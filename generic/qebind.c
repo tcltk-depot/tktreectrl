@@ -1,6 +1,12 @@
-/* File: qebind.c */
-
-/* Purpose: implements quasi-events */
+/* 
+ * qebind.c --
+ *
+ *	This module implements quasi-events.
+ *
+ * Copyright (c) 2002-2004 Tim Baker
+ *
+ * RCS: @(#) $Id$
+ */
 
 /*
  * A general purpose module that allows a program to send event-like
