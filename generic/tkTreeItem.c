@@ -2160,8 +2160,7 @@ static int DictionaryCompare(char *left, char *right)
     int secondaryDiff = 0;
 
     while (1) {
-	if (isdigit(UCHAR(*right))	/* INTL: digit */
-		&& isdigit(UCHAR(*left))) {	/* INTL: digit */
+	if (isdigit(UCHAR(*right)) && isdigit(UCHAR(*left))) { /* INTL: digit */
 	    /*
 	     * There are decimal numbers embedded in the two
 	     * strings.  Compare them as numbers, rather than
@@ -2259,29 +2258,54 @@ static int DictionaryCompare(char *left, char *right)
     return diff;
 }
 
-static int CompareAscii(SortData *sortData, struct SortItem *a, struct SortItem *b, int n)
+static int
+CompareAscii(SortData *sortData, struct SortItem *a, struct SortItem *b, int n)
 {
-    return strcmp(a->item1[n].string, b->item1[n].string);
+    char *left  = a->item1[n].string;
+    char *right = b->item1[n].string;
+
+    /* make sure to handle case where no string value has been set */
+    if (left == NULL) {
+	return ((right == NULL) ? 0 : (0 - UCHAR(*right)));
+    } else if (right == NULL) {
+	return UCHAR(*left);
+    } else {
+	return strcmp(left, right);
+    }
 }
 
-static int CompareDict(SortData *sortData, struct SortItem *a, struct SortItem *b, int n)
+static int
+CompareDict(SortData *sortData, struct SortItem *a, struct SortItem *b, int n)
 {
-    return DictionaryCompare(a->item1[n].string, b->item1[n].string);
+    char *left  = a->item1[n].string;
+    char *right = b->item1[n].string;
+
+    /* make sure to handle case where no string value has been set */
+    if (left == NULL) {
+	return ((right == NULL) ? 0 : (0 - UCHAR(*right)));
+    } else if (right == NULL) {
+	return UCHAR(*left);
+    } else {
+	return DictionaryCompare(left, right);
+    }
 }
 
-static int CompareDouble(SortData *sortData, struct SortItem *a, struct SortItem *b, int n)
+static int
+CompareDouble(SortData *sortData, struct SortItem *a, struct SortItem *b, int n)
 {
     return (a->item1[n].doubleValue < b->item1[n].doubleValue) ? -1 :
 	((a->item1[n].doubleValue == b->item1[n].doubleValue) ? 0 : 1);
 }
 
-static int CompareLong(SortData *sortData, struct SortItem *a, struct SortItem *b, int n)
+static int
+CompareLong(SortData *sortData, struct SortItem *a, struct SortItem *b, int n)
 {
     return (a->item1[n].longValue < b->item1[n].longValue) ? -1 :
 	((a->item1[n].longValue == b->item1[n].longValue) ? 0 : 1);
 }
 
-static int CompareCmd(SortData *sortData, struct SortItem *a, struct SortItem *b, int n)
+static int
+CompareCmd(SortData *sortData, struct SortItem *a, struct SortItem *b, int n)
 {
     Tcl_Interp *interp = sortData->tree->interp;
     Tcl_Obj **objv, *paramObjv[2];
