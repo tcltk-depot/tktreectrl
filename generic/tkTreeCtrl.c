@@ -2860,7 +2860,7 @@ int LoupeCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
 	}
     }
 
-    Tk_PhotoPutZoomedBlock(interp, photoH, &photoBlock, 0, 0, w, h,
+    Tk_PhotoPutZoomedBlock(photoH, &photoBlock, 0, 0, w, h,
 	    zoom, zoom, 1, 1, TK_PHOTO_COMPOSITE_SET);
 
     Tcl_Free((char *) pixelPtr);
