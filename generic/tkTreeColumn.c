@@ -198,6 +198,9 @@ static void ImageChangedProc(
     int imageWidth, int imageHeight)
 {
     /* I would like to know the image was deleted... */
+    Column *column = (Column *) clientData;
+
+    Tree_DInfoChanged(column->tree, DINFO_INVALIDATE | DINFO_OUT_OF_DATE);
 }
 
 int Tree_FindColumnByTag(TreeCtrl *tree, Tcl_Obj *obj, TreeColumn *columnPtr, int flags)

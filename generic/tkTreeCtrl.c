@@ -1490,6 +1490,9 @@ static void ImageChangedProc(
     int imageWidth, int imageHeight)
 {
     /* I would like to know the image was deleted... */
+    TreeCtrl *tree = (TreeCtrl *) clientData;
+
+    Tree_DInfoChanged(tree, DINFO_INVALIDATE | DINFO_OUT_OF_DATE);
 }
 
 Tk_Image Tree_GetImage(TreeCtrl *tree, char *imageName)
