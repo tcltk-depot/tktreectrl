@@ -1131,6 +1131,9 @@ static int TreeConfigure(Tcl_Interp *interp, TreeCtrl *tree, int objc,
 	mask |= TREE_CONF_FONT | TREE_CONF_RELAYOUT;
 
     if (mask & (TREE_CONF_FONT | TREE_CONF_FG)) {
+	/*
+	 * Should be blended into TreeWorldChanged.
+	 */
 	gcValues.font = Tk_FontId(tree->tkfont);
 	gcValues.foreground = tree->fgColorPtr->pixel;
 	gcValues.graphics_exposures = False;
@@ -1255,10 +1258,9 @@ static int TreeConfigure(Tcl_Interp *interp, TreeCtrl *tree, int objc,
 	TreeComputeGeometry(tree);
 	Tree_InvalidateColumnWidth(tree, -1);
 	Tree_RelayoutWindow(tree);
-    }
-
-    if (mask & TREE_CONF_REDISPLAY)
+    } else if (mask & TREE_CONF_REDISPLAY) {
 	Tree_RelayoutWindow(tree);
+    }
 
     return TCL_OK;
 }
@@ -1276,6 +1278,9 @@ static void TreeWorldChanged(ClientData instanceData)
     if (tree->textGC != None)
 	Tk_FreeGC(tree->display, tree->textGC);
     tree->textGC = Tk_GetGC(tree->tkwin, gcMask, &gcValues);
+
+    TreeStyle_TreeChanged(tree, TREE_CONF_FONT | TREE_CONF_RELAYOUT);
+    TreeColumn_TreeChanged(tree, TREE_CONF_FONT | TREE_CONF_RELAYOUT);
 
     TreeComputeGeometry(tree);
     Tree_InvalidateColumnWidth(tree, -1);
