@@ -457,5 +457,6 @@ test column-99.1 {some needed cleanup} -body {
 } -result {}
 
 # cleanup
+image delete emptyImg
 ::tcltest::cleanupTests
 return
