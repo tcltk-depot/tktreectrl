@@ -218,6 +218,12 @@ struct TreeCtrl
     int scanY;
     int scanXOrigin;
     int scanYOrigin;
+
+    struct {
+	Tcl_Obj *stylesObj;
+	TreeStyle *styles;
+	int numStyles;
+    } defaultStyle;
 };
 
 #define TREE_CONF_FONT 0x0001
@@ -234,6 +240,7 @@ struct TreeCtrl
 #define TREE_CONF_PROXY 0x0800
 #define TREE_CONF_BUTTON 0x1000
 #define TREE_CONF_LINE 0x2000
+#define TREE_CONF_DEFSTYLE 0x4000
 
 extern void Tree_AddItem(TreeCtrl *tree, TreeItem item);
 extern void Tree_RemoveItem(TreeCtrl *tree, TreeItem item);
@@ -406,7 +413,6 @@ extern void TreeNotify_Scroll(TreeCtrl *tree, double fractions[2], int vertical)
 
 /* tkTreeColumn.c */
 extern void Tree_InitColumns(TreeCtrl *tree);
-extern TreeColumn Tree_CreateColumn(TreeCtrl *tree, int columnIndex, int *isNew);
 extern TreeColumn Tree_FindColumn(TreeCtrl *tree, int columnIndex);
 #define CFO_NOT_TAIL 0x01
 extern int Tree_FindColumnByTag(TreeCtrl *tree, Tcl_Obj *obj, TreeColumn *columnPtr, int flags);
