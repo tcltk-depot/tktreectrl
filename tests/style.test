@@ -99,7 +99,7 @@ test style-4.4 {style names: no style defined} -body {
 
 test style-5.1 {style elements: missing args} -body {
     .t style elements
-} -returnCodes error -result {wrong # args: should be ".t style elements name ?element element...?"}
+} -returnCodes error -result {wrong # args: should be ".t style elements name ?elementList?"}
 
 test style-5.2 {style elements: unknown style} -body {
     .t style elements testStyle
