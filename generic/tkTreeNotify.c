@@ -1,3 +1,13 @@
+/* 
+ * tkTreeNotify.c --
+ *
+ *	This module implements "qebind.c" events for treectrl widgets.
+ *
+ * Copyright (c) 2002-2004 Tim Baker
+ *
+ * RCS: @(#) $Id$
+ */
+
 #include "tkTreeCtrl.h"
 
 /* tkMacOSXPort.h should include this, I think, like the other platform
