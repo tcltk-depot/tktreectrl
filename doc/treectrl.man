@@ -111,8 +111,11 @@ it should be a screen distance
 in any of the forms acceptable to [fun Tk_GetPixels].
 Then a 1 pixel thick vertical line will be drawn
 at the specified screen distance from the left edge of the treectrl widget,
-which reaches from top to bottom and uses an inverting color
+which reaches from top to bottom of the treectrl widget
+and uses an inverting color
 (i.e black on lighter background, white on darker background).
+This line can be used to give the user a visual feedback
+during column resizing.
 
 [tkoption_def -doublebuffer doubleBuffer DoubleBuffer]
 Specifies if double-buffering should be used to improve displaying.
@@ -893,8 +896,10 @@ the order between these two limiting items doesn't matter.
 
 The sort column can be specified by means of the [option -column] option;
 this option can be used repeatedly to define a multi column sort.
-The sorting is always done by looking at the [arg text]
-of the first text element of the sorting column(s).
+The sorting is done by looking at the [arg text]
+of the element specified by the [option -element] option,
+which must be a text element defined in the style of the sorting column,
+by default the first text element is used.
 [nl]
 
 If the [option -notreally] option is specified,
