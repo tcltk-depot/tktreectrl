@@ -224,7 +224,8 @@ install-doc-x: doc
 	done
 
 install-doc:
-	@echo "No docs to install"
+	mkdir -p $(DESTDIR)$(pkglibdir)/htmldoc
+	cp $(srcdir)/doc/*.html $(DESTDIR)$(pkglibdir)/htmldoc
 
 test: binaries libraries
 	$(WISH) `@CYGPATH@ $(srcdir)/tests/all.tcl` $(TESTFLAGS) | cat
