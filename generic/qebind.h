@@ -55,6 +55,7 @@ extern void QE_ExpandNumber(long number, Tcl_DString *result);
 extern void QE_ExpandString(char *string, Tcl_DString *result);
 extern void QE_ExpandEvent(QE_BindingTable bindingTable, int eventType, Tcl_DString *result);
 extern void QE_ExpandDetail(QE_BindingTable bindingTable, int event, int detail, Tcl_DString *result);
+extern void QE_ExpandPattern(QE_BindingTable bindingTable, int eventType, int detail, Tcl_DString *result);
 extern void QE_ExpandUnknown(char which, Tcl_DString *result);
 extern int QE_BindCmd(QE_BindingTable bindingTable, int objOffset, int objc,
 	Tcl_Obj *CONST objv[]);
