@@ -199,6 +199,7 @@ struct TreeCtrl
     TreeMarquee marquee;
     TreeDInfo dInfo;
     int selectCount;		/* Number of selected items */
+    Tcl_HashTable selection;	/* Selected items */
 
 #define TREE_WRAP_NONE 0
 #define TREE_WRAP_ITEMS 1
