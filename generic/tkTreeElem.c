@@ -3452,6 +3452,7 @@ int TreeCtrl_RegisterElementType(Tcl_Interp *interp, ElementType *newTypePtr)
 
 TreeCtrlStubs stubs = {
 	TreeCtrl_RegisterElementType,
+	Tree_RedrawElement,
 	PerStateInfo_Free,
 	PerStateInfo_FromObj,
 	PerStateInfo_ForState,
