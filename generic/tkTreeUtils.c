@@ -468,8 +468,10 @@ void Tk_OffsetRegion(TkRegion region, int xOffset, int yOffset)
 {
 #ifdef WIN32
 	OffsetRgn((HRGN) region, xOffset, yOffset);
+#elif defined(TARGET_OS_MAC)
+#error "Mac developer: implement Tk_OffsetRegion please!"
 #else
-#error "Unix/Mac developer: implement Tk_OffsetRegion please!"
+	XOffsetRegion((Region) region, xOffset, yOffset);
 #endif
 }
 
