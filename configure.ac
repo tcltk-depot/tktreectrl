@@ -21,7 +21,7 @@ dnl	to configure the system for the local environment.
 
 AC_INIT([treectrl], [1.1])
 
-TEA_INIT([3.1])
+TEA_INIT([3.2])
 
 AC_CONFIG_AUX_DIR(tclconfig)
 
