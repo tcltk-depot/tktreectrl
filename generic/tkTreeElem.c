@@ -1,3 +1,13 @@
+/* 
+ * tkTreeElem.c --
+ *
+ *	This module implements elements for treectrl widgets.
+ *
+ * Copyright (c) 2002-2004 Tim Baker
+ *
+ * RCS: @(#) $Id$
+ */
+
 #include "tkTreeCtrl.h"
 #include "tkTreeElem.h"
 
