@@ -72,6 +72,11 @@ See the [cmd option] manual entry for details on the standard options.
 
 [section {WIDGET SPECIFIC OPTIONS}]
 [list_begin tkoption]
+[tkoption_def -backgroundimage backgroundImage BackgroundImage]
+Specifies the name of an image to draw as the list background. The image is
+tiled horizontally and vertically to fill the content area of the list. If
+the image is transparent it is drawn on top of the background color(s).
+
 [tkoption_def -backgroundmode backgroundMode BackgroundMode]
 Specifies the desired mode for changing the background of individual items.
 The value should be one of [const row], [const column], [const index],

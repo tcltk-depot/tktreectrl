@@ -349,6 +349,17 @@ See the \fBoption\fR manual entry for details on the standard options.
 .LP
 .nf
 .ta 6c
+Command-Line Switch:	\fB-backgroundimage\fR
+Database Name:	\fBbackgroundImage\fR
+Database Class:	\fBBackgroundImage\fR
+.fi
+.IP
+Specifies the name of an image to draw as the list background. The image is
+tiled horizontally and vertically to fill the content area of the list. If
+the image is transparent it is drawn on top of the background color(s).
+.LP
+.nf
+.ta 6c
 Command-Line Switch:	\fB-backgroundmode\fR
 Database Name:	\fBbackgroundMode\fR
 Database Class:	\fBBackgroundMode\fR
