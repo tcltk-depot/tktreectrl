@@ -868,7 +868,7 @@ int TreeColumnCmd(ClientData clientData, Tcl_Interp *interp, int objc,
 	    if (TreeColumn_FromObj(tree, objv[3], (TreeColumn *) &column, 0) != TCL_OK)
 		return TCL_ERROR;
 	    /* Update layout if needed */
-	    (void) Tree_TotalWidth(tree);
+	    (void) Tree_WidthOfColumns(tree);
 	    Tcl_SetObjResult(interp, Tcl_NewIntObj(column->useWidth));
 	    break;
 	}
