@@ -1181,6 +1181,12 @@ The following forms of the command are supported:
 Defines a new state with the name \fIstateName\fR,
 which must not be the name of a predefined or already user defined state.
 .TP
+\fIpathName \fBstate linkage\fR \fIstateName\fR
+Returns a string indicating
+whether the specified state is user defined
+by means of the \fBstate define\fR widget command (\fBdynamic\fR)
+or predefined by the treectrl widget itself (\fBstatic\fR).
+.TP
 \fIpathName \fBstate names\fR
 Returns a list containing the names of all user defined states.
 .TP
