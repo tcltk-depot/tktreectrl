@@ -42,6 +42,38 @@ if {[llength $::tcltest::matchFiles] > 0} {
 set timeCmd {clock format [clock seconds]}
 puts $chan "Tests began at [eval $timeCmd]"
 
+# Currently the following doesn't work if tktreectrl is not yet installed:
+#   package require treectrl
+# And we want to test the currently built version anyway.
+# So we have to load and source it by hand, until TreectrlInit()
+# evals the initScript with calls of tcl_findLibrary...
+
+proc package_require {treectrl} { 
+    set thisPlatform $::tcl_platform(platform)
+    if {![catch {tk windowingsystem} windowingSystem] \
+	    && [string equal aqua $windowingSystem]} {
+	set thisPlatform macosx
+    }
+    switch -- $thisPlatform {
+	macintosh {
+	    load treectrl.shlb
+	}
+	macosx {
+	    load build/treectrl.dylib
+	}
+	unix {
+	    load [glob libtreectrl*[info sharedlibextension]]
+	}
+	default { # Windows
+	    load Build/treectrl[info sharedlibextension]
+	}
+    }
+    if {![namespace exists ::TreeCtrl]} {
+	uplevel #0 source [file join library treectrl.tcl]
+	uplevel #0 source [file join library filelist-bindings.tcl]
+    }
+}
+
 # source each of the specified tests
 foreach file [lsort [::tcltest::getMatchingFiles]] {
     set tail [file tail $file]
