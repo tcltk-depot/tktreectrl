@@ -17,10 +17,12 @@
  * We need to remove that for compiling with 8.4.
  */
 #if (TK_MAJOR_VERSION == 8) && (TK_MINOR_VERSION < 5)
-#define TK_PHOTOPUTBLOCK(interp, hdl, blk, x, y, w, cr) \
-		Tk_PhotoPutBlock(hdl, blk, x, y, w, cr)
-#define TK_PHOTOPUTZOOMEDBLOCK(interp, hdl, blk, x, y, w, zx, zy, sx, sy, cr) \
-		Tk_PhotoPutZoomedBlock(hdl, blk, x, y, w, zx, zy, sx, sy, cr)
+#define TK_PHOTOPUTBLOCK(interp, hdl, blk, x, y, w, h, cr) \
+		Tk_PhotoPutBlock(hdl, blk, x, y, w, h, cr)
+#define TK_PHOTOPUTZOOMEDBLOCK(interp, hdl, blk, x, y, w, h, \
+				zx, zy, sx, sy, cr) \
+		Tk_PhotoPutZoomedBlock(hdl, blk, x, y, w, h, \
+				zx, zy, sx, sy, cr)
 #else
 #define TK_PHOTOPUTBLOCK	Tk_PhotoPutBlock
 #define TK_PHOTOPUTZOOMEDBLOCK	Tk_PhotoPutZoomedBlock
