@@ -464,6 +464,15 @@ void Tk_FillRegion(Display *display, Drawable drawable, GC gc, TkRegion rgn)
 #endif
 }
 
+void Tk_OffsetRegion(TkRegion region, int xOffset, int yOffset)
+{
+#ifdef WIN32
+	OffsetRgn((HRGN) region, xOffset, yOffset);
+#else
+#error "Unix/Mac developer: implement Tk_OffsetRegion please!"
+#endif
+}
+
 /*
  * Replacement for Tk_TextLayout stuff. Allows the caller to break lines
  * on character boundaries (as well as word boundaries). Allows the caller
