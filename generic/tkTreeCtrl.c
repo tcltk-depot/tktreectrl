@@ -45,6 +45,12 @@ static Tk_OptionSpec optionSpecs[] = {
     {TK_OPTION_BORDER, "-background", "background", "Background",
      "white", -1, Tk_Offset(TreeCtrl, border), 0, 
      (ClientData) "white", TREE_CONF_REDISPLAY},
+#ifdef BG_IMAGE
+    {TK_OPTION_STRING, "-backgroundimage", "backgroundImage", "BackgroundImage",
+      (char *) NULL, -1, Tk_Offset(TreeCtrl, backgroundImageString),
+      TK_OPTION_NULL_OK, (ClientData) NULL,
+      TREE_CONF_BG_IMAGE | TREE_CONF_REDISPLAY},
+#endif
     {TK_OPTION_STRING_TABLE, "-backgroundmode",
      "backgroundMode", "BackgroundMode",
      "row", -1, Tk_Offset(TreeCtrl, backgroundMode),
@@ -116,7 +122,7 @@ static Tk_OptionSpec optionSpecs[] = {
      "HighlightThickness", DEF_LISTBOX_HIGHLIGHT_WIDTH,
      Tk_Offset(TreeCtrl, highlightWidthObj),
      Tk_Offset(TreeCtrl, highlightWidth),
-     0, (ClientData) NULL, 0},
+     0, (ClientData) NULL, TREE_CONF_RELAYOUT},
     {TK_OPTION_PIXELS, "-indent", "indent", "Indent",
      "19", Tk_Offset(TreeCtrl, indentObj),
      Tk_Offset(TreeCtrl, indent),
@@ -1055,6 +1061,10 @@ static int TreeConfigure(Tcl_Interp *interp, TreeCtrl *tree, int objc,
 		saved.closedButtonImage = tree->closedButtonImage;
 	    if (mask & TREE_CONF_BUTIMG_OPEN)
 		saved.openButtonImage = tree->openButtonImage;
+#ifdef BG_IMAGE
+	    if (mask & TREE_CONF_BG_IMAGE)
+		saved.backgroundImage = tree->backgroundImage;
+#endif
 	    if (mask & TREE_CONF_WRAP) {
 		saved.wrapMode = tree->wrapMode;
 		saved.wrapArg = tree->wrapArg;
@@ -1083,6 +1093,18 @@ static int TreeConfigure(Tcl_Interp *interp, TreeCtrl *tree, int objc,
 		    tree->openButtonImage = image;
 		}
 	    }
+
+#ifdef BG_IMAGE
+	    if (mask & TREE_CONF_BG_IMAGE) {
+		tree->backgroundImage = NULL;
+		if (tree->backgroundImageString != NULL) {
+		    Tk_Image image = Tree_GetImage(tree, tree->backgroundImageString);
+		    if (image == NULL)
+			continue;
+		    tree->backgroundImage = image;
+		}
+	    }
+#endif
 
 	    if (mask & TREE_CONF_DEFSTYLE) {
 		if (tree->defaultStyle.stylesObj == NULL) {
@@ -1189,6 +1211,12 @@ badWrap:
 	    if (mask & TREE_CONF_BUTIMG_OPEN) {
 		tree->openButtonImage = saved.openButtonImage;
 	    }
+
+#ifdef BG_IMAGE
+	    if (mask & TREE_CONF_BG_IMAGE) {
+		tree->backgroundImage = saved.backgroundImage;
+	    }
+#endif
 
 	    if (mask & TREE_CONF_DEFSTYLE) {
 		tree->defaultStyle.styles = saved.defaultStyle.styles;
