@@ -42,7 +42,6 @@ switch -- $thisPlatform {
     }
 }
 
-load   [file join . libtreectrl1.0.so]
 source [file join library treectrl.tcl]
 source [file join library filelist-bindings.tcl]
 
