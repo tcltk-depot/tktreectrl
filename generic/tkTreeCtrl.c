@@ -184,6 +184,9 @@ static Tk_OptionSpec optionSpecs[] = {
     {TK_OPTION_BOOLEAN, "-showlines", "showLines",
      "ShowLines", "1", -1, Tk_Offset(TreeCtrl, showLines),
      0, (ClientData) NULL, TREE_CONF_REDISPLAY},
+    {TK_OPTION_BOOLEAN, "-showrootlines", "showRootLines",
+     "ShowRootLines", "1", -1, Tk_Offset(TreeCtrl, showRootLines),
+     0, (ClientData) NULL, TREE_CONF_REDISPLAY},
     {TK_OPTION_BOOLEAN, "-showroot", "showRoot",
      "ShowRoot", "1", -1, Tk_Offset(TreeCtrl, showRoot),
      0, (ClientData) NULL, TREE_CONF_RELAYOUT},
@@ -702,10 +705,14 @@ static int TreeWidgetCmd(ClientData clientData, Tcl_Interp *interp, int objc,
 			sprintf(buf + strlen(buf), " button");
 		}
 		else if (tree->showLines) {
+		    TreeItem sibling;
 		    do {
 			item = TreeItem_GetParent(tree, item);
 		    } while (++column < depth);
-		    if (TreeItem_GetNextSibling(tree, item) != NULL)
+		    sibling = TreeItem_NextSiblingVisible(tree, item);
+		    if ((sibling != NULL) &&
+			((TreeItem_GetParent(tree, sibling) != tree->root) ||
+			tree->showRootLines))
 			sprintf(buf + strlen(buf), " line %s%d", itemPrefix,
 				TreeItem_GetID(tree, item)); /* TreeItem_ToObj() */
 		}
