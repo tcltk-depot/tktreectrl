@@ -2338,6 +2338,8 @@ static int A_XviewCmd(TreeCtrl *tree, int objc, Tcl_Obj *CONST objv[])
 	int totWidth = Tree_TotalWidth(tree);
 	int xIncr = tree->xScrollIncrement;
 
+	if (visWidth < 0)
+	    visWidth = 0;
 	if (totWidth <= visWidth)
 	    return TCL_OK;
 
@@ -2417,6 +2419,8 @@ static int A_YviewCmd(TreeCtrl *tree, int objc, Tcl_Obj *CONST objv[])
 	int totHeight = Tree_TotalHeight(tree);
 	int yIncr = tree->yScrollIncrement;
 
+	if (visHeight < 0)
+	    visHeight = 0;
 	if (totHeight <= visHeight)
 	    return TCL_OK;
 
