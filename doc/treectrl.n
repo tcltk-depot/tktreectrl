@@ -8,12 +8,12 @@
 '\"
 '\"   $Id$
 .so man.macros
-.TH "treectrl" n 1.0  "Tk Commands"
+.TH "treectrl" n 1.1  "Tk Commands"
 .BS
 .SH "NAME"
 treectrl \- Create and manipulate hierarchical multicolumn widgets
 .SH "SYNOPSIS"
-package require \fBtreectrl  1.0\fR
+package require \fBtreectrl  1.1\fR
 .sp
 \fBtreectrl\fR \fIpathName\fR ?\fIoptions\fR?\fR
 .sp
