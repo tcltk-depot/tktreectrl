@@ -42,7 +42,6 @@ if {[llength $::tcltest::matchFiles] > 0} {
 set timeCmd {clock format [clock seconds]}
 puts $chan "Tests began at [eval $timeCmd]"
 
-interp alias {} package_require {} package require
 package require treectrl
 
 # source each of the specified tests
