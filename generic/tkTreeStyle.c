@@ -2646,7 +2646,7 @@ int TreeStyle_ElementActual(TreeCtrl *tree, TreeStyle style_, int state, Tcl_Obj
 			style->name, masterElem->name);
 		return TCL_ERROR;
 	}
-\
+
 	args.tree = tree;
 	args.elem = eLink->elem;
 	args.state = state;
