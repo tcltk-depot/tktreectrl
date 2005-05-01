@@ -19,7 +19,7 @@ dnl	to configure the system for the local environment.
 # AC_INIT(generic/tcl.h)
 #-----------------------------------------------------------------------
 
-AC_INIT([treectrl], [1.1])
+AC_INIT([treectrl], [1.2])
 
 TEA_INIT([3.2])
 
