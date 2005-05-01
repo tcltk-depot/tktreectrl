@@ -3,7 +3,7 @@
  *
  *	This module implements treectrl widget's columns.
  *
- * Copyright (c) 2002-2004 Tim Baker
+ * Copyright (c) 2002-2005 Tim Baker
  *
  * RCS: @(#) $Id$
  */
@@ -3444,6 +3444,7 @@ Tree_RelayoutWindow(TreeCtrl *tree)
 	DINFO_REDO_RANGES |
 	DINFO_OUT_OF_DATE |
 	DINFO_CHECK_COLUMN_WIDTH |
+	DINFO_DRAW_HEADER |
 	DINFO_SET_ORIGIN_X |
 	DINFO_SET_ORIGIN_Y |
 	DINFO_UPDATE_SCROLLBAR_X |
