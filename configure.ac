@@ -67,7 +67,7 @@ TEA_SETUP_COMPILER
 
 TEA_ADD_SOURCES([qebind.c tkTreeColumn.c tkTreeCtrl.c tkTreeDisplay.c
 		tkTreeDrag.c tkTreeElem.c tkTreeItem.c tkTreeMarquee.c
-		tkTreeNotify.c tkTreeStyle.c tkTreeUtils.c])
+		tkTreeNotify.c tkTreeStyle.c tkTreeTheme.c tkTreeUtils.c])
 TEA_ADD_HEADERS([])
 #TEA_ADD_INCLUDES([-I. -I\"`${CYGPATH} ${srcdir}/generic`\"])
 TEA_ADD_CFLAGS([])
