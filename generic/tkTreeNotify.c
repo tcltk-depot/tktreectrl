@@ -3,7 +3,7 @@
  *
  *	This module implements "qebind.c" events for treectrl widgets.
  *
- * Copyright (c) 2002-2004 Tim Baker
+ * Copyright (c) 2002-2005 Tim Baker
  *
  * RCS: @(#) $Id$
  */
