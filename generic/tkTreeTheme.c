@@ -9,9 +9,12 @@
  */
 
 #ifdef WIN32
-
 #define WINVER 0x0501 /* Cygwin */
+#endif
+
 #include "tkTreeCtrl.h"
+
+#ifdef WIN32
 #include "tkWinInt.h"
 
 #include <uxtheme.h>
@@ -394,12 +397,13 @@ int TreeTheme_DrawButton(TreeCtrl *tree, Drawable drawable, int open,
     TkWinDCState dcState;
     RECT rc;
     HRESULT hr;
+    int iPartId, iStateId;
 
     if (!themeData->themeEnabled || !procs)
 	return TCL_ERROR;
 
-    int iPartId = TVP_GLYPH;
-    int iStateId = open ? GLPS_OPENED : GLPS_CLOSED;
+    iPartId  = TVP_GLYPH;
+    iStateId = open ? GLPS_OPENED : GLPS_CLOSED;
 
     hTheme = procs->OpenThemeData(hwnd, L"TREEVIEW");
     if (!hTheme)
@@ -449,12 +453,13 @@ int TreeTheme_GetButtonSize(TreeCtrl *tree, Drawable drawable, int open,
     TkWinDCState dcState;
     HRESULT hr;
     SIZE size;
+    int iPartId, iStateId;
 
     if (!themeData->themeEnabled || !procs)
 	return TCL_ERROR;
 
-    int iPartId = TVP_GLYPH;
-    int iStateId = open ? GLPS_OPENED : GLPS_CLOSED;
+    iPartId  = TVP_GLYPH;
+    iStateId = open ? GLPS_OPENED : GLPS_CLOSED;
 
     hTheme = procs->OpenThemeData(hwnd, L"TREEVIEW");
     if (!hTheme)
