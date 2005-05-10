@@ -621,7 +621,7 @@ dbwin("Tcl_SetAssocData TreeTheme\n");
 
     data = (PerInterpData *) ckalloc(sizeof(PerInterpData));
     data->hwnd = hwnd;
-    Tcl_SetAssocData(interp, "TreeTheme", FreeAssocData, (ClientData) data);
+    Tcl_SetAssocData(interp, "TreeCtrlTheme", FreeAssocData, (ClientData) data);
 
     return TCL_OK;
 }
