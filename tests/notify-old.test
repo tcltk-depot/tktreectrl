@@ -38,7 +38,7 @@ test notify-2.1 {notify eventnames: too much args} -body {
 
 test notify-2.2 {notify eventnames: nothing own installed yet} -body {
     lsort [.t notify eventnames]
-} -result {ActiveItem Collapse Expand Scroll Selection}
+} -result {ActiveItem Collapse Expand ItemDelete Scroll Selection}
 
 test notify-2.3 {notify install: missing args} -body {
     .t notify install
@@ -63,7 +63,7 @@ test notify-2.7 {notify install event} -body {
 
 test notify-2.8 {notify eventnames: list Greetings} -body {
     lsort [.t notify eventnames]
-} -result {ActiveItem Collapse Expand GoodBye Greetings Scroll Selection}
+} -result {ActiveItem Collapse Expand GoodBye Greetings ItemDelete Scroll Selection}
 
 test notify-2.9 {notify detailnames: missing args} -body {
     .t notify detailnames
