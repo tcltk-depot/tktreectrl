@@ -576,7 +576,6 @@ static void FreeAssocData(ClientData clientData, Tcl_Interp *interp)
 {
     PerInterpData *data = (PerInterpData *) clientData;
 
-dbwin("FreeAssocData\n");
     DestroyWindow(data->hwnd);
     ckfree((char *) data);
 }
@@ -591,7 +590,6 @@ int TreeTheme_Init(Tcl_Interp *interp)
     /* This is done once per-application */
     if (themeData == NULL)
     {
-dbwin("alloc themeData\n");
 	themeData = (XPThemeData *) ckalloc(sizeof(XPThemeData));
 	themeData->procs = LoadXPThemeProcs(&themeData->hlibrary);
 	themeData->registered = FALSE;
@@ -617,7 +615,6 @@ dbwin("alloc themeData\n");
     hwnd = CreateThemeMonitorWindow(Tk_GetHINSTANCE(), interp);
     if (!hwnd)
 	return TCL_ERROR;
-dbwin("Tcl_SetAssocData TreeTheme\n");
 
     data = (PerInterpData *) ckalloc(sizeof(PerInterpData));
     data->hwnd = hwnd;
