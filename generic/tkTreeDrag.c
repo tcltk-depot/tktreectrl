@@ -297,8 +297,14 @@ int DragImageCmd(ClientData clientData, Tcl_Interp *interp, int objc,
 					indent = TreeItem_Indent(tree, item);
 				else
 					indent = 0;
+#ifdef LAYOUTHAX
+				drawArgs.indent = indent;
+				drawArgs.x = x + totalWidth;
+				drawArgs.width = TreeColumn_UseWidth(treeColumn);
+#else
 				drawArgs.x = x + indent + totalWidth;
 				drawArgs.width = TreeColumn_UseWidth(treeColumn) - indent;
+#endif
 				drawArgs.justify = TreeColumn_Justify(treeColumn);
 				if (objc - 5 > STATIC_SIZE)
 				STATIC_ALLOC(rects, XRectangle, objc - 5);
@@ -334,8 +340,14 @@ int DragImageCmd(ClientData clientData, Tcl_Interp *interp, int objc,
 					drawArgs.style = TreeItemColumn_GetStyle(tree, itemColumn);
 					if (drawArgs.style != NULL)
 					{
+#ifdef LAYOUTHAX
+						drawArgs.indent = indent;
+						drawArgs.x = x + totalWidth;
+						drawArgs.width = width;
+#else
 						drawArgs.x = x + indent + totalWidth;
 						drawArgs.width = width - indent;
+#endif
 						drawArgs.justify = TreeColumn_Justify(treeColumn);
 						count = TreeStyle_NumElements(tree, drawArgs.style);
 						STATIC_ALLOC(rects, XRectangle, count);

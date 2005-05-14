@@ -420,6 +420,7 @@ extern TreeItemColumn TreeItem_GetFirstColumn(TreeCtrl *tree, TreeItem item);
 extern TreeItemColumn TreeItemColumn_GetNext(TreeCtrl *tree, TreeItemColumn column);
 extern void TreeItemColumn_InvalidateSize(TreeCtrl *tree, TreeItemColumn column);
 extern TreeStyle TreeItemColumn_GetStyle(TreeCtrl *tree, TreeItemColumn column);
+extern int TreeItemColumn_Index(TreeCtrl *tree, TreeItem item_, TreeItemColumn column_);
 extern void TreeItemColumn_ForgetStyle(TreeCtrl *tree, TreeItemColumn column_);
 extern int TreeItemColumn_NeededWidth(TreeCtrl *tree, TreeItem item_, TreeItemColumn column_);
 extern TreeItemColumn TreeItem_FindColumn(TreeCtrl *tree, TreeItem item, int columnIndex);
@@ -437,6 +438,10 @@ struct StyleDrawArgs
 {
     TreeCtrl *tree;
     TreeStyle style;
+#define LAYOUTHAX
+#ifdef LAYOUTHAX
+    int indent;
+#endif
     int x;
     int y;
     int width;
