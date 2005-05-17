@@ -1985,6 +1985,9 @@ Indicates the [arg n]th column in the list of columns as returned by the
 
 [lst_item [const tail]]
 Indicates the ever-present tail column of the treectrl.
+
+[lst_item [const tree]]
+Indicates the column specified by the -treecolumn option of the treectrl.
 [list_end]
 
 [para]
@@ -2278,11 +2281,16 @@ configured width, it will be truncated at the right end and filled up with
 an ellipsis.
 
 [opt_def [option -text] [arg string]]
-[arg String] specifies the characters to be displayed in the text.
+[arg String] specifies the characters to be displayed by the element.
 Non printable characters are displayed in their escaped form
 (e.g. a new line character is displayed as the two characters [const \\n]).
 If this option is specified, any values of [option -data], [option -datatype],
 and [option -format] are ignored.
+
+[opt_def [option -textvariable] [arg varName]]
+Specifies the name of a variable.  The value of the variable is a text string
+to be displayed by the element;  if the variable value changes then the element
+will automatically update itself to reflect the new value.
 
 [opt_def [option -width] [arg size]]
 Specifies the width of the area of the text.
