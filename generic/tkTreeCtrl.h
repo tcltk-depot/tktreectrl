@@ -21,14 +21,6 @@
 #define dbwin printf
 #endif /* HAVE_DBWIN_H */
 
-/* define TARGET_OS_MAC: */
-#if defined(MAC_TCL) || defined(MAC_OSX_TK)
-#include <TargetConditionals.h>
-#if defined(TARGET_OS_MAC) && ! TARGET_OS_MAC
-#undef TARGET_OS_MAC
-#endif
-#endif
-
 #ifndef TRUE
 #define TRUE 1
 #define FALSE 0

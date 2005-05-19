@@ -2429,7 +2429,7 @@ TreeColumnProxy_Draw(TreeCtrl *tree)
     unsigned long gcMask;
     GC gc;
 
-#if defined(TARGET_OS_MAC)
+#if defined(MAC_TCL) || defined(MAC_OSX_TK)
     gcValues.function = GXxor;
 #else
     gcValues.function = GXinvert;
@@ -2439,7 +2439,7 @@ TreeColumnProxy_Draw(TreeCtrl *tree)
     gc = Tk_GetGC(tree->tkwin, gcMask, &gcValues);
 
     /* GXinvert doesn't work with XFillRectangle() on Win32 */
-#if defined(WIN32) || defined(TARGET_OS_MAC)
+#if defined(WIN32) || defined(MAC_TCL) || defined(MAC_OSX_TK)
     XDrawLine(tree->display, Tk_WindowId(tree->tkwin), gc,
 	    tree->columnProxy.sx,
 	    tree->inset,

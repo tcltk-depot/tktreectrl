@@ -1799,8 +1799,9 @@ void TreeItem_DrawButton(TreeCtrl *tree, TreeItem item_, int x, int y, int width
     if (ISROOT(self) && !tree->showRootButton)
 	return;
 
-#ifdef TARGET_OS_MAC
-    macoffset = 1;
+#if defined(MAC_TCL) || defined(MAC_OSX_TK)
+	/* QuickDraw on Mac is offset by one pixel in both x and y. */
+	macoffset = 1;
 #endif
 
     indent = TreeItem_Indent(tree, item_);
