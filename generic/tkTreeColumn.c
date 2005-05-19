@@ -2317,6 +2317,7 @@ static void Column_DrawArrow(Column *column, Drawable drawable, int x, int y,
 		0, 0,
 		(unsigned int) layout.arrowWidth, (unsigned int) layout.arrowHeight,
 		bx, by, 1);
+	XSetClipOrigin(tree->display, gc, 0, 0);
 	Tk_FreeGC(tree->display, gc);
 	return;
     }
