@@ -16,6 +16,8 @@
 /* OffsetRgn() on Mac */
 #ifdef TARGET_OS_MAC
 #include <Carbon/Carbon.h>
+#include "tkMacOSXInt.h"
+static PixPathHandle gPenPat = NULL;
 #endif
 
 /*
@@ -469,7 +471,25 @@ void Tk_FillRegion(Display *display, Drawable drawable, GC gc, TkRegion rgn)
 	FillRgn(dc, (HRGN) rgn, brush);
 	DeleteObject(brush);
 	TkWinReleaseDrawableDC(drawable, dc, &dcState);
-/* Apparently this works on Mac Aqua as well as Unix */
+#elif defined(TARGET_OS_MAC)
+	MacDrawable *macWin = (MacDrawable *) d;
+	CGrafPtr saveWorld;
+	GDHandle saveDevice;
+	GWorldPtr destPort;
+	RGBColor macColor;
+
+	destPort = TkMacOSXGetDrawablePort(drawable);
+	if (gPenPat == NULL)
+		gPenPat = NewPixPat();
+	if (TkSetMacColor(gc->foreground, &macColor) == true)
+		MakeRGBPat(gPenPath, &macColor);
+	display->request++;
+	GetGWorld(&saveWorld, &saveDevice);
+	SetGWorld(destPort, NULL);
+	TkMacOSXSetUpClippingRgn(drawable);
+	TkMacOSXSetUpGraphicsPort(gc, destPort);
+	FillCRgn((RgnHandle) rgn, gPenPat);
+	SetGWorld(saveWorld, saveDevice);
 #else
 	XRectangle box;
 
