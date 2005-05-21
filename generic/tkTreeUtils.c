@@ -17,7 +17,7 @@
 #if defined(MAC_OSX_TK)
 #include <Carbon/Carbon.h>
 #include "tkMacOSXInt.h"
-static PixPathHandle gPenPat = NULL;
+static PixPatHandle gPenPat = NULL;
 #endif
 
 /*
@@ -472,7 +472,6 @@ void Tk_FillRegion(Display *display, Drawable drawable, GC gc, TkRegion rgn)
 	DeleteObject(brush);
 	TkWinReleaseDrawableDC(drawable, dc, &dcState);
 #elif defined(TARGET_OS_MAC)
-	MacDrawable *macWin = (MacDrawable *) d;
 	CGrafPtr saveWorld;
 	GDHandle saveDevice;
 	GWorldPtr destPort;
@@ -482,7 +481,7 @@ void Tk_FillRegion(Display *display, Drawable drawable, GC gc, TkRegion rgn)
 	if (gPenPat == NULL)
 		gPenPat = NewPixPat();
 	if (TkSetMacColor(gc->foreground, &macColor) == true)
-		MakeRGBPat(gPenPath, &macColor);
+		MakeRGBPat(gPenPat, &macColor);
 	display->request++;
 	GetGWorld(&saveWorld, &saveDevice);
 	SetGWorld(destPort, NULL);
