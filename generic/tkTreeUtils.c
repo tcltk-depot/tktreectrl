@@ -472,6 +472,7 @@ void Tk_FillRegion(Display *display, Drawable drawable, GC gc, TkRegion rgn)
 	DeleteObject(brush);
 	TkWinReleaseDrawableDC(drawable, dc, &dcState);
 #elif defined(TARGET_OS_MAC)
+    MacDrawable *macWin = (MacDrawable *) d;
 	CGrafPtr saveWorld;
 	GDHandle saveDevice;
 	GWorldPtr destPort;
@@ -487,7 +488,9 @@ void Tk_FillRegion(Display *display, Drawable drawable, GC gc, TkRegion rgn)
 	SetGWorld(destPort, NULL);
 	TkMacOSXSetUpClippingRgn(drawable);
 	TkMacOSXSetUpGraphicsPort(gc, destPort);
+	OffsetRgn((RgnHandle) rgn, macWin->xOff, macWin->yOff);
 	FillCRgn((RgnHandle) rgn, gPenPat);
+	OffsetRgn((RgnHandle) rgn, -macWin->xOff, -macWin->yOff);
 	SetGWorld(saveWorld, saveDevice);
 #else
 	XRectangle box;
