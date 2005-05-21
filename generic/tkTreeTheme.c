@@ -646,7 +646,7 @@ int TreeTheme_DrawHeaderItem(TreeCtrl *tree, Drawable drawable, int state,
 	case 2: info.state = kThemeStatePressed; break;
 	default: info.state = kThemeStateActive; break;
     }
-    info.value = kThemeButtonOn; /* ??? */
+    info.value = kThemeButtonOff; /* ??? */
     info.adornment = kThemeAdornmentNone;
 
     GetGWorld(&saveWorld, &saveDevice);
@@ -663,22 +663,34 @@ int TreeTheme_DrawHeaderItem(TreeCtrl *tree, Drawable drawable, int state,
     return TCL_OK;
 }
 
+/* List headers are a fixed height on Aqua */
+int TreeTheme_GetHeaderFixedHeight(TreeCtrl *tree, int *heightPtr)
+{
+    SInt32 metric;
+
+    GetThemeMetric(kThemeMetricListHeaderHeight, &metric);
+    *heightPtr = metric;
+    return TCL_OK;
+}
+
 int TreeTheme_GetHeaderContentMargins(TreeCtrl *tree, int state, int bounds[4])
 {
     Rect inBounds, outBounds;
     ThemeButtonDrawInfo info;
+    SInt32 metric;
 
     inBounds.left = 0;
     inBounds.top = 0;
     inBounds.right = 100;
-    inBounds.bottom = 100;
+    GetThemeMetric(kThemeMetricListHeaderHeight, &metric);
+    inBounds.bottom = metric;
 
     switch (state) {
 	case 1: info.state = kThemeStateRollover; break;
 	case 2: info.state = kThemeStatePressed; break;
 	default: info.state = kThemeStateActive; break;
     }
-    info.value = kThemeButtonOn; /* ??? */
+    info.value = kThemeButtonOff; /* ??? */
     info.adornment = kThemeAdornmentNone;
 
     (void) GetThemeButtonContentBounds(
