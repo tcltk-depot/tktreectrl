@@ -1385,12 +1385,22 @@ static void TreeEventProc(ClientData clientData, XEvent *eventPtr)
 	    break;
 	}
 	case FocusIn:
-	    if (eventPtr->xfocus.detail != NotifyInferior)
+	    /* Handle focus as Tile does */
+	    if (   eventPtr->xfocus.detail == NotifyInferior
+		|| eventPtr->xfocus.detail == NotifyAncestor
+		|| eventPtr->xfocus.detail == NotifyNonlinear)
+	    {
 		Tree_FocusChanged(tree, 1);
+	    }
 	    break;
 	case FocusOut:
-	    if (eventPtr->xfocus.detail != NotifyInferior)
+	    /* Handle focus as Tile does */
+	    if (   eventPtr->xfocus.detail == NotifyInferior
+		|| eventPtr->xfocus.detail == NotifyAncestor
+		|| eventPtr->xfocus.detail == NotifyNonlinear)
+	    {
 		Tree_FocusChanged(tree, 0);
+	    }
 	    break;
 	case ActivateNotify:
 	    Tree_Activate(tree, 1);
