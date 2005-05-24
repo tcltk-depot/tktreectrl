@@ -29,7 +29,7 @@
 #endif
 
 static CONST char *bgModeST[] = {
-    "column", "index", "row", "visindex", (char *) NULL
+    "column", "order", "ordervisible", "row", "index", "visindex", (char *) NULL
 };
 static CONST char *doubleBufferST[] = {
     "none", "item", "window", (char *) NULL
