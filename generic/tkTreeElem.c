@@ -441,9 +441,6 @@ static void DisplayProcBitmap(ElementArgs *args)
 	int bx = args->display.x /* + args->display.pad[LEFT] */;
 	int by = args->display.y /* + args->display.pad[TOP] */;
 	int dx = 0, dy = 0;
-	XGCValues gcValues;
-	GC gc;
-	unsigned long mask = 0;
 
 	Tk_SizeOfBitmap(tree->display, bitmap, &imgW, &imgH);
 	if (imgW < args->display.width)
@@ -458,26 +455,9 @@ static void DisplayProcBitmap(ElementArgs *args)
 	bx += dx;
 	by += dy;
 
-	if (fg != NULL) {
-	    gcValues.foreground = fg->pixel;
-	    mask |= GCForeground;
-	}
-	if (bg != NULL) {
-	    gcValues.background = bg->pixel;
-	    mask |= GCBackground;
-	} else {
-	    gcValues.clip_mask = bitmap;
-	    mask |= GCClipMask;
-	}
-	gcValues.graphics_exposures = False;
-	mask |= GCGraphicsExposures;
-	gc = Tk_GetGC(tree->tkwin, mask, &gcValues);
-	XSetClipOrigin(tree->display, gc, bx, by);
-	XCopyPlane(tree->display, bitmap, args->display.drawable, gc,
-		0, 0, (unsigned int) imgW, (unsigned int) imgH,
-		bx, by, 1);
-	XSetClipOrigin(tree->display, gc, 0, 0);
-	Tk_FreeGC(tree->display, gc);
+	Tree_DrawBitmap(tree, bitmap, args->display.drawable, fg, bg,
+	    0, 0, (unsigned int) imgW, (unsigned int) imgH,
+	    bx, by);
     }
 }
 
