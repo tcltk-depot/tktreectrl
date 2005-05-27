@@ -527,7 +527,11 @@ void DrawXORLine(Display *display, Drawable drawable, int x1, int y1,
 	GetGWorld(&saveWorld, &saveDevice);
 	SetGWorld(destPort, NULL);
 	TkMacOSXSetUpClippingRgn(drawable);
+#if 1
+	PenNormal();
+#else
 	TkMacOSXSetUpGraphicsPort(gc, destPort);
+#endif
 	PenMode(patXor);
 	ShowPen();
 	MoveTo(macWin->xOff + x1, macWin->yOff + y1);
