@@ -31,6 +31,9 @@
 static CONST char *bgModeST[] = {
     "column", "order", "ordervisible", "row", "index", "visindex", (char *) NULL
 };
+static CONST char *columnResizeModeST[] = {
+    "proxy", "realtime", (char *) NULL
+};
 static CONST char *doubleBufferST[] = {
     "none", "item", "window", (char *) NULL
 };
@@ -55,6 +58,10 @@ static Tk_OptionSpec optionSpecs[] = {
      "backgroundMode", "BackgroundMode",
      "row", -1, Tk_Offset(TreeCtrl, backgroundMode),
      0, (ClientData) bgModeST, TREE_CONF_REDISPLAY},
+    {TK_OPTION_STRING_TABLE, "-columnresizemode",
+     "columnResizeMode", "ColumnResizeMode",
+     "proxy", -1, Tk_Offset(TreeCtrl, columnResizeMode),
+     0, (ClientData) columnResizeModeST, 0},
     {TK_OPTION_SYNONYM, "-bd", (char *) NULL, (char *) NULL,
      (char *) NULL, 0, -1, 0, (ClientData) "-borderwidth"},
     {TK_OPTION_SYNONYM, "-bg", (char *) NULL, (char *) NULL,

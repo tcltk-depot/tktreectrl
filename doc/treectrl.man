@@ -136,6 +136,13 @@ and uses an inverting color
 This line can be used to give the user a visual feedback
 during column resizing.
 
+[tkoption_def -columnresizemode columnResizeMode ColumnResizeMode]
+Specifies the visual feedback used when resizing columns. The value should be
+one of [const proxy] or [const realtime]. For [const proxy], a 1-pixel thick
+vertical line is drawn representing where the right edge of the column will
+be after resizing. For [const realtime], the column's size is changed while
+the user is dragging the right edge of the column.
+
 [tkoption_def -defaultstyle defaultStyle DefaultStyle]
 Specifies a list of styles, one per column, to apply to each item created by
 the [cmd "item create"] command. The number of styles in the list can be

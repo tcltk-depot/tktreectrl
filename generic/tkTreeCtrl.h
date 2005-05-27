@@ -199,6 +199,7 @@ struct TreeCtrl
 #define BG_MODE_INDEX 4		/* compatibility */
 #define BG_MODE_VISINDEX 5	/* compatibility */
     int backgroundMode;		/* -backgroundmode */
+    int columnResizeMode;	/* -columnresizemode */
     int *itemPadX;		/* -itempadx */
     Tcl_Obj *itemPadXObj;	/* -itempadx */
     int *itemPadY;		/* -itempady */
