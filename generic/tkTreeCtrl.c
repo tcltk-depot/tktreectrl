@@ -714,6 +714,7 @@ static int TreeWidgetCmd(ClientData clientData, Tcl_Interp *interp, int objc,
 
 	    /* Point is in a line or button */
 	    if (tree->columnTreeVis && (x >= tree->columnTreeLeft) &&
+		    (x < tree->columnTreeLeft + TreeColumn_UseWidth(tree->columnTree)) &&
 		    (x < tree->columnTreeLeft + depth * tree->useIndent)) {
 		int column = (x - tree->columnTreeLeft) / tree->useIndent + 1;
 		if (column == depth) {
