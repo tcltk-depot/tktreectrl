@@ -198,8 +198,13 @@ static void Style_DoExpandH(struct Layout *layout, int flags, int width)
 		{
 			int amt = extraWidth / 2;
 
+#ifdef LAYOUTHAX
+			layout->x = eW;
+			layout->eWidth += eMax;
+#else
 			layout->x = 0;
 			layout->eWidth = width;
+#endif
 			if (ePadX[PAD_TOP_LEFT] + amt + layout->iWidth > iE)
 				amt -= (ePadX[PAD_TOP_LEFT] + amt + layout->iWidth) - iE;
 			ePadX[PAD_TOP_LEFT] += amt;
@@ -207,8 +212,13 @@ static void Style_DoExpandH(struct Layout *layout, int flags, int width)
 		}
 		else if (flags & ELF_eEXPAND_W)
 		{
+#ifdef LAYOUTHAX
+			layout->x = eW;
+			layout->eWidth = (iE + ePadX[PAD_BOTTOM_RIGHT]) - layout->x;
+#else
 			layout->x = 0;
 			layout->eWidth = iE + ePadX[PAD_BOTTOM_RIGHT];
+#endif
 			ePadX[PAD_TOP_LEFT] = layout->eWidth - layout->iWidth - ePadX[PAD_BOTTOM_RIGHT];
 		}
 		else
