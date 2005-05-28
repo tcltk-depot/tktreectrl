@@ -91,6 +91,7 @@ INSTALL_SCRIPT	= @INSTALL_SCRIPT@
 
 PACKAGE_NAME	= @PACKAGE_NAME@
 PACKAGE_VERSION	= @PACKAGE_VERSION@
+PACKAGE_PATCHLEVEL	= @PACKAGE_PATCHLEVEL@
 CC		= @CC@
 CFLAGS_DEFAULT	= @CFLAGS_DEFAULT@
 CFLAGS_WARNING	= @CFLAGS_WARNING@
@@ -286,7 +287,7 @@ pkgIndex.tcl:
 	echo '    && [file exists [file join $$dir treectrl.tcl]]} {';\
 	echo '    set ::env(TREECTRL_LIBRARY) $$dir';\
 	echo '}';\
-	echo 'package ifneeded $(PACKAGE_NAME) $(PACKAGE_VERSION) \
+	echo 'package ifneeded $(PACKAGE_NAME) $(PACKAGE_PATCHLEVEL) \
 	    [list load [file join $$dir $(PKG_LIB_FILE)] $(PACKAGE_NAME)]'\
 	) > pkgIndex.tcl
 
