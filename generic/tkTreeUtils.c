@@ -748,7 +748,7 @@ void XImage2Photo(Tcl_Interp *interp, Tk_PhotoHandle photoH, XImage *ximage, int
 	}
     }
 
-    TK_PHOTOPUTBLOCK(tree->interp, photoH, &photoBlock, 0, 0, w, h,
+    TK_PHOTOPUTBLOCK(interp, photoH, &photoBlock, 0, 0, w, h,
 	    TK_PHOTO_COMPOSITE_SET);
 
     Tcl_Free((char *) pixelPtr);
