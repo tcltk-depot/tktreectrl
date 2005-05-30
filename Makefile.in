@@ -283,12 +283,13 @@ VPATH = $(srcdir):$(srcdir)/generic:$(srcdir)/unix:$(srcdir)/win
 pkgIndex.tcl:
 	(\
 	echo 'if {[catch {package require Tcl 8.4}]} return';\
+	echo 'set script ""';\
 	echo 'if {![info exists ::env(TREECTRL_LIBRARY)]';\
 	echo '    && [file exists [file join $$dir treectrl.tcl]]} {';\
-	echo '    set ::env(TREECTRL_LIBRARY) $$dir';\
+	echo '    append script "set ::treectrl_library \"$$dir\"\n"';\
 	echo '}';\
-	echo 'package ifneeded $(PACKAGE_NAME) $(PACKAGE_PATCHLEVEL) \
-	    [list load [file join $$dir $(PKG_LIB_FILE)] $(PACKAGE_NAME)]'\
+	echo 'append script "load \"[file join $$dir $(PKG_LIB_FILE)]\" $(PACKAGE_NAME)"';\
+	echo 'package ifneeded $(PACKAGE_NAME) $(PACKAGE_PATCHLEVEL) $$script'\
 	) > pkgIndex.tcl
 
 #========================================================================
