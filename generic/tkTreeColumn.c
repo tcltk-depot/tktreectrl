@@ -424,10 +424,10 @@ int TreeColumn_FromObj(TreeCtrl *tree, Tcl_Obj *objPtr, TreeColumn *columnPtr, i
     Tcl_Obj **objv, *elemPtr;
     Column *column = NULL;
     static CONST char *indexName[] = {
-	"all", "first", "last", "order", "tail", "tree", (char *) NULL
+	"all", "end", "first", "last", "order", "tail", "tree", (char *) NULL
     };
     enum indexEnum {
-	INDEX_ALL, INDEX_FIRST, INDEX_LAST, INDEX_ORDER, INDEX_TAIL,
+	INDEX_ALL, INDEX_END, INDEX_FIRST, INDEX_LAST, INDEX_ORDER, INDEX_TAIL,
 	INDEX_TREE
     } ;
     static CONST char *modifiers[] = {
@@ -473,6 +473,7 @@ int TreeColumn_FromObj(TreeCtrl *tree, Tcl_Obj *objPtr, TreeColumn *columnPtr, i
 		}
 		break;
 	    }
+	    case INDEX_END:
 	    case INDEX_LAST:
 	    {
 		column = (Column *) tree->columns;
