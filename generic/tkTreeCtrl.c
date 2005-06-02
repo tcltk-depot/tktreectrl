@@ -3032,7 +3032,7 @@ static char initScript[] = "if {![llength [info proc ::TreeCtrl::Init]]} {\n\
   namespace eval ::TreeCtrl {}\n\
   proc ::TreeCtrl::Init {} {\n\
     global treectrl_library\n\
-    tcl_findLibrary treectrl " PACKAGE_VERSION " " PACKAGE_VERSION " treectrl.tcl TREECTRL_LIBRARY treectrl_library\n\
+    tcl_findLibrary treectrl " PACKAGE_PATCHLEVEL " " PACKAGE_PATCHLEVEL " treectrl.tcl TREECTRL_LIBRARY treectrl_library\n\
   }\n\
 }\n\
 ::TreeCtrl::Init";
