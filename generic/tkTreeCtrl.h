@@ -684,6 +684,7 @@ extern Tcl_Obj * TreeCtrl_NewPadAmountObj(int *padAmounts);
 extern int ObjectIsEmpty(Tcl_Obj *obj);
 
 extern PerStateType pstBitmap;
+extern PerStateType pstBoolean;
 extern PerStateType pstBorder;
 extern PerStateType pstColor;
 extern PerStateType pstFont;
@@ -721,6 +722,8 @@ extern Pixmap PerStateBitmap_ForState(TreeCtrl *tree, PerStateInfo *pInfo,
     int state, int *match);
 extern void PerStateBitmap_MaxSize(TreeCtrl *tree, PerStateInfo *pInfo,
     int *widthPtr, int *heightPtr);
+extern int PerStateBoolean_ForState(TreeCtrl *tree, PerStateInfo *pInfo,
+    int state, int *match);
 extern Tk_3DBorder PerStateBorder_ForState(TreeCtrl *tree, PerStateInfo *pInfo,
     int state, int *match);
 extern XColor *PerStateColor_ForState(TreeCtrl *tree, PerStateInfo *pInfo,
