@@ -254,8 +254,6 @@ static int ColumnOptionSet(
     int objEmpty;
     TreeColumn new, *internalPtr;
 
-    objEmpty = 0;
-
     if (internalOffset >= 0)
 	internalPtr = (TreeColumn *) (recordPtr + internalOffset);
     else
@@ -272,8 +270,8 @@ static int ColumnOptionSet(
     if (internalPtr != NULL) {
 	if ((*value) == NULL)
 	    new = NULL;
-	*((TreeColumn *) saveInternalPtr) = *((TreeColumn *) internalPtr);
-	*((TreeColumn *) internalPtr) = new;
+	*((TreeColumn *) saveInternalPtr) = *internalPtr;
+	*internalPtr = new;
     }
 
     return TCL_OK;
