@@ -125,7 +125,7 @@ test style-6.1 {style layout: missing args} -body {
 
 test style-6.2 {style layout: no options specified} -body {
     .t style layout testStyle eText
-} -result {-padx 0 -pady 0 -ipadx 0 -ipady 0 -expand {} -iexpand {} -detach no -squeeze {} -union {}}
+} -result {-padx 0 -pady 0 -ipadx 0 -ipady 0 -expand {} -iexpand {} -detach no * -squeeze {} -union {}} -match glob
 
 test style-6.3 {style layout: option -padx} -body {
     .t style layout testStyle eText -padx 3

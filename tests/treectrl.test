@@ -50,7 +50,7 @@ test treectrl-1.6 {configure: -background option} -body {
 
 test treectrl-1.7 {configure: invalid -backgroundmode option} -body {
     .t configure -backgroundmode foo
-} -returnCodes error -result {bad backgroundmode "foo": must be column, index, row, or visindex}
+} -returnCodes error -result {bad backgroundmode "foo": must be column, order, ordervisible, row, index, or visindex}
 
 test treectrl-1.8 {configure: -backgroundmode option} -body {
     .t configure -backgroundmode column

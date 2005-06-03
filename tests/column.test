@@ -76,7 +76,7 @@ test column-2.3 {column bbox: tree doesn't show headers} -body {
 test column-2.4 {column bbox} -body {
     .t configure -showheader 1
     .t column bbox 0
-} -result {0 3 501 7}
+} -result {0 3 482 7}
 
 test column-2.5 {column bbox: tail column not allowed} -body {
     .t column bbox tail
