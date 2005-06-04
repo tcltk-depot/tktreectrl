@@ -342,7 +342,7 @@ void TreeNotify_Selection(TreeCtrl *tree, TreeItem select[], TreeItem deselect[]
 		int *deselect;
 		int count;
 	} data;
-	int staticS[20], staticD[20];
+	int staticS[128], staticD[128];
 	int i;
 
 	data.tree = tree;
