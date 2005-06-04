@@ -410,7 +410,7 @@ int TreeItem_ChangeState(TreeCtrl *tree, TreeItem item_, int stateOff,
     return iMask;
 }
 
-void TreeItem_Undefine(TreeCtrl *tree, TreeItem item_, int state)
+void TreeItem_UndefineState(TreeCtrl *tree, TreeItem item_, int state)
 {
     Item *item = (Item *) item_;
     Column *column = item->columns;
