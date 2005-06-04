@@ -1108,6 +1108,9 @@ static Column *Column_Free(Column *column)
 	Tk_FreeImage(column->image);
     if (column->textLayout != NULL)
 	TextLayout_Free(column->textLayout);
+    PerStateInfo_Free(tree, &pstBitmap, &column->arrowBitmap);
+    PerStateInfo_Free(tree, &pstImage, &column->arrowImage);
+    PerStateInfo_Free(tree, &pstBorder, &column->border);
     Tk_FreeConfigOptions((char *) column, column->optionTable, tree->tkwin);
     WFREE(column, Column);
     tree->columnCount--;
