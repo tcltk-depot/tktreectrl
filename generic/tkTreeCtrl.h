@@ -438,10 +438,7 @@ struct StyleDrawArgs
 {
     TreeCtrl *tree;
     TreeStyle style;
-#define LAYOUTHAX
-#ifdef LAYOUTHAX
     int indent;
-#endif
     int x;
     int y;
     int width;
