@@ -1132,6 +1132,9 @@ Tree_ItemBbox(TreeCtrl *tree, TreeItem item, int *x, int *y, int *w, int *h)
     Range *range;
     RItem *rItem;
 
+    /* Update columnCountVis if needed */
+    (void) Tree_WidthOfColumns(tree);
+
     if (!TreeItem_ReallyVisible(tree, item) || (tree->columnCountVis < 1))
 	return -1;
     Range_RedoIfNeeded(tree);
