@@ -8,6 +8,8 @@
  * RCS: @(#) $Id$
  */
 
+#define STYLE_STICKY
+
 typedef struct ElementType ElementType;
 typedef struct Element Element;
 typedef struct ElementArgs ElementArgs;
@@ -34,7 +36,15 @@ struct ElementArgs
 		int y;
 		int width;
 		int height;
+		int squeeze;
 		int pad[4];
+#ifdef STYLE_STICKY
+#define STICKY_W 0x1000 /* These values must match ELF_STICKY_xxx */
+#define STICKY_N 0x2000
+#define STICKY_E 0x4000
+#define STICKY_S 0x8000
+		int sticky;
+#endif
 		Drawable drawable;
 	} display;
 	struct {
