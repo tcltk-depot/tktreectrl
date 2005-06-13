@@ -97,6 +97,7 @@ struct TreeCtrlDebug
     int enable;			/* Turn all debugging on/off */
     int data;			/* Debug data structures */
     int display;		/* Debug display routines */
+    int textLayout;		/* Debug text layout */
     int displayDelay;		/* Delay between copy/draw operations */
     XColor *eraseColor;		/* Erase "invalidated" areas */
     GC gcErase;			/* for eraseColor */
@@ -650,6 +651,7 @@ extern TextLayout TextLayout_Compute(Tk_Font tkfont, CONST char *string,
 	int numChars, int wrapLength, Tk_Justify justify, int maxLines, int flags);
 extern void TextLayout_Free(TextLayout textLayout);
 extern void TextLayout_Size(TextLayout textLayout, int *widthPtr, int *heightPtr);
+extern int TextLayout_TotalWidth(TextLayout textLayout);
 extern void TextLayout_Draw(Display *display, Drawable drawable, GC gc,
 	TextLayout layout, int x, int y, int firstChar, int lastChar);
 #ifdef MAC_OSX_TK
