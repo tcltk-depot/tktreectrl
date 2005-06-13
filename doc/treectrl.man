@@ -1763,6 +1763,14 @@ style has less space than it needs.
 This option is typically used for [const text] elements and will cause
 the text element to display an ellipsis (...) and/or wrap lines.
 
+[opt_def [option -sticky] [arg flags]]
+This option controls how the actual display information (image, text, etc)
+of an element is positioned (or stretched) within its display area.
+[arg Flags] is a
+string that contains zero or more of the characters [const n], [const s],
+[const w] or [const e]. Each letter refers to the top, bottom, left or right
+side of the display area that the display information should "stick" to.
+
 [opt_def [option -union] [arg elementList]]
 Specifies a list of other elements which this element will surround.
 The size of an element with [option -union] layout is determined by the
