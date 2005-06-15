@@ -908,7 +908,11 @@ static LayoutChunk *NewChunk(LayoutInfo **layoutPtrPtr, int *maxPtr,
 {
 	LayoutInfo *layoutPtr;
 	LayoutChunk *chunkPtr;
+#ifdef TEXTLAYOUT_ALLOCHAX
+	int numChars;
+#else
 	int maxChunks, numChars;
+#endif
 	size_t s;
 
 	layoutPtr = *layoutPtrPtr;
