@@ -34,8 +34,6 @@ struct ElementArgs
 		int y;
 		int width;
 		int height;
-		int squeeze;
-		int pad[4];
 #define STICKY_W 0x1000 /* These values must match ELF_STICKY_xxx */
 #define STICKY_N 0x2000
 #define STICKY_E 0x4000

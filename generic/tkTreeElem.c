@@ -1219,8 +1219,8 @@ static void DisplayProcCheckButton(ElementArgs *args)
 	else if (imgH > args->display.height)
 	    imgH = args->display.height;
 	Tk_RedrawImage(image, 0, 0, imgW, imgH, args->display.drawable,
-		args->display.x /* + args->display.pad[LEFT] */ + dx,
-		args->display.y /* + args->display.pad[TOP] */ + dy);
+		args->display.x + dx,
+		args->display.y + dy);
     }
 }
 
@@ -2873,8 +2873,7 @@ static void DisplayProcText(ElementArgs *args)
 
     Tk_GetFontMetrics(tkfont, &fm);
 
-    pixelsForText = args->display.width /* - args->display.pad[LEFT] -
-					   args->display.pad[RIGHT] */;
+    pixelsForText = args->display.width;
     bytesThatFit = Ellipsis(tkfont, text, textLen, &pixelsForText, ellipsis, FALSE);
     width = pixelsForText, height = fm.linespace;
     /* Hack -- The actual size of the text may be slightly smaller than
