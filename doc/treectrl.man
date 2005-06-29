@@ -1150,7 +1150,7 @@ Just like [cmd {item state set}] but manipulates user-defined states for a singl
 item column, not the item as a whole.
 
 [call [arg pathName] [cmd {item state get}] [arg itemDesc] \
-     [opt [arg {stateName ...}]]]
+     [opt [arg {stateName}]]]
 If no [arg stateName] is specified, returns a list containing
 the names of all (predefined and user defined) states
 which are currently switched on for the item described by [arg itemDesc].

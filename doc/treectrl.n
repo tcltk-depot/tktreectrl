@@ -179,7 +179,7 @@ package require \fBtreectrl  2.0\fR
 .sp
 \fIpathName\fR \fBitem state forcolumn\fR \fIitemDesc\fR \fIcolumn\fR ?\fIstateDescList\fR?\fR
 .sp
-\fIpathName\fR \fBitem state get\fR \fIitemDesc\fR ?\fIstateName ...\fR?\fR
+\fIpathName\fR \fBitem state get\fR \fIitemDesc\fR ?\fIstateName\fR?\fR
 .sp
 \fIpathName\fR \fBitem state set\fR \fIitemDesc\fR ?\fIlastItem\fR? ?\fIstateDescList\fR?\fR
 .sp
@@ -1629,7 +1629,7 @@ The following forms of the command are supported:
 Just like \fBitem state set\fR but manipulates user-defined states for a single
 item column, not the item as a whole.
 .TP
-\fIpathName\fR \fBitem state get\fR \fIitemDesc\fR ?\fIstateName ...\fR?\fR
+\fIpathName\fR \fBitem state get\fR \fIitemDesc\fR ?\fIstateName\fR?\fR
 If no \fIstateName\fR is specified, returns a list containing
 the names of all (predefined and user defined) states
 which are currently switched on for the item described by \fIitemDesc\fR.
