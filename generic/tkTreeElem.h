@@ -65,6 +65,9 @@ struct ElementArgs
 	struct {
 		Tcl_Obj *obj;
 	} actual;
+	struct {
+		int visible;
+	} screen;
 };
 
 struct ElementType
@@ -83,6 +86,7 @@ struct ElementType
 	int (*stateProc)(ElementArgs *args);
 	int (*undefProc)(ElementArgs *args);
 	int (*actualProc)(ElementArgs *args);
+	void (*onScreenProc)(ElementArgs *args);
 	ElementType *next;
 };
 
