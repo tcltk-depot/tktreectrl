@@ -745,6 +745,11 @@ static int TreeWidgetCmd(ClientData clientData, Tcl_Interp *interp, int objc,
 			sprintf(buf + strlen(buf), " line %s%d", tree->itemPrefix,
 				TreeItem_GetID(tree, item)); /* TreeItem_ToObj() */
 		}
+#if 1
+	    } else {
+		TreeItem_Identify(tree, item, x, y, buf);
+	    }
+#else
 	    } else if (tree->columnCountVis == 1) {
 		char *elem;
 
@@ -777,6 +782,7 @@ static int TreeWidgetCmd(ClientData clientData, Tcl_Interp *interp, int objc,
 		    itemColumn = TreeItemColumn_GetNext(tree, itemColumn);
 		}
 	    }
+#endif
 	    Tcl_SetResult(interp, buf, TCL_VOLATILE);
 	    break;
 	}
