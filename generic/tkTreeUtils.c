@@ -613,6 +613,22 @@ int Tree_ScrollWindow(TreeCtrl *tree, GC gc, int x, int y,
 	return result;
 }
 
+void UnsetClipMask(TreeCtrl *tree, Drawable drawable, GC gc)
+{
+	XSetClipMask(tree->display, gc, None);
+#ifdef WIN32
+	/* Tk_DrawChars does not clear the clip region */
+	if (drawable == Tk_WindowId(tree->tkwin)) {
+		HDC dc;
+		TkWinDCState dcState;
+
+		dc = TkWinGetDrawableDC(tree->display, drawable, &dcState);
+		SelectClipRgn(dc, NULL);
+		TkWinReleaseDrawableDC(drawable, dc, &dcState);
+	}
+#endif
+}
+
 void Tree_DrawBitmapWithGC(TreeCtrl *tree, Pixmap bitmap, Drawable drawable,
 	GC gc, int src_x, int src_y, int width, int height, int dest_x, int dest_y)
 {
