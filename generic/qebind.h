@@ -65,6 +65,8 @@ extern int QE_GenerateCmd(QE_BindingTable bindingTable, int objOffset, int objc,
 	Tcl_Obj *CONST objv[]);
 extern int QE_InstallCmd(QE_BindingTable bindingTable, int objOffset, int objc,
 	Tcl_Obj *CONST objv[]);
+extern int QE_UnbindCmd(QE_BindingTable bindingTable, int objOffset, int objc,
+	Tcl_Obj *CONST objv[]);
 extern int QE_UninstallCmd(QE_BindingTable bindingTable, int objOffset, int objc,
 	Tcl_Obj *CONST objv[]);
 extern int QE_LinkageCmd(QE_BindingTable bindingTable, int objOffset, int objc,
