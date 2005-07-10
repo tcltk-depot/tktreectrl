@@ -138,5 +138,12 @@ struct TreeCtrlStubs
 	PerStateData *(*PerStateInfo_ForState)(TreeCtrl *tree, PerStateType *typePtr, PerStateInfo *pInfo, int state, int *match);
 	Tcl_Obj *(*PerStateInfo_ObjForState)(TreeCtrl *tree, PerStateType *typePtr, PerStateInfo *pInfo, int state, int *match);
 	int (*PerStateInfo_Undefine)(TreeCtrl *tree, PerStateType *typePtr, PerStateInfo *pInfo, int state);
+	PerStateType *pstBoolean;
+	int (*PerStateBoolean_ForState)(TreeCtrl *tree, PerStateInfo *pInfo, int state, int *match);
+	void (*PSTSave)(PerStateInfo *pInfo, PerStateInfo *pSave);
+	void (*PSTRestore)(TreeCtrl *tree, PerStateType *typePtr, PerStateInfo *pInfo, PerStateInfo *pSave);
+	int (*TreeStateFromObj)(TreeCtrl *tree, Tcl_Obj *obj, int *stateOff, int *stateOn);
+	int (*BooleanCO_Init)(Tk_OptionSpec *optionTable, CONST char *optionName);
+	int (*StringTableCO_Init)(Tk_OptionSpec *optionTable, CONST char *optionName, CONST char **tablePtr);
 };
 
