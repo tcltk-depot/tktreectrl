@@ -268,12 +268,12 @@ int TreeNotifyCmd(ClientData clientData, Tcl_Interp *interp, int objc,
 {
 	TreeCtrl *tree = (TreeCtrl *) clientData;
 	static CONST char *commandName[] = { "bind", "configure", "detailnames",
-		"eventnames", "generate", "install", "linkage", "uninstall",
+		"eventnames", "generate", "install", "linkage", "unbind", "uninstall",
 		(char *) NULL };
 	enum {
 		COMMAND_BIND, COMMAND_CONFIGURE, COMMAND_DETAILNAMES,
 		COMMAND_EVENTNAMES, COMMAND_GENERATE, COMMAND_INSTALL,
-		COMMAND_LINKAGE, COMMAND_UNINSTALL
+		COMMAND_LINKAGE, COMMAND_UNBIND, COMMAND_UNINSTALL
 	};
 	int index;
 
@@ -339,6 +339,11 @@ int TreeNotifyCmd(ClientData clientData, Tcl_Interp *interp, int objc,
 		case COMMAND_LINKAGE:
 		{
 			return QE_LinkageCmd(tree->bindingTable, 2, objc, objv);
+		}
+
+		case COMMAND_UNBIND:
+		{
+			return QE_UnbindCmd(tree->bindingTable, 2, objc, objv);
 		}
 
 		case COMMAND_UNINSTALL:
