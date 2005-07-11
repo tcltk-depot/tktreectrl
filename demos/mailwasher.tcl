@@ -1,3 +1,5 @@
+# RCS: @(#) $Id$
+
 #
 # Demo: MailWasher
 #

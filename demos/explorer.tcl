@@ -1,10 +1,15 @@
+# RCS: @(#) $Id$
+
 set Dir [file dirname [file dirname [info script]]]
 
 set shellicon 0
-catch {
-	lappend auto_path $treectrl_library
-	package require shellicon $VERSION
-	set shellicon 1
+# Might work on other windows versions, but only tested on XP
+if {$tcl_platform(os) eq "Windows NT" && $tcl_platform(osVersion) == 5.1} {
+	catch {
+		lappend auto_path $treectrl_library
+		package require shellicon $VERSION
+		set shellicon 1
+	}
 }
 
 proc DemoExplorerAux {scriptDir scriptFile} {

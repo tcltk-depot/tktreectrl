@@ -1,3 +1,5 @@
+# RCS: @(#) $Id$
+
 proc DemoTextvariable {} {
 
 	set T .f2.f1.t

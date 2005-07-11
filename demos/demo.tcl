@@ -1,5 +1,7 @@
 #!/bin/wish84.exe
 
+# RCS: @(#) $Id$
+
 set VERSION 2.0.1
 
 package require Tk 8.4

@@ -1,3 +1,5 @@
+# RCS: @(#) $Id$
+
 namespace eval StyleEditor {
 	variable Info
 	array unset Info
