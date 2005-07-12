@@ -165,7 +165,7 @@ int TreeMarqueeCmd(ClientData clientData, Tcl_Interp *interp, int objc,
 
 	if (objc < 3)
 	{
-		Tcl_WrongNumArgs(interp, 2, objv, "command ?arg arg...?");
+		Tcl_WrongNumArgs(interp, 2, objv, "command ?arg arg ...?");
 		return TCL_ERROR;
 	}
 
