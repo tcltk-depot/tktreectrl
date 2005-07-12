@@ -349,7 +349,6 @@ proc DemoFirefoxPrivacyButton1 {w x y} {
 }
 
 proc DemoFirefoxPrivacyMotion {w x y} {
-	variable TreeCtrl::Priv
 	global FirefoxPrivacy
 	set id [$w identify $x $y]
 	if {[lindex $id 0] eq "item"} {
