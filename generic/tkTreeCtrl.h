@@ -468,8 +468,10 @@ extern int TreeElement_FromObj(TreeCtrl *tree, Tcl_Obj *obj, TreeElement *elemPt
 extern int TreeElement_IsType(TreeCtrl *tree, TreeElement elem_, CONST char *type);
 extern int TreeStyle_FromObj(TreeCtrl *tree, Tcl_Obj *obj, TreeStyle *stylePtr);
 extern Tcl_Obj *TreeStyle_ToObj(TreeStyle style_);
+extern Tcl_Obj *TreeStyle_GetImage(TreeCtrl *tree, TreeStyle style_);
 extern Tcl_Obj *TreeStyle_GetText(TreeCtrl *tree, TreeStyle style_);
-extern void TreeStyle_SetText(TreeCtrl *tree, TreeItem item, TreeItemColumn column, TreeStyle style_, Tcl_Obj *textObj);
+extern int TreeStyle_SetImage(TreeCtrl *tree, TreeItem item, TreeItemColumn column, TreeStyle style_, Tcl_Obj *textObj);
+extern int TreeStyle_SetText(TreeCtrl *tree, TreeItem item, TreeItemColumn column, TreeStyle style_, Tcl_Obj *textObj);
 extern int TreeStyle_FindElement(TreeCtrl *tree, TreeStyle style_, TreeElement elem_, int *index);
 extern TreeStyle TreeStyle_NewInstance(TreeCtrl *tree, TreeStyle master);
 extern int TreeStyle_ElementActual(TreeCtrl *tree, TreeStyle style_, int state, Tcl_Obj *elemObj, Tcl_Obj *obj);
