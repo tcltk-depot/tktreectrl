@@ -30,7 +30,7 @@ test column-0.2 {create an image} -body {
 
 test column-1.1 {missing args} -body {
     .t column
-} -returnCodes error -result {wrong # args: should be ".t column command ?arg arg...?"}
+} -returnCodes error -result {wrong # args: should be ".t column command ?arg arg ...?"}
 
 test column-1.2 {unknown command} -body {
     .t column foo
