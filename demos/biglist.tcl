@@ -125,8 +125,10 @@ proc DemoBigList {} {
 	set w [BigListNewWindow $T root]
 	update idletasks
 	set height [winfo reqheight $w]
+	# Add 1 pixel for the border
 	incr height
 	set BigList(windowHeight) $height
+	BigListFreeWindow $T $w
 
 	bind DemoBigList <Double-ButtonPress-1> {
 		if {[lindex [%W identify %x %y] 0] eq "header"} {
