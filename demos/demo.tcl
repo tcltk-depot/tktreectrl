@@ -128,7 +128,8 @@ option add *TreeCtrl.useTheme 1
 
 # Resizing columns can be done in realtime or by displaying a proxy line
 switch -- $::thisPlatform {
-    macosx {
+    macosx -
+    unix {
 	option add *TreeCtrl.columnResizeMode realtime
     }
     windows {
@@ -414,7 +415,7 @@ proc MakeSourceWindow {} {
 	    set font {Geneva 9}
 	}
 	unix {
-	    set font {Courier 16}
+	    set font {Courier -12}
 	}
 	default {
 	    set font {Courier 9}
