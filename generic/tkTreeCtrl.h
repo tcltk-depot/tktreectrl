@@ -612,7 +612,7 @@ extern TreeItem *Tree_ItemsInArea(TreeCtrl *tree, int minX, int minY, int maxX, 
 extern void TreeColumnProxy_Undisplay(TreeCtrl *tree);
 extern void TreeColumnProxy_Display(TreeCtrl *tree);
 extern void Tree_DrawTiledImage(TreeCtrl *tree, Drawable drawable, Tk_Image image, 
-    int x1, int y1, int x2, int y2);
+    int x1, int y1, int x2, int y2, int xOffset, int yOffset);
 
 #define DINFO_OUT_OF_DATE 0x0001
 #define DINFO_CHECK_COLUMN_WIDTH 0x0002
