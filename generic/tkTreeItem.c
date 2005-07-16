@@ -1598,7 +1598,8 @@ static void ItemDrawBackground(TreeCtrl *tree, TreeColumn treeColumn,
     XFillRectangle(tree->display, drawable, gc, x, y, width, height);
     if (tree->backgroundImage != NULL) {
 	Tree_DrawTiledImage(tree, drawable, tree->backgroundImage, x, y, 
-		x + width, y + height);
+		x + width, y + height,
+		tree->drawableXOrigin, tree->drawableYOrigin);
     }
 }
 
@@ -2156,6 +2157,11 @@ static int Item_Configure(TreeCtrl *tree, Item *item, int objc,
 	    Tcl_DecrRefCount(errorResult);
 	    return TCL_ERROR;
 	}
+    }
+
+    if (mask & ITEM_CONF_SIZE) {
+	Tree_FreeItemDInfo(tree, (TreeItem) item, NULL);
+	Tree_DInfoChanged(tree, DINFO_REDO_RANGES);
     }
 
     if (mask & ITEM_CONF_BUTTON)
