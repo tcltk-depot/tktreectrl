@@ -60,6 +60,10 @@ TreeCtrlStubs *stubs;
 	stubs->PerStateInfo_Free(t,ty,in)
 #define PerStateInfo_FromObj(t,pr,ty,in) \
 	stubs->PerStateInfo_FromObj(t,pr,ty,in)
+#define PerStateInfo_ForState(t,ty,in,st,ma) \
+	stubs->PerStateInfo_ForState(t,ty,in,st,ma)
+#define PerStateInfo_ObjForState(t,ty,in,st,ma) \
+	stubs->PerStateInfo_ObjForState(t,ty,in,st,ma)
 #define PerStateInfo_Undefine(t,ty,in,st) \
 	stubs->PerStateInfo_Undefine(t,ty,in,st)
 #define pstBoolean \
@@ -630,8 +634,8 @@ static int UndefProcShellIcon(ElementArgs *args)
 static int ActualProcShellIcon(ElementArgs *args)
 {
     TreeCtrl *tree = args->tree;
-    ElementText *elemX = (ElementText *) args->elem;
-    ElementText *masterX = (ElementText *) args->elem->master;
+    ElementShellIcon *elemX = (ElementShellIcon *) args->elem;
+    ElementShellIcon *masterX = (ElementShellIcon *) args->elem->master;
     static CONST char *optionName[] = {
 	"-draw",
 	(char *) NULL };
@@ -720,7 +724,7 @@ DLLEXPORT int Shellicon_Init(Tcl_Interp *interp)
 #endif
 
     /* Load TkTreeCtrl */
-    if (Tcl_PkgRequire(interp, "treectrl", "2.0.1", TRUE) == NULL)
+    if (Tcl_PkgRequire(interp, "treectrl", PACKAGE_PATCHLEVEL, TRUE) == NULL)
 	return TCL_ERROR;
 
     /* Get the stubs table from TkTreeCtrl */
