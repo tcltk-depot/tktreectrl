@@ -122,7 +122,6 @@ else
     CLEANFILES="pkgIndex.tcl"
 fi
 if test "${TEA_WINDOWINGSYSTEM}" = "aqua"; then
-    TK_INCLUDES="${TK_INCLUDES} -I${TK_TOP_DIR_NATIVE}/macosx"
     TEA_ADD_LIBS([-framework Carbon])
 fi
 AC_SUBST(CLEANFILES)

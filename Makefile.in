@@ -114,9 +114,6 @@ TCL_SRC_DIR	= @TCL_SRC_DIR@
 TCL_BIN_DIR	= @TCL_BIN_DIR@
 TK_SRC_DIR	= @TK_SRC_DIR@
 TK_BIN_DIR	= @TK_BIN_DIR@
-# This is necessary for packages that use private Tcl headers
-TCL_TOP_DIR_NATIVE = @TCL_TOP_DIR_NATIVE@
-TK_TOP_DIR_NATIVE  = @TK_TOP_DIR_NATIVE@
 # Not used, but retained for reference of what libs Tcl required
 TCL_LIBS	= @TCL_LIBS@
 TK_LIBS		= @TK_LIBS@
@@ -215,7 +212,7 @@ install-libraries: libraries
 # directory.
 #========================================================================
 
-install-doc-x: doc
+install-doc-x:
 	@mkdir -p $(DESTDIR)$(mandir)/mann
 	@echo "Installing documentation in $(DESTDIR)$(mandir)"
 	@for i in $(srcdir)/doc/*.n; do \
@@ -224,7 +221,7 @@ install-doc-x: doc
 	    $(INSTALL_DATA) $$i $(DESTDIR)$(mandir)/mann ; \
 	done
 
-install-doc:
+install-doc: install-doc-x
 	mkdir -p $(DESTDIR)$(pkglibdir)/htmldoc
 	cp $(srcdir)/doc/*.html $(DESTDIR)$(pkglibdir)/htmldoc
 
