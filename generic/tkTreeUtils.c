@@ -51,12 +51,6 @@ Tk_ObjCustomOption PadAmountOption = {
     PadAmountOptionFree
 };
 
-void wipefree(char *memPtr, int size)
-{
-	memset(memPtr, 0xAA, size);
-	ckfree(memPtr);
-}
-
 void FormatResult(Tcl_Interp *interp, char *fmt, ...)
 {
 	va_list ap;
@@ -633,7 +627,7 @@ void Tree_DrawBitmapWithGC(TreeCtrl *tree, Pixmap bitmap, Drawable drawable,
 	GC gc, int src_x, int src_y, int width, int height, int dest_x, int dest_y)
 {
 #ifdef WIN32
-    TkpClipMask *clipPtr = (TkpClipMask *) gc->clip_mask;
+	TkpClipMask *clipPtr = (TkpClipMask *) gc->clip_mask;
 #endif
 	XSetClipOrigin(tree->display, gc, dest_x, dest_y);
 #ifdef WIN32
@@ -1697,7 +1691,7 @@ void PerStateInfo_Free(
     AllocHax_CFree(tree->allocData, (char *) pInfo->data, typePtr->size,
 	pInfo->count, 5);
 #else
-    wipefree((char *) pInfo->data, typePtr->size * pInfo->count);
+    WIPEFREE(pInfo->data, typePtr->size * pInfo->count);
 #endif
     pInfo->data = NULL;
     pInfo->count = 0;
@@ -1742,7 +1736,7 @@ int PerStateInfo_FromObj(
 	    AllocHax_CFree(tree->allocData, (char *) pData, typePtr->size,
 		1, 5);
 #else
-	    wipefree((char *) pData, typePtr->size);
+	    WIPEFREE(pData, typePtr->size);
 #endif
 	    return TCL_ERROR;
 	}
@@ -1791,7 +1785,7 @@ freeIt:
     AllocHax_CFree(tree->allocData, (char *) pInfo->data, typePtr->size,
 	objc / 2, 5);
 #else
-    wipefree((char *) pInfo->data, typePtr->size * (objc / 2));
+    WIPEFREE(pInfo->data, typePtr->size * (objc / 2));
 #endif
     pInfo->data = NULL;
     pInfo->count = 0;
@@ -2508,8 +2502,7 @@ void AllocHax_Free(ClientData data, char *ptr, int size)
 
 	while (freeList != NULL && freeList->size != size)
 		freeList = freeList->next;
-/* WFREE */
-memset(ptr, 0xAA, size);
+	WIPE(ptr, size);
 	elem->next = freeList->head;
 	elem->free = 1;
 	freeList->head = elem;
