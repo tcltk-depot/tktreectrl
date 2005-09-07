@@ -2965,7 +2965,7 @@ int LoupeCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
 	return TCL_ERROR;
     }
 
-    /* See TkPoscriptImage */
+    /* See TkPostscriptImage */
 
     ncolors = visual->map_entries;
     xcolors = (XColor *) ckalloc(sizeof(XColor) * ncolors);
