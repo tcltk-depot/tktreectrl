@@ -17,6 +17,7 @@
 #if defined(MAC_OSX_TK)
 #include <Carbon/Carbon.h>
 #include "tkMacOSXInt.h"
+#include "tclInt.h"
 static PixPatHandle gPenPat = NULL;
 #endif
 
