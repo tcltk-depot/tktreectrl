@@ -1,3 +1,5 @@
+# RCS: @(#) $Id$
+
 bind TreeCtrl <Motion> {
     TreeCtrl::CursorCheck %W %x %y
     TreeCtrl::MotionInHeader %W %x %y

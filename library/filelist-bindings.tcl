@@ -1,3 +1,5 @@
+# RCS: @(#) $Id$
+
 bind TreeCtrlFileList <Double-ButtonPress-1> {
     TreeCtrl::FileListEditCancel %W
     TreeCtrl::DoubleButton1 %W %x %y
