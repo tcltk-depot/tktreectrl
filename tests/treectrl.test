@@ -707,7 +707,7 @@ test treectrl-8.12 {selection modify: to be or not to be?} -body {
 
 test treectrl-8.13 {selection includes: missing args} -body {
     .t selection includes
-} -returnCodes error -result {wrong # args: should be ".t selection includes index"}
+} -returnCodes error -result {wrong # args: should be ".t selection includes item"}
 
 test treectrl-8.14 {selection includes: invalid item} -body {
     .t selection includes {foo bar}
