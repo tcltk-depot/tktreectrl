@@ -370,26 +370,13 @@ extern int TreeItem_ChangeState(TreeCtrl *tree, TreeItem item_, int stateOff, in
 extern void TreeItem_UndefineState(TreeCtrl *tree, TreeItem item_, int state);
 
 extern int TreeItem_GetButton(TreeCtrl *tree, TreeItem item_);
-extern int TreeItem_SetButton(TreeCtrl *tree, TreeItem item, int hasButton);
 extern int TreeItem_GetDepth(TreeCtrl *tree, TreeItem item_);
-extern int TreeItem_SetDepth(TreeCtrl *tree, TreeItem item, int depth);
 extern int TreeItem_GetID(TreeCtrl *tree, TreeItem item_);
 extern int TreeItem_SetID(TreeCtrl *tree, TreeItem item_, int id);
-extern int TreeItem_GetOpen(TreeCtrl *tree, TreeItem item_);
-extern int TreeItem_SetOpen(TreeCtrl *tree, TreeItem item, int isOpen);
 extern int TreeItem_GetSelected(TreeCtrl *tree, TreeItem item_);
-extern int TreeItem_SetSelected(TreeCtrl *tree, TreeItem item, int isSelected);
-extern TreeItem TreeItem_SetFirstChild(TreeCtrl *tree, TreeItem item, TreeItem firstChild);
-extern TreeItem TreeItem_GetFirstChild(TreeCtrl *tree, TreeItem item);
-extern TreeItem TreeItem_SetLastChild(TreeCtrl *tree, TreeItem item, TreeItem lastChild);
-extern TreeItem TreeItem_GetLastChild(TreeCtrl *tree, TreeItem item);
-extern TreeItem TreeItem_SetParent(TreeCtrl *tree, TreeItem item, TreeItem parent);
 extern TreeItem TreeItem_GetParent(TreeCtrl *tree, TreeItem item);
-extern TreeItem TreeItem_SetNextSibling(TreeCtrl *tree, TreeItem item, TreeItem nextSibling);
 extern TreeItem TreeItem_GetNextSibling(TreeCtrl *tree, TreeItem item);
 extern TreeItem TreeItem_NextSiblingVisible(TreeCtrl *tree, TreeItem item);
-extern TreeItem TreeItem_SetPrevSibling(TreeCtrl *tree, TreeItem item, TreeItem prevSibling);
-extern TreeItem TreeItem_GetPrevSibling(TreeCtrl *tree, TreeItem item);
 extern void TreeItem_SetDInfo(TreeCtrl *tree, TreeItem item, TreeItemDInfo dInfo);
 extern TreeItemDInfo TreeItem_GetDInfo(TreeCtrl *tree, TreeItem item);
 extern void TreeItem_SetRInfo(TreeCtrl *tree, TreeItem item, TreeItemRInfo rInfo);
