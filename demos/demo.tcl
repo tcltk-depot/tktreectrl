@@ -1420,7 +1420,7 @@ proc compare {i1 i2} {
 }
 
 # A little screen magnifier for X11
-if {$::thisPlatform eq "unix"} {
+if {[llength [info commands loupe]]} {
 
     set Loupe(zoom) 3
     set Loupe(x) 0
@@ -1459,6 +1459,5 @@ if {$::thisPlatform eq "unix"} {
     }
     MakeLoupeWindow
 
-    # unix
 }
 
