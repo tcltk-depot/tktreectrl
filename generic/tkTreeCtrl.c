@@ -3524,19 +3524,19 @@ LoupeCmd(
     Tk_PhotoHandle photoH;
     Tk_PhotoImageBlock photoBlock;
     unsigned char *pixelPtr;
-    int x, y, w, h, zoom, xx, yy;
+    int x, y, w, h, zoom;
     int grabX, grabY, grabW, grabH;
-    int i, ncolors;
 #ifdef WIN32
+    int xx, yy;
     HWND hwnd;
     HDC hdc;
 #else
-    int screenNum = Tk_ScreenNumber(tkwin);
     Visual *visual = Tk_Visual(tkwin);
     Window rootWindow = RootWindow(display, screenNum);
     XImage *ximage;
     XColor *xcolors;
     unsigned long red_shift, green_shift, blue_shift;
+    int i, ncolors;
     int separated = 0;
 #endif
 
