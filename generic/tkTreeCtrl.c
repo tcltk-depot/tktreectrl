@@ -3669,7 +3669,6 @@ LoupeCmd(
     int bPerPixel, byPerRow, byPerPixel;
 
     // Gets all the screen info:
-    CGDisplayCapture(kCGDirectMainDisplay);
     CGDisplayHideCursor(kCGDirectMainDisplay);
     bPerPixel  = CGDisplayBitsPerPixel(kCGDirectMainDisplay);
     byPerRow   = CGDisplayBytesPerRow(kCGDirectMainDisplay);
@@ -3720,7 +3719,6 @@ LoupeCmd(
 	}
     }
     CGDisplayShowCursor(kCGDirectMainDisplay);
-    CGDisplayRelease(kCGDirectMainDisplay);
 #else
     ximage = XGetImage(display, rootWindow,
 	    grabX, grabY, grabW, grabH, AllPlanes, ZPixmap);
