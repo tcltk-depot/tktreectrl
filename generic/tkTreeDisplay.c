@@ -1424,8 +1424,7 @@ B_XviewCmd(
 	Tree_GetScrollFractionsX(tree, fractions);
 	sprintf(buf, "%g %g", fractions[0], fractions[1]);
 	Tcl_SetResult(interp, buf, TCL_VOLATILE);
-    }
-    else {
+    } else {
 	int count, index = 0, indexMax, offset, type;
 	double fraction;
 	int visWidth = Tk_Width(tree->tkwin) - tree->inset * 2;
@@ -1445,11 +1444,10 @@ B_XviewCmd(
 		offset = Increment_ToOffsetX(tree, indexMax);
 	    }
 
-	    /* Add some fake content to bottom */
+	    /* Add some fake content to right */
 	    if (offset + visWidth > totWidth)
 		totWidth = offset + visWidth;
-	}
-	else {
+	} else {
 	    indexMax = Increment_FindX(tree, totWidth);
 	    visWidth = 1;
 	}
