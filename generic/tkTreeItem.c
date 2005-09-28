@@ -88,7 +88,7 @@ static Tk_OptionSpec itemOptionSpecs[] = {
  *
  * Column_Alloc --
  *
- *	Allocate an initialize a new Column record.
+ *	Allocate and initialize a new Column record.
  *
  * Results:
  *	Pointer to allocated Column.
