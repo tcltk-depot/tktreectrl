@@ -3664,6 +3664,7 @@ LoupeCmd(
     /*
      * Adapted from John Anon's ScreenController demo code.
      */
+    {
     int xx, yy;
     unsigned char *screenBytes;
     int bPerPixel, byPerRow, byPerPixel;
@@ -3719,6 +3720,7 @@ LoupeCmd(
 	}
     }
     CGDisplayShowCursor(kCGDirectMainDisplay);
+    }
 #else
     ximage = XGetImage(display, rootWindow,
 	    grabX, grabY, grabW, grabH, AllPlanes, ZPixmap);
