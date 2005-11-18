@@ -687,6 +687,8 @@ int TreeTheme_Init(Tcl_Interp *interp)
 #include <Carbon/Carbon.h>
 #include "tkMacOSXInt.h"
 
+static RgnHandle oldClip = NULL, boundsRgn = NULL;
+
 int TreeTheme_DrawHeaderItem(TreeCtrl *tree, Drawable drawable, int state,
     int arrow, int x, int y, int width, int height)
 {
@@ -718,12 +720,30 @@ int TreeTheme_DrawHeaderItem(TreeCtrl *tree, Drawable drawable, int state,
     SetGWorld(destPort, 0);
     TkMacOSXSetUpClippingRgn(drawable);
 
+    /* Save the old clipping region because we are going to modify it. */
+    if (oldClip == NULL)
+	oldClip = NewRgn();
+    GetClip(oldClip);
+
+    /* Create a clipping region as big as the header. */
+    if (boundsRgn == NULL)
+	boundsRgn = NewRgn();
+    RectRgn(boundsRgn, &bounds);
+
+    /* Set the clipping region to the intersection of the two regions. */
+    SectRgn(oldClip, boundsRgn, boundsRgn);
+    SetClip(boundsRgn);
+
+    /* Draw the left edge outside of the clipping region. */
+    bounds.left -= 1;
+
     (void) DrawThemeButton(&bounds, kThemeListHeaderButton, &info,
 	NULL,	/*prevInfo*/
 	NULL,	/*eraseProc*/
 	NULL,	/*labelProc*/
 	NULL);	/*userData*/
-   
+
+    SetClip(oldClip);
     SetGWorld(saveWorld,saveDevice);
 
     return TCL_OK;
