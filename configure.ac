@@ -97,6 +97,9 @@ TEA_PRIVATE_TK_HEADERS
 
 TEA_PATH_X
 
+# Needed for OS X ppx/intel image handling
+AC_C_BIGENDIAN
+
 #--------------------------------------------------------------------
 # __CHANGE__
 # A few miscellaneous platform-specific items:
