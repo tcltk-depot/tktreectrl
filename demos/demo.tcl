@@ -160,6 +160,7 @@ foreach file {
     outlook-folders
     outlook-newgroup
     random
+    span
     textvariable
     www-options
 } {
@@ -936,6 +937,7 @@ proc InitDemoList {} {
 	"Firefox Privacy" DemoFirefoxPrivacy firefox.tcl \
 	"Textvariable" DemoTextvariable textvariable.tcl \
 	"Big List" DemoBigList biglist.tcl \
+	"Column Spanning" DemoSpan span.tcl \
 	] {
 	set item [$t item create]
 	$t item lastchild root $item
