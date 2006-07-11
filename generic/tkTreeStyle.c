@@ -4191,7 +4191,7 @@ TreeStyle_ElementCget(
 /*
  *----------------------------------------------------------------------
  *
- * TreeStyle_ElementCget --
+ * TreeStyle_ElementConfigure --
  *
  *	This procedure is invoked to process the [item element configure]
  *	widget command.  See the user documentation for details on what
