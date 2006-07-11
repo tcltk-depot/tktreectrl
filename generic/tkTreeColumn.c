@@ -3658,6 +3658,12 @@ TreeColumn_WidthOfItems(
     if (!TreeItem_ReallyVisible(tree, item))
 	item = TreeItem_NextVisible(tree, item);
     while (item != NULL) {
+#ifdef EXPENSIVE_SPAN_WIDTH /* NOT USED */
+	width = TreeItem_NeededWidthOfColumn(tree, item, column->index);
+	if (column == (Column *) tree->columnTree)
+	    width += TreeItem_Indent(tree, item);
+	column->widthOfItems = MAX(column->widthOfItems, width);
+#else
 	itemColumn = TreeItem_FindColumn(tree, item, column->index);
 	if (itemColumn != NULL) {
 	    width = TreeItemColumn_NeededWidth(tree, item, itemColumn);
@@ -3665,6 +3671,7 @@ TreeColumn_WidthOfItems(
 		width += TreeItem_Indent(tree, item);
 	    column->widthOfItems = MAX(column->widthOfItems, width);
 	}
+#endif
 	item = TreeItem_NextVisible(tree, item);
     }
 
@@ -3799,6 +3806,12 @@ Tree_InvalidateColumnWidth(
     )
 {
     Column *column;
+
+#ifdef COLUMN_SPANxxx
+    /* It may be necessary to recalculate the width of other columns as
+     * well when column-spanning is in effect. */
+    columnIndex = -1;
+#endif
 
     if (columnIndex == -1) {
 	column = (Column *) tree->columns;
