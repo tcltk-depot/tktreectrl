@@ -676,6 +676,8 @@ proc ::TreeCtrl::SelectionMotion {w el} {
 		set i $el
 		lappend select $el
 		set hack [$w item compare $el == anchor]
+	    } else {
+		set hack 0
 	    }
 	    if {[$w selection includes anchor] || $hack} {
 		set deselect [concat $deselect [$w range $i $el]]
