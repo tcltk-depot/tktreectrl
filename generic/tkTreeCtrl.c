@@ -487,10 +487,16 @@ static int TreeWidgetCmd(
 		goto error;
 	    }
 	    if (item != tree->activeItem) {
+		int x, y, w, h;
+
 		TreeNotify_ActiveItem(tree, tree->activeItem, item);
 		TreeItem_ChangeState(tree, tree->activeItem, STATE_ACTIVE, 0);
 		tree->activeItem = item;
 		TreeItem_ChangeState(tree, tree->activeItem, 0, STATE_ACTIVE);
+		if (Tree_ItemBbox(tree, item, &x, &y, &w, &h) >= 0) {
+		    Tk_SetCaretPos(tree->tkwin, x - tree->xOrigin,
+			    y - tree->yOrigin, h);
+		}
 	    }
 	    break;
 	}
