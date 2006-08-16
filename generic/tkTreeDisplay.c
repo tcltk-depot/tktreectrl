@@ -3692,6 +3692,14 @@ Tree_Display(
 	dInfo->flags &= ~(DINFO_REDRAW_PENDING);
 	return;
     }
+    /* Some change requires selection changes */
+    if (dInfo->flags & DINFO_REDO_SELECTION) {
+#ifdef SELECTION_VISIBLE
+	Tree_DeselectHidden(tree);
+#endif
+	dInfo->flags &= ~(DINFO_REDO_SELECTION);
+    }
+
     /* A column was deleted */
     if (dInfo->flags & DINFO_REDO_COLUMN_WIDTH) {
 	TreeColumn treeColumn = tree->columns;
