@@ -3,7 +3,7 @@
  *
  *	This module is the header for quasi-events.
  *
- * Copyright (c) 2002-2005 Tim Baker
+ * Copyright (c) 2002-2006 Tim Baker
  *
  * RCS: @(#) $Id$
  */

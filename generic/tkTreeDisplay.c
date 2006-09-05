@@ -3,7 +3,7 @@
  *
  *	This module implements treectrl widget's main display code.
  *
- * Copyright (c) 2002-2005 Tim Baker
+ * Copyright (c) 2002-2006 Tim Baker
  *
  * RCS: @(#) $Id$
  */
@@ -3695,7 +3695,15 @@ Tree_Display(
     /* Some change requires selection changes */
     if (dInfo->flags & DINFO_REDO_SELECTION) {
 #ifdef SELECTION_VISIBLE
+	int abort = 0;
+	/* A <Selection> event may occur so preserve things */
+	Tcl_Preserve((ClientData) tree);
 	Tree_DeselectHidden(tree);
+	if (tree->deleted)
+	    abort = 1;
+	Tcl_Release((ClientData) tree);
+	if (abort)
+	    return;
 #endif
 	dInfo->flags &= ~(DINFO_REDO_SELECTION);
     }

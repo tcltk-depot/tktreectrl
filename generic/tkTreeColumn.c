@@ -3,7 +3,7 @@
  *
  *	This module implements treectrl widget's columns.
  *
- * Copyright (c) 2002-2005 Tim Baker
+ * Copyright (c) 2002-2006 Tim Baker
  * Copyright (c) 2002-2003 Christian Krone
  * Copyright (c) 2003 ActiveState Corporation
  *
