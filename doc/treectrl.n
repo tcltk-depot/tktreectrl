@@ -131,7 +131,7 @@ package require \fBtreectrl  2.1.1\fR
 .sp
 \fIpathName\fR \fBitem configure\fR \fIitemDesc\fR ?\fIoption\fR? ?\fIvalue\fR? ?\fIoption value ...\fR?
 .sp
-\fIpathName\fR \fBitem count\fR
+\fIpathName\fR \fBitem count\fR ?\fI-visible\fR?
 .sp
 \fIpathName\fR \fBitem create\fR ?\fIoption value ...\fR?
 .sp
@@ -1493,11 +1493,14 @@ the meaning of each option):
 \fB\fB-visible\fR\fR \fIboolean\fR
 .RE
 .TP
-\fIpathName\fR \fBitem count\fR
+\fIpathName\fR \fBitem count\fR ?\fI-visible\fR?
 Returns a decimal string giving the number of
 items created by the \fBitem create\fR widget command which haven't been
 deleted by the \fBitem delete\fR widget command, plus 1 for the ever-present
-root item.
+root item. If the optional argument \fI-visible\fR is given, only the items
+whose ancestors are expanded, and whose -visible option is true, get counted.
+Additionally, for the root item, the treectrl option \fB-showroot\fR must
+be true for the root item to be counted.
 .TP
 \fIpathName\fR \fBitem create\fR ?\fIoption value ...\fR?
 Creates some new items and optionally returns a list of unique identifiers for
