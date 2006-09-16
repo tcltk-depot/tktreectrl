@@ -126,6 +126,9 @@ proc ::TreeCtrl::FileListButton1 {T x y} {
 			break
 		    }
 		}
+		if {![$T item enabled $item]} {
+		    set ok 0
+		}
 		if {$ok} {
 		    set Priv(drag,motion) 0
 		    set Priv(drag,click,x) $x
