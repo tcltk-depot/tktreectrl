@@ -373,6 +373,7 @@ extern int TreeItem_GetButton(TreeCtrl *tree, TreeItem item_);
 extern int TreeItem_GetDepth(TreeCtrl *tree, TreeItem item_);
 extern int TreeItem_GetID(TreeCtrl *tree, TreeItem item_);
 extern int TreeItem_SetID(TreeCtrl *tree, TreeItem item_, int id);
+extern int TreeItem_GetEnabled(TreeCtrl *tree, TreeItem item_);
 extern int TreeItem_GetSelected(TreeCtrl *tree, TreeItem item_);
 extern TreeItem TreeItem_GetParent(TreeCtrl *tree, TreeItem item);
 extern TreeItem TreeItem_GetNextSibling(TreeCtrl *tree, TreeItem item);
