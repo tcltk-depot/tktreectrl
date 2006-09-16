@@ -157,6 +157,7 @@ foreach file {
     imovie
     layout
     mailwasher
+    mycomputer
     outlook-folders
     outlook-newgroup
     random
@@ -938,6 +939,7 @@ proc InitDemoList {} {
 	"Textvariable" DemoTextvariable textvariable.tcl \
 	"Big List" DemoBigList biglist.tcl \
 	"Column Spanning" DemoSpan span.tcl \
+	"My Computer" DemoMyComputer mycomputer.tcl
 	] {
 	set item [$t item create]
 	$t item lastchild root $item
@@ -1201,7 +1203,8 @@ proc DemoClear {} {
 	-indent 19 -defaultstyle {} -backgroundimage "" \
 	-showrootlines yes -minitemheight 0 -borderwidth 6 \
 	-highlightthickness 3 -usetheme yes -cursor {} \
-	-itemwidth 0 -itemwidthequal no -itemwidthmultiple 0
+	-itemwidth 0 -itemwidthequal no -itemwidthmultiple 0 \
+	-font [.f4.t cget -font]
 
     # Undo "column configure all" in a demo
     $T column configure tail -background \
