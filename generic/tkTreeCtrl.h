@@ -359,6 +359,7 @@ extern void Tree_ReleaseItems(TreeCtrl *tree);
 #define SFO_NOT_TOGGLE	0x0002
 #define SFO_NOT_STATIC	0x0004
 extern int Tree_StateFromObj(TreeCtrl *tree, Tcl_Obj *obj, int states[3], int *indexPtr, int flags);
+extern int Tree_StateFromListObj(TreeCtrl *tree, Tcl_Obj *obj, int states[3], int flags);
 
 /* tkTreeItem.c */
 

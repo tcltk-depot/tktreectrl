@@ -2064,6 +2064,46 @@ unknown:
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
+ * Tree_StateFromListObj --
+ *
+ *	Call Tree_StateFromObj for a Tcl_Obj list object.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tree_StateFromListObj(
+    TreeCtrl *tree,		/* Widget info. */
+    Tcl_Obj *obj,		/* List of states. */
+    int states[3],		/* Uninitialized state flags, indexed by the
+				 * STATE_OP_xxx contants. A single flag
+				 * may be turned on or off in each value. */
+    int flags			/* SFO_xxx flags. */
+    )
+{
+    Tcl_Interp *interp = tree->interp;
+    int i, listObjc;
+    Tcl_Obj **listObjv;
+
+    states[0] = states[1] = states[2] = 0;
+    if (Tcl_ListObjGetElements(interp, obj, &listObjc, &listObjv) != TCL_OK)
+	return TCL_ERROR;
+    for (i = 0; i < listObjc; i++) {
+	if (Tree_StateFromObj(tree, listObjv[i], states, NULL, flags) != TCL_OK)
+	    return TCL_ERROR;
+    }
+    return TCL_OK;
+}
+
+/*
  *--------------------------------------------------------------
  *
  * TreeStateCmd --
