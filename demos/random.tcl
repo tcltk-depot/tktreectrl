@@ -395,24 +395,8 @@ proc RandomDrop {T target source pos} {
 		$T item element configure $item colDepth elemTxtAny -text [$T depth $item]
 
 		# Recursively update text: depth
-		set itemList [$T item firstchild $item]
-		while {[llength $itemList]} {
-			# Pop
-			set item [lindex $itemList end]
-			set itemList [lrange $itemList 0 end-1]
-
+		foreach item [$T item descendants $item] {
 			$T item element configure $item colDepth elemTxtAny -text [$T depth $item]
-
-			set item2 [$T item nextsibling $item]
-			if {$item2 ne ""} {
-				# Push
-				lappend itemList $item2
-			}
-			set item2 [$T item firstchild $item]
-			if {$item2 ne ""} {
-				# Push
-				lappend itemList $item2
-			}
 		}
 	}
 
