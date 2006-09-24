@@ -139,6 +139,8 @@ proc iMovieButton1 {T x y} {
 						set right [expr {$x2 - 3 - 6 + 1}]
 						place $T.entry -x $left -width [expr {$right - $left}]
 						$T.entry icursor [$T.entry index @[expr {$x - ($x1 + 1)}]]
+						# Disable mouse tracking
+						unset ::TreeCtrl::Priv(buttonMode)
 					}
 				}
 			}
