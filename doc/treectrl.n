@@ -3187,6 +3187,14 @@ length is determined.
 An element of type \fBwindow\fR can be used to display a Tk window in an item.
 The following options are supported for window elements:
 .TP
+\fB\fB-clip\fR\fR \fIboolean\fR
+Specifies whether the associated Tk window is a borderless frame which should
+be used to clip its child window so it doesn't overlap the header, borders, or
+other items or columns. When this option is true, the treectrl manages the
+geometry of both the \fB-window\fR widget and its first child widget; in
+this case the \fB-window\fR widget (which should be a borderless frame) is
+kept sized and positioned so that it is never out-of-bounds.
+.TP
 \fB\fB-destroy\fR\fR \fIboolean\fR
 Specifies whether the associated Tk window should be destroyed when the
 element is deleted. The element is deleted when the item containing the
