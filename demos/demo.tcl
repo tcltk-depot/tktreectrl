@@ -55,6 +55,14 @@ if {[catch {
     proc dbwin s {puts -nonewline $s}
 }
 
+set tile 0
+catch {
+	package require tile 0.6
+	namespace import -force ::ttk::button ::ttk::checkbutton ::ttk::entry \
+		ttk::radiobutton
+	set tile 1
+}
+
 # This gets called if 'package require' won't work during development.
 proc LoadSharedLibrary {} {
 
