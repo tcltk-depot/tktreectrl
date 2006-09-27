@@ -40,6 +40,7 @@ struct ElementArgs
 #define STICKY_S 0x8000
 	int sticky;
 	Drawable drawable;
+	int bounds[4];
     } display;
     struct {
 	int fixedWidth;
