@@ -19,7 +19,7 @@ proc DemoIMovie {} {
 	# Create columns
 	#
 
-	$T column create -tag C0
+	$T column create -tags C0
 
 	InitPics imovie-*
 

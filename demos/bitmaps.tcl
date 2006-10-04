@@ -19,7 +19,7 @@ proc DemoBitmaps {} {
 	# Create columns
 	#
 
-	$T column create -itembackground {gray90 {}} -tag C0
+	$T column create -itembackground {gray90 {}} -tags C0
 
 	#
 	# Create elements

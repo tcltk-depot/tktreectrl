@@ -27,7 +27,7 @@ proc DemoHelpContents {} {
 	# Create columns
 	#
 
-	$T column create -text "Help Contents" -tag C0
+	$T column create -text "Help Contents" -tags C0
 
 	$T configure -treecolumn C0
 
@@ -306,7 +306,6 @@ proc HelpButton1 {w x y} {
 }
 
 proc HelpMotion {w x y} {
-	variable TreeCtrl::Priv
 	global HelpContents
 	set id [$w identify $x $y]
 	if {$id eq ""} {
