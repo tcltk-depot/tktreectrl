@@ -25,7 +25,7 @@ proc DemoOutlookFolders {} {
 	# Create columns
 	#
 
-	$T column create -text Folders -tag C0
+	$T column create -text Folders -tags C0
 	$T configure -treecolumn C0
 
 	#
