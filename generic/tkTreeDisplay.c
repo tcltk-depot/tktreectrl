@@ -643,7 +643,6 @@ Range_TotalHeight(
 	    } else if (TreeRowLabel_NeededHeight(dRowLabel->row) > range->totalHeight) {
 		range->totalHeight = TreeRowLabel_NeededHeight(dRowLabel->row);
 	    }
-	    dRowLabel->offset = range->offset;
 	    dRowLabel->height = range->totalHeight;
 	}
     }
@@ -744,6 +743,16 @@ Tree_TotalHeight(
 	}
 	range = range->next;
     }
+#ifdef ROW_LABEL
+    if (!tree->vertical) {
+	int i, offset = 0;
+	for (i =  0; i < dInfo->dRowLabelCnt; i++) {
+	    DRowLabel *dRowLabel = &dInfo->dRowLabel[i];
+	    dRowLabel->offset = offset;
+	    offset += dRowLabel->height;
+	}
+    }
+#endif
     return tree->totalHeight;
 }
 
