@@ -90,7 +90,7 @@ proc DemoRowLabels {} {
     # Create elements
     #
 
-    $T element create eRect rect -outline gray -outlinewidth 1
+    $T element create eRect rect -outline gray -outlinewidth 1 -open wn
 
     #
     # Create styles using the elements
@@ -109,6 +109,9 @@ proc DemoRowLabels {} {
 	$T item style set [list list $ids] $C s1
     }
 
+    bind DemoRowLabels <Button1-Motion> {
+	# no-op
+    }
     bind DemoRowLabels <Motion> {
 	RowLabelMotion %W %x %y
     }
