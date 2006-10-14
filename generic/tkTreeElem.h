@@ -20,9 +20,6 @@ struct ElementArgs
     struct {
 	TreeItem item;
 	TreeItemColumn column;
-#ifdef ROW_LABEL
-	TreeRowLabel row;
-#endif
     } create;
     struct {
 	int noop;
@@ -125,13 +122,9 @@ extern TreeIterate Tree_ElementIterateBegin(TreeCtrl *tree, ElementType *elemTyp
 extern TreeIterate Tree_ElementIterateNext(TreeIterate iter_);
 extern Element *Tree_ElementIterateGet(TreeIterate iter_);
 extern void Tree_ElementIterateChanged(TreeIterate iter_, int mask);
-#ifdef ROW_LABEL
-extern void Tree_ElementChangedItself(TreeCtrl *tree, TreeItem item,
-    TreeItemColumn column, TreeRowLabel row, Element *elem, int mask);
-#else
 extern void Tree_ElementChangedItself(TreeCtrl *tree, TreeItem item,
     TreeItemColumn column, Element *elem, int mask);
-#endif
+
 typedef struct TreeCtrlStubs TreeCtrlStubs;
 struct TreeCtrlStubs
 {

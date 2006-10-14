@@ -4610,27 +4610,6 @@ Tree_DrawHeader(
 	}
     }
 
-#ifdef ROW_LABEL
-    if (Tree_WidthOfRowLabels(tree) > 0) {
-	column = (Column *) tree->columnTail;
-	width = Tree_WidthOfRowLabels(tree);
-	height = tree->headerHeight;
-	if (tree->useTheme &&
-	    (TreeTheme_DrawHeaderItem(tree, pixmap, 0, 0, tree->inset, y, width, height) == TCL_OK)) {
-	} else {
-	    Tk_3DBorder border;
-	    border = PerStateBorder_ForState(tree, &column->border,
-		Column_MakeState(column), NULL);
-	    if (border == NULL)
-		border = tree->border;
-	    Tk_Fill3DRectangle(tkwin, pixmap, border,
-		    tree->inset, y, width, height,
-		    column->borderWidth, TK_RELIEF_RAISED);
-	}
-	column = (Column *) tree->columns;
-    }
-#endif
-
 #ifdef COLUMN_LOCK
     DrawHeaderLeft(tree, pixmap);
     DrawHeaderRight(tree, pixmap);
