@@ -248,7 +248,7 @@ Percents_ItemVisibility(
 	    count = TreeItemList_Count(table);
 	    for (i = 0; i < count; i++)
 	    {
-		TreeItem item = TreeItemList_ItemN(table, i);
+		TreeItem item = TreeItemList_Nth(table, i);
 		if (tree->itemPrefixLen) {
 		    char buf[10 + TCL_INTEGER_SPACE];
 		    (void) sprintf(buf, "%s%d", tree->itemPrefix,
@@ -317,7 +317,7 @@ Percents_Selection(
 	    count = TreeItemList_Count(itemList);
 	    for (i = 0; i < count; i++)
 	    {
-		TreeItem item = TreeItemList_ItemN(itemList, i);
+		TreeItem item = TreeItemList_Nth(itemList, i);
 		if (tree->itemPrefixLen) {
 		    char buf[10 + TCL_INTEGER_SPACE];
 		    (void) sprintf(buf, "%s%d", tree->itemPrefix,
@@ -749,7 +749,7 @@ Percents_ItemDelete(
 	    count = TreeItemList_Count(data->items);
 	    for (i = 0; i < count; i++)
 	    {
-		TreeItem item = TreeItemList_ItemN(data->items, i);
+		TreeItem item = TreeItemList_Nth(data->items, i);
 		if (tree->itemPrefixLen) {
 		    char buf[10 + TCL_INTEGER_SPACE];
 		    (void) sprintf(buf, "%s%d", tree->itemPrefix,

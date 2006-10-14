@@ -512,7 +512,7 @@ TreeMarqueeCmd(
 	    for (n = 0; n < TreeItemList_Count(&items); n++)
 	    {
 		Tcl_Obj *subListObj = Tcl_NewListObj(0, NULL);
-		TreeItem item = TreeItemList_ItemN(&items, n);
+		TreeItem item = TreeItemList_Nth(&items, n);
 		Tcl_ListObjAppendElement(interp, subListObj,
 		    TreeItem_ToObj(tree, item));
 		TreeItem_Identify2(tree, item, x1, y1, x2, y2, subListObj);
