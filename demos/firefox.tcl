@@ -392,7 +392,7 @@ if {$::clip} {
 
 	# This binding collapses all items before expanding a new one
 	$T notify bind $T <Expand-before> {
-		%T collapse all
+		%T item collapse all
 	}
 	$T item collapse all
 
