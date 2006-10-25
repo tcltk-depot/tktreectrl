@@ -1026,10 +1026,12 @@ struct DynamicOption
     char data[1];		/* Actual size will be > 1 */
 };
 
+typedef void (DynamicOptionInitProc)(char *data);
+
+extern DynamicOption *DynamicOption_AllocIfNeeded(DynamicOption **firstPtr,
+    int id, int size, DynamicOptionInitProc *init);
 extern char *DynamicOption_FindData(DynamicOption *first, int id);
 extern void DynamicOption_Free(DynamicOption *first);
-
-typedef void (DynamicOptionInitProc)(char *data);
 
 extern int DynamicCO_Init(Tk_OptionSpec *optionTable, CONST char *optionName,
     int id, int size, int objOffset, int internalOffset,
