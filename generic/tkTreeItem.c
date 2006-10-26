@@ -5409,14 +5409,16 @@ doneMAP:
 		for (i = 0; i < count; i++) {
 		    COLUMN_FOR_EACH(treeColumn, &cs[i].columns, NULL, &citer) {
 			if (treeColumn == tree->columnTail) continue; /* FIXME */
-			column = Item_CreateColumn(tree, item,
-				TreeColumn_Index(treeColumn), NULL);
 			if (cs[i].style == NULL) {
-			    if (column->style == NULL)
+			    column = Item_FindColumn(tree, item,
+				    TreeColumn_Index(treeColumn));
+			    if (column == NULL || column->style == NULL)
 				continue;
 			    TreeItemColumn_ForgetStyle(tree,
 				    (TreeItemColumn) column);
 			} else {
+			    column = Item_CreateColumn(tree, item,
+				    TreeColumn_Index(treeColumn), NULL);
 			    if (column->style != NULL) {
 				if (TreeStyle_GetMaster(tree, column->style)
 					== cs[i].style)
