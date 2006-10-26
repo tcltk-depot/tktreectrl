@@ -2436,7 +2436,7 @@ Element_FreeResources(
     Tk_FreeConfigOptions((char *) elem,
 	typePtr->optionTable,
 	tree->tkwin);
-    DynamicOption_Free(elem->options);
+    DynamicOption_Free(tree, elem->options, typePtr->optionSpecs);
 #ifdef ALLOC_HAX
     AllocHax_Free(tree->allocData, typePtr->name, (char *) elem, typePtr->size);
 #else
@@ -2858,9 +2858,9 @@ Element_CreateAndConfig(
     {
 	(*type->deleteProc)(&args);
 	Tk_FreeConfigOptions((char *) elem,
-	    elem->typePtr->optionTable,
+	    type->optionTable,
 	    tree->tkwin);
-	DynamicOption_Free(elem->options);
+	DynamicOption_Free(tree, elem->options, type->optionSpecs);
 #ifdef ALLOC_HAX
 	AllocHax_Free(tree->allocData, type->name, (char *) elem, type->size);
 #else
