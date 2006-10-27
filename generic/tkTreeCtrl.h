@@ -282,6 +282,10 @@ struct TreeCtrl
     int columnCountVisLeft;	/* Number of visible left-locked columns */
     int columnCountVisRight;	/* Number of visible right-locked columns */
 #endif
+#define UNIFORM_GROUP
+#ifdef UNIFORM_GROUP
+    Tcl_HashTable uniformGroupHash;	/* -uniform -> UniformGroup */
+#endif
 
     TreeItem root;
     TreeItem activeItem;
