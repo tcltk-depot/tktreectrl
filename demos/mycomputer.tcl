@@ -10,7 +10,6 @@ proc DemoMyComputer {} {
 
     $T configure -showroot no -showbuttons no -showlines no \
 	-selectmode browse -xscrollincrement 20 \
-	-scrollmargin 16 -xscrolldelay "500 50" -yscrolldelay "500 50" \
 	-font [.menubar cget -font]
 
     #
