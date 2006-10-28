@@ -29,9 +29,12 @@ proc DemoRandom {} {
 	# Create columns
 	#
 
-	$T column create -expand yes -text Item -itembackground {#e0e8f0 {}} -tags colItem
-	$T column create -text Parent -justify center -itembackground {gray90 {}} -tags colParent
-	$T column create -text Depth -justify center -itembackground {linen {}} -tags colDepth
+	$T column create -expand yes -weight 4 -text Item -itembackground {#e0e8f0 {}} \
+	    -tags colItem
+	$T column create -text Parent -justify center -itembackground {gray90 {}} \
+	    -uniform a -expand yes -tags colParent
+	$T column create -text Depth -justify center -itembackground {linen {}} \
+	    -uniform a -expand yes -tags colDepth
 
 	$T configure -treecolumn colItem
 
