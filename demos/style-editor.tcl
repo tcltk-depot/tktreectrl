@@ -723,7 +723,7 @@ proc StyleEditor::StyleToCanvas {{scroll 0}} {
     }
     # No selected item uses the current style, look for an unselected item
     if {$match eq ""} {
-	foreach I [$Tdemo range first last] {
+	foreach I [$Tdemo item range first last] {
 	    set C 0
 	    foreach S [$Tdemo item style set $I] {
 		if {$S eq $style} {

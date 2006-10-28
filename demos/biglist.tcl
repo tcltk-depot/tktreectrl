@@ -367,7 +367,7 @@ proc BigListButton1 {w x y} {
 			return
 		}
 		if {[$w item tag expr $item !info]} {
-			$w toggle $item
+			$w item toggle $item
 		}
 	}
 	return

@@ -443,7 +443,7 @@ proc DemoFirefoxPrivacyButton1 {w x y} {
 			return
 		}
 		if {[lindex $id 5] eq "eText1"} {
-			$w toggle $item
+			$w item toggle $item
 			DisplayStylesInItem $item
 		}
 	}
