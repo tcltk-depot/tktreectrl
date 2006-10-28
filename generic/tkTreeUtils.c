@@ -5059,7 +5059,8 @@ dbwin("DynamicCO_Set id=%d saveInternalPtr=%p save=%p\n", cd->id, saveInternalPt
 dbwin("saving object '%s'\n", *value ? Tcl_GetString(*value) : "NULL");
 #endif
 	*objPtrPtr = *value;
-	Tcl_IncrRefCount(*value);
+	if (*value != NULL)
+	    Tcl_IncrRefCount(*value);
     }
 
     *(DynamicCOSave **) saveInternalPtr = save;
