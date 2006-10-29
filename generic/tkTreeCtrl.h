@@ -636,7 +636,8 @@ extern int TreeColumn_InitInterp(Tcl_Interp *interp);
 extern void Tree_InitColumns(TreeCtrl *tree);
 extern TreeColumn Tree_FindColumn(TreeCtrl *tree, int columnIndex);
 
-#define COLUMN_ALL ((TreeColumn) -1)
+#define COLUMN_ALL ((TreeColumn) -1)	/* Every column. */
+#define COLUMN_NTAIL ((TreeColumn) -2)	/* Every column but the tail. */
 #define CFO_NOT_MANY 0x01
 #define CFO_NOT_NULL 0x02
 #define CFO_NOT_TAIL 0x04
@@ -649,6 +650,7 @@ struct ColumnForEach {
     TreeCtrl *tree;
     int error;
     int all;
+    int ntail;
     TreeColumn current;
     TreeColumn next;
     TreeColumn last;
