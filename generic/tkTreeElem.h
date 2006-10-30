@@ -126,7 +126,7 @@ extern TreeIterate Tree_ElementIterateNext(TreeIterate iter_);
 extern Element *Tree_ElementIterateGet(TreeIterate iter_);
 extern void Tree_ElementIterateChanged(TreeIterate iter_, int mask);
 extern void Tree_ElementChangedItself(TreeCtrl *tree, TreeItem item,
-    TreeItemColumn column, Element *elem, int mask);
+    TreeItemColumn column, Element *elem, int flags, int mask);
 
 typedef struct TreeCtrlStubs TreeCtrlStubs;
 struct TreeCtrlStubs
