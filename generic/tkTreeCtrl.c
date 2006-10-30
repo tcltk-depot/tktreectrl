@@ -818,9 +818,9 @@ static int TreeWidgetCmd(
 		Tcl_WrongNumArgs(interp, 2, objv, "x y");
 		goto error;
 	    }
-	    if (Tcl_GetIntFromObj(interp, objv[2], &x) != TCL_OK)
+	    if (Tk_GetPixelsFromObj(interp, tree->tkwin, objv[2], &x) != TCL_OK)
 		goto error;
-	    if (Tcl_GetIntFromObj(interp, objv[3], &y) != TCL_OK)
+	    if (Tk_GetPixelsFromObj(interp, tree->tkwin, objv[3], &y) != TCL_OK)
 		goto error;
 
 	    hit = Tree_HitTest(tree, x, y);
