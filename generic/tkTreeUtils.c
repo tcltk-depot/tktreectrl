@@ -4605,7 +4605,7 @@ OptionHax_Forget(
 {
     int i;
 
-    for (i = 0; tree->optionHaxCnt; i++) {
+    for (i = 0; i < tree->optionHaxCnt; i++) {
 	if (ptr == tree->optionHax[i]) {
 	    tree->optionHax[i] = tree->optionHax[--tree->optionHaxCnt];
 /*dbwin("OptionHax_Forget %p\n", ptr);*/
