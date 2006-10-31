@@ -1739,9 +1739,11 @@ void TextLayout_Draw(
     int firstChar,		/* The index of the first character to draw
 				 * * from the given text item.  0 specfies the
 				 * * beginning. */
-    int lastChar		/* The index just after the last character
+    int lastChar,		/* The index just after the last character
 				 * * to draw from the given text item.  A number
 				 * * < 0 means to draw all characters. */
+    int underline		/* Character index to underline, or < 0 for
+				 * no underline. */
 )
 {
     LayoutInfo *layoutPtr = (LayoutInfo *) layout;
@@ -1795,9 +1797,23 @@ void TextLayout_Draw(
 	    Tk_DrawChars(display, drawable, gc, layoutPtr->tkfont,
 		firstByte, lastByte - firstByte, x + chunkPtr->x + drawX,
 		y + chunkPtr->y);
+#if 1
+	    if (underline >= firstChar && underline < numDisplayChars)
+	    {
+		CONST char *fstBytePtr = Tcl_UtfAtIndex(chunkPtr->start, underline);
+		CONST char *sndBytePtr = Tcl_UtfNext(fstBytePtr);
+		Tk_UnderlineChars(display, drawable, gc,
+			layoutPtr->tkfont, firstByte,
+			x + chunkPtr->x + drawX, y + chunkPtr->y, 
+			fstBytePtr - chunkPtr->start, sndBytePtr - chunkPtr->start);
+	    }
+#endif
 	}
 	firstChar -= chunkPtr->numChars;
 	lastChar -= chunkPtr->numChars;
+#if 1
+	underline -= chunkPtr->numChars;
+#endif
 	if (lastChar <= 0)
 	    break;
 	chunkPtr++;

@@ -843,7 +843,8 @@ extern void TextLayout_Free(TextLayout textLayout);
 extern void TextLayout_Size(TextLayout textLayout, int *widthPtr, int *heightPtr);
 extern int TextLayout_TotalWidth(TextLayout textLayout);
 extern void TextLayout_Draw(Display *display, Drawable drawable, GC gc,
-	TextLayout layout, int x, int y, int firstChar, int lastChar);
+	TextLayout layout, int x, int y, int firstChar, int lastChar,
+	int underline);
 #ifdef MAC_OSX_TK
 extern void DrawXORLine(Display *display, Drawable drawable, int x1, int y1,
 	int x2, int y2);
