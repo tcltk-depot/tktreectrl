@@ -3337,7 +3337,7 @@ MStyle_ChangeElementsAux(
 		(char *) style->elements, sizeof(MElementLink),
 		style->numElements, ELEMENT_LINK_ROUND);
 #else
-	WCFREE(style->mstyle.elements, MElementLink, style->numElements);
+	WCFREE(style->elements, MElementLink, style->numElements);
 #endif
     }
 
@@ -6230,7 +6230,7 @@ TreeStyle_Remap(
 #else
 	if (styleFromNumElements > 0)
 	    WCFREE(styleFrom->elements, IElementLink, styleFromNumElements);
-	styleFrom->elements = (ElementLink *) ckalloc(sizeof(IElementLink) *
+	styleFrom->elements = (IElementLink *) ckalloc(sizeof(IElementLink) *
 	    styleTo->numElements);
 #endif
 	memset(styleFrom->elements, '\0', sizeof(IElementLink) * styleTo->numElements);
