@@ -223,8 +223,10 @@ struct TreeCtrl
 #define BG_MODE_ORDER 1
 #define BG_MODE_ORDERVIS 2
 #define BG_MODE_ROW 3
+#ifdef DEPRECATED
 #define BG_MODE_INDEX 4		/* compatibility */
 #define BG_MODE_VISINDEX 5	/* compatibility */
+#endif /* DEPRECATED */
     int backgroundMode;		/* -backgroundmode */
     int columnResizeMode;	/* -columnresizemode */
     int *itemPadX;		/* -itempadx */
