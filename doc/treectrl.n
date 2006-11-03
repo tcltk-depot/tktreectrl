@@ -569,6 +569,7 @@ Database Class:	\fBDefaultStyle\fR
 
 .fi
 .IP
+This option is deprecated; use the column option \fB-itemstyle\fR instead.
 Specifies a list of styles, one per column, to apply to each item created by
 the \fBitem create\fR command. The number of styles in the list can be
 different from the number of tree columns.
@@ -2849,6 +2850,10 @@ it defaults to 0.
 Specifies a list of zero or more colors, which are used as
 alternating background colors for items in this column.
 See also the \fB-backgroundmode\fR widget option for more on this.
+.TP
+\fB\fB-itemstyle\fR\fR \fIstyle\fR
+\fIStyle\fR is the name of a style that should be set in this column
+for newly-created items.
 .TP
 \fB\fB-justify\fR\fR \fIjustification\fR
 This option determines how the items (and the title) line up with each other.

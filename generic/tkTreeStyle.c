@@ -4010,6 +4010,14 @@ Style_Deleted(
 	hPtr = Tcl_NextHashEntry(&search);
     }
 
+    /* Update each column's -itemstyle option */
+    treeColumn = tree->columns;
+    while (treeColumn != NULL) {
+	TreeColumn_StyleDeleted(treeColumn, (TreeStyle) masterStyle);
+	treeColumn = TreeColumn_Next(treeColumn);
+    }
+
+#ifdef DEPRECATED
     /* Update -defaultstyle option */
     if (tree->defaultStyle.stylesObj != NULL)
     {
@@ -4031,6 +4039,7 @@ Style_Deleted(
 	    Tcl_ListObjReplace(tree->interp, stylesObj, columnIndex, 1, 1, &emptyObj);
 	}
     }
+#endif /* DEPRECATED */
 }
 
 /*
