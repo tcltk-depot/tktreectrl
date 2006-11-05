@@ -48,7 +48,7 @@ proc DemoBitmaps {} {
 	$T style layout $S elemTxt -expand we
 
 	# Set default item style
-	$T configure -defaultstyle [list $S]
+	$T column configure C0 -itemstyle $S
 
 	#
 	# Create items and assign styles

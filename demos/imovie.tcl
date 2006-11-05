@@ -64,7 +64,7 @@ proc DemoIMovie {} {
 		-ipadx 6 -padx {0 3} -pady {0 3}
 
 	# Set default item style
-	$T configure -defaultstyle [list $S]
+	$T column configure C0 -itemstyle $S
 
 	#
 	# Create items and assign styles
