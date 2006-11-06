@@ -691,6 +691,7 @@ extern TreeStyle TreeColumn_ItemStyle(TreeColumn column_);
 extern void TreeColumn_StyleDeleted(TreeColumn column_, TreeStyle style);
 extern int TreeColumn_Visible(TreeColumn column_);
 extern int TreeColumn_Squeeze(TreeColumn column_);
+extern int TreeColumn_BackgroundCount(TreeColumn column_);
 extern GC TreeColumn_BackgroundGC(TreeColumn column_, int which);
 extern void Tree_DrawHeader(TreeCtrl *tree, Drawable drawable, int x, int y);
 extern int TreeColumn_WidthOfItems(TreeColumn column_);
