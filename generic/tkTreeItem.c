@@ -3926,17 +3926,25 @@ SpanWalkProc_Draw(
     drawArgs->drawable = data->drawable;
 
     /* Draw background colors. */
-    x = drawArgs->x;
-    for (i = 0; i < spanPtr->span; i++) {
-	int columnWidth = TreeColumn_UseWidth(treeColumn);
-	if ((columnWidth > 0) && (x < data->maxX) &&
-		(x + columnWidth > data->minX)) {
-	    ItemDrawBackground(tree, treeColumn, (Item *) item_, itemColumn,
-		    drawArgs->drawable, x, drawArgs->y,
-		    columnWidth, drawArgs->height, data->index);
+    if (spanPtr->span == 1) {
+	/* Important point: use drawArgs->width since an item's width may
+	 * be totally different than tree->columnVis' width. */
+	ItemDrawBackground(tree, treeColumn, (Item *) item_, itemColumn,
+		drawArgs->drawable, drawArgs->x, drawArgs->y,
+		drawArgs->width, drawArgs->height, data->index);
+    } else {
+	x = drawArgs->x;
+	for (i = 0; i < spanPtr->span; i++) {
+	    int columnWidth = TreeColumn_UseWidth(treeColumn);
+	    if ((columnWidth > 0) && (x < data->maxX) &&
+		    (x + columnWidth > data->minX)) {
+		ItemDrawBackground(tree, treeColumn, (Item *) item_, itemColumn,
+			drawArgs->drawable, x, drawArgs->y,
+			columnWidth, drawArgs->height, data->index);
+	    }
+	    x += columnWidth;
+	    treeColumn = TreeColumn_Next(treeColumn);
 	}
-	x += columnWidth;
-	treeColumn = TreeColumn_Next(treeColumn);
     }
 
     if (drawArgs->style != NULL) {
