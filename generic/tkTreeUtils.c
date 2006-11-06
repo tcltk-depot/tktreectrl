@@ -86,6 +86,37 @@ FormatResult(
 /*
  *----------------------------------------------------------------------
  *
+ * DStringAppendf --
+ *
+ *	Format a string and append it to a Tcl_DString.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+DStringAppendf(
+    Tcl_DString *dString,	/* Initialized dynamic string. */
+    char *fmt, ...		/* Format string and varargs. */
+    )
+{
+    va_list ap;
+    char buf[256];
+
+    va_start(ap, fmt);
+    vsprintf(buf, fmt, ap);
+    va_end(ap);
+    Tcl_DStringAppend(dString, buf, -1);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Ellipsis --
  *
  *	Determine the number of bytes from the string that will fit
@@ -3049,15 +3080,13 @@ AllocHax_Stats(
 {
     AllocData *data = (AllocData *) _data;
     AllocStats *stats = data->stats;
-    char buf[128];
     Tcl_DString dString;
 
     Tcl_DStringInit(&dString);
     while (stats != NULL) {
-	sprintf(buf, "%-20s: %8d : %8d B %5d KB\n",
+	DStringAppendf(&dString, "%-20s: %8d : %8d B %5d KB\n",
 		stats->id, stats->count,
 		stats->size, (stats->size + 1023) / 1024);
-	Tcl_DStringAppend(&dString, buf, -1);
 	stats = stats->next;
     }
     Tcl_DStringResult(interp, &dString);
