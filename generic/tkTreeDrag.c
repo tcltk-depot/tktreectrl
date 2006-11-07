@@ -457,11 +457,7 @@ DragImageCmd(
 		}
 	    }
 
-#ifdef COLUMN_LOCK
 	    if (Tree_ItemBbox(tree, item, COLUMN_LOCK_NONE, &x, &y, &w, &h) < 0)
-#else
-	    if (Tree_ItemBbox(tree, item, &x, &y, &w, &h) < 0)
-#endif
 		return TCL_OK;
 	    if (w < 1 || h < 1)
 		return TCL_OK;
