@@ -35,7 +35,6 @@
 
 #define SELECTION_VISIBLE
 #define ALLOC_HAX
-#define COLUMN_SPAN
 #define COLUMN_LOCK
 #define DEPRECATED
 
