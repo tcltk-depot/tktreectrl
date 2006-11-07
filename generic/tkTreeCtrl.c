@@ -389,9 +389,7 @@ TreeObjCmd(
 	    tkwin);
 
     Tcl_InitHashTable(&tree->itemHash, TCL_ONE_WORD_KEYS);
-#ifdef NEW_SPAN_CODE
     Tcl_InitHashTable(&tree->itemSpansHash, TCL_ONE_WORD_KEYS);
-#endif
     Tcl_InitHashTable(&tree->elementHash, TCL_STRING_KEYS);
     Tcl_InitHashTable(&tree->styleHash, TCL_STRING_KEYS);
     Tcl_InitHashTable(&tree->imageNameHash, TCL_STRING_KEYS);
@@ -1733,9 +1731,7 @@ TreeDestroy(
     }
     Tcl_DeleteHashTable(&tree->itemHash);
 
-#ifdef NEW_SPAN_CODE
     Tcl_DeleteHashTable(&tree->itemSpansHash);
-#endif
 
     count = TreeItemList_Count(&tree->preserveItemList);
     for (i = 0; i < count; i++) {
@@ -1997,11 +1993,9 @@ Tree_RemoveItem(
     if (TreeItem_GetSelected(tree, item))
 	Tree_RemoveFromSelection(tree, item);
 
-#ifdef NEW_SPAN_CODE
     hPtr = Tcl_FindHashEntry(&tree->itemSpansHash, (char *) item);
     if (hPtr != NULL)
 	Tcl_DeleteHashEntry(hPtr);
-#endif
 
     hPtr = Tcl_FindHashEntry(&tree->itemHash,
 	    (char *) TreeItem_GetID(tree, item));
