@@ -827,8 +827,7 @@ int TreeTheme_DrawButton(TreeCtrl *tree, Drawable drawable, int open, int x, int
     /* Drawing the disclosure triangles produces a white background.
      * To avoid this, set the clipping region to the exact area where
      * pixels are drawn. */
-#define CLIP_BUTTON
-#ifdef CLIP_BUTTON
+
     /* Save the old clipping region because we are going to modify it. */
     if (oldClip == NULL)
 	oldClip = NewRgn();
@@ -843,7 +842,6 @@ int TreeTheme_DrawButton(TreeCtrl *tree, Drawable drawable, int open, int x, int
     /* Set the clipping region to the intersection of the two regions. */
     SectRgn(oldClip, boundsRgn, boundsRgn);
     SetClip(boundsRgn);
-#endif
 
     (void) DrawThemeButton(&bounds, kThemeDisclosureButton, &info,
 	NULL,	/*prevInfo*/
@@ -851,10 +849,8 @@ int TreeTheme_DrawButton(TreeCtrl *tree, Drawable drawable, int open, int x, int
 	NULL,	/*labelProc*/
 	NULL);	/*userData*/
 
-#ifdef CLIP_BUTTON
     /* Restore the original clipping region. */
     SetClip(oldClip);
-#endif
 
     SetGWorld(saveWorld,saveDevice);
 
