@@ -788,8 +788,7 @@ static int TreeWidgetCmd(
 		Tcl_SetObjResult(interp, Tcl_NewIntObj(depth));
 		break;
 	    }
-	    if (tree->updateIndex)
-		Tree_UpdateItemIndex(tree);
+	    Tree_UpdateItemIndex(tree);
 	    Tcl_SetObjResult(interp, Tcl_NewIntObj(tree->depth + 1));
 	    break;
 	}
