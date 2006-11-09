@@ -737,6 +737,16 @@ proc StyleEditor::StyleToCanvas {{scroll 0}} {
     }
     if {$match ne ""} {
 	set I $match
+
+	foreach state [$Tdemo item state get $I] {
+	    if {[lsearch -exact [$Tdemo state names] $state] != -1} {
+		$T item state set root $state
+	    }
+	}
+	foreach state [$Tdemo item state forcolumn $I $C] {
+	    $T item state set root $state
+	}
+
 	foreach E [$Tdemo item style elements $I $C] {
 	    foreach list [$Tdemo item element configure $I $C $E] {
 		foreach {name x y default current} $list {}
