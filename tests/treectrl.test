@@ -762,6 +762,79 @@ test treectrl-17.5 {columnproxy} -body {
     .t cget -columnproxy
 } -result {100}
 
+test treectrl-18.1 {-defaultstyle: setup} -body {
+    .t column delete all
+    .t column create -tags a
+    .t column create -tags b
+    .t column create -tags c
+    .t column create -tags d
+
+    .t item delete all
+
+    .t style create a
+    .t style create b
+    .t style create c
+    .t style create d
+} -result {d}
+
+test treectrl-18.2 {-defaultstyle: set} -constraints {
+    deprecated
+} -body {
+    .t configure -defaultstyle {a b c d}
+    .t cget -defaultstyle
+} -result {a b c d}
+
+test treectrl-18.3 {-defaultstyle: new items get default styles} -constraints {
+    deprecated
+} -body {
+    set I [.t item create]
+    .t item style set $I
+} -result {a b c d}
+
+test treectrl-18.4 {-defaultstyle: moving column updates -defaultstyle} -constraints {
+    deprecated
+} -body {
+    .t column move "tag a" "tag c"
+    .t cget -defaultstyle
+} -result {b a c d}
+
+test treectrl-18.5 {-defaultstyle: moving column updates -defaultstyle} -constraints {
+    deprecated
+} -body {
+    .t column move "tag a" tail
+    .t cget -defaultstyle
+} -result {b c d a}
+
+test treectrl-18.6 {-defaultstyle: moving column updates -defaultstyle} -constraints {
+    deprecated
+} -body {
+    .t column move "tag a" "tag b"
+    .t cget -defaultstyle
+} -result {a b c d}
+
+test treectrl-18.7 {-defaultstyle: moving column updates -defaultstyle} -constraints {
+    deprecated
+} -body {
+    .t column create -tags e
+    .t column move "tag e" "tag d"
+    .t cget -defaultstyle
+} -result {a b c {} d}
+
+test treectrl-18.8 {-defaultstyle: moving column updates -defaultstyle} -constraints {
+    deprecated
+} -body {
+    .t column create -tags f
+    .t column move "tag c" tail
+    .t cget -defaultstyle
+} -result {a b {} d {} c}
+
+test treectrl-18.9 {-defaultstyle: deleting column does not update -defaultstyle} -constraints {
+    deprecated
+} -body {
+    .t column delete "tag e"
+    .t cget -defaultstyle
+} -result {a b {} d {} c}
+
 # cleanup
 image delete emptyImg
 ::tcltest::cleanupTests
