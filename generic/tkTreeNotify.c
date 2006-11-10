@@ -9,12 +9,7 @@
  */
 
 #include "tkTreeCtrl.h"
-
-/* tkMacOSXPort.h should include this, I think, like the other platform
- * tk*Port.h files. Needed for TclFormatInt() */
-#if defined(MAC_OSX_TK)
-#include "tclInt.h"
-#endif
+#include "tclInt.h" /* TclFormatInt */
 
 static int EVENT_EXPAND,
     DETAIL_EXPAND_BEFORE,
