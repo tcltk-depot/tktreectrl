@@ -584,7 +584,7 @@ static int TreeWidgetCmd(
 		goto error;
 	    }
 	    if (Tcl_GetIntFromObj(interp, objv[2], &x) != TCL_OK)
-		return TCL_ERROR;
+		goto error;
 	    Tcl_SetObjResult(interp, Tcl_NewIntObj(x + tree->xOrigin));
 	    break;
 	}
@@ -598,7 +598,7 @@ static int TreeWidgetCmd(
 		goto error;
 	    }
 	    if (Tcl_GetIntFromObj(interp, objv[2], &y) != TCL_OK)
-		return TCL_ERROR;
+		goto error;
 	    Tcl_SetObjResult(interp, Tcl_NewIntObj(y + tree->yOrigin));
 	    break;
 	}
