@@ -4851,7 +4851,7 @@ TreeElementCmd(
 	    ElementArgs args;
 
 	    if (objc != 6) {
-		Tcl_WrongNumArgs(tree->interp, 4, objv,
+		Tcl_WrongNumArgs(tree->interp, 3, objv,
 		    "element option stateList");
 		return TCL_ERROR;
 	    }
