@@ -406,10 +406,21 @@ extern int Tree_StateFromListObj(TreeCtrl *tree, Tcl_Obj *obj, int states[3], in
 #define Tree_BorderBottom(tree) \
     (Tk_Height(tree->tkwin) - tree->inset)
 
+#define Tree_HeaderLeft(tree) \
+    Tree_BorderLeft(tree)
+#define Tree_HeaderTop(tree) \
+    Tree_BorderTop(tree)
+#define Tree_HeaderRight(tree) \
+    Tree_BorderRight(tree)
+#define Tree_HeaderBottom(tree) \
+    (Tree_BorderTop(tree) + Tree_HeaderHeight(tree))
+#define Tree_HeaderWidth(tree) \
+    (Tree_HeaderRight(tree) - Tree_HeaderLeft(tree))
+
 #define Tree_ContentLeft(tree) \
     (Tree_BorderLeft(tree) + Tree_WidthOfLeftColumns(tree))
 #define Tree_ContentTop(tree) \
-    (tree->inset + Tree_HeaderHeight(tree))
+    (Tree_BorderTop(tree) + Tree_HeaderHeight(tree))
 #define Tree_ContentRight(tree) \
     (Tree_BorderRight(tree) - Tree_WidthOfRightColumns(tree))
 #define Tree_ContentBottom(tree) \
