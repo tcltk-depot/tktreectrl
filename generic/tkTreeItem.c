@@ -4407,7 +4407,7 @@ SpanWalkProc_UpdateWindowPositions(
     TreeStyle_UpdateWindowPositions(drawArgs);
 
     /* Stop walking if we went past the right edge of the display area. */
-    return drawArgs->x + drawArgs->width >= drawArgs->bounds[3];
+    return drawArgs->x + drawArgs->width >= drawArgs->bounds[2];
 }
 
 /*
@@ -8370,7 +8370,7 @@ SpanWalkProc_Identify2(
 		subListObj);
     }
     Tcl_ListObjAppendElement(tree->interp, data->listObj, subListObj);
-    return 0;
+    return drawArgs->x + drawArgs->width >= data->x2;
 }
 
 /*
