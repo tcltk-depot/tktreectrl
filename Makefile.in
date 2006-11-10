@@ -235,7 +235,7 @@ demo: binaries libraries
 	@$(WISH) `@CYGPATH@ $(srcdir)/demos/demo.tcl` | cat
 
 gdb:
-	$(TCLSH_ENV) gdb $(WISH_PROG) $(SCRIPT)
+	$(TCLSH_ENV) gdb --args $(WISH_PROG) $(srcdir)/demos/demo.tcl
 
 depend:
 
