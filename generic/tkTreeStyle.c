@@ -4809,11 +4809,6 @@ TreeElementCmd(
 	    Element *elem;
 	    int i;
 
-	    if (objc < 3)
-	    {
-		Tcl_WrongNumArgs(interp, 3, objv, "?name ...?");
-		return TCL_ERROR;
-	    }
 	    for (i = 3; i < objc; i++)
 	    {
 		if (Element_FromObj(tree, objv[i], &elem) != TCL_OK)
@@ -4831,6 +4826,11 @@ TreeElementCmd(
 	    Tcl_HashEntry *hPtr;
 	    Element *elem;
 
+	    if (objc != 3)
+	    {
+		Tcl_WrongNumArgs(interp, 3, objv, NULL);
+		return TCL_ERROR;
+	    }
 	    listObj = Tcl_NewListObj(0, NULL);
 	    hPtr = Tcl_FirstHashEntry(&tree->elementHash, &search);
 	    while (hPtr != NULL)
