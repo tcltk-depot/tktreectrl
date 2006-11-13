@@ -4724,7 +4724,10 @@ Tree_DrawHeader(
 	column = tree->columnTail;
 	width = maxX - x + column->borderWidth;
 	height = tree->headerHeight;
-	if (tree->useTheme &&
+	if (!column->visible) {
+	    Tk_Fill3DRectangle(tkwin, pixmap, tree->border,
+		    x, y, width, height, 0, TK_RELIEF_FLAT);
+	} else if (tree->useTheme &&
 	    (TreeTheme_DrawHeaderItem(tree, pixmap, 0, 0, x, y, width, height) == TCL_OK)) {
 	} else {
 	    Tk_3DBorder border;
