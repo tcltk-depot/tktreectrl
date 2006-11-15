@@ -7178,6 +7178,8 @@ TreeItemCmd(
 	    Tcl_Obj *listObj;
 	    TreeItem parent = item->parent;
 
+	    if (parent == NULL)
+		break; /* empty list */
 	    listObj = Tcl_NewListObj(0, NULL);
 	    while (parent != NULL) {
 		Tcl_ListObjAppendElement(interp, listObj,
