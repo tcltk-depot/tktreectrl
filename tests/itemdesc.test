@@ -35,6 +35,10 @@ test itemdesc-1.1 {bogus itemdesc} -body {
     .t item id ""
 } -returnCodes error -result {bad item description ""}
 
+test itemdesc-1.1.1 {bogus itemdesc} -body {
+    .t item id "\{all"
+} -returnCodes error -result "bad item description \"\{all\""
+
 test itemdesc-1.2 {all} -setup {
     .t item create -count 10
 } -body {
