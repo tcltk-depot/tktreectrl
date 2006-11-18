@@ -2,7 +2,7 @@
 
 # RCS: @(#) $Id$
 
-set VERSION 2.1.1
+set VERSION 2.2
 
 package require Tk 8.4
 
@@ -680,7 +680,7 @@ proc TreePlusScrollbarsInAFrame {f h v} {
     }
     treectrl $f.t -highlightthickness 0 -borderwidth 0 -font $font
     $f.t configure -xscrollincrement 20
-    $f.t configure -itemprefix item# -columnprefix column#
+#    $f.t configure -itemprefix item# -columnprefix column#
     $f.t debug configure -enable no -display yes -erasecolor pink \
 	-drawcolor orange -displaydelay 30 -textlayout 0 -data 0
     if {$h} {
