@@ -177,7 +177,7 @@ proc RandomButton1 {T x y} {
 
 	# Click in item
 	} else {
-		foreach {where item arg1 arg2 arg3 arg4} $id {}
+		lassign $id where item arg1 arg2 arg3 arg4
 		switch $arg1 {
 			button {
 				$T item toggle $item
