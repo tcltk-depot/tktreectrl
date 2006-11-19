@@ -196,6 +196,13 @@ namespace eval ::TreeCtrl {
     array set Priv {
 	prev {}
     }
+
+    if {[info procs ::lassign] eq ""} {
+	proc lassign {values args} {
+	    uplevel 1 [list foreach $args [linsert $values end {}] break]
+	    lrange $values [llength $args] end
+	}
+    }
 }
 
 # Retrieve filelist bindings from this dir
@@ -433,7 +440,7 @@ proc ::TreeCtrl::ButtonPress1 {w x y} {
     }
 
     if {[lindex $id 0] eq "item"} {
-	foreach {where item arg1 arg2} $id {}
+	lassign $id where item arg1 arg2
 	if {$arg1 eq "button"} {
 	    $w item toggle $item
 	    return
@@ -503,7 +510,7 @@ proc ::TreeCtrl::DoubleButton1 {w x y} {
 	return
     }
     if {[lindex $id 0] eq "item"} {
-	foreach {where item arg1 arg2} $id {}
+	lassign $id where item arg1 arg2
 	if {$arg1 eq "button"} {
 	    $w item toggle $item
 	    return

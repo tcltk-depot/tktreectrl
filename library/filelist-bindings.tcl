@@ -88,7 +88,7 @@ proc ::TreeCtrl::IsSensitive {T x y} {
     if {[lindex $id 0] ne "item" || [llength $id] != 6} {
 	return 0
     }
-    foreach {where item arg1 arg2 arg3 arg4} $id {}
+    lassign $id where item arg1 arg2 arg3 arg4
     if {![$T item enabled $item]} {
 	return 0
     }
@@ -126,7 +126,7 @@ proc ::TreeCtrl::FileListButton1 {T x y} {
 
     # Click in item
     } else {
-	foreach {where item arg1 arg2 arg3 arg4} $id {}
+	lassign $id where item arg1 arg2 arg3 arg4
 	switch $arg1 {
 	    button -
 	    line {
