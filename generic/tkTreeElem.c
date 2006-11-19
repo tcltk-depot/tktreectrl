@@ -402,17 +402,11 @@ static void StringTableRestore(
 
 int BooleanCO_Init(Tk_OptionSpec *optionTable, CONST char *optionName)
 {
-    int i;
+    Tk_OptionSpec *specPtr;
 
-    for (i = 0; optionTable[i].type != TK_OPTION_END; i++) {
-	if (!strcmp(optionTable[i].optionName, optionName)) {
-
-	    /* Update the option table */
-	    optionTable[i].clientData = (ClientData) &booleanCO;
-	    return TCL_OK;
-	}
-    }
-    return TCL_ERROR;
+    specPtr = OptionSpec_Find(optionTable, optionName);
+    specPtr->clientData = &booleanCO;
+    return TCL_OK;
 }
 
 Tk_ObjCustomOption *
@@ -456,26 +450,17 @@ IntegerCO_Init(
     int flags
     )
 {
-    Tk_ObjCustomOption *co;
-    int i;
+    Tk_OptionSpec *specPtr;
 
-    for (i = 0; optionTable[i].type != TK_OPTION_END; i++) {
-	if (!strcmp(optionTable[i].optionName, optionName)) {
+    specPtr = OptionSpec_Find(optionTable, optionName);
+    if (specPtr->type != TK_OPTION_CUSTOM)
+	panic("IntegerCO_Init: %s is not TK_OPTION_CUSTOM", optionName);
+    if (specPtr->clientData != NULL)
+	return TCL_OK;
 
-	    if (optionTable[i].type != TK_OPTION_CUSTOM)
-		panic("IntegerCO_Init: %s is not TK_OPTION_CUSTOM", optionName);
+    specPtr->clientData = IntegerCO_Alloc(optionName, min, max, empty, flags);
 
-	    if (optionTable[i].clientData != NULL)
-		return TCL_OK;
-
-	    co = IntegerCO_Alloc(optionName, min, max, empty, flags);
-
-	    /* Update the option table */
-	    optionTable[i].clientData = (ClientData) co;
-	    return TCL_OK;
-	}
-    }
-    return TCL_ERROR;
+    return TCL_OK;
 }
 
 Tk_ObjCustomOption *
@@ -506,23 +491,17 @@ StringTableCO_Alloc(
 
 int StringTableCO_Init(Tk_OptionSpec *optionTable, CONST char *optionName, CONST char **tablePtr)
 {
-    Tk_ObjCustomOption *co;
-    int i;
+    Tk_OptionSpec *specPtr;
 
-    for (i = 0; optionTable[i].type != TK_OPTION_END; i++) {
-	if (!strcmp(optionTable[i].optionName, optionName)) {
+    specPtr = OptionSpec_Find(optionTable, optionName);
+    if (specPtr->type != TK_OPTION_CUSTOM)
+	panic("StringTableCO_Init: %s is not TK_OPTION_CUSTOM", optionName);
+    if (specPtr->clientData != NULL)
+	return TCL_OK;
 
-	    if (optionTable[i].clientData != NULL)
-		return TCL_OK;
+    specPtr->clientData = StringTableCO_Alloc(optionName, tablePtr);
 
-	    co = StringTableCO_Alloc(optionName, tablePtr);
-
-	    /* Update the option table */
-	    optionTable[i].clientData = (ClientData) co;
-	    return TCL_OK;
-	}
-    }
-    return TCL_ERROR;
+    return TCL_OK;
 }
 
 /*****/
