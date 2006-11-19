@@ -5139,7 +5139,7 @@ DebugDrawBorder(
 	    XFillRectangle(tree->display, Tk_WindowId(tkwin),
 		    tree->debug.gcDraw,
 		    inset, Tk_Height(tkwin) - inset - bottom,
-		    Tk_Width(tkwin), bottom);
+		    Tk_Width(tkwin) - inset * 2, bottom);
 	}
 	DisplayDelay(tree);
     }
