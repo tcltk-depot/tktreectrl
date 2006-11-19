@@ -181,10 +181,9 @@ proc DemoMailWasher {} {
 		if {$id eq ""} {
 		} elseif {[lindex $id 0] eq "header"} {
 		} else {
-			foreach {what item where arg1 arg2 arg3} $id {}
+			lassign $id what item where arg1 arg2 arg3
 			if {$where eq "column"} {
-				set tag [%W column cget $arg1 -tags]
-				if {$tag eq "delete" || $tag eq "bounce"} {
+				if {[%W column tag expr $arg1 {delete || bounce}]} {
 					%W item state forcolumn $item $arg1 ~CHECK
 #					return -code break
 				}
