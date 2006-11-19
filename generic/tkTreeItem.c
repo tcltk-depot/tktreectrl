@@ -6491,6 +6491,48 @@ ItemSortCmd(
 /*
  *----------------------------------------------------------------------
  *
+ * TreeItemList_Sort --
+ *
+ *	Sorts a list of items.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TILSCompare(
+    CONST VOID *first_,
+    CONST VOID *second_
+    )
+{
+    TreeItem first = *(TreeItem *) first_;
+    TreeItem second = *(TreeItem *) second_;
+
+    return first->index - second->index;
+}
+
+void
+TreeItemList_Sort(
+    TreeItemList *items
+    )
+{
+    Tree_UpdateItemIndex(items->tree);
+
+    /* TkTable uses this, but mentions possible lack of thread-safety. */
+    qsort((VOID *) TreeItemList_Items(items),
+	    (size_t) TreeItemList_Count(items),
+	    sizeof(TreeItem),
+	    TILSCompare);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * ItemStateCmd --
  *
  *	This procedure is invoked to process the [item state] widget

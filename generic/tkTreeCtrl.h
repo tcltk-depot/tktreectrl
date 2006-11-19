@@ -950,6 +950,7 @@ extern void TreePtrList_Free(TreePtrList *tilPtr);
 #define TreeItemList_Items(L) ((TreeItem *) (L)->pointers)
 #define TreeItemList_Nth(L,n) ((TreeItem) (L)->pointers[n])
 #define TreeItemList_Count(L) ((L)->count)
+extern void TreeItemList_Sort(TreeItemList *items);
 
 #define TreeColumnList_Init TreePtrList_Init
 #define TreeColumnList_Append TreePtrList_Append
