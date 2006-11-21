@@ -417,6 +417,23 @@ and switches on the state [const active] for this item.
 From now on the item can be retrieved with the item description [const active].
 An [const <ActiveItem>] event is generated.
 
+[call [arg pathName] [cmd bbox] [opt [arg area]]]
+Returns a list with four elements giving the bounding box (left, top, right
+and bottom) of an area of the window. If [arg area] is not specified, then
+the result is the bounding box of the entire window.
+If [arg area] is [const content], then the result is the part of the window
+not including borders, headers, or locked columns.
+If [arg area] is [const header], then the result is the part of the window
+not including borders where column titles are displayed.
+If [arg area] is [const left], then the result is the part of the window
+not including borders or headers where left-locked columns are displayed.
+If [arg area] is [const right], then the result is the part of the window
+not including borders or headers where right-locked columns are displayed.
+An empty string is returned if the display area has
+no height or width, which can be true for various reasons such as the window
+is too small, or the header is not displayed, or there aren't any locked
+columns.
+
 [call [arg pathName] [cmd canvasx] [arg screenx]]
 Given a window x-coordinate in the treectrl [arg screenx],
 this command returns the treectrl x-coordinate
