@@ -21,7 +21,7 @@ struct Column {
     int cstate;		/* STATE_xxx flags manipulated with the
 			 * [item state forcolumn] command */
     int span;		/* Number of tree-columns this column covers */
-    TreeStyle style;
+    TreeStyle style;	/* Instance style. */
     Column *next;	/* Column to the right of this one */
 };
 

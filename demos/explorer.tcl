@@ -59,6 +59,7 @@ proc DemoExplorerAux {scriptDir scriptFile} {
 
 	set ::TreeCtrl::Priv(DirCnt,$T) [llength $globDirs]
 
+	# Double-clicking a directory displays its contents.
 	set Explorer(scriptDir) $scriptDir
 	set Explorer(scriptFile) $scriptFile
 	bind DemoExplorer <Double-ButtonPress-1> {
