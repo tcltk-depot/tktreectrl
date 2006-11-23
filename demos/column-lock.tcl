@@ -316,3 +316,9 @@ proc ColumnLockUpdateSelection {w} {
     }
     return
 }
+
+proc ColumnLockAddText {} {
+    set w .f2.f1.t
+    $w style elements cell {cell.bd label1.text cell.selN cell.selS cell.selW cell.selE}
+    $w item text visible all abc
+}
