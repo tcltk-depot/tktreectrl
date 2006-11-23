@@ -4,7 +4,7 @@ proc DemoColumnLock {} {
 
     global ColumnLock
 
-    set T .f2.f1.t
+    set T [DemoList]
 
     InitPics *checked
 
@@ -318,7 +318,7 @@ proc ColumnLockUpdateSelection {w} {
 }
 
 proc ColumnLockAddText {} {
-    set w .f2.f1.t
+    set w [DemoList]
     $w style elements cell {cell.bd label1.text cell.selN cell.selS cell.selW cell.selE}
-    $w item text visible all abc
+    $w item text visible {lock none} abc
 }

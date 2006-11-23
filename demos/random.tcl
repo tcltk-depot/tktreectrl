@@ -8,7 +8,7 @@ set RandomDepth 5
 #
 proc DemoRandom {} {
 
-	set T .f2.f1.t
+	set T [DemoList]
 
 	InitPics folder-* small-*
 
@@ -398,7 +398,7 @@ proc RandomDrop {T target source pos} {
 #
 proc DemoRandom2 {} {
 
-	set T .f2.f1.t
+	set T [DemoList]
 
 	DemoRandom
 

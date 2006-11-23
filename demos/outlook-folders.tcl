@@ -7,7 +7,7 @@ proc DemoOutlookFolders {} {
 
 	InitPics outlook-*
 
-	set T .f2.f1.t
+	set T [DemoList]
 
 	set height [font metrics [$T cget -font] -linespace]
 	if {$height < 18} {

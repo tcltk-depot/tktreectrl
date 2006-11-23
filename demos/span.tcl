@@ -5,7 +5,7 @@
 #
 proc DemoSpan {} {
 
-    set T .f2.f1.t
+    set T [DemoList]
 
     #
     # Configure the treectrl widget

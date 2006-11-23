@@ -9,7 +9,7 @@ proc DemoOutlookNewsgroup {} {
 
 	InitPics outlook-*
 
-	set T .f2.f1.t
+	set T [DemoList]
 
 	set height [font metrics [$T cget -font] -linespace]
 	if {$height < 18} {
@@ -180,7 +180,7 @@ proc MessageReadDelayed {} {
 
 	global Message
 
-	set T .f2.f1.t
+	set T [DemoList]
 
 	unset Message(afterId)
 	set I $Message(afterId,item)
@@ -211,7 +211,7 @@ proc DemoOutlookNewsgroup_2 {} {
 
 	InitPics outlook-*
 
-	set T .f2.f1.t
+	set T [DemoList]
 
 	set height [font metrics [$T cget -font] -linespace]
 	if {$height < 18} {
