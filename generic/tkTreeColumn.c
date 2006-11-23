@@ -2977,6 +2977,9 @@ TreeColumn_NeededWidth(
     int arrow = column->arrow;
 #endif
 
+    if (!tree->showHeader)
+	return 0;
+
     if (column->neededWidth >= 0)
 	return column->neededWidth;
 
