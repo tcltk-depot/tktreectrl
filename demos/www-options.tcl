@@ -24,7 +24,7 @@ proc DemoInternetOptions {} {
 	# Create columns
 	#
 
-	$T column create -text "Internet Options" -tag C0
+	$T column create -text "Internet Options" -tags C0
 
 	$T configure -treecolumn C0
 
