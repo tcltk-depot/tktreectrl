@@ -342,15 +342,15 @@ test column-4.2 {column configure: -tags} -body {
 
 test column-4.3 {column cget: -tags of tail} -body {
     .t column cget tail -tags
-} -result {tail}
+} -result {}
 
 test column-4.4 {column configure/cget: -tags of tail} -body {
     .t column configure tail -tags head
-} -returnCodes error -result {can't change tag of tail column}
+} -result {}
 
 test column-4.5 {column cget: specify tail by its tag} -body {
     .t column cget head -tags
-} -returnCodes error -result {column "head" doesn't exist}
+} -result {head}
 
 test column-5.1 {column delete: missing args} -body {
     .t column delete
