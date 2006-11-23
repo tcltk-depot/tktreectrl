@@ -3746,19 +3746,26 @@ static void DisplayProcWindow(ElementArgs *args)
 	args->display.width, args->display.height,
 	TRUE, TRUE,
 	&x, &y, &width, &height);
+
     x += tree->drawableXOrigin - tree->xOrigin;
     y += tree->drawableYOrigin - tree->yOrigin;
+
+    /* -squeeze layout may give the element less space than requested. */
+    if (width > args->display.width)
+	width = args->display.width;
+    if (height > args->display.height)
+	height = args->display.height;
+
+    minX = args->display.bounds[0];
+    minY = args->display.bounds[1];
+    maxX = args->display.bounds[2];
+    maxY = args->display.bounds[3];
 
     /*
      * If the window is completely out of the visible area of the treectrl
      * then unmap it.  The window could suddenly reappear if the treectrl
      * window gets resized.
      */
-
-    minX = args->display.bounds[0];
-    minY = args->display.bounds[1];
-    maxX = args->display.bounds[2];
-    maxY = args->display.bounds[3];
 
     if (((x + width) <= minX) || ((y + height) <= minY)
 	    || (x >= maxX) || (y >= maxY)) {
