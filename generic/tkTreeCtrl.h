@@ -764,6 +764,8 @@ extern void Tree_FreeItemDInfo(TreeCtrl *tree, TreeItem item1, TreeItem item2);
 extern void Tree_InvalidateItemDInfo(TreeCtrl *tree, TreeColumn column, TreeItem item1, TreeItem item2);
 extern void TreeDisplay_ItemDeleted(TreeCtrl *tree, TreeItem item);
 extern void TreeDisplay_ColumnDeleted(TreeCtrl *tree, TreeColumn column);
+extern void TreeDisplay_GetReadyForTrouble(TreeCtrl *tree, int *requestsPtr);
+extern int TreeDisplay_WasThereTrouble(TreeCtrl *tree, int requests);
 extern void Tree_InvalidateArea(TreeCtrl *tree, int x1, int y1, int x2, int y2);
 extern void Tree_InvalidateItemArea(TreeCtrl *tree, int x1, int y1, int x2, int y2);
 extern void Tree_InvalidateRegion(TreeCtrl *tree, TkRegion region);

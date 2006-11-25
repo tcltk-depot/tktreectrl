@@ -4404,14 +4404,20 @@ SpanWalkProc_UpdateWindowPositions(
     )
 {
     StyleDrawArgs drawArgsCopy;
+    int requests;
 
     if ((drawArgs->x >= drawArgs->bounds[2]) ||
 	    (drawArgs->x + drawArgs->width <= drawArgs->bounds[0]) ||
 	    (drawArgs->style == NULL))
 	return 0;
 
+    TreeDisplay_GetReadyForTrouble(tree, &requests);
+
     drawArgsCopy = *drawArgs; 
     TreeStyle_UpdateWindowPositions(&drawArgsCopy);
+
+    if (TreeDisplay_WasThereTrouble(tree, requests))
+	return 1;
 
     /* Stop walking if we went past the right edge of the display area. */
     return drawArgs->x + drawArgs->width >= drawArgs->bounds[2];
