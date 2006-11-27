@@ -2244,9 +2244,15 @@ Column_Config(
     if (mask & COLU_CONF_JUSTIFY)
 	Tree_DInfoChanged(tree, DINFO_INVALIDATE | DINFO_OUT_OF_DATE);
 
-    /* -stepwidth and  -widthHack */
+    /* -stepwidth and -widthhack */
     if (mask & COLU_CONF_RANGES)
 	Tree_DInfoChanged(tree, DINFO_REDO_RANGES);
+
+    /* If one column becomes visible and another of equal width becomes
+     * hidden, and the two columns swap places with each other, then 
+     * display ranges are unaffected but items must be redrawn. */
+    if (visible != column->visible)
+	Tree_DInfoChanged(tree, DINFO_INVALIDATE | DINFO_OUT_OF_DATE);
 
     /* Redraw everything */
     if (mask & (COLU_CONF_TWIDTH | COLU_CONF_NWIDTH | COLU_CONF_NHEIGHT)) {
