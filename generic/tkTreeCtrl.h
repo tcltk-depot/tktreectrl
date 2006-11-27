@@ -162,7 +162,7 @@ struct TreeCtrl
     Tcl_Obj *yScrollDelay;	/* -yscrolldelay: used by scripts */
     int xScrollIncrement;	/* -xscrollincrement */
     int yScrollIncrement;	/* -yscrollincrement */
-    Tcl_Obj *scrollMargin;		/* -scrollmargin: used by scripts */
+    Tcl_Obj *scrollMargin;	/* -scrollmargin: used by scripts */
     char *takeFocus;		/* -takfocus */
     Tcl_Obj *fontObj;		/* -font */
     Tk_Font tkfont;		/* -font */
