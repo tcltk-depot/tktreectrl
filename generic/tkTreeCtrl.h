@@ -487,7 +487,7 @@ extern int TreeItem_ChangeState(TreeCtrl *tree, TreeItem item_, int stateOff, in
 
 extern void TreeItem_UndefineState(TreeCtrl *tree, TreeItem item_, int state);
 
-extern int TreeItem_GetButton(TreeCtrl *tree, TreeItem item_);
+extern int TreeItem_HasButton(TreeCtrl *tree, TreeItem item_);
 extern int TreeItem_GetDepth(TreeCtrl *tree, TreeItem item_);
 extern int TreeItem_GetID(TreeCtrl *tree, TreeItem item_);
 extern int TreeItem_SetID(TreeCtrl *tree, TreeItem item_, int id);
@@ -1053,6 +1053,8 @@ extern int DynamicCO_Init(Tk_OptionSpec *optionTable, CONST char *optionName,
 
 extern int BooleanFlagCO_Init(Tk_OptionSpec *optionTable, CONST char *optionName,
     int theFlag);
+extern int ItemButtonCO_Init(Tk_OptionSpec *optionTable, CONST char *optionName,
+    int flag1, int flag2);
 
 extern Tk_ObjCustomOption pixelsCO;
 extern Tk_ObjCustomOption stringCO;

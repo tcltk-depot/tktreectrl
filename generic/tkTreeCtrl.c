@@ -914,10 +914,9 @@ static int TreeWidgetCmd(
 		    (x < tree->columnTreeLeft + depth * tree->useIndent)) {
 		int column = (x - tree->columnTreeLeft) / tree->useIndent + 1;
 		if (column == depth) {
-		    if (tree->showButtons && TreeItem_GetButton(tree, item))
+		    if (TreeItem_HasButton(tree, item))
 			sprintf(buf + strlen(buf), " button");
-		}
-		else if (tree->showLines) {
+		} else if (tree->showLines) {
 		    TreeItem sibling;
 		    do {
 			item = TreeItem_GetParent(tree, item);
