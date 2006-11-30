@@ -86,16 +86,14 @@ proc DemoRandom {} {
     #
 
     set clicks [clock clicks]
-    set items [$T item create -count [expr {$::RandomN - 1}]]
+    $T item configure root -button auto
+    set items [$T item create -count [expr {$::RandomN - 1}] -button auto]
     set added root
     foreach itemi $items {
 	set j [expr {int(rand() * [llength $added])}]
 	set itemj [lindex $added $j]
 	if {[$T depth $itemj] < $::RandomDepth - 1} {
 	    lappend added $itemi
-	}
-	if {![$T item cget $itemj -button]} {
-	    $T item configure $itemj -button yes
 	}
 	if {rand() * 2 > 1} {
 	    $T item collapse $itemi
@@ -376,7 +374,6 @@ proc RandomDrop {T target source pos} {
     foreach item $parentList {
 	set numChildren [$T item numchildren $item]
 	if {$numChildren == 0} {
-	    $T item configure $item -button no
 	    $T item style map $item colItem styFile {elemTxtName elemTxtName}
 	} else {
 	    $T item element configure $item colItem elemTxtCount -text "($numChildren)"
@@ -385,7 +382,6 @@ proc RandomDrop {T target source pos} {
 
     # Update the target that gained some children
     if {[$T item style set $parent colItem] ne "styFolder"} {
-	$T item configure $parent -button yes
 	$T item style map $parent colItem styFolder {elemTxtName elemTxtName}
     }
     set numChildren [$T item numchildren $parent]
