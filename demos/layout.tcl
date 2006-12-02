@@ -18,7 +18,7 @@ proc DemoLayout {} {
     # Create columns
     #
 
-    $T column create -text Layout -tags C0
+    $T column create -text Layout -itemjustify left -justify center -tags C0
     $T configure -treecolumn C0
 
     #

@@ -22,7 +22,8 @@ proc DemoSpan {} {
     #
 
     for {set i 0} {$i < 100} {incr i} {
-	$T column create -text "$i" -tags C$i -width 40
+	$T column create -itemjustify left -justify center -text "$i" \
+	    -width 40 -tags C$i
     }
 
     #
