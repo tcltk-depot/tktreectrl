@@ -301,7 +301,7 @@ TreeMarqueeCmd(
     Tcl_Obj *CONST objv[]	/* Argument values. */
     )
 {
-    TreeCtrl *tree = (TreeCtrl *) clientData;
+    TreeCtrl *tree = clientData;
     TreeMarquee marquee = tree->marquee;
     static CONST char *commandNames[] = { "anchor", "cget", "configure",
 	"coords", "corner", "identify", (char *) NULL };

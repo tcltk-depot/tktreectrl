@@ -445,7 +445,7 @@ TreeNotifyCmd(
     Tcl_Obj *CONST objv[]	/* Argument values. */
     )
 {
-    TreeCtrl *tree = (TreeCtrl *) clientData;
+    TreeCtrl *tree = clientData;
     static CONST char *commandName[] = { "bind", "configure", "detailnames",
 	"eventnames", "generate", "install", "linkage", "unbind", "uninstall",
 	(char *) NULL };
