@@ -354,8 +354,8 @@ test treectrl-5.20 {state define: strange state name} -body {
 } -returnCodes error -result {invalid state name ""}
 
 test treectrl-7.0 {some prerequisites for the marquee test} -body {
-    .t element create eImage image -width 202
-    .t element create eRect rect -width 10c
+    .t element create eImage image -width 202 -height 18m
+    .t element create eRect rect -width 10c -height 18m
     .t style create testStyle2
     .t style elements testStyle2 {eImage eRect}
     .t item style set 2

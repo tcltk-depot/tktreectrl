@@ -45,9 +45,9 @@ test column-1.4 {configure: no column exists with tag} -body {
 } -returnCodes error -result {column "column0" doesn't exist}
 
 test column-1.5 {configure: create and fill a column} -body {
-	.t column create
+    .t column create
     .t column configure 0 -tags column0
-    .t element create e rect -width 482
+    .t element create e rect -width 482 -height 20
     .t style create s
     .t style elements s e
     set i [.t item create]
