@@ -39,6 +39,7 @@
 
 typedef struct TreeCtrl TreeCtrl;
 typedef struct TreeColumn_ *TreeColumn;
+typedef struct TreeColumnDInfo_ *TreeColumnDInfo;
 typedef struct TreeDInfo_ *TreeDInfo;
 typedef struct TreeDragImage_ *TreeDragImage;
 typedef struct TreeItem_ *TreeItem;
@@ -702,6 +703,8 @@ extern int Tree_WidthOfColumns(TreeCtrl *tree);
 extern int Tree_WidthOfLeftColumns(TreeCtrl *tree);
 extern int Tree_WidthOfRightColumns(TreeCtrl *tree);
 extern void TreeColumn_TreeChanged(TreeCtrl *tree, int flagT);
+extern void TreeColumn_SetDInfo(TreeColumn column, TreeColumnDInfo dInfo);
+extern TreeColumnDInfo TreeColumn_GetDInfo(TreeColumn column);
 
 /* tkTreeDrag.c */
 extern int TreeDragImage_Init(TreeCtrl *tree);
