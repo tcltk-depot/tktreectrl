@@ -868,7 +868,9 @@ test item-17.33 {item sort -command: always returning 1 is identity?} -body {
     .t item sort root -command {myCompare 1}
 } -returnCodes error -result {buggy item sort -command detected}
 
-test item-17.34 {item sort -command: always returning -1 reverts?} -body {
+test item-17.34 {item sort -command: always returning -1 reverts?} -constraints {
+    knownBug
+} -body {
     .t item sort root -command {myCompare -1}
 } -returnCodes error -result {buggy item sort -command detected}
 
