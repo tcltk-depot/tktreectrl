@@ -5068,7 +5068,7 @@ DynamicOption_Find(
  *----------------------------------------------------------------------
  */
 
-char *
+void *
 DynamicOption_FindData(
     DynamicOption *first,	/* Head of linked list. */
     int id			/* Unique id. */
