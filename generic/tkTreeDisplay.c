@@ -2698,7 +2698,7 @@ GetOnScreenColumnsForItemAux(
 	    if (dItem->spans[columnIndex] != columnIndex)
 		goto next;
 	    /* Calculate the width of the span. */
-	    for (i = columnIndex + 1; columnIndex < tree->columnCount &&
+	    for (i = columnIndex + 1; i < tree->columnCount &&
 		    dItem->spans[i] == columnIndex; i++) {
 		width += TreeColumn_GetDInfo(column2)->width;
 		column2 = TreeColumn_Next(column2);
