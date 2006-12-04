@@ -1523,7 +1523,9 @@ badWrap:
     if (mask & TREE_CONF_BORDERS) {
 	if (tree->highlightWidth < 0)
 	    tree->highlightWidth = 0;
-	if (TreeTheme_SetBorders(tree) != TCL_OK) {
+	if (tree->useTheme && TreeTheme_SetBorders(tree) == TCL_OK) {
+	    /* nothing */
+	} else {
 	    tree->inset.left = tree->inset.top =
 	    tree->inset.right = tree->inset.bottom =
 		    tree->highlightWidth + tree->borderWidth;
