@@ -2350,6 +2350,7 @@ Column_Free(
 	Tk_FreeImage(column->image);
     if (column->textLayout != NULL)
 	TextLayout_Free(column->textLayout);
+    TreeDisplay_FreeColumnDInfo(tree, column);
     Tk_FreeConfigOptions((char *) column, column->optionTable, tree->tkwin);
     WFREE(column, TreeColumn_);
     tree->columnCount--;
