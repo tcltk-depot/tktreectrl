@@ -5783,7 +5783,9 @@ displayRetry:
 	dInfo->flags |= DINFO_DRAW_HIGHLIGHT | DINFO_DRAW_BORDER;
 
     if (dInfo->flags & (DINFO_DRAW_BORDER | DINFO_DRAW_HIGHLIGHT)) {
-	if (TreeTheme_DrawBorders(tree, drawable) != TCL_OK) {
+	if (tree->useTheme && TreeTheme_DrawBorders(tree, drawable) == TCL_OK) {
+	    /* nothing */
+	} else {
 
 	    /* Draw focus rectangle (outside of 3D-border) */
 	    if ((dInfo->flags & DINFO_DRAW_HIGHLIGHT) &&
@@ -6461,8 +6463,10 @@ Tree_RelayoutWindow(
 	dInfo->pixmap = None;
     }
 
-    TreeTheme_Relayout(tree);
-    TreeTheme_SetBorders(tree);
+    if (tree->useTheme) {
+	TreeTheme_Relayout(tree);
+	TreeTheme_SetBorders(tree);
+    }
 
     Tree_EventuallyRedraw(tree);
 }
