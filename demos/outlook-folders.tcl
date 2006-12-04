@@ -36,7 +36,7 @@ proc DemoOutlookFolders {} {
     $T element create elemTxtRead text -fill [list $::SystemHighlightText {selected focus}] \
 	-lines 1
     $T element create elemTxtUnread text -fill [list $::SystemHighlightText {selected focus}] \
-	-font [list "[$T cget -font] bold"] -lines 1
+	-font [list DemoFontBold] -lines 1
     $T element create elemTxtCount text -fill blue
     $T element create elemImgFolder image -image outlook-folder
     $T element create elemRectSel rect -fill [list $::SystemHighlight {selected focus} gray {selected !focus}] \

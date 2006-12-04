@@ -52,7 +52,7 @@ if {$::clip} {
     $T element create elemBorderTitle border -relief {sunken open raised {}} -thickness 1 \
 	-filled yes -background $::SystemButtonFace
     $T element create elemTxtTitle text \
-	-font [list "[$T cget -font] bold"]
+	-font [list DemoFontBold]
 
     # Citizen
     $T element create elemRectSel rect -showfocus no \

@@ -41,7 +41,7 @@ proc DemoHelpContents {} {
     $T element create elemImgPage image -image help-page
     $T element create elemImgBook image -image {help-book-open {open} help-book-closed {}}
     $T element create elemTxt text -fill [list $::SystemHighlightText {selected focus} blue {mouseover}] \
-	-font [list "[$T cget -font] underline" {mouseover}]
+	-font [list DemoFontUnderline {mouseover}]
     $T element create elemRectSel rect -fill [list $::SystemHighlight {selected focus}] -showfocus yes
 
     #
