@@ -6450,6 +6450,12 @@ ItemSortCmd(
 			&sortItem1->longValue,
 			&sortItem1->doubleValue,
 			&sortItem1->string) != TCL_OK) {
+		char msg[128];
+		sprintf(msg, "\n    (preparing to sort item %s%d column %s%d)",
+			tree->itemPrefix, walk->id,
+			tree->columnPrefix, TreeColumn_GetID(
+			Tree_FindColumn(tree, sortData.columns[i].column)));
+		Tcl_AddErrorInfo(interp, msg);
 		result = TCL_ERROR;
 		goto done;
 	    }
