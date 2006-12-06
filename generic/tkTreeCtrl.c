@@ -1782,6 +1782,10 @@ TreeDestroy(
 
     Tree_FreeColumns(tree);
 
+dbwin("tree->regionStackLen = %d", tree->regionStackLen);
+    while (tree->regionStackLen > 0)
+	TkDestroyRegion(tree->regionStack[--tree->regionStackLen]);
+
     QE_DeleteBindingTable(tree->bindingTable);
 
     for (i = STATE_USER - 1; i < 32; i++)
