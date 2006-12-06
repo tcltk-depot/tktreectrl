@@ -4229,7 +4229,7 @@ Proxy_Draw(
 #endif
     gcValues.graphics_exposures = False;
     gcMask = GCFunction | GCGraphicsExposures;
-    gc = Tk_GetGC(tree->tkwin, gcMask, &gcValues);
+    gc = Tree_GetGC(tree, gcMask, &gcValues);
 
     /* GXinvert doesn't work with XFillRectangle() on Win32 or Mac */
 #if defined(WIN32) || defined(MAC_TCL)
@@ -4239,8 +4239,7 @@ Proxy_Draw(
 	    x1, y1, MAX(x2 - x1, 1), MAX(y2 - y1, 1));
 #endif
 
-    Tk_FreeGC(tree->display, gc);
-#endif
+#endif /* !MAC_OSX_TK */
 }
 
 /*

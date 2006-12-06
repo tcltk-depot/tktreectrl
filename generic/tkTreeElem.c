@@ -2205,7 +2205,6 @@ struct ElementText
     int textLen;		/* Number of bytes (not characters) in the
 				 * UTF-8 string. If -1, it means the string
 				 * representation is invalid. */
-    struct PerStateGC *gc;
 };
 #define TEXTVAR
 
@@ -2764,8 +2763,6 @@ static void DeleteProcText(ElementArgs *args)
     ElementText *elemX = (ElementText *) elem;
     ElementTextLayout2 *etl2;
 
-    if (elemX->gc != NULL)
-	PerStateGC_Free(tree, &elemX->gc);
     if ((elemX->textCfg == NULL) && (elemX->text != NULL)) {
 	ckfree(elemX->text);
 	elemX->text = NULL;
@@ -2988,8 +2985,7 @@ static void DisplayProcText(ElementArgs *args)
 	gcMask |= GCFont;
 	gcValues.graphics_exposures = False;
 	gcMask |= GCGraphicsExposures;
-	gc = PerStateGC_Get(tree, (masterX != NULL) ? &masterX->gc :
-		&elemX->gc, gcMask, &gcValues);
+	gc = Tree_GetGC(tree, gcMask, &gcValues);
     } else {
 	tkfont = tree->tkfont;
 	gc = tree->textGC;

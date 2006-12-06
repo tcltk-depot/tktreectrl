@@ -1778,6 +1778,7 @@ TreeDestroy(
 	Tk_FreeGC(tree->display, tree->buttonGC);
     if (tree->lineGC != None)
 	Tk_FreeGC(tree->display, tree->lineGC);
+    Tree_FreeAllGC(tree);
 
     Tree_FreeColumns(tree);
 
