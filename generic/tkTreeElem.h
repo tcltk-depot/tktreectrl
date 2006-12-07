@@ -64,6 +64,10 @@ struct ElementArgs
     struct {
 	int state1;
 	int state2;
+	int draw1;
+	int draw2;
+	int visible1;
+	int visible2;
     } states;
     struct {
 	Tcl_Obj *obj;
