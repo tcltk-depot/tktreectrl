@@ -67,7 +67,7 @@ if {$::clip} {
 if {$::clip} { $T element configure eWindow -clip yes }
     $T element create eText1 text -font [list DemoFontBold]
     $T element create eRectTop rect -outline black -fill #FFFFCC \
-	-draw {yes open no {}} -outlinewidth 1 -open s
+	-outlinewidth 1 -open s
     $T element create eRectBottom rect -outline black -fill #FFFFCC \
 	-outlinewidth 1 -open n
 
@@ -81,7 +81,7 @@ if {$::clip} { $T element configure eWindow -clip yes }
 
     set S [$T style create styCategory -orient horizontal]
     $T style elements $S {eRectTop eText1 eWindow}
-    $T style layout $S eRectTop -detach yes -indent no -iexpand xy
+    $T style layout $S eRectTop -detach yes -indent no -iexpand xy -draw {yes open no {}}
     # note: using -iexpand x so clicking in the text works better
     $T style layout $S eText1 -expand ns -iexpand x -sticky w
     $T style layout $S eWindow -expand ns -padx 10 -pady 6
