@@ -126,11 +126,12 @@ proc DemoLayout {} {
 	foreach expand $expandList {
 
 	    set S [$T style create s$styleNum -orient $orient]
-	    $T style elements $S {e4 e8 e2 e5 e6}
+	    $T style elements $S {e4 e8 e3 e2 e5 e6}
 	    $T style layout $S e4 -detach yes -iexpand xy
 	    $T style layout $S e8 -detach yes -expand n -iexpand x
+	    $T style layout $S e3 -union {e2 e5 e6} -ipadx 5 -ipady 5
 	    $T style layout $S e2 -expand $expand
-	    $T style layout $S e5 -expand $expand
+	    $T style layout $S e5 -expand $expand -visible {no !selected}
 	    $T style layout $S e6 -expand $expand
 	    incr styleNum
 
