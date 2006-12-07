@@ -44,7 +44,7 @@ proc DemoRandom {} {
 
     $T element create elemImgFolder image -image {folder-open {open} folder-closed {}}
     $T element create elemImgFile image -image small-file
-    $T element create elemTxtName text \
+    $T element create elemTxtName text -wrap none \
 	-fill [list $::SystemHighlightText {selected focus}]
     $T element create elemTxtCount text -fill blue
     $T element create elemTxtAny text
@@ -58,14 +58,14 @@ proc DemoRandom {} {
     set S [$T style create styFolder]
     $T style elements $S {elemRectSel elemImgFolder elemTxtName elemTxtCount}
     $T style layout $S elemImgFolder -padx {0 4} -expand ns
-    $T style layout $S elemTxtName -padx {0 4} -expand ns
+    $T style layout $S elemTxtName -minwidth 12 -padx {0 4} -expand ns -squeeze x
     $T style layout $S elemTxtCount -padx {0 6} -expand ns
     $T style layout $S elemRectSel -union [list elemTxtName] -iexpand ns -ipadx 2
 
     set S [$T style create styFile]
     $T style elements $S {elemRectSel elemImgFile elemTxtName}
     $T style layout $S elemImgFile -padx {0 4} -expand ns
-    $T style layout $S elemTxtName -padx {0 4} -expand ns
+    $T style layout $S elemTxtName -minwidth 12 -padx {0 4} -expand ns -squeeze x
     $T style layout $S elemRectSel -union [list elemTxtName] -iexpand ns -ipadx 2
 
     set S [$T style create styAny]
