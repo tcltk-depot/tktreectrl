@@ -886,11 +886,11 @@ proc ::TreeCtrl::SelectionMotion {w item} {
 		set hack 0
 	    }
 	    if {[$w selection includes anchor] || $hack} {
-		set deselect [concat $deselect [$w range $i $item]]
-		set select [concat $select [$w range anchor $item]]
+		set deselect [concat $deselect [$w item range $i $item]]
+		set select [concat $select [$w item range anchor $item]]
 	    } else {
-		set deselect [concat $deselect [$w range $i $item]]
-		set deselect [concat $deselect [$w range anchor $item]]
+		set deselect [concat $deselect [$w item range $i $item]]
+		set deselect [concat $deselect [$w item range anchor $item]]
 	    }
 	    if {![info exists Priv(selection)]} {
 		set Priv(selection) [$w selection get]
