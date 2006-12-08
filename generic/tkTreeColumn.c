@@ -1836,7 +1836,10 @@ Column_Move(
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
     TreeItem item;
-    int index, numStyles;
+    int index;
+#ifdef DEPRECATED
+    int numStyles;
+#endif
 
     if (move == before)
 	goto renumber;
