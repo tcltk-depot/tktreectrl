@@ -3695,7 +3695,7 @@ TreeItem_SpansInvalidate(
 	count++;
     }
 
-    if (count && tree->debug.enable && tree->debug.display)
+    if (count && tree->debug.enable && tree->debug.span)
 	dbwin("TreeItem_SpansInvalidate forgot %d items\n", count);
 }
 
@@ -3730,7 +3730,7 @@ TreeItem_SpansRedo(
     int columnIndex = 0, spanner = 0, span = 1, simple = TRUE;
     int lock = TreeColumn_Lock(treeColumn);
 
-    if (tree->debug.enable && tree->debug.display)
+    if (tree->debug.enable && tree->debug.span)
 	dbwin("TreeItem_SpansRedo item %d\n", item->id);
 
     if (item->spans == NULL) {

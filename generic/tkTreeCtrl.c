@@ -290,6 +290,9 @@ static Tk_OptionSpec debugSpecs[] = {
     {TK_OPTION_COLOR, "-erasecolor", (char *) NULL, (char *) NULL,
      (char *) NULL, -1, Tk_Offset(TreeCtrl, debug.eraseColor),
      TK_OPTION_NULL_OK, (ClientData) NULL, 0},
+    {TK_OPTION_BOOLEAN, "-span", (char *) NULL, (char *) NULL,
+     "1", -1, Tk_Offset(TreeCtrl, debug.span),
+     0, (ClientData) NULL, 0},
     {TK_OPTION_BOOLEAN, "-textlayout", (char *) NULL, (char *) NULL,
      "1", -1, Tk_Offset(TreeCtrl, debug.textLayout),
      0, (ClientData) NULL, 0},
@@ -1782,7 +1785,6 @@ TreeDestroy(
 
     Tree_FreeColumns(tree);
 
-dbwin("tree->regionStackLen = %d", tree->regionStackLen);
     while (tree->regionStackLen > 0)
 	TkDestroyRegion(tree->regionStack[--tree->regionStackLen]);
 

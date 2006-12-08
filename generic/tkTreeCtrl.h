@@ -123,6 +123,7 @@ struct TreeCtrlDebug
     int enable;			/* Turn all debugging on/off */
     int data;			/* Debug data structures */
     int display;		/* Debug display routines */
+    int span;			/* Debug column spanning */
     int textLayout;		/* Debug text layout */
     int displayDelay;		/* Delay between copy/draw operations */
     XColor *eraseColor;		/* Erase "invalidated" areas */
