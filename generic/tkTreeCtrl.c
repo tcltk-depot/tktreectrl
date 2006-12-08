@@ -1629,7 +1629,7 @@ TreeEventProc(
 	{
 	    int x = eventPtr->xexpose.x;
 	    int y = eventPtr->xexpose.y;
-	    Tree_RedrawArea(tree, x, y,
+	    Tree_ExposeArea(tree, x, y,
 		    x + eventPtr->xexpose.width,
 		    y + eventPtr->xexpose.height);
 	    break;
