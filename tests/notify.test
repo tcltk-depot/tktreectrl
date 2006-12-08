@@ -339,6 +339,35 @@ test notify-7.15 {notify uninstall event: delete a static event} -body {
     .t notify uninstall <Scroll>
 } -returnCodes error -result {can't uninstall static event "Scroll"}
 
+test notify-8.1 {<ItemDelete>: set firstchild of a deleted item} -setup {
+    .t item create -count 3 ; # item ids 1, 2 and 3
+    .t notify bind notify-8 <ItemDelete> {
+	.t item firstchild %i 2
+    }
+    set ::error {}
+    proc bgerror msg {set ::error $msg}
+} -body {
+    .t item delete 1
+    update ; # background error during <ItemDelete>
+    set ::error
+} -cleanup {
+    rename bgerror {}
+} -result {item 1 is being deleted}
+
+test notify-8.2 {<ItemDelete>: set firstchild to a deleted item} -setup {
+    .t notify bind notify-8 <ItemDelete> {
+	.t item firstchild 2 %i
+    }
+    set ::error {}
+    proc bgerror msg {set ::error $msg}
+} -body {
+    .t item delete 3
+    update ; # background error during <ItemDelete>
+    set ::error
+} -cleanup {
+    rename bgerror {}
+} -result {item 3 is being deleted}
+
 test notify-99.1 {some needed cleanup} -body {
     destroy .t
 } -result {}
