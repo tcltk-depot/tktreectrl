@@ -29,7 +29,7 @@ static void Range_Redo(TreeCtrl *tree);
 static Range *Range_UnderPoint(TreeCtrl *tree, int *x_, int *y_, int nearest);
 static RItem *Range_ItemUnderPoint(TreeCtrl *tree, Range *range, int *x_, int *y_);
 
-/* One of these per TreeItem. */
+/* One of these per TreeItem that is ReallyVisible(). */
 struct RItem
 {
     TreeItem item;		/* The item. */
@@ -62,7 +62,7 @@ typedef struct DItemArea {
     int flags;
 } DItemArea;
 
-/* Display information for a TreeItem. */
+/* Display information for a TreeItem that is onscreen. */
 struct DItem
 {
 #ifdef TREECTRL_DEBUG
