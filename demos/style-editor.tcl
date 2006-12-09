@@ -1,8 +1,8 @@
 # RCS: @(#) $Id$
 
 namespace eval StyleEditor {
-	variable Info
-	array unset Info
+    variable Info
+    array unset Info
 }
 
 proc StyleEditor::Info {info args} {
