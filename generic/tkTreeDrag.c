@@ -76,8 +76,7 @@ DragElem_Alloc(
     memset(elem, '\0', sizeof(DragElem));
     if (dragImage->elem == NULL)
 	dragImage->elem = elem;
-    else
-    {
+    else {
 	while (walk->next != NULL)
 	    walk = walk->next;
 	walk->next = elem;
@@ -285,9 +284,7 @@ DragImage_Config(
 
 	    Tk_FreeSavedOptions(&savedOptions);
 	    break;
-	}
-	else
-	{
+	} else {
 	    errorResult = Tcl_GetObjResult(tree->interp);
 	    Tcl_IncrRefCount(errorResult);
 	    Tk_RestoreSavedOptions(&savedOptions);

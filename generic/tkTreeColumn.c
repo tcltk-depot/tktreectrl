@@ -2206,8 +2206,7 @@ Column_Config(
 		    before = tree->columnLockNone;
 		    if (before == NULL)
 			before = tree->columnLockRight;
-		}
-		else
+		} else
 		    before = tree->columnLockRight;
 		break;
 	    case COLUMN_LOCK_RIGHT:

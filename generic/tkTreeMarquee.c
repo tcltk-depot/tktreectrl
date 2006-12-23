@@ -245,9 +245,7 @@ Marquee_Config(
 
 	    Tk_FreeSavedOptions(&savedOptions);
 	    break;
-	}
-	else
-	{
+	} else {
 	    errorResult = Tcl_GetObjResult(tree->interp);
 	    Tcl_IncrRefCount(errorResult);
 	    Tk_RestoreSavedOptions(&savedOptions);

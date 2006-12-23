@@ -547,9 +547,7 @@ TreeNotify_OpenClose(
     if (state & STATE_OPEN) {
 	event.type = EVENT_EXPAND;
 	event.detail = before ? DETAIL_EXPAND_BEFORE : DETAIL_EXPAND_AFTER;
-    }
-    else
-    {
+    } else {
 	event.type = EVENT_COLLAPSE;
 	event.detail = before ? DETAIL_COLLAPSE_BEFORE : DETAIL_COLLAPSE_AFTER;
     }

@@ -333,8 +333,7 @@ Range_Redo(
 			    if (tree->columnTreeVis)
 				columnWidth += TreeItem_Indent(tree, item);
 			    rItem->size = columnWidth;
-			}
-			else
+			} else
 			    rItem->size = 0;
 			if ((stepWidth != -1) && (rItem->size % stepWidth))
 			    rItem->size += stepWidth - rItem->size % stepWidth;
@@ -6319,8 +6318,7 @@ Tree_SetOriginX(
 	/* Add some fake content to right */
 	if (offset + visWidth > totWidth)
 	    totWidth = offset + visWidth;
-    }
-    else
+    } else
 	indexMax = Increment_FindX(tree, totWidth);
 
     xOrigin += Tree_ContentLeft(tree); /* origin -> canvas */
@@ -6402,8 +6400,7 @@ Tree_SetOriginY(
 	/* Add some fake content to bottom */
 	if (offset + visHeight > totHeight)
 	    totHeight = offset + visHeight;
-    }
-    else
+    } else
 	indexMax = Increment_FindY(tree, totHeight);
 
     yOrigin += Tree_ContentTop(tree); /* origin -> canvas */

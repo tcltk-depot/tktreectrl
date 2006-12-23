@@ -1344,8 +1344,7 @@ badWrap:
 			if ((ch0 == 'w') && !strncmp(s0, "window", len0)) {
 			    tree->wrapMode = TREE_WRAP_WINDOW;
 			    tree->wrapArg = 0;
-			}
-			else
+			} else
 			    goto badWrap;
 		    } else {
 			s1 = Tcl_GetStringFromObj(listObjv[1], &len1);
@@ -1367,8 +1366,7 @@ badWrap:
 			    }
 			    tree->wrapMode = TREE_WRAP_PIXELS;
 			    tree->wrapArg = n;
-			}
-			else
+			} else
 			    goto badWrap;
 		    }
 		}
