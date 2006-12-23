@@ -432,7 +432,6 @@ TreeObjCmd(
 
     if (Tk_InitOptions(interp, (char *) tree, optionTable, tkwin) != TCL_OK) {
 	Tk_DestroyWindow(tree->tkwin);
-	WFREE(tree, TreeCtrl);
 	return TCL_ERROR;
     }
 
