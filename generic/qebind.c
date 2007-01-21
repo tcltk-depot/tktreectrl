@@ -33,11 +33,7 @@
 #include <tk.h>
 #include "qebind.h"
 
-#ifdef HAVE_DBWIN_H
-#include "dbwin.h"
-#else /* HAVE_DBWIN_H */
-#define dbwin printf
-#endif /* HAVE_DBWIN_H */
+extern void dbwin(char *fmt, ...);
 
 /*
  * The macro below is used to modify a "char" value (e.g. by casting
