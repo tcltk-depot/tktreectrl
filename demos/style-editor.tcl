@@ -304,6 +304,9 @@ proc StyleEditor::SetPropertyList {} {
     if {$element eq ""} return
 
     foreach {header option} {
+	"Draw and Visible" ""
+	"" -draw
+	"" -visible
 	"Detach" ""
 	"" -detach
 	"" -indent
@@ -381,6 +384,9 @@ proc StyleEditor::SelectProperty {select deselect} {
 
     $T item style set $I value sWindow
     switch -- $option {
+	-draw -
+	-visible {
+	}
 	-padx -
 	-pady -
 	-ipadx -
@@ -707,6 +713,7 @@ proc StyleEditor::StyleToCanvas {{scroll 0}} {
     $T style elements $style [$Tdemo style elements $style]
     foreach E [$T style elements $style] {
 	eval $T style layout $style $E [$Tdemo style layout $style $E]
+	$T style layout $style $E -visible {}
     }
 
     # Find a selected item using the style to copy element config info from
