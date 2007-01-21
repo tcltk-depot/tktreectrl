@@ -58,10 +58,16 @@ if {[info procs lassign] eq ""} {
 }
 
 if {[catch {
-    package require dbwin 1.0
+    package require dbwin
 }]} {
-    proc dbwin s {puts -nonewline $s}
+    proc dbwin {s} {
+	puts [string trimright $s "\n"]
+    }
 }
+proc dbwintrace {name1 name2 op} {
+    dbwin $::dbwin
+}
+trace add variable ::dbwin write dbwintrace
 
 # This gets called if 'package require' won't work during development.
 proc LoadSharedLibrary {} {
