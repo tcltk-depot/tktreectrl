@@ -12,14 +12,12 @@
 
 #include "tkPort.h"
 #include "default.h"
+#include "tclInt.h"
 #include "tkInt.h"
 #include "qebind.h"
 
-#ifdef HAVE_DBWIN_H
-#include "dbwin.h"
-#else /* HAVE_DBWIN_H */
-#define dbwin printf
-#endif /* HAVE_DBWIN_H */
+extern void dbwin(char *fmt, ...);
+extern void dbwin_add_interp(Tcl_Interp *interp);
 
 #ifndef TRUE
 #define TRUE 1
