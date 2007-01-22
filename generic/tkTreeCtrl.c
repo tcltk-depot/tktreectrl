@@ -429,6 +429,12 @@ TreeObjCmd(
     /* Window must exist on Win32. */
     TreeTheme_Init(tree);
 
+    /*
+     * Keep a hold of the associated tkwin until we destroy the listbox,
+     * otherwise Tk might free it while we still need it.
+     */
+    Tcl_Preserve((ClientData) tkwin);
+
     if (Tk_InitOptions(interp, (char *) tree, optionTable, tkwin) != TCL_OK) {
 	Tk_DestroyWindow(tree->tkwin);
 	return TCL_ERROR;
@@ -1781,6 +1787,7 @@ TreeDestroy(
     AllocHax_Finalize(tree->allocData);
 #endif
 
+    Tcl_Release(tree->tkwin);
     WFREE(tree, TreeCtrl);
 }
 
