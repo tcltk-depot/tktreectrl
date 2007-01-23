@@ -33,6 +33,7 @@
 #include <tk.h>
 #include "qebind.h"
 
+#define dbwin TreeCtrl_dbwin
 extern void dbwin(char *fmt, ...);
 
 /*

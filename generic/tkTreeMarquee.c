@@ -195,9 +195,9 @@ TreeMarquee_Draw(
     y = MIN(marquee->y1, marquee->y2);
     h = abs(marquee->y1 - marquee->y2) + 1;
 
-    DotRect_Setup(tree, drawable, &dotState);
-    DotRect_Draw(&dotState, x1 + x, y1 + y, w, h);
-    DotRect_Restore(&dotState);
+    TreeDotRect_Setup(tree, drawable, &dotState);
+    TreeDotRect_Draw(&dotState, x1 + x, y1 + y, w, h);
+    TreeDotRect_Restore(&dotState);
 }
 
 /*
