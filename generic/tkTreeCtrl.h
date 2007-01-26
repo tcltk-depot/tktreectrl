@@ -26,6 +26,10 @@ extern void dbwin_add_interp(Tcl_Interp *interp);
 #define FALSE 0
 #endif
 
+#ifdef WIN32
+#define vsnprintf _vsnprintf
+#endif
+
 #ifndef MIN
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
 #endif
