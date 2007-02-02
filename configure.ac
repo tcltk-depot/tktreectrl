@@ -20,7 +20,7 @@ dnl	to configure the system for the local environment.
 #-----------------------------------------------------------------------
 
 AC_INIT([treectrl], [2.2])
-AC_SUBST([PACKAGE_PATCHLEVEL], [2.2.2])
+AC_SUBST([PACKAGE_PATCHLEVEL], [2.2.3])
 AC_DEFINE_UNQUOTED(PACKAGE_PATCHLEVEL, "$PACKAGE_PATCHLEVEL")
 
 TEA_INIT([3.5])
@@ -121,6 +121,14 @@ if test "${TEA_PLATFORM}" = "windows" ; then
     AC_DEFINE(BUILD_treectrl)
     CLEANFILES="pkgIndex.tcl *.lib *.dll *.exp *.ilk *.pdb vc*.pch"
     TEA_ADD_LIBS([gdi32.lib user32.lib])
+
+    AC_ARG_ENABLE(shellicon,
+	AC_HELP_STRING([--enable-shellicon],
+	    [build the shellicon extension (default: no)]),
+	[tcl_ok=$enableval], [tcl_ok=no])
+    if test "$tcl_ok" = "yes" ; then
+	AC_CONFIG_SUBDIRS(shellicon)
+    fi
 else
     CLEANFILES="pkgIndex.tcl"
 fi
@@ -155,6 +163,10 @@ TEA_CONFIG_CFLAGS
 #--------------------------------------------------------------------
 
 TEA_ENABLE_SYMBOLS
+
+if test "${enable_symbols+set}" = set && test "$enable_symbols" != no; then
+    TEA_ADD_CFLAGS([-DTREECTRL_DEBUG])
+fi
 
 #--------------------------------------------------------------------
 # Everyone should be linking against the Tcl stub library.  If you
