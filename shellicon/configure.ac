@@ -154,6 +154,10 @@ TEA_CONFIG_CFLAGS
 
 TEA_ENABLE_SYMBOLS
 
+if test "${enable_symbols+set}" = set && test "$enable_symbols" != no; then
+    TEA_ADD_CFLAGS([-DTREECTRL_DEBUG])
+fi
+
 #--------------------------------------------------------------------
 # Everyone should be linking against the Tcl stub library.  If you
 # can't for some reason, remove this definition.  If you aren't using
