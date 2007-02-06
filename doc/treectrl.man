@@ -4,10 +4,10 @@
   of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
   $Id$}
-][manpage_begin treectrl n 2.2.2]
+][manpage_begin treectrl n 2.2.3]
 [moddesc {Tk Commands}]
 [titledesc {Create and manipulate hierarchical multicolumn widgets}]
-[require treectrl 2.2.2]
+[require treectrl 2.2.3]
 
 [description]
 [list_begin definitions] 
