@@ -6228,7 +6228,7 @@ ItemButtonCO_Get(
 
     if (value & cd->flag2)
 	return Tcl_NewStringObj("auto", -1);
-    return Tcl_NewBooleanObj((value & cd->flag2) != 0);
+    return Tcl_NewBooleanObj((value & cd->flag1) != 0);
 }
 
 static void
