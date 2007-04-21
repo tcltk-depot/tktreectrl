@@ -1743,7 +1743,7 @@ static void DisplayProcImage(TreeElementArgs *args)
 	imgW = args->display.width;
     if (imgH > args->display.height)
 	imgH = args->display.height;
-    Tk_RedrawImage(image, 0, 0, imgW, imgH, args->display.drawable, x, y);
+    Tree_RedrawImage(image, 0, 0, imgW, imgH, args->display.td, x, y);
 }
 
 static void NeededProcImage(TreeElementArgs *args)

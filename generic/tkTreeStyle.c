@@ -2347,7 +2347,8 @@ void TreeStyle_Draw(
 
     args.tree = tree;
     args.state = drawArgs->state;
-    args.display.drawable = drawArgs->drawable;
+    args.display.td = drawArgs->td;
+    args.display.drawable = drawArgs->td.drawable;
 
     for (i = 0; i < masterStyle->numElements; i++) {
 	struct Layout *layout = &layouts[i];
@@ -2541,7 +2542,8 @@ TreeStyle_UpdateWindowPositions(
 
     args.tree = tree;
     args.state = drawArgs->state;
-    args.display.drawable = drawArgs->drawable;
+    args.display.td = drawArgs->td;
+    args.display.drawable = drawArgs->td.drawable;
 
     for (i = 0; i < numElements; i++) {
 	struct Layout *layout = &layouts[i];
