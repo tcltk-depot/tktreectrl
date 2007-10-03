@@ -686,17 +686,22 @@ void TreeTheme_ThemeChanged(TreeCtrl *tree)
     Window win = Tk_WindowId(tree->tkwin);
     HWND hwnd = Tk_GetHWND(win);
 
-    if (tree->themeData->hThemeHEADER != NULL) {
-	procs->CloseThemeData(tree->themeData->hThemeHEADER);
-	tree->themeData->hThemeHEADER = NULL;
-    }
-    if (tree->themeData->hThemeTREEVIEW != NULL) {
-	procs->CloseThemeData(tree->themeData->hThemeTREEVIEW);
-	tree->themeData->hThemeTREEVIEW = NULL;
+    if (tree->themeData != NULL) {
+	if (tree->themeData->hThemeHEADER != NULL) {
+	    procs->CloseThemeData(tree->themeData->hThemeHEADER);
+	    tree->themeData->hThemeHEADER = NULL;
+	}
+	if (tree->themeData->hThemeTREEVIEW != NULL) {
+	    procs->CloseThemeData(tree->themeData->hThemeTREEVIEW);
+	    tree->themeData->hThemeTREEVIEW = NULL;
+	}
     }
 
     if (!appThemeData->themeEnabled || !procs)
 	return;
+
+    if (tree->themeData == NULL)
+	tree->themeData = (TreeThemeData) ckalloc(sizeof(TreeThemeData_));
 
     tree->themeData->hThemeHEADER = procs->OpenThemeData(hwnd, L"HEADER");
     tree->themeData->hThemeTREEVIEW = procs->OpenThemeData(hwnd, L"TREEVIEW");
