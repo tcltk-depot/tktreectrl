@@ -391,6 +391,9 @@ struct TreeCtrl
 
     TkRegion regionStack[8];	/* Temp region stack. */
     int regionStackLen;		/* Number of unused regions in regionStack. */
+
+    int itemTagExpr;		/* Enable/disable operators in item tags */
+    int columnTagExpr;		/* Enable/disable operators in column tags */
 };
 
 #define TREE_CONF_FONT 0x0001
