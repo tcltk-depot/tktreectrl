@@ -185,7 +185,7 @@ DStringAppendf(
 /*
  *----------------------------------------------------------------------
  *
- * Ellipsis --
+ * Tree_Ellipsis --
  *
  *	Determine the number of bytes from the string that will fit
  *	in the given horizontal span. If the entire string does not
@@ -4133,7 +4133,7 @@ TagInfo_Copy(
 #else
 	copy = (TagInfo *) ckalloc(TAG_INFO_SIZE(tagSpace));
 #endif
-	memcpy(copy->tagPtr, tagInfo->tagPtr, tagInfo->numTags * sizeof(Tk_Uid));
+	memcpy((void *) copy->tagPtr, tagInfo->tagPtr, tagInfo->numTags * sizeof(Tk_Uid));
 	copy->numTags = tagInfo->numTags;
 	copy->tagSpace = tagSpace;
     }
@@ -4521,7 +4521,7 @@ TagExpr_Scan(
 	    } else {
 		expr->uids =
 		    (Tk_Uid *) ckalloc((expr->allocated)*sizeof(Tk_Uid));
-		memcpy(expr->uids, expr->staticUids, sizeof(expr->staticUids));
+		memcpy((void *) expr->uids, expr->staticUids, sizeof(expr->staticUids));
 	    }
 	}
 
