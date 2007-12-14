@@ -23,8 +23,8 @@
  * scripts, with QE_CreateBindingTable(). QE_BindCmd() is
  * called to associate a Tcl script with a given event for a particular
  * object. The objects that commands are bound to can be a Tk widget or any
- * string, just like the usual "bind" command. Bindings are not automatically
- * deleted when a widget is destroyed.
+ * string, just like the usual "bind" command. Bindings on Tk widgets are
+ * automatically deleted when the widget is destroyed.
  */
 
 #include <ctype.h>
