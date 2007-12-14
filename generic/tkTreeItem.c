@@ -821,8 +821,10 @@ TreeItem_ChangeState(
 
 	Tk_Image image1, image2;
 	Pixmap bitmap1, bitmap2;
-	int butOpen, butClosed;
-	int themeOpen, themeClosed;
+	/* NOTE: These next 2 lines must have 'static' to work around a
+	 * Microsoft compiler optimization bug. */
+	static int butOpen, butClosed;
+	static int themeOpen, themeClosed;
 	int w1, h1, w2, h2;
 	void *ptr1 = NULL, *ptr2 = NULL;
 
