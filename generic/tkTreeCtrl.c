@@ -4220,7 +4220,11 @@ Treectrl_Init(
     }
 #endif
 #ifdef USE_TK_STUBS
+#if (TK_MAJOR_VERSION == 8) && (TK_MINOR_VERSION < 5)
+    if (Tk_InitStubs(interp, (char*)tcl_version, 0) == NULL) {
+#else
     if (Tk_InitStubs(interp, tcl_version, 0) == NULL) {
+#endif
 	return TCL_ERROR;
     }
 #endif
