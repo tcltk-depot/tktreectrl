@@ -3632,9 +3632,9 @@ static Tk_OptionSpec windowOptionSpecs[] = {
 };
 
 static void
-WinItemStructureProc(clientData, eventPtr)
-    ClientData clientData;	/* Pointer to record describing window elem. */
-    XEvent *eventPtr;		/* Describes what just happened. */
+WinItemStructureProc(
+    ClientData clientData,	/* Pointer to record describing window elem. */
+    XEvent *eventPtr)		/* Describes what just happened. */
 {
     ElementWindow *elemX = clientData;
 
@@ -3646,9 +3646,9 @@ WinItemStructureProc(clientData, eventPtr)
 }
 
 static void
-WinItemRequestProc(clientData, tkwin)
-    ClientData clientData;		/* Pointer to record for window item. */
-    Tk_Window tkwin;			/* Window that changed its desired
+WinItemRequestProc(
+    ClientData clientData,		/* Pointer to record for window item. */
+    Tk_Window tkwin)			/* Window that changed its desired
 					 * size. */
 {
     ElementWindow *elemX = clientData;
@@ -3663,10 +3663,10 @@ WinItemRequestProc(clientData, tkwin)
 }
 
 static void
-WinItemLostSlaveProc(clientData, tkwin)
-    ClientData clientData;	/* WindowItem structure for slave window that
+WinItemLostSlaveProc(
+    ClientData clientData,	/* WindowItem structure for slave window that
 				 * was stolen away. */
-    Tk_Window tkwin;		/* Tk's handle for the slave window. */
+    Tk_Window tkwin)		/* Tk's handle for the slave window. */
 {
     ElementWindow *elemX = clientData;
     TreeCtrl *tree = elemX->tree;
