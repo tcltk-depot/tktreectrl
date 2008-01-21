@@ -23,7 +23,7 @@ static PixPatHandle gPenPat = NULL;
 /* TkRegion changed from RgnHandle to HIShapeRef in 8.4.17/8.5.0 */
 #if (TK_MAJOR_VERSION == 8) && (TK_MINOR_VERSION >= 5)
 #define MAC_OSX_HISHAPE 1
-#elif (TK_MAJOR_VERSION == 8) && (TK_MINOR_VERSION < 5) && (TK_RELEASE_SERIAL < 17)
+#elif (TK_MAJOR_VERSION == 8) && (TK_MINOR_VERSION == 4) && (TK_RELEASE_SERIAL >= 17)
 #define MAC_OSX_HISHAPE 1
 #endif
 
