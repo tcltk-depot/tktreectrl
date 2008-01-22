@@ -3,7 +3,7 @@
  *
  *	This module implements treectrl widget's main display code.
  *
- * Copyright (c) 2002-2006 Tim Baker
+ * Copyright (c) 2002-2008 Tim Baker
  *
  * RCS: @(#) $Id$
  */
