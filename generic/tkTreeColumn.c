@@ -5732,7 +5732,7 @@ TreeColumn_InitInterp(
 	Tcl_DStringAppendElement(&dString, DEF_BUTTON_ACTIVE_BG_COLOR);
 	Tcl_DStringAppendElement(&dString, "");
 	specPtr->defValue = ckalloc(Tcl_DStringLength(&dString) + 1);
-	strcpy(specPtr->defValue, Tcl_DStringValue(&dString));
+	strcpy((char *)specPtr->defValue, Tcl_DStringValue(&dString));
 	Tcl_DStringFree(&dString);
     }
     

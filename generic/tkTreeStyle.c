@@ -2733,11 +2733,13 @@ MElementLink_FreeResources(
     if (eLink->onion != NULL)
 	WCFREE(eLink->onion, int, eLink->onionCount);
     PerStateInfo_Free(tree, &pstBoolean, &eLink->draw);
-    if (eLink->draw.obj != NULL)
+    if (eLink->draw.obj != NULL) {
 	Tcl_DecrRefCount(eLink->draw.obj);
+    }
     PerStateInfo_Free(tree, &pstBoolean, &eLink->visible);
-    if (eLink->visible.obj != NULL)
+    if (eLink->visible.obj != NULL) {
 	Tcl_DecrRefCount(eLink->visible.obj);
+    }
 }
 
 /*
