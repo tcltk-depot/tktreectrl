@@ -977,7 +977,8 @@ Tree_FillRegion(
     FillRgn(dc, (HRGN) rgn, brush);
     DeleteObject(brush);
     TkWinReleaseDrawableDC(drawable, dc, &dcState);
-#elif defined(MAC_OSX_TK_XXX) /* Not needed as of 8.4.15 / 8.5a7 */
+#elif defined(MAC_OSX_TK) && (TK_MINOR_VERSION == 4) && (TK_RELEASE_SERIAL < 15)
+    /* Not needed as of 8.4.15 / 8.5a7 */
     MacDrawable *macWin = (MacDrawable *) drawable;
     CGrafPtr saveWorld;
     GDHandle saveDevice;
