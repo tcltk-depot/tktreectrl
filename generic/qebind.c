@@ -1453,7 +1453,6 @@ void QE_ExpandNumber(long number, Tcl_DString *result)
 {
 	char numStorage[TCL_INTEGER_SPACE];
 
-	/* TclFormatInt() */
 	(void) sprintf(numStorage, "%ld", number);
 	Tcl_DStringAppend(result, numStorage, -1);
 /*	QE_ExpandString(numStorage, result); */
