@@ -156,10 +156,15 @@ GetActCtxProcs(void)
     return NULL;
 }
 
+static HMODULE thisModule = NULL;
+
 /* Return the HMODULE for this treectrl.dll. */
 static HMODULE
 GetMyHandle(void)
 {
+#if 1
+    return thisModule;
+#else
     HMODULE hModule = NULL;
 
     /* FIXME: Only >=NT so I shouldn't link to it? But I already linked to
@@ -169,6 +174,19 @@ GetMyHandle(void)
 	(LPCTSTR)&appThemeData,
 	&hModule);
     return hModule;
+#endif
+}
+
+BOOL WINAPI
+DllMain(hInst, reason, reserved)
+    HINSTANCE hInst;	/* Library instance handle. */
+    DWORD reason;	/* Reason this function is being called. */
+    LPVOID reserved;	/* Not used. */
+{
+    if (reason == DLL_PROCESS_ATTACH) {
+	thisModule = (HMODULE) hInst;
+    }
+    return TRUE;
 }
 
 static HANDLE
