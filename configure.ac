@@ -121,7 +121,7 @@ OUTPUTFILES=Makefile
 
 if test "${TEA_PLATFORM}" = "windows" ; then
     AC_DEFINE(BUILD_treectrl)
-    CLEANFILES="pkgIndex.tcl *.manifest *.lib *.dll *.exp *.ilk *.pdb vc*.pch"
+    CLEANFILES="pkgIndex.tcl *.lib *.dll *.exp *.ilk *.pdb vc*.pch"
     TEA_ADD_LIBS([gdi32.lib user32.lib])
 
     AC_ARG_ENABLE(shellicon,
