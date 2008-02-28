@@ -755,7 +755,7 @@ TreeTheme_Relayout(
 static LRESULT WINAPI
 WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
 {
-    Tcl_Interp *interp = (Tcl_Interp *)GetWindowLong(hwnd, GWL_USERDATA);
+    Tcl_Interp *interp = (Tcl_Interp *)GetWindowLongPtr(hwnd, GWLP_USERDATA);
 
     switch (msg) {
 	case WM_THEMECHANGED:
@@ -805,7 +805,7 @@ CreateThemeMonitorWindow(HINSTANCE hinst, Tcl_Interp *interp)
     if (!hwnd)
 	return NULL;
 
-    SetWindowLong(hwnd, GWL_USERDATA, (LONG)interp);
+    SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG)interp);
     ShowWindow(hwnd, SW_HIDE);
     UpdateWindow(hwnd);
 
