@@ -395,7 +395,7 @@ TreeDragImageCmd(
 	    TreeItem item;
 	    TreeItemColumn itemColumn;
 	    TreeColumn treeColumn;
-	    XRectangle rects[128];
+	    TreeRectangle rects[128];
 	    DragElem *elem;
 	    int i, count, result = TCL_OK;
 

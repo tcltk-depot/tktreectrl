@@ -6499,7 +6499,7 @@ TreeStyle_GetElemRects(
     StyleDrawArgs *drawArgs,	/* Various args. */
     int objc,			/* Number of element names. */
     Tcl_Obj *CONST objv[],	/* Array of element names. */
-    XRectangle rects[]		/* Returned rectangles. */
+    TreeRectangle rects[]	/* Returned rectangles. */
     )
     
 {

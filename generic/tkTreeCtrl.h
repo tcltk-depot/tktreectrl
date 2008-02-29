@@ -99,6 +99,12 @@ typedef struct
     int height;
 } TreeDrawable;
 
+typedef struct
+{
+    int x, y;
+    int width, height;
+} TreeRectangle;
+
 typedef struct GCCache GCCache;
 struct GCCache
 {
@@ -565,7 +571,7 @@ extern void TreeItem_Identify(TreeCtrl *tree, TreeItem item_, int lock, int x, i
 extern void TreeItem_Identify2(TreeCtrl *tree, TreeItem item_,
 	int x1, int y1, int x2, int y2, Tcl_Obj *listObj);
 extern int TreeItem_GetRects(TreeCtrl *tree, TreeItem item_,
-    TreeColumn treeColumn, int objc, Tcl_Obj *CONST objv[], XRectangle rects[]);
+    TreeColumn treeColumn, int objc, Tcl_Obj *CONST objv[], TreeRectangle rects[]);
 extern int TreeItem_Indent(TreeCtrl *tree, TreeItem item_);
 extern void Tree_UpdateItemIndex(TreeCtrl *tree);
 extern void Tree_DeselectHidden(TreeCtrl *tree);
@@ -645,7 +651,7 @@ extern int TreeStyle_GetSortData(TreeCtrl *tree, TreeStyle style_, int elemIndex
 #if 0
 extern int TreeStyle_ValidateElements(TreeCtrl *tree, TreeStyle style_, int objc, Tcl_Obj *CONST objv[]);
 #endif
-extern int TreeStyle_GetElemRects(StyleDrawArgs *drawArgs, int objc, Tcl_Obj *CONST objv[], XRectangle rects[]);
+extern int TreeStyle_GetElemRects(StyleDrawArgs *drawArgs, int objc, Tcl_Obj *CONST objv[], TreeRectangle rects[]);
 extern int TreeElementCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]);
 extern int TreeStyleCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]);
 extern int TreeStyle_ChangeState(TreeCtrl *tree, TreeStyle style_, int state1, int state2);
