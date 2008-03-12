@@ -880,7 +880,7 @@ extern void Tree_VDotLine(TreeCtrl *tree, Drawable drawable, GC gc, int x1, int 
 extern void Tree_DrawActiveOutline(TreeCtrl *tree, Drawable drawable, int x, int y, int width, int height, int open);
 typedef struct DotState
 {
-    int stuff[10];
+    void *stuff[10];
 } DotState;
 extern void TreeDotRect_Setup(TreeCtrl *tree, Drawable drawable, DotState *dotState);
 extern void TreeDotRect_Draw(DotState *dotState, int x, int y, int width, int height);
