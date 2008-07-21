@@ -876,6 +876,18 @@ The item option \fB-button\fR determines whether the root item has a button.
 .LP
 .nf
 .ta 6c
+Command-Line Switch:	\fB-showrootchildbuttons\fR
+Database Name:	\fBshowRootChildButtons\fR
+Database Class:	\fBShowRootChildButtons\fR
+
+.fi
+.IP
+Specifies a boolean value that determines whether this widget
+should draw the expand/collapse buttons next to children of the root item.
+The default value is true.
+.LP
+.nf
+.ta 6c
 Command-Line Switch:	\fB-showrootlines\fR
 Database Name:	\fBshowRootLines\fR
 Database Class:	\fBShowRootLines\fR

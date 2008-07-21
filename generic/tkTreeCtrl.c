@@ -236,6 +236,9 @@ static Tk_OptionSpec optionSpecs[] = {
     {TK_OPTION_BOOLEAN, "-showrootbutton", "showRootButton",
      "ShowRootButton", "0", -1, Tk_Offset(TreeCtrl, showRootButton),
      0, (ClientData) NULL, TREE_CONF_RELAYOUT},
+    {TK_OPTION_BOOLEAN, "-showrootchildbuttons", "showRootChildButtons",
+     "ShowRootChildButtons", "1", -1, Tk_Offset(TreeCtrl, showRootChildButtons),
+     0, (ClientData) NULL, TREE_CONF_RELAYOUT},
     {TK_OPTION_STRING, "-takefocus", "takeFocus", "TakeFocus",
      DEF_LISTBOX_TAKE_FOCUS, -1, Tk_Offset(TreeCtrl, takeFocus),
      TK_OPTION_NULL_OK, 0, 0},
@@ -905,12 +908,18 @@ static int TreeWidgetCmd(
 
 	    sprintf(buf, "item %s%d", tree->itemPrefix, TreeItem_GetID(tree, item)); /* TreeItem_ToObj() */
 	    depth = TreeItem_GetDepth(tree, item);
-	    if (tree->showRoot || tree->showButtons || tree->showLines)
-		depth++;
-	    if (tree->showRoot && tree->showButtons && tree->showRootButton)
-		depth++;
 	    if (item == tree->root)
 		depth = (tree->showButtons && tree->showRootButton) ? 1 : 0;
+	    else if (tree->showRoot)
+	    {
+		depth++;
+		if (tree->showButtons && tree->showRootButton)
+		    depth++;
+	    }
+	    else if (tree->showButtons && tree->showRootChildButtons)
+		depth += 1;
+	    else if (tree->showLines && tree->showRootLines)
+		depth += 1;
 
 	    lock = (hit == TREE_AREA_LEFT) ? COLUMN_LOCK_LEFT :
 		(hit == TREE_AREA_RIGHT) ? COLUMN_LOCK_RIGHT :
@@ -3229,11 +3238,11 @@ A_YviewCmd(
 		break;
 	}
 
-	/* Don't scroll too far left */
+	/* Don't scroll too far up */
 	if (index < 0)
 	    index = 0;
 
-	/* Don't scroll too far right */
+	/* Don't scroll too far down */
 	if (index > indexMax)
 	    index = indexMax;
 

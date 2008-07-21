@@ -124,6 +124,9 @@ typedef struct TreePtrList TreePtrList;
 typedef TreePtrList TreeItemList;
 typedef TreePtrList TreeColumnList;
 struct TreePtrList {
+#ifdef TREECTRL_DEBUG
+    char magic[4];
+#endif
     TreeCtrl *tree;
     ClientData *pointers;	/* NULL-terminated list of pointers. */
     int count;			/* Number of items. */
@@ -202,6 +205,8 @@ struct TreeCtrl
     int showRoot;		/* boolean: Draw the unique root item */
     int showRootButton;		/* boolean: Draw expand/collapse button for
 				 * root item */
+    int showRootChildButtons;	/* boolean: Draw expand/collapse buttons for
+				 * children of the root item */
     int showHeader;		/* boolean: show column titles */
     Tcl_Obj *indentObj;		/* pixels: offset of child relative to
 				 * parent */
