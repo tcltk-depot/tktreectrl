@@ -6420,11 +6420,11 @@ Tree_SetOriginY(
     yOrigin += Tree_ContentTop(tree); /* origin -> canvas */
     index = Increment_FindY(tree, yOrigin);
 
-    /* Don't scroll too far left */
+    /* Don't scroll too far up */
     if (index < 0)
 	index = 0;
 
-    /* Don't scroll too far right */
+    /* Don't scroll too far down */
     if (index > indexMax)
 	index = indexMax;
 
