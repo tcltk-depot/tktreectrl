@@ -997,7 +997,7 @@ Increment_AddX(
     TreeDInfo dInfo = tree->dInfo;
     int visWidth = Tree_ContentWidth(tree);
 
-    while ((visWidth > 1) &&
+    while ((visWidth > 1) && (dInfo->xScrollIncrementCount > 0) &&
 	    (offset - dInfo->xScrollIncrements[dInfo->xScrollIncrementCount - 1]
 		    > visWidth)) {
 	size = Increment_AddX(tree,
@@ -1040,7 +1040,7 @@ Increment_AddY(
     TreeDInfo dInfo = tree->dInfo;
     int visHeight = Tree_ContentHeight(tree);
 
-    while ((visHeight > 1) &&
+    while ((visHeight > 1) && (dInfo->yScrollIncrementCount > 0) &&
 	    (offset - dInfo->yScrollIncrements[dInfo->yScrollIncrementCount - 1]
 		    > visHeight)) {
 	size = Increment_AddY(tree,
