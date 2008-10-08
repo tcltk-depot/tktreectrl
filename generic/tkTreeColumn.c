@@ -2771,6 +2771,8 @@ Column_DoLayout(
     }
 #endif
 
+    padList[0] = 0;
+
     if (column->arrow != ARROW_NONE) {
 	Column_GetArrowSize(column, &partArrow.width, &partArrow.height);
 	partArrow.padX[PAD_TOP_LEFT] = column->arrowPadX[PAD_TOP_LEFT];
