@@ -5,10 +5,10 @@
 
   $Id$}
 ]
-[manpage_begin treectrl n 2.2.7]
+[manpage_begin treectrl n 2.2.8]
 [moddesc {Tk Commands}]
 [titledesc {Create and manipulate hierarchical multicolumn widgets}]
-[require treectrl 2.2.7]
+[require treectrl 2.2.8]
 
 [description]
 [list_begin definitions] 
