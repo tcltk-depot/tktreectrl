@@ -6442,6 +6442,64 @@ Tree_SetOriginY(
 /*
  *--------------------------------------------------------------
  *
+ * Tree_GetOriginX --
+ *
+ *	Return the horizontal scroll position.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	May update the horizontal scroll position.
+ *	If the horizontal scroll position changes, then the widget is
+ *	redisplayed at idle time.
+ *
+ *--------------------------------------------------------------
+ */
+
+int
+Tree_GetOriginX(
+    TreeCtrl *tree		/* Widget info. */
+    )
+{
+    /* Update the value if needed. */
+    Tree_SetOriginX(tree, tree->xOrigin);
+
+    return tree->xOrigin;
+}
+
+/*
+ *--------------------------------------------------------------
+ *
+ * Tree_GetOriginY --
+ *
+ *	Return the vertical scroll position.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	May update the vertical scroll position.
+ *	If the vertical scroll position changes, then the widget is
+ *	redisplayed at idle time.
+ *
+ *--------------------------------------------------------------
+ */
+
+int
+Tree_GetOriginY(
+    TreeCtrl *tree		/* Widget info. */
+    )
+{
+    /* Update the value if needed. */
+    Tree_SetOriginY(tree, tree->yOrigin);
+
+    return tree->yOrigin;
+}
+
+/*
+ *--------------------------------------------------------------
+ *
  * Tree_EventuallyRedraw --
  *
  *	Schedule an idle task to redisplay the widget, if one is not
@@ -7401,6 +7459,7 @@ Tree_DumpDInfo(
     static CONST char *optionNames[] = {
 	"alloc", "ditem", "onscreen", "range", (char *) NULL
     };
+#undef DUMP_ALLOC // [BUG 2233922] SunOS: build error
     enum { DUMP_ALLOC, DUMP_DITEM, DUMP_ONSCREEN, DUMP_RANGE };
 
     if (objc != 4) {
