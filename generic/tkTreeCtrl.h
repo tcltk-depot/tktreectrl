@@ -809,6 +809,8 @@ extern int B_XviewCmd(TreeCtrl *tree, int objc, Tcl_Obj *CONST objv[]);
 extern int B_YviewCmd(TreeCtrl *tree, int objc, Tcl_Obj *CONST objv[]);
 extern void Tree_SetOriginX(TreeCtrl *tree, int xOrigin);
 extern void Tree_SetOriginY(TreeCtrl *tree, int yOrigin);
+extern int Tree_GetOriginX(TreeCtrl *tree);
+extern int Tree_GetOriginY(TreeCtrl *tree);
 extern void Tree_RelayoutWindow(TreeCtrl *tree);
 extern void Tree_FreeItemDInfo(TreeCtrl *tree, TreeItem item1, TreeItem item2);
 extern void Tree_InvalidateItemDInfo(TreeCtrl *tree, TreeColumn column, TreeItem item1, TreeItem item2);

@@ -1117,8 +1117,8 @@ static int TreeWidgetCmd(
 	    int x, y, w, h;
 	    int visWidth = Tree_ContentWidth(tree);
 	    int visHeight = Tree_ContentHeight(tree);
-	    int xOrigin = tree->xOrigin;
-	    int yOrigin = tree->yOrigin;
+	    int xOrigin = Tree_GetOriginX(tree);
+	    int yOrigin = Tree_GetOriginY(tree);
 	    int minX = Tree_ContentLeft(tree);
 	    int minY = Tree_ContentTop(tree);
 	    int maxX = Tree_ContentRight(tree);
@@ -1132,7 +1132,7 @@ static int TreeWidgetCmd(
 	    if (TreeItem_FromObj(tree, objv[2], &item, IFO_NOT_NULL) != TCL_OK)
 		goto error;
 
-	    /* Canvas coords */
+	    /* Get the item bounds in canvas coords. */
 	    if (Tree_ItemBbox(tree, item, COLUMN_LOCK_NONE, &x, &y, &w, &h) < 0)
 		break;
 
