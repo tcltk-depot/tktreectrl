@@ -1888,39 +1888,23 @@ to produce the effect of dragging the treectrl at high speed through its window.
 The return value is an empty string.
 [list_end]
 
-[call [arg pathName] [cmd state] [arg option] [arg args]]
-This command is used to manipulate the list of user-defined states,
-see section [sectref STATES] below.
-The exact behavior of the command depends on the [arg option] argument
-that follows the [cmd state] argument.
-The following forms of the command are supported:
-
-[list_begin definitions]
-[call [arg pathName] [cmd {state define}] [arg stateName]]
-Defines a new state with the name [arg stateName],
-which must not be the name of an existing state.
-
-[call [arg pathName] [cmd {state linkage}] [arg stateName]]
-Returns a string indicating
-whether the specified state is user-defined
-by means of the [cmd {state define}] widget command ([const dynamic])
-or predefined by the treectrl widget itself ([const static]).
-
-[call [arg pathName] [cmd {state names}]]
-Returns a list containing the names of all user-defined states.
-
-[call [arg pathName] [cmd {state undefine}] [opt [arg {stateName ...}]]]
-Every [arg stateName] must be the name of a user-defined state.
-Removes this state from the list of user-defined states.
-[list_end]
-
-[call [arg pathName] [cmd see] [arg itemDesc]]
-Adjust the view in the treectrl so that the item
-described by [arg itemDesc] is visible.
+[call [arg pathName] [cmd see] [arg itemDesc] [opt [arg columnDesc]] [opt [arg {option value ...}]]]
+Adjust the view in the treectrl so that the item described by [arg itemDesc]
+is visible.
 If the item is already visible then the command has no effect;
 otherwise the treectrl scrolls to bring the item into view,
 and the corresponding [const <Scroll-x>] and/or [const <Scroll-y>]
-events are generated.
+events are generated. If [arg columnDesc] is specified then a specific column
+of the item is scrolled into view instead of the entire item.
+[nl]
+The following options are supported:
+[list_begin opt]
+[opt_def [option -center] [arg flags]]
+[arg Flags] is a string that contains zero or more of the characters [const x]
+or [const y]. This option is used to center the item horizontally and/or
+vertically in the window.  The item will be centered regardless of whether it
+is already visible.
+[list_end]
 
 [call [arg pathName] [cmd selection] [arg option] [arg args]]
 This command is used to adjust the selection within a treectrl.
@@ -1991,6 +1975,32 @@ Any unselected items in [arg select] are added to the selection,
 and any selected items in [arg deselect] are removed from the selection (except
 for those items which are also in [arg select]).
 A [const <Selection>] event is generated if any items were selected or deselected.
+[list_end]
+
+[call [arg pathName] [cmd state] [arg option] [arg args]]
+This command is used to manipulate the list of user-defined states,
+see section [sectref STATES] below.
+The exact behavior of the command depends on the [arg option] argument
+that follows the [cmd state] argument.
+The following forms of the command are supported:
+
+[list_begin definitions]
+[call [arg pathName] [cmd {state define}] [arg stateName]]
+Defines a new state with the name [arg stateName],
+which must not be the name of an existing state.
+
+[call [arg pathName] [cmd {state linkage}] [arg stateName]]
+Returns a string indicating
+whether the specified state is user-defined
+by means of the [cmd {state define}] widget command ([const dynamic])
+or predefined by the treectrl widget itself ([const static]).
+
+[call [arg pathName] [cmd {state names}]]
+Returns a list containing the names of all user-defined states.
+
+[call [arg pathName] [cmd {state undefine}] [opt [arg {stateName ...}]]]
+Every [arg stateName] must be the name of a user-defined state.
+Removes this state from the list of user-defined states.
 [list_end]
 
 [call [arg pathName] [cmd style] [arg option] [opt [arg element]] \

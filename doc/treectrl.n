@@ -291,17 +291,7 @@ package require \fBtreectrl  2.2.8\fR
 .sp
 \fIpathName\fR \fBscan dragto\fR \fIx\fR \fIy\fR ?\fIgain\fR?
 .sp
-\fIpathName\fR \fBstate\fR \fIoption\fR \fIargs\fR
-.sp
-\fIpathName\fR \fBstate define\fR \fIstateName\fR
-.sp
-\fIpathName\fR \fBstate linkage\fR \fIstateName\fR
-.sp
-\fIpathName\fR \fBstate names\fR
-.sp
-\fIpathName\fR \fBstate undefine\fR ?\fIstateName ...\fR?
-.sp
-\fIpathName\fR \fBsee\fR \fIitemDesc\fR
+\fIpathName\fR \fBsee\fR \fIitemDesc\fR ?\fIcolumnDesc\fR? ?\fIoption value ...\fR?
 .sp
 \fIpathName\fR \fBselection\fR \fIoption\fR \fIargs\fR
 .sp
@@ -318,6 +308,16 @@ package require \fBtreectrl  2.2.8\fR
 \fIpathName\fR \fBselection includes\fR \fIitemDesc\fR
 .sp
 \fIpathName\fR \fBselection modify\fR \fIselect\fR \fIdeselect\fR
+.sp
+\fIpathName\fR \fBstate\fR \fIoption\fR \fIargs\fR
+.sp
+\fIpathName\fR \fBstate define\fR \fIstateName\fR
+.sp
+\fIpathName\fR \fBstate linkage\fR \fIstateName\fR
+.sp
+\fIpathName\fR \fBstate names\fR
+.sp
+\fIpathName\fR \fBstate undefine\fR ?\fIstateName ...\fR?
 .sp
 \fIpathName\fR \fBstyle\fR \fIoption\fR ?\fIelement\fR? ?\fIarg arg ...\fR?
 .sp
@@ -2466,39 +2466,24 @@ to produce the effect of dragging the treectrl at high speed through its window.
 The return value is an empty string.
 .RE
 .TP
-\fIpathName\fR \fBstate\fR \fIoption\fR \fIargs\fR
-This command is used to manipulate the list of user-defined states,
-see section \fBSTATES\fR below.
-The exact behavior of the command depends on the \fIoption\fR argument
-that follows the \fBstate\fR argument.
-The following forms of the command are supported:
-.RS
-.TP
-\fIpathName\fR \fBstate define\fR \fIstateName\fR
-Defines a new state with the name \fIstateName\fR,
-which must not be the name of an existing state.
-.TP
-\fIpathName\fR \fBstate linkage\fR \fIstateName\fR
-Returns a string indicating
-whether the specified state is user-defined
-by means of the \fBstate define\fR widget command (\fBdynamic\fR)
-or predefined by the treectrl widget itself (\fBstatic\fR).
-.TP
-\fIpathName\fR \fBstate names\fR
-Returns a list containing the names of all user-defined states.
-.TP
-\fIpathName\fR \fBstate undefine\fR ?\fIstateName ...\fR?
-Every \fIstateName\fR must be the name of a user-defined state.
-Removes this state from the list of user-defined states.
-.RE
-.TP
-\fIpathName\fR \fBsee\fR \fIitemDesc\fR
-Adjust the view in the treectrl so that the item
-described by \fIitemDesc\fR is visible.
+\fIpathName\fR \fBsee\fR \fIitemDesc\fR ?\fIcolumnDesc\fR? ?\fIoption value ...\fR?
+Adjust the view in the treectrl so that the item described by \fIitemDesc\fR
+is visible.
 If the item is already visible then the command has no effect;
 otherwise the treectrl scrolls to bring the item into view,
 and the corresponding \fB<Scroll-x>\fR and/or \fB<Scroll-y>\fR
-events are generated.
+events are generated. If \fIcolumnDesc\fR is specified then a specific column
+of the item is scrolled into view instead of the entire item.
+.sp
+The following options are supported:
+.RS
+.TP
+\fB\fB-center\fR\fR \fIflags\fR
+\fIFlags\fR is a string that contains zero or more of the characters \fBx\fR
+or \fBy\fR. This option is used to center the item horizontally and/or
+vertically in the window.  The item will be centered regardless of whether it
+is already visible.
+.RE
 .TP
 \fIpathName\fR \fBselection\fR \fIoption\fR \fIargs\fR
 This command is used to adjust the selection within a treectrl.
@@ -2571,6 +2556,32 @@ Any unselected items in \fIselect\fR are added to the selection,
 and any selected items in \fIdeselect\fR are removed from the selection (except
 for those items which are also in \fIselect\fR).
 A \fB<Selection>\fR event is generated if any items were selected or deselected.
+.RE
+.TP
+\fIpathName\fR \fBstate\fR \fIoption\fR \fIargs\fR
+This command is used to manipulate the list of user-defined states,
+see section \fBSTATES\fR below.
+The exact behavior of the command depends on the \fIoption\fR argument
+that follows the \fBstate\fR argument.
+The following forms of the command are supported:
+.RS
+.TP
+\fIpathName\fR \fBstate define\fR \fIstateName\fR
+Defines a new state with the name \fIstateName\fR,
+which must not be the name of an existing state.
+.TP
+\fIpathName\fR \fBstate linkage\fR \fIstateName\fR
+Returns a string indicating
+whether the specified state is user-defined
+by means of the \fBstate define\fR widget command (\fBdynamic\fR)
+or predefined by the treectrl widget itself (\fBstatic\fR).
+.TP
+\fIpathName\fR \fBstate names\fR
+Returns a list containing the names of all user-defined states.
+.TP
+\fIpathName\fR \fBstate undefine\fR ?\fIstateName ...\fR?
+Every \fIstateName\fR must be the name of a user-defined state.
+Removes this state from the list of user-defined states.
 .RE
 .TP
 \fIpathName\fR \fBstyle\fR \fIoption\fR ?\fIelement\fR? ?\fIarg arg ...\fR?
