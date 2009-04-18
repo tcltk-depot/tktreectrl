@@ -901,6 +901,8 @@ proc MakeMainWindow {} {
     [DemoList] notify install <Edit-accept>
     ###
 
+    [DemoList] notify install <DemoColumnVisibility>
+
     return
 }
 
@@ -1165,8 +1167,11 @@ proc ShowPopup {T x y X Y} {
     foreach C [$T column list] {
 	set break [expr {!([$T column order $C] % 20)}]
 	set Popup(visible,$C) [$T column cget $C -visible]
-	$m add checkbutton -label "Column $C \"[$T column cget $C -text]\" \[[$T column cget $C -image]\]" -variable Popup(visible,$C) \
-	    -command "$T column configure $C -visible \$Popup(visible,$C)" \
+	$m add checkbutton \
+	    -label "Column $C \"[$T column cget $C -text]\" \[[$T column cget $C -image]\]" \
+	    -variable Popup(visible,$C) \
+	    -command "$T column configure $C -visible \$Popup(visible,$C) ;
+		TreeCtrl::TryEvent $T DemoColumnVisibility {} {C $C}" \
 	    -columnbreak $break
     }
 
