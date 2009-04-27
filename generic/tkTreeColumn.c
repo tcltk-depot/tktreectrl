@@ -4921,7 +4921,7 @@ Tree_DrawHeader(
     }
 
     if (tree->doubleBuffer == DOUBLEBUFFER_ITEM) {
-	height = min(height, Tree_BorderBottom(tree) - Tree_BorderTop(tree));
+	height = min(tree->headerHeight, Tree_BorderBottom(tree) - Tree_BorderTop(tree));
 	XCopyArea(tree->display, pixmap, drawable,
 		tree->copyGC, Tree_HeaderLeft(tree), y,
 		Tree_HeaderWidth(tree), height,
