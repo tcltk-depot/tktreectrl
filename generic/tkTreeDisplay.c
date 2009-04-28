@@ -3461,6 +3461,46 @@ skipLock:
 /*
  *--------------------------------------------------------------
  *
+ * InvalidateWhitespace --
+ *
+ *	Subtract a rectangular area from the current whitespace
+ *	region.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *--------------------------------------------------------------
+ */
+
+static void
+InvalidateWhitespace(
+    TreeCtrl *tree,		/* Widget info. */
+    int x1, int y1,		/* Window coords to invalidate. */
+    int x2, int y2)		/* Window coords to invalidate. */
+{
+    TreeDInfo dInfo = tree->dInfo;
+
+    if ((x1 < x2 && y1 < y2) && TkRectInRegion(dInfo->wsRgn, x1, y1,
+	    x2 - x1, y2 - y1)) {
+	XRectangle rect;
+	TkRegion rgn = Tree_GetRegion(tree);
+
+	rect.x = x1;
+	rect.y = y1;
+	rect.width = x2 - x1;
+	rect.height = y2 - y1;
+	TkUnionRectWithRegion(&rect, rgn, rgn);
+	TkSubtractRegion(dInfo->wsRgn, rgn, dInfo->wsRgn);
+	Tree_FreeRegion(tree, rgn);
+    }
+}
+
+/*
+ *--------------------------------------------------------------
+ *
  * InvalidateDItemX --
  *
  *	Mark a horizontal span of a DItem as dirty (needing to be
@@ -3974,6 +4014,16 @@ ScrollHorizontalSimple(
     }
     Tree_FreeRegion(tree, damageRgn);
     Tree_InvalidateArea(tree, dirtyMin, minY, dirtyMax, maxY);
+
+    /* Invalidate the part of the whitespace that the content was copied
+     * over. This fixes the case where items are deleted and the list
+     * scrolls left: the deleted-item pixels were scrolled right over the
+     * old whitespace. */
+    if (offset > 0) {
+	dirtyMin = minX + width;
+	dirtyMax = maxX;
+	InvalidateWhitespace(tree, dirtyMin, minY, dirtyMax, maxY);
+    }
 }
 
 /*
@@ -4027,7 +4077,7 @@ ScrollVerticalSimple(
 
     offset = dInfo->yOrigin - tree->yOrigin;
 
-    /* We only scroll the content, not the whitespace */
+    /* Scroll the items, not the whitespace to the right */
     x = 0 - tree->xOrigin + Tree_TotalWidth(tree);
     if (x < maxX)
 	maxX = x;
@@ -4072,6 +4122,16 @@ ScrollVerticalSimple(
     }
     Tree_FreeRegion(tree, damageRgn);
     Tree_InvalidateArea(tree, minX, dirtyMin, maxX, dirtyMax);
+
+    /* Invalidate the part of the whitespace that the content was copied
+     * over. This fixes the case where items are deleted and the list
+     * scrolls up: the deleted-item pixels were scrolled down over the
+     * old whitespace. */
+    if (offset > 0) {
+	dirtyMin = minY + height;
+	dirtyMax = maxY;
+	InvalidateWhitespace(tree, minX, dirtyMin, maxX, dirtyMax);
+    }
 }
 
 /*
@@ -7078,19 +7138,7 @@ Tree_InvalidateArea(
     }
 
     /* Invalidate part of the whitespace */
-    if ((x1 < x2 && y1 < y2) && TkRectInRegion(dInfo->wsRgn, x1, y1,
-	    x2 - x1, y2 - y1)) {
-	XRectangle rect;
-	TkRegion rgn = Tree_GetRegion(tree);
-
-	rect.x = x1;
-	rect.y = y1;
-	rect.width = x2 - x1;
-	rect.height = y2 - y1;
-	TkUnionRectWithRegion(&rect, rgn, rgn);
-	TkSubtractRegion(dInfo->wsRgn, rgn, dInfo->wsRgn);
-	Tree_FreeRegion(tree, rgn);
-    }
+    InvalidateWhitespace(tree, x1, y1, x2, y2);
 
     if (tree->debug.enable && tree->debug.display && tree->debug.eraseColor) {
 	XFillRectangle(tree->display, Tk_WindowId(tree->tkwin),
