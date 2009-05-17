@@ -9,7 +9,7 @@
    -->
 
 <body>
-<h1> treectrl(n) 2.2.8 treectrl &quot;Tk Commands&quot;</h1>
+<h1> treectrl(n) 2.2.9 treectrl &quot;Tk Commands&quot;</h1>
 <h2><a name="name">NAME</a></h2>
 <p>
 <p> treectrl - Create and manipulate hierarchical multicolumn widgets
@@ -45,7 +45,7 @@
 &nbsp;&nbsp;&nbsp;&nbsp;<a href="#keywords">KEYWORDS</a><br>
 <h2><a name="synopsis">SYNOPSIS</a></h2>
 <p>
-package require <b>treectrl 2.2.8</b><br>
+package require <b>treectrl 2.2.9</b><br>
 <br><table border=1 width=100% cellspacing=0 cellpadding=0><tr            bgcolor=lightyellow><td bgcolor=lightyellow><table 0 width=100% cellspacing=0 cellpadding=0><tr valign=top ><td ><a href="#1"><b class='cmd'>treectrl</b> <i class='arg'>pathName</i> ?<i class='arg'>options</i>?</a></td></tr>
 <tr valign=top ><td ><a href="#2"><i class='arg'>pathName</i> <b class='cmd'>activate</b> <i class='arg'>itemDesc</i></a></td></tr>
 <tr valign=top ><td ><a href="#3"><i class='arg'>pathName</i> <b class='cmd'>bbox</b> ?<i class='arg'>area</i>?</a></td></tr>
@@ -689,21 +689,24 @@ Database Name:	<strong>wrap</strong><br>
 Database Class:	<strong>Wrap</strong><br>
 <dd>
 Specifies whether items are arranged in a 1- or 2-dimensional layout.
-
+<br><br>
 If the value is an empty string (the default), then items are arranged from top
 to bottom (-orient vertical) or from left to right (-orient horizontal) in
 a 1-dimensional layout.
-
-If the value is &quot;<em>N</em> <strong>items</strong>&quot;, then a no more than <em>N</em> items will appear in
+<br><br>
+If the value is &quot;<em>N</em> <strong>items</strong>&quot;, then no more than <em>N</em> items will appear in
 a vertical group (-orient vertical) or horizontal group (-orient horizontal).
-
-If the value is &quot;<em>N</em> <strong>pixels</strong>&quot;, then a no vertical group of items will be
+<br><br>
+If the value is &quot;<em>N</em> <strong>pixels</strong>&quot;, then no vertical group of items will be
 taller than <em>N</em> pixels (-orient vertical) or no horizontal group of items will
 be wider than <em>N</em> pixels (-orient horizontal).
-
+<br><br>
 If the value is <strong>window</strong>, then a no vertical group of items will be
 taller than the window (-orient vertical) or no horizontal group of items will
 be wider than the window (-orient horizontal).
+<br><br>
+It is also possible to cause wrapping to occur on a per-item basis by using
+the item option -wrap.  See the <b class='cmd'>item create</b> command for that option.
 
 <br><br>
 <dt>Command-Line Switch:	<strong>-xscrolldelay</strong><br>
@@ -1583,6 +1586,7 @@ the meaning of each option):
 <dt><strong><strong>-height</strong></strong> <i class='arg'>height</i><dd>
 <dt><strong><strong>-tags</strong></strong> <i class='arg'>tagList</i><dd>
 <dt><strong><strong>-visible</strong></strong> <i class='arg'>boolean</i><dd>
+<dt><strong><strong>-wrap</strong></strong> <i class='arg'>boolean</i><dd>
 
 </dl>
 
@@ -1674,6 +1678,12 @@ indicates that the item should be displayed in the list. The item will only be
 displayed if:
 a) each ancestor is a descendant of the root item (not an orphan);
 and b) each ancestor's <strong>-visible</strong> option is true 
+
+<br><br>
+<dt><strong><strong>-wrap</strong></strong> <i class='arg'>boolean</i><dd>
+<i class='arg'>Boolean</i> must have one of the forms accepted by <strong>Tcl_GetBoolean</strong>. It
+indicates that this item should be the first one in a horizontal range or
+vertical range of items. See also the widget option <strong>-wrap</strong>.
 
 </dl>
 

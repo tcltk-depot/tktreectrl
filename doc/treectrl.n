@@ -8,12 +8,12 @@
 '\"
 '\"   $Id$
 .so man.macros
-.TH "treectrl" n 2.2.8 treectrl "Tk Commands"
+.TH "treectrl" n 2.2.9 treectrl "Tk Commands"
 .BS
 .SH NAME
 treectrl \- Create and manipulate hierarchical multicolumn widgets
 .SH SYNOPSIS
-package require \fBtreectrl  2.2.8\fR
+package require \fBtreectrl  2.2.9\fR
 .sp
 \fBtreectrl\fR \fIpathName\fR ?\fIoptions\fR?
 .sp
@@ -945,17 +945,24 @@ Database Class:	\fBWrap\fR
 .fi
 .IP
 Specifies whether items are arranged in a 1- or 2-dimensional layout.
+.sp
 If the value is an empty string (the default), then items are arranged from top
 to bottom (-orient vertical) or from left to right (-orient horizontal) in
 a 1-dimensional layout.
-If the value is "\fIN\fR \fBitems\fR", then a no more than \fIN\fR items will appear in
+.sp
+If the value is "\fIN\fR \fBitems\fR", then no more than \fIN\fR items will appear in
 a vertical group (-orient vertical) or horizontal group (-orient horizontal).
-If the value is "\fIN\fR \fBpixels\fR", then a no vertical group of items will be
+.sp
+If the value is "\fIN\fR \fBpixels\fR", then no vertical group of items will be
 taller than \fIN\fR pixels (-orient vertical) or no horizontal group of items will
 be wider than \fIN\fR pixels (-orient horizontal).
+.sp
 If the value is \fBwindow\fR, then a no vertical group of items will be
 taller than the window (-orient vertical) or no horizontal group of items will
 be wider than the window (-orient horizontal).
+.sp
+It is also possible to cause wrapping to occur on a per-item basis by using
+the item option -wrap.  See the \fBitem create\fR command for that option.
 .LP
 .nf
 .ta 6c
@@ -1701,6 +1708,8 @@ the meaning of each option):
 \fB\fB-tags\fR\fR \fItagList\fR
 .TP
 \fB\fB-visible\fR\fR \fIboolean\fR
+.TP
+\fB\fB-wrap\fR\fR \fIboolean\fR
 .RE
 .TP
 \fIpathName\fR \fBitem count\fR ?\fIitemDesc\fR?
@@ -1775,6 +1784,11 @@ indicates that the item should be displayed in the list. The item will only be
 displayed if:
 a) each ancestor is a descendant of the root item (not an orphan);
 and b) each ancestor's \fB-visible\fR option is true
+.TP
+\fB\fB-wrap\fR\fR \fIboolean\fR
+\fIBoolean\fR must have one of the forms accepted by \fBTcl_GetBoolean\fR. It
+indicates that this item should be the first one in a horizontal range or
+vertical range of items. See also the widget option \fB-wrap\fR.
 .RE
 .TP
 \fIpathName\fR \fBitem delete\fR \fIfirst\fR ?\fIlast\fR?

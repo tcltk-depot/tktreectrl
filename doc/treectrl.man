@@ -5,10 +5,10 @@
 
   $Id$}
 ]
-[manpage_begin treectrl n 2.2.8]
+[manpage_begin treectrl n 2.2.9]
 [moddesc {Tk Commands}]
 [titledesc {Create and manipulate hierarchical multicolumn widgets}]
-[require treectrl 2.2.8]
+[require treectrl 2.2.9]
 
 [description]
 [list_begin definitions] 
@@ -324,21 +324,24 @@ not request any size at all.
 
 [tkoption_def -wrap wrap Wrap]
 Specifies whether items are arranged in a 1- or 2-dimensional layout.
-
+[nl]
 If the value is an empty string (the default), then items are arranged from top
 to bottom (-orient vertical) or from left to right (-orient horizontal) in
 a 1-dimensional layout.
-
-If the value is "[emph N] [const items]", then a no more than [emph N] items will appear in
+[nl]
+If the value is "[emph N] [const items]", then no more than [emph N] items will appear in
 a vertical group (-orient vertical) or horizontal group (-orient horizontal).
-
-If the value is "[emph N] [const pixels]", then a no vertical group of items will be
+[nl]
+If the value is "[emph N] [const pixels]", then no vertical group of items will be
 taller than [emph N] pixels (-orient vertical) or no horizontal group of items will
 be wider than [emph N] pixels (-orient horizontal).
-
+[nl]
 If the value is [const window], then a no vertical group of items will be
 taller than the window (-orient vertical) or no horizontal group of items will
 be wider than the window (-orient horizontal).
+[nl]
+It is also possible to cause wrapping to occur on a per-item basis by using
+the item option -wrap.  See the [cmd {item create}] command for that option.
 
 [tkoption_def -xscrolldelay xScrollDelay ScrollDelay]
 This option controls how quickly horizontal scrolling occurs while dragging
@@ -1075,6 +1078,7 @@ the meaning of each option):
 [opt_def [option -height] [arg height]]
 [opt_def [option -tags] [arg tagList]]
 [opt_def [option -visible] [arg boolean]]
+[opt_def [option -wrap] [arg boolean]]
 
 [list_end]
 
@@ -1151,6 +1155,11 @@ indicates that the item should be displayed in the list. The item will only be
 displayed if:
 a) each ancestor is a descendant of the root item (not an orphan);
 and b) each ancestor's [option -visible] option is true 
+
+[opt_def [option -wrap] [arg boolean]]
+[arg Boolean] must have one of the forms accepted by [fun Tcl_GetBoolean]. It
+indicates that this item should be the first one in a horizontal range or
+vertical range of items. See also the widget option [option -wrap].
 
 [list_end]
 
