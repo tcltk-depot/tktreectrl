@@ -4026,9 +4026,23 @@ ScrollHorizontalSimple(
      * scrolls left: the deleted-item pixels were scrolled right over the
      * old whitespace. */
     if (offset > 0) {
+#if 1
+	TkRegion rgn = Tree_GetRegion(tree);
+	XRectangle rect;
+	rect.x = dInfo->bounds[0];
+	rect.y = dInfo->bounds[1];
+	rect.width = dInfo->bounds[2] - rect.x;
+	rect.height = dInfo->bounds[3] - rect.y;
+	TkUnionRectWithRegion(&rect, rgn, rgn);
+	TkSubtractRegion(rgn, dInfo->wsRgn, rgn);
+	Tree_OffsetRegion(rgn, offset, 0);
+	TkSubtractRegion(dInfo->wsRgn, rgn, dInfo->wsRgn);
+	Tree_FreeRegion(tree, rgn);
+#else
 	dirtyMin = minX + width;
 	dirtyMax = maxX;
 	InvalidateWhitespace(tree, dirtyMin, minY, dirtyMax, maxY);
+#endif
     }
 }
 
@@ -4134,9 +4148,23 @@ ScrollVerticalSimple(
      * scrolls up: the deleted-item pixels were scrolled down over the
      * old whitespace. */
     if (offset > 0) {
+#if 1
+	TkRegion rgn = Tree_GetRegion(tree);
+	XRectangle rect;
+	rect.x = dInfo->bounds[0];
+	rect.y = dInfo->bounds[1];
+	rect.width = dInfo->bounds[2] - rect.x;
+	rect.height = dInfo->bounds[3] - rect.y;
+	TkUnionRectWithRegion(&rect, rgn, rgn);
+	TkSubtractRegion(rgn, dInfo->wsRgn, rgn);
+	Tree_OffsetRegion(rgn, 0, offset);
+	TkSubtractRegion(dInfo->wsRgn, rgn, dInfo->wsRgn);
+	Tree_FreeRegion(tree, rgn);
+#else
 	dirtyMin = minY + height;
 	dirtyMax = maxY;
 	InvalidateWhitespace(tree, minX, dirtyMin, maxX, dirtyMax);
+#endif
     }
 }
 
