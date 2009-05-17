@@ -4775,7 +4775,7 @@ DrawHeaderLeft(
 
     DrawDragIndicator(tree, td2.drawable, COLUMN_LOCK_LEFT);
 
-    height = min(height, Tree_BorderBottom(tree) - Tree_BorderTop(tree));
+    height = MIN(height, Tree_BorderBottom(tree) - Tree_BorderTop(tree));
     XCopyArea(tree->display, td2.drawable, td.drawable,
 	    tree->copyGC, Tree_HeaderLeft(tree), y,
 	    x - Tree_HeaderLeft(tree), height,
@@ -4811,7 +4811,7 @@ DrawHeaderRight(
 
     DrawDragIndicator(tree, td2.drawable, COLUMN_LOCK_RIGHT);
 
-    height = min(height, Tree_BorderBottom(tree) - Tree_BorderTop(tree));
+    height = MIN(height, Tree_BorderBottom(tree) - Tree_BorderTop(tree));
     XCopyArea(tree->display, td2.drawable, td.drawable,
 	    tree->copyGC, Tree_ContentRight(tree), y,
 	    x - Tree_ContentRight(tree), height,
@@ -4921,7 +4921,7 @@ Tree_DrawHeader(
     }
 
     if (tree->doubleBuffer == DOUBLEBUFFER_ITEM) {
-	height = min(tree->headerHeight, Tree_BorderBottom(tree) - Tree_BorderTop(tree));
+	height = MIN(tree->headerHeight, Tree_BorderBottom(tree) - Tree_BorderTop(tree));
 	XCopyArea(tree->display, pixmap, drawable,
 		tree->copyGC, Tree_HeaderLeft(tree), y,
 		Tree_HeaderWidth(tree), height,
