@@ -973,6 +973,9 @@ proc MakeListPopup {T} {
 	-command {$Popup(T) configure -doublebuffer $Popup(doublebuffer)}
     $m add cascade -label Buffering -menu $m2
 
+    set m2 [menu $m.mItemWrap -tearoff no]
+    $m add cascade -label "Item Wrap" -menu $m2
+
     set m2 [menu $m.mLineStyle -tearoff no]
     $m2 add radiobutton -label "dot" -variable Popup(linestyle) -value dot \
 	-command {$Popup(T) configure -linestyle $Popup(linestyle)}
@@ -1175,6 +1178,21 @@ proc ShowPopup {T x y X Y} {
 	    -columnbreak $break
     }
 
+    set m $menu.mItemWrap
+    $m delete 0 end
+    $m add command -label "All Off" -command {$Popup(T) item configure all -wrap off}
+    $m add command -label "All On" -command {$Popup(T) item configure all -wrap on}
+    if {$id ne ""} {
+	if {[lindex $id 0] eq "item"} {
+	    set item [lindex $id 1]
+	    if {[$T item cget $item -wrap]} {
+		$m add command -label "Item $item Off" -command "$T item configure $item -wrap off"
+	    } else {
+		$m add command -label "Item $item On" -command "$T item configure $item -wrap on"
+	    }
+	}
+    }
+
     set m $menu.mSpan
     $m delete 0 end
     if {[llength $id] >= 4 && [lindex $id 2] eq "column"} {
@@ -1237,6 +1255,7 @@ proc InitDemoList {} {
 	"MailWasher" DemoMailWasher mailwasher.tcl \
 	"Bitmaps" DemoBitmaps bitmaps.tcl \
 	"iMovie" DemoIMovie imovie.tcl \
+	"iMovie (Wrap)" DemoIMovieWrap imovie.tcl \
 	"Firefox Privacy" DemoFirefoxPrivacy firefox.tcl \
 	"Textvariable" DemoTextvariable textvariable.tcl \
 	"Big List" DemoBigList biglist.tcl \
@@ -1512,7 +1531,7 @@ proc DemoClear {} {
 	destroy $child
     }
 
-    $T item configure root -button no
+    $T item configure root -button no -wrap no
     $T item expand root
 
     # Restore some happy defaults to the demo list

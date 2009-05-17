@@ -338,6 +338,7 @@ struct TreeCtrl
     int depth;			/* max depth of items under root */
     int itemCount;		/* Total number of items */
     int itemVisCount;		/* Total number of ReallyVisible() items */
+    int itemWrapCount;		/* ReallyVisible() items with -wrap=true */
     QE_BindingTable bindingTable;
     TreeDragImage dragImage;
     TreeMarquee marquee;
@@ -541,6 +542,7 @@ extern int TreeItem_GetID(TreeCtrl *tree, TreeItem item_);
 extern int TreeItem_SetID(TreeCtrl *tree, TreeItem item_, int id);
 extern int TreeItem_GetEnabled(TreeCtrl *tree, TreeItem item_);
 extern int TreeItem_GetSelected(TreeCtrl *tree, TreeItem item_);
+extern int TreeItem_GetWrap(TreeCtrl *tree, TreeItem item_);
 extern TreeItem TreeItem_GetParent(TreeCtrl *tree, TreeItem item);
 extern TreeItem TreeItem_GetNextSibling(TreeCtrl *tree, TreeItem item);
 extern TreeItem TreeItem_NextSiblingVisible(TreeCtrl *tree, TreeItem item);
@@ -817,6 +819,7 @@ extern void Tree_InvalidateItemDInfo(TreeCtrl *tree, TreeColumn column, TreeItem
 extern void TreeDisplay_ItemDeleted(TreeCtrl *tree, TreeItem item);
 extern void TreeDisplay_ColumnDeleted(TreeCtrl *tree, TreeColumn column);
 extern void TreeDisplay_FreeColumnDInfo(TreeCtrl *tree, TreeColumn column);
+extern int Tree_ShouldDisplayLockedColumns(TreeCtrl *tree);
 extern void TreeDisplay_GetReadyForTrouble(TreeCtrl *tree, int *requestsPtr);
 extern int TreeDisplay_WasThereTrouble(TreeCtrl *tree, int requests);
 extern void Tree_InvalidateArea(TreeCtrl *tree, int x1, int y1, int x2, int y2);

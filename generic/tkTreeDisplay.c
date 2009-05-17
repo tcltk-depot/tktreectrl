@@ -166,8 +166,8 @@ Range_Free(TreeCtrl *tree, Range *range)
  * Range_Redo --
  *
  *	This procedure puts all ReallyVisible() TreeItems into a list of
- *	Ranges. If tree->wrapMode is TREE_WRAP_NONE there will only be a
- *	single Range.
+ *	Ranges. If tree->wrapMode is TREE_WRAP_NONE and no visible items
+ *	have the -wrap=true option there will only be a single Range.
  *
  * Results:
  *	None.
@@ -352,6 +352,8 @@ Range_Redo(
 	    item = TreeItem_NextVisible(tree, item);
 	    if (item == NULL)
 		break;
+	    if (TreeItem_GetWrap(tree, item))
+		break;
 	}
 	/* Since we needed to calculate the height or width of this range,
 	 * we don't need to do it later in Range_TotalWidth/Height() */
@@ -470,7 +472,11 @@ Range_TotalWidth(
 
 	/* If wrapping is disabled, then use the column width,
 	 * since it may expand to fill the window */
+#if 1
+	if ((tree->wrapMode == TREE_WRAP_NONE) && (tree->itemWrapCount <= 0))
+#else
 	if (tree->wrapMode == TREE_WRAP_NONE)
+#endif
 	    return range->totalWidth = TreeColumn_UseWidth(tree->columnVis);
 
 	/* Single item column, fixed width for all ranges */
@@ -4889,7 +4895,12 @@ ComplexWhitespace(
 	    TreeColumn_BackgroundCount(tree->columnTail) == 0)
 	return 0;
 
+#if 1
+    if (!tree->vertical || (tree->wrapMode != TREE_WRAP_NONE) ||
+	(tree->itemWrapCount > 0))
+#else
     if (!tree->vertical || tree->wrapMode != TREE_WRAP_NONE)
+#endif
 	return 0;
 
     if (tree->itemHeight <= 0 && tree->minItemHeight <= 0)
@@ -7036,6 +7047,40 @@ TreeDisplay_FreeColumnDInfo(
 
     if (dColumn != NULL)
 	ckfree((char *) dColumn);    
+}
+
+/*
+ *--------------------------------------------------------------
+ *
+ * Tree_ShouldDisplayLockedColumns --
+ *
+ *	Figure out if we are allowed to draw any locked columns.
+ *
+ * Results:
+ *	TRUE if locked columns should be displayed, otherwise FALSE.
+ *
+ * Side effects:
+ *	None.
+ *
+ *--------------------------------------------------------------
+ */
+
+int
+Tree_ShouldDisplayLockedColumns(
+    TreeCtrl *tree		/* Widget info. */
+    )
+{
+    if (!tree->vertical)
+	return 0;
+
+    if (tree->wrapMode != TREE_WRAP_NONE)
+	return 0;
+
+    Tree_UpdateItemIndex(tree); /* update tree->itemWrapCount */
+    if (tree->itemWrapCount > 0)
+	return 0;
+    
+    return 1;
 }
 
 /*
