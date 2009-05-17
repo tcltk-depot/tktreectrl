@@ -5594,18 +5594,25 @@ Tree_WidthOfLeftColumns(
     TreeCtrl *tree		/* Widget info. */
     )
 {
-    int showLocked = tree->vertical && (tree->wrapMode == TREE_WRAP_NONE);
+    if (tree->widthOfColumnsLeft >= 0)
+	return tree->widthOfColumnsLeft;
 
-    if (!showLocked) {
+    if (!Tree_ShouldDisplayLockedColumns(tree)) {
+	TreeColumn column = tree->columnLockLeft;
+	while (column != NULL && column->lock == COLUMN_LOCK_LEFT) {
+	    column->useWidth = 0;
+	    column = column->next;
+	}
 	tree->columnCountVisLeft = 0;
-	return tree->widthOfColumnsLeft = 0;
+	tree->widthOfColumnsLeft = 0;
+	return 0;
     }
-    if (tree->widthOfColumnsLeft < 0) {
-	tree->widthOfColumnsLeft = LayoutColumns(
-	    tree->columnLockLeft,
-	    NULL,
-	    &tree->columnCountVisLeft);
-    }
+
+    tree->widthOfColumnsLeft = LayoutColumns(
+	tree->columnLockLeft,
+	NULL,
+	&tree->columnCountVisLeft);
+
     return tree->widthOfColumnsLeft;
 }
 
@@ -5634,18 +5641,25 @@ Tree_WidthOfRightColumns(
     TreeCtrl *tree		/* Widget info. */
     )
 {
-    int showLocked = tree->vertical && (tree->wrapMode == TREE_WRAP_NONE);
+    if (tree->widthOfColumnsRight >= 0)
+	return tree->widthOfColumnsRight;
 
-    if (!showLocked) {
+    if (!Tree_ShouldDisplayLockedColumns(tree)) {
+	TreeColumn column = tree->columnLockRight;
+	while (column != NULL && column->lock == COLUMN_LOCK_RIGHT) {
+	    column->useWidth = 0;
+	    column = column->next;
+	}
 	tree->columnCountVisRight = 0;
-	return tree->widthOfColumnsRight = 0;
+	tree->widthOfColumnsRight = 0;
+	return 0;
     }
-    if (tree->widthOfColumnsRight < 0) {
-	tree->widthOfColumnsRight = LayoutColumns(
-	    tree->columnLockRight,
-	    NULL,
-	    &tree->columnCountVisRight);
-    }
+
+    tree->widthOfColumnsRight = LayoutColumns(
+	tree->columnLockRight,
+	NULL,
+	&tree->columnCountVisRight);
+
     return tree->widthOfColumnsRight;
 }
 
