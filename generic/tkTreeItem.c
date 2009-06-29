@@ -4931,6 +4931,7 @@ ItemCreateCmd(
 		if (count <= 0) {
 		    FormatResult(interp, "bad count \"%d\": must be > 0",
 			    count);
+		    return TCL_ERROR;
 		}
 		break;
 	    case OPT_HEIGHT:
@@ -4940,6 +4941,7 @@ ItemCreateCmd(
 		if (height < 0) {
 		    FormatResult(interp, "bad screen distance \"%s\": must be > 0",
 			    Tcl_GetString(objv[i + 1]));
+		    return TCL_ERROR;
 		}
 		break;
 	    case OPT_NEXTSIBLING:
