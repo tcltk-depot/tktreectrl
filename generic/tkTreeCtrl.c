@@ -1192,6 +1192,15 @@ TreeConfigure(
     XGCValues gcValues;
     unsigned long gcMask;
 
+    /* Init these to prevent compiler warnings */
+    saved.backgroundImage = NULL;
+#ifdef DEPRECATED
+    saved.defaultStyle.styles = NULL;
+    saved.defaultStyle.numStyles = 0;
+#endif
+    saved.wrapMode = TREE_WRAP_NONE;
+    saved.wrapArg = 0;
+
     for (error = 0; error <= 1; error++) {
 	if (error == 0) {
 	    if (Tk_SetOptions(interp, (char *) tree, tree->optionTable, objc,
