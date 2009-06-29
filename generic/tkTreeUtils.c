@@ -1673,6 +1673,7 @@ TextLayout TextLayout_Compute(
 				** just let lines get as long as needed. */
     Tk_Justify justify,		/* How to justify lines. */
     int maxLines,
+    int lMargin1, int lMargin2, /* Extra indentation or zero */
     int flags	/* Flag bits OR-ed together.
 		 ** TK_IGNORE_TABS means that tab characters
 		 ** should not be expanded.  TK_IGNORE_NEWLINES
@@ -1727,8 +1728,7 @@ TextLayout TextLayout_Compute(
     baseline = fm.ascent;
     maxWidth = 0;
 
-    curX = 0;
-
+    curX = lMargin1;
     end = Tcl_UtfAtIndex(string, numChars);
     special = string;
 
@@ -1830,7 +1830,14 @@ wrapLine:
 
 	Tcl_DStringAppend(&lineBuffer, (char *) &curX, sizeof(curX));
 
-	curX = 0;
+	chunkPtr = layoutPtr->numChunks ?
+	    &layoutPtr->chunks[layoutPtr->numChunks - 1] : NULL;
+	if ((chunkPtr != NULL) && !(flags & TK_IGNORE_NEWLINES) &&
+		(chunkPtr->start[0] == '\n'))
+	    curX = lMargin1;
+	else
+	    curX = lMargin2;
+
 	baseline += height;
 	layoutPtr->numLines++;
 
@@ -1838,8 +1845,8 @@ wrapLine:
 	    break;
     }
 
-    if (start >= end)
-    if ((layoutPtr->numChunks > 0) && !(flags & TK_IGNORE_NEWLINES)) {
+    if ((start >= end) && (layoutPtr->numChunks > 0) &&
+	    !(flags & TK_IGNORE_NEWLINES)) {
 	if (layoutPtr->chunks[layoutPtr->numChunks - 1].start[0] == '\n') {
 	    chunkPtr =
 #ifdef TEXTLAYOUT_ALLOCHAX
@@ -1930,7 +1937,7 @@ finish:
 
     layoutPtr->width = maxWidth;
     layoutPtr->height = baseline - fm.ascent;
-layoutPtr->totalWidth = 0;
+    layoutPtr->totalWidth = 0;
     if (layoutPtr->numChunks == 0) {
 	layoutPtr->height = height;
 
@@ -1962,13 +1969,14 @@ layoutPtr->totalWidth = 0;
 	    else if (justify == TK_JUSTIFY_RIGHT) {
 		chunkPtr->x += extra;
 	    }
-if (chunkPtr->x + chunkPtr->totalWidth > layoutPtr->totalWidth)
-    layoutPtr->totalWidth = chunkPtr->x + chunkPtr->totalWidth;
+	    if (chunkPtr->x + chunkPtr->totalWidth > layoutPtr->totalWidth)
+		layoutPtr->totalWidth = chunkPtr->x + chunkPtr->totalWidth;
 	    chunkPtr++;
 	}
 /* dbwin("totalWidth %d displayWidth %d\n", layoutPtr->totalWidth, maxWidth); */
-    Tcl_DStringFree(&lineBuffer);
     }
+
+    Tcl_DStringFree(&lineBuffer);
 
     /* We don't want single-line text layouts for text elements, but it happens for column titles */
 /*	if (layoutPtr->numLines == 1)

@@ -16,6 +16,10 @@
 #include "tkInt.h"
 #include "qebind.h"
 
+#ifdef PLATFORM_SDL
+#undef WIN32
+#endif
+
 #define dbwin TreeCtrl_dbwin
 #define dbwin_add_interp TreeCtrl_dbwin_add_interp
 extern void dbwin(char *fmt, ...);
@@ -897,7 +901,8 @@ extern void TreeDotRect_Draw(DotState *dotState, int x, int y, int width, int he
 extern void TreeDotRect_Restore(DotState *dotState);
 typedef struct TextLayout_ *TextLayout;
 extern TextLayout TextLayout_Compute(Tk_Font tkfont, CONST char *string,
-	int numChars, int wrapLength, Tk_Justify justify, int maxLines, int flags);
+	int numChars, int wrapLength, Tk_Justify justify, int maxLines,
+	int lMargin1, int lMargin2, int flags);
 extern void TextLayout_Free(TextLayout textLayout);
 extern void TextLayout_Size(TextLayout textLayout, int *widthPtr, int *heightPtr);
 extern int TextLayout_TotalWidth(TextLayout textLayout);

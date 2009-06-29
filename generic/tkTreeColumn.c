@@ -2623,7 +2623,8 @@ Column_UpdateTextLayout(
 	flags |= TK_WHOLE_WORDS;
 
     column->textLayout = TextLayout_Compute(tkfont, text,
-	    Tcl_NumUtfChars(text, textLen), width, justify, maxLines, flags);
+	    Tcl_NumUtfChars(text, textLen), width, justify, maxLines,
+	    0, 0, flags);
 }
 
 /*
