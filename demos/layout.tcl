@@ -99,7 +99,7 @@ proc DemoLayout {} {
 
     $T element create eb border -background $::SystemButtonFace \
 	-relief {sunken {selected} raised {}} -thickness 2 -filled yes
-    $T element create et text
+    $T element create et text -lmargin2 20
 
     set text "Here is a text element surrounded by a border element.\nResize the column to watch me wrap."
 
