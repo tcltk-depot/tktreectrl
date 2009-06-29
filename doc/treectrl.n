@@ -3497,6 +3497,23 @@ be truncated with an ellipsis at the right.
 If this option is specified as zero or an empty string (the default),
 there is no limit to the number of lines displayed.
 .TP
+\fB\fB-lmargin1\fR\fR \fIpixels\fR
+\fIPixels\fR is a screen distance that specifies how much a line of text should be
+indented.  If a line of text wraps, this option only applies to the first line
+on the display; the \fB-lmargin2\fR option controls the indentation for
+subsequent lines.
+If this option is specified as zero or an empty string (the default),
+then the line is not indented.
+This option was based on the Tk Text widget tag option of the same name.
+.TP
+\fB\fB-lmargin2\fR\fR \fIpixels\fR
+\fIPixels\fR is a screen distance that specifies how much a line of text should be
+indented.  If a line of text wraps, this option only applies to the second and
+later display lines for a line of text.
+If this option is specified as zero or an empty string (the default),
+then the line is not indented.
+This option was based on the Tk Text widget tag option of the same name.
+.TP
 \fB\fB-text\fR\fR \fIstring\fR
 \fIString\fR specifies a string to be displayed by the element.
 \fIString\fR may contain newline characters in which case multiple lines of text

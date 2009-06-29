@@ -3747,6 +3747,25 @@ If this option is specified as zero or an empty string (the default),
 there is no limit to the number of lines displayed.
 
 <br><br>
+<dt><strong><strong>-lmargin1</strong></strong> <i class='arg'>pixels</i><dd>
+<i class='arg'>Pixels</i> is a screen distance that specifies how much a line of text should be
+indented.  If a line of text wraps, this option only applies to the first line
+on the display; the <strong>-lmargin2</strong> option controls the indentation for
+subsequent lines.
+If this option is specified as zero or an empty string (the default),
+then the line is not indented.
+This option was based on the Tk Text widget tag option of the same name.
+
+<br><br>
+<dt><strong><strong>-lmargin2</strong></strong> <i class='arg'>pixels</i><dd>
+<i class='arg'>Pixels</i> is a screen distance that specifies how much a line of text should be
+indented.  If a line of text wraps, this option only applies to the second and
+later display lines for a line of text.
+If this option is specified as zero or an empty string (the default),
+then the line is not indented.
+This option was based on the Tk Text widget tag option of the same name.
+
+<br><br>
 <dt><strong><strong>-text</strong></strong> <i class='arg'>string</i><dd>
 <i class='arg'>String</i> specifies a string to be displayed by the element.
 <i class='arg'>String</i> may contain newline characters in which case multiple lines of text

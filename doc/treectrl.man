@@ -2953,6 +2953,23 @@ be truncated with an ellipsis at the right.
 If this option is specified as zero or an empty string (the default),
 there is no limit to the number of lines displayed.
 
+[opt_def [option -lmargin1] [arg pixels]]
+[arg Pixels] is a screen distance that specifies how much a line of text should be
+indented.  If a line of text wraps, this option only applies to the first line
+on the display; the [option -lmargin2] option controls the indentation for
+subsequent lines.
+If this option is specified as zero or an empty string (the default),
+then the line is not indented.
+This option was based on the Tk Text widget tag option of the same name.
+
+[opt_def [option -lmargin2] [arg pixels]]
+[arg Pixels] is a screen distance that specifies how much a line of text should be
+indented.  If a line of text wraps, this option only applies to the second and
+later display lines for a line of text.
+If this option is specified as zero or an empty string (the default),
+then the line is not indented.
+This option was based on the Tk Text widget tag option of the same name.
+
 [opt_def [option -text] [arg string]]
 [arg String] specifies a string to be displayed by the element.
 [arg String] may contain newline characters in which case multiple lines of text
