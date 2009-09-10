@@ -15,8 +15,11 @@
 #ifdef WIN32
 #include <windows.h>
 #endif
-#if defined(MAC_TCL) || defined(MAC_OSX_TK)
+#if defined(MAC_TK_CARBON)
 #include <Carbon/Carbon.h>
+#endif
+#if defined(MAC_TK_COCOA)
+#import <Cocoa/Cocoa.h>
 #endif
 
 /*
@@ -3945,7 +3948,7 @@ LoupeCmd(
     int xx, yy;
     HWND hwnd;
     HDC hdc;
-#elif defined(MAC_TCL) || defined(MAC_OSX_TK)
+#elif defined(MAC_OSX_TK)
 #else
     Visual *visual = Tk_Visual(tkwin);
     Window rootWindow = RootWindow(display, screenNum);
@@ -4006,7 +4009,7 @@ LoupeCmd(
     miny = GetSystemMetrics(SM_YVIRTUALSCREEN);
     displayW = GetSystemMetrics(SM_CXVIRTUALSCREEN);
     displayH = GetSystemMetrics(SM_CYVIRTUALSCREEN);
-#elif defined(MAC_TCL) || defined(MAC_OSX_TK)
+#elif defined(MAC_OSX_TK)
     /*
      * OS X multiple monitors can have negative coords
      * FIX: must be implemented
@@ -4073,7 +4076,7 @@ LoupeCmd(
 	}
     }
     ReleaseDC(hwnd, hdc);
-#elif defined(MAC_TCL) || defined(MAC_OSX_TK)
+#elif defined(MAC_OSX_TK)
     /*
      * Adapted from John Anon's ScreenController demo code.
      */
@@ -4226,7 +4229,7 @@ LoupeCmd(
 	    zoom, zoom, 1, 1, TK_PHOTO_COMPOSITE_SET);
 
     Tcl_Free((char *) pixelPtr);
-#if !defined(WIN32) && !defined(MAC_TCL) && !defined(MAC_OSX_TK)
+#if !defined(WIN32) && !defined(MAC_OSX_TK)
     ckfree((char *) xcolors);
     XDestroyImage(ximage);
 #endif

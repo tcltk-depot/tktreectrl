@@ -3197,8 +3197,8 @@ TreeColumn_NeededHeight(
 
 #if defined(MAC_OSX_TK)
     /* List headers are a fixed height on Aqua */
-    if (tree->useTheme) {
-	(void) TreeTheme_GetHeaderFixedHeight(tree, &column->neededHeight);
+    if (tree->useTheme &&
+	(TreeTheme_GetHeaderFixedHeight(tree, &column->neededHeight) == TCL_OK)) {
 	return column->neededHeight;
     }
 #endif
@@ -4694,7 +4694,7 @@ SetImageForColumn(
 	panic("tkTreeColumn.c:SetImageForColumn() ximage is NULL");
 
     /* XImage -> Tk_Image */
-    Tree_XImage2Photo(tree->interp, photoH, ximage, tree->columnDrag.alpha);
+    Tree_XImage2Photo(tree->interp, photoH, ximage, 0, tree->columnDrag.alpha);
 
     XDestroyImage(ximage);
     Tk_FreePixmap(tree->display, td.drawable);

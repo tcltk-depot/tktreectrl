@@ -4407,7 +4407,7 @@ TreeItem_DrawButton(
     if (!TreeItem_HasButton(tree, item))
 	return;
 
-#if defined(MAC_TCL) || defined(MAC_OSX_TK)
+#if defined(MAC_TK_CARBON)
     /* QuickDraw on Mac is offset by one pixel in both x and y. */
     macoffset = 1;
 #endif

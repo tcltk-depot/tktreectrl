@@ -15,6 +15,7 @@
 #define DW2Cy(y) ((y) + dInfo->yOrigin)
 
 #define COMPLEX_WHITESPACE
+#define REDRAW_RGN
 
 typedef struct TreeColumnDInfo_ TreeColumnDInfo_;
 typedef struct TreeDInfo_ TreeDInfo_;
@@ -112,6 +113,10 @@ struct TreeDInfo_
     int itemWidth;		/* Observed max TreeItem width */
     TreeDrawable pixmapW;	/* Pixmap as big as the window */
     TreeDrawable pixmapI;	/* Pixmap as big as the largest item */
+    TreeDrawable pixmapT;	/* Pixmap as big as the window.
+				   Use on non-composited desktops when
+				   displaying non-XOR dragimage, marquee
+				   and/or proxies. */
     TkRegion dirtyRgn;		/* DOUBLEBUFFER_WINDOW */
     int flags;			/* DINFO_XXX */
     int xScrollIncrement;	/* Last seen TreeCtr.xScrollIncrement */
@@ -138,6 +143,12 @@ struct TreeDInfo_
 				 * columns, this range holds the vertical
 				 * offset and height of each ReallyVisible
 				 * item for displaying locked columns. */
+#ifdef REDRAW_RGN
+    TkRegion redrawRgn;		/* Contains all redrawn (not copied) pixels
+				 * during a single Tree_Display call. */
+#endif /* REDRAW_RGN */
+    int overlays;		/* TRUE if the dragimage|marquee|proxy
+				 * were drawn in non-XOR mode. */
 };
 
 #ifdef COMPLEX_WHITESPACE
@@ -2356,7 +2367,7 @@ DisplayDelay(TreeCtrl *tree)
     if (tree->debug.enable &&
 	    tree->debug.display &&
 	    tree->debug.displayDelay > 0) {
-#if !defined(WIN32) && !defined(MAC_TCL) && !defined(MAC_OSX_TK)
+#if !defined(WIN32) && !defined(MAC_OSX_TK)
 	XSync(tree->display, False);
 #endif
 	Tcl_Sleep(tree->debug.displayDelay);
@@ -3675,6 +3686,40 @@ DblBufWinDirty(
     TkUnionRectWithRegion(&rect, dInfo->dirtyRgn, dInfo->dirtyRgn);
 }
 
+#ifdef REDRAW_RGN
+static void
+AddRgnToRedrawRgn(
+    TreeCtrl *tree,
+    TkRegion rgn)
+{
+    TreeDInfo dInfo = tree->dInfo;
+
+    Tree_UnionRegion(dInfo->redrawRgn, rgn, dInfo->redrawRgn);
+}
+
+static void
+AddRectToRedrawRgn(
+    TreeCtrl *tree,
+    int minX,
+    int minY,
+    int maxX,
+    int maxY)
+{
+    TkRegion rgn = Tree_GetRegion(tree);
+    XRectangle rect;
+
+    rect.x = minX;
+    rect.y = minY;
+    rect.width = maxX - minX;
+    rect.height = maxY - minY;
+    Tree_SetRectRegion(rgn, &rect);
+
+    AddRgnToRedrawRgn(tree, rgn);
+
+    Tree_FreeRegion(tree, rgn);
+}
+#endif /* REDRAW_RGN */
+
 /*
  *--------------------------------------------------------------
  *
@@ -4353,15 +4398,15 @@ Proxy_Draw(
     int y2
     )
 {
-#if defined(MAC_OSX_TK)
+#if defined(MAC_TK_CARBON)
     DrawXORLine(tree->display, Tk_WindowId(tree->tkwin), x1, y1, x2, y2);
 #else
     XGCValues gcValues;
     unsigned long gcMask;
     GC gc;
 
-#if defined(MAC_TCL)
-    gcValues.function = GXxor;
+#if defined(MAC_TK_COCOA)
+    gcValues.function = GXcopy;
 #else
     gcValues.function = GXinvert;
 #endif
@@ -4369,15 +4414,15 @@ Proxy_Draw(
     gcMask = GCFunction | GCGraphicsExposures;
     gc = Tree_GetGC(tree, gcMask, &gcValues);
 
-    /* GXinvert doesn't work with XFillRectangle() on Win32 or Mac */
-#if defined(WIN32) || defined(MAC_TCL)
+    /* GXinvert doesn't work with XFillRectangle() on Win32 */
+#if defined(WIN32)
     XDrawLine(tree->display, Tk_WindowId(tree->tkwin), gc, x1, y1, x2, y2);
 #else
     XFillRectangle(tree->display, Tk_WindowId(tree->tkwin), gc,
 	    x1, y1, MAX(x2 - x1, 1), MAX(y2 - y1, 1));
 #endif
 
-#endif /* !MAC_OSX_TK */
+#endif /* !MAC_TK_CARBON */
 }
 
 /*
@@ -4885,8 +4930,7 @@ DrawWhitespaceBelowItem(
 	columnBox.width = width;
 	columnBox.height = bounds[3] - top;
 	if (Tree_IntersectRect(&columnBox, &boundsBox, &columnBox)) {
-	    TkSubtractRegion(columnRgn, columnRgn, columnRgn);
-	    TkUnionRectWithRegion(&columnBox, columnRgn, columnRgn);
+	    Tree_SetRectRegion(columnRgn, &columnBox);
 	    TkIntersectRegion(dirtyRgn, columnRgn, columnRgn);
 	    DrawColumnBackground(tree, drawable, treeColumn,
 		    columnRgn, &columnBox, (RItem *) NULL, height, index);
@@ -5030,8 +5074,7 @@ DrawWhitespace(
 	    columnBox.x = x + Tree_TotalWidth(tree);
 	    columnBox.width = maxX - columnBox.x;
 	    columnBox.height = maxY - columnBox.y;
-	    TkSubtractRegion(columnRgn, columnRgn, columnRgn);
-	    TkUnionRectWithRegion(&columnBox, columnRgn, columnRgn);
+	    Tree_SetRectRegion(columnRgn, &columnBox);
 	    TkIntersectRegion(dirtyRgn, columnRgn, columnRgn);
 	    DrawColumnBackground(tree, drawable, tree->columnTail,
 		    columnRgn, &columnBox, rItem, height, index);
@@ -5248,6 +5291,10 @@ DisplayDItem(
 		dItem->index);
     }
 
+#ifdef REDRAW_RGN
+    AddRectToRedrawRgn(tree, left, top, right, bottom);
+#endif /* REDRAW_RGN */
+
     return 1;
 }
 
@@ -5381,6 +5428,36 @@ DisplayGetPixmap(
     return dPixmap->drawable;
 }
 
+static void
+SetBuffering(
+    TreeCtrl *tree)
+{
+    TreeDInfo dInfo = tree->dInfo;
+    int overlays = FALSE;
+
+    if ((TreeDragImage_IsVisible(tree->dragImage) &&
+	!TreeDragImage_IsXOR(tree->dragImage)) ||
+	(TreeMarquee_IsVisible(tree->marquee) &&
+	!TreeMarquee_IsXOR(tree->marquee))) {
+
+	overlays = TRUE;
+    }
+
+    if (overlays) {
+	tree->doubleBuffer = DOUBLEBUFFER_WINDOW;
+    } else {
+	tree->doubleBuffer = DOUBLEBUFFER_ITEM;
+    }
+
+    if (overlays != dInfo->overlays) {
+	dInfo->flags |=
+	    DINFO_DRAW_HEADER |
+	    DINFO_INVALIDATE |
+	    DINFO_DRAW_WHITESPACE;
+	dInfo->overlays = overlays;
+    }
+}
+
 /*
  *--------------------------------------------------------------
  *
@@ -5433,6 +5510,8 @@ Tree_Display(
     Tree_PreserveItems(tree);
 
 displayRetry:
+
+    SetBuffering(tree);
 
     /* Some change requires selection changes */
     if (dInfo->flags & DINFO_REDO_SELECTION) {
@@ -5702,8 +5781,16 @@ displayRetry:
     /* XOR off */
     TreeColumnProxy_Undisplay(tree);
     TreeRowProxy_Undisplay(tree);
-    TreeDragImage_Undisplay(tree->dragImage);
-    TreeMarquee_Undisplay(tree->marquee);
+    if (TreeDragImage_IsXOR(tree->dragImage))
+	TreeDragImage_Undisplay(tree->dragImage);
+    if (TreeMarquee_IsXOR(tree->marquee))
+	TreeMarquee_Undisplay(tree->marquee);
+
+#ifdef REDRAW_RGN
+    /* Collect all the pixels that are redrawn below into the redrawRgn.
+     * The redrawRgn is used to clip drawing of the marquee and dragimage. */
+    Tree_SetEmptyRegion(dInfo->redrawRgn);
+#endif /* REDRAW_RGN */
 
     if (dInfo->flags & DINFO_DRAW_HEADER) {
 	if (Tree_AreaBbox(tree, TREE_AREA_HEADER, &minX, &minY, &maxX, &maxY)) {
@@ -5716,6 +5803,9 @@ displayRetry:
 	    if (tree->doubleBuffer == DOUBLEBUFFER_WINDOW) {
 		DblBufWinDirty(tree, minX, minY, maxX, maxY);
 	    }
+#ifdef REDRAW_RGN
+//	    AddRectToRedrawRgn(tree, minX, minY, maxX, maxY);
+#endif /* REDRAW_RGN */
 	}
 	dInfo->flags &= ~DINFO_DRAW_HEADER;
     }
@@ -5740,7 +5830,7 @@ displayRetry:
     }
 
     if (dInfo->flags & DINFO_DRAW_WHITESPACE) {
-	TkSubtractRegion(dInfo->wsRgn, dInfo->wsRgn, dInfo->wsRgn);
+	Tree_SetEmptyRegion(dInfo->wsRgn);
 	dInfo->flags &= ~DINFO_DRAW_WHITESPACE;
     }
 
@@ -5794,6 +5884,9 @@ displayRetry:
 		DblBufWinDirty(tree, wsBox.x, wsBox.y, wsBox.x + wsBox.width,
 			wsBox.y + wsBox.height);
 	    }
+#ifdef REDRAW_RGN
+	    AddRgnToRedrawRgn(tree, wsRgnDif);
+#endif /* REDRAW_RGN */
 	}
 	if (wsRgnDif != wsRgnNew)
 	    Tree_FreeRegion(tree, wsRgnDif);
@@ -5832,6 +5925,9 @@ displayRetry:
 		DblBufWinDirty(tree, wsBox.x, wsBox.y, wsBox.x + wsBox.width,
 			wsBox.y + wsBox.height);
 	    }
+#ifdef REDRAW_RGN
+	    AddRgnToRedrawRgn(tree, wsRgnDif);
+#endif /* REDRAW_RGN */
 	}
 	Tree_FreeRegion(tree, wsRgnDif);
 	Tree_FreeRegion(tree, dInfo->wsRgn);
@@ -5933,6 +6029,71 @@ displayRetry:
     if (tree->debug.enable && tree->debug.display)
 	dbwin("copy %d draw %d %s\n", numCopy, numDraw, Tk_PathName(tkwin));
 
+#ifdef REDRAW_RGNxxx
+    tree->drawableXOrigin = tree->xOrigin;
+    tree->drawableYOrigin = tree->yOrigin;
+    if (TreeDragImage_IsXOR(tree->dragImage) == FALSE)
+	TreeDragImage_DrawClipped(tree->dragImage, tdrawable, dInfo->redrawRgn);
+    if (TreeMarquee_IsXOR(tree->marquee) == FALSE)
+	TreeMarquee_DrawClipped(tree->marquee, tdrawable, dInfo->redrawRgn);
+    Tree_SetEmptyRegion(dInfo->redrawRgn);
+#endif /* REDRAW_RGN */
+
+#if 1
+    if (dInfo->overlays) {
+
+	tdrawable.width = Tk_Width(tkwin);
+	tdrawable.height = Tk_Height(tkwin);
+
+	if (TreeTheme_IsDesktopComposited(tree)) {
+	    tdrawable.drawable = Tk_WindowId(tkwin);
+	} else {
+	    tdrawable.drawable = DisplayGetPixmap(tree, &dInfo->pixmapT,
+		Tk_Width(tree->tkwin), Tk_Height(tree->tkwin));
+	}
+
+	/* Copy double-buffer */
+	/* FIXME: only copy what is in dirtyRgn plus overlays */
+	XCopyArea(tree->display, dInfo->pixmapW.drawable,
+	    tdrawable.drawable,
+	    tree->copyGC,
+	    Tree_BorderLeft(tree), Tree_BorderTop(tree),
+	    Tree_BorderRight(tree) - Tree_BorderLeft(tree),
+	    Tree_BorderBottom(tree) - Tree_BorderTop(tree),
+	    Tree_BorderLeft(tree), Tree_BorderTop(tree));
+
+	/* Draw dragimage|marquee */
+	tree->drawableXOrigin = tree->xOrigin;
+	tree->drawableYOrigin = tree->yOrigin;
+	if (TreeDragImage_IsXOR(tree->dragImage) == FALSE)
+#ifdef DRAG_PIXMAP
+	    TreeDragImage_DrawSome(tree->dragImage, tdrawable,
+		    0, 0,
+		    0, 0);
+#else /* DRAG_PIXMAP */
+	    TreeDragImage_DrawClipped(tree->dragImage, tdrawable, NULL);
+#endif /* DRAG_PIXMAP */
+	if (TreeMarquee_IsXOR(tree->marquee) == FALSE)
+	    TreeMarquee_DrawClipped(tree->marquee, tdrawable, NULL);
+
+	if (TreeTheme_IsDesktopComposited(tree)) {
+	} else {
+
+	    /* Copy tripple-buffer to window */
+	    /* FIXME: only copy what is in dirtyRgn plus overlays */
+	    XCopyArea(tree->display, dInfo->pixmapT.drawable,
+		Tk_WindowId(tkwin),
+		tree->copyGC,
+		Tree_BorderLeft(tree), Tree_BorderTop(tree),
+		Tree_BorderRight(tree) - Tree_BorderLeft(tree),
+		Tree_BorderBottom(tree) - Tree_BorderTop(tree),
+		Tree_BorderLeft(tree), Tree_BorderTop(tree));
+	}
+
+	Tree_SetEmptyRegion(dInfo->dirtyRgn);
+	DisplayDelay(tree);
+    }
+#else
     if (tree->doubleBuffer == DOUBLEBUFFER_WINDOW) {
 	XRectangle box;
 
@@ -5948,13 +6109,16 @@ displayRetry:
 		    box.x, box.y);
 	    XSetClipMask(tree->display, tree->copyGC, None);
 	}
-	TkSubtractRegion(dInfo->dirtyRgn, dInfo->dirtyRgn, dInfo->dirtyRgn);
+	Tree_SetEmptyRegion(dInfo->dirtyRgn);
 	DisplayDelay(tree);
     }
+#endif
 
     /* XOR on */
-    TreeMarquee_Display(tree->marquee);
-    TreeDragImage_Display(tree->dragImage);
+    if (TreeMarquee_IsXOR(tree->marquee))
+	TreeMarquee_Display(tree->marquee);
+    if (TreeDragImage_IsXOR(tree->dragImage))
+	TreeDragImage_Display(tree->dragImage);
     TreeRowProxy_Display(tree);
     TreeColumnProxy_Display(tree);
 
@@ -7270,8 +7434,7 @@ Tree_InvalidateRegion(
 	    rect.y = dItem->y;
 	    rect.width = dItem->area.width;
 	    rect.height = dItem->height;
-	    TkSubtractRegion(rgn, rgn, rgn);
-	    TkUnionRectWithRegion(&rect, rgn, rgn);
+	    Tree_SetRectRegion(rgn, &rect);
 	    TkIntersectRegion(region, rgn, rgn);
 	    TkClipBox(rgn, &rect);
 	    if (rect.width > 0 && rect.height > 0) {
@@ -7285,8 +7448,7 @@ Tree_InvalidateRegion(
 	    rect.y = dItem->y;
 	    rect.width = dItem->left.width;
 	    rect.height = dItem->height;
-	    TkSubtractRegion(rgn, rgn, rgn);
-	    TkUnionRectWithRegion(&rect, rgn, rgn);
+	    Tree_SetRectRegion(rgn, &rect);
 	    TkIntersectRegion(region, rgn, rgn);
 	    TkClipBox(rgn, &rect);
 	    if (rect.width > 0 && rect.height > 0) {
@@ -7300,8 +7462,7 @@ Tree_InvalidateRegion(
 	    rect.y = dItem->y;
 	    rect.width = dItem->right.width;
 	    rect.height = dItem->height;
-	    TkSubtractRegion(rgn, rgn, rgn);
-	    TkUnionRectWithRegion(&rect, rgn, rgn);
+	    Tree_SetRectRegion(rgn, &rect);
 	    TkIntersectRegion(region, rgn, rgn);
 	    TkClipBox(rgn, &rect);
 	    if (rect.width > 0 && rect.height > 0) {
@@ -7493,6 +7654,9 @@ TreeDInfo_Init(
     dInfo->wsRgn = Tree_GetRegion(tree);
     dInfo->dirtyRgn = TkCreateRegion();
     Tcl_InitHashTable(&dInfo->itemVisHash, TCL_ONE_WORD_KEYS);
+#ifdef REDRAW_RGN
+    dInfo->redrawRgn = TkCreateRegion();
+#endif /* REDRAW_RGN */
     tree->dInfo = dInfo;
 }
 
@@ -7545,6 +7709,8 @@ TreeDInfo_Free(
 	Tk_FreePixmap(tree->display, dInfo->pixmapW.drawable);
     if (dInfo->pixmapI.drawable != None)
 	Tk_FreePixmap(tree->display, dInfo->pixmapI.drawable);
+    if (dInfo->pixmapT.drawable != None)
+	Tk_FreePixmap(tree->display, dInfo->pixmapT.drawable);
     if (dInfo->xScrollIncrements != NULL)
 	ckfree((char *) dInfo->xScrollIncrements);
     if (dInfo->yScrollIncrements != NULL)
@@ -7559,6 +7725,9 @@ TreeDInfo_Free(
     }
 #endif
     Tcl_DeleteHashTable(&dInfo->itemVisHash);
+#ifdef REDRAW_RGN
+    TkDestroyRegion(dInfo->redrawRgn);
+#endif /* REDRAW_RGN */
     WFREE(dInfo, TreeDInfo_);
 }
 

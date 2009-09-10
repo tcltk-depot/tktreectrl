@@ -44,6 +44,7 @@ extern void dbwin_add_interp(Tcl_Interp *interp);
 #define SELECTION_VISIBLE
 #define ALLOC_HAX
 #define DEPRECATED
+#define DRAG_PIXMAPxxx
 
 typedef struct TreeCtrl TreeCtrl;
 typedef struct TreeColumn_ *TreeColumn;
@@ -762,6 +763,8 @@ extern TreeColumnDInfo TreeColumn_GetDInfo(TreeColumn column);
 /* tkTreeDrag.c */
 extern int TreeDragImage_Init(TreeCtrl *tree);
 extern void TreeDragImage_Free(TreeDragImage dragImage_);
+extern int TreeDragImage_IsXOR(TreeDragImage dragImage_);
+extern int TreeDragImage_IsVisible(TreeDragImage dragImage_);
 extern void TreeDragImage_Display(TreeDragImage dragImage_);
 extern void TreeDragImage_Undisplay(TreeDragImage dragImage_);
 extern void TreeDragImage_Draw(TreeDragImage dragImage_, Drawable drawable, int x, int y);
@@ -770,6 +773,8 @@ extern int TreeDragImageCmd(ClientData clientData, Tcl_Interp *interp, int objc,
 /* tkTreeMarquee.c */
 extern int TreeMarquee_Init(TreeCtrl *tree);
 extern void TreeMarquee_Free(TreeMarquee marquee_);
+extern int TreeMarquee_IsXOR(TreeMarquee marquee_);
+extern int TreeMarquee_IsVisible(TreeMarquee marquee_);
 extern void TreeMarquee_Draw(TreeMarquee marquee_, Drawable drawable, int x, int y);
 extern void TreeMarquee_Display(TreeMarquee marquee_);
 extern void TreeMarquee_Undisplay(TreeMarquee marquee_);
@@ -876,6 +881,7 @@ extern int TreeTheme_GetArrowSize(TreeCtrl *tree, Drawable drawable, int up, int
 extern int TreeTheme_SetBorders(TreeCtrl *tree);
 extern int TreeTheme_DrawBorders(TreeCtrl *tree, Drawable drawable);
 extern void TreeTheme_Relayout(TreeCtrl *tree);
+extern int TreeTheme_IsDesktopComposited(TreeCtrl *tree);
 
 /* tkTreeUtils.c */
 #ifdef TREECTRL_DEBUG
@@ -909,7 +915,7 @@ extern int TextLayout_TotalWidth(TextLayout textLayout);
 extern void TextLayout_Draw(Display *display, Drawable drawable, GC gc,
 	TextLayout layout, int x, int y, int firstChar, int lastChar,
 	int underline);
-#ifdef MAC_OSX_TK
+#ifdef MAC_TK_CARBON
 extern void DrawXORLine(Display *display, Drawable drawable, int x1, int y1,
 	int x2, int y2);
 #endif
@@ -924,10 +930,14 @@ extern TkRegion Tree_GetRegion(TreeCtrl *tree);
 extern void Tree_FreeRegion(TreeCtrl *tree, TkRegion region);
 extern void Tree_FillRegion(Display *display, Drawable drawable, GC gc, TkRegion rgn);
 extern void Tree_OffsetRegion(TkRegion region, int xOffset, int yOffset);
+extern void Tree_SetEmptyRegion(TkRegion region);
+extern void Tree_SetRectRegion(TkRegion region, XRectangle *rect);
+extern void Tree_UnionRegion(TkRegion rgnA, TkRegion rgnB, TkRegion rgnOut);
 extern int Tree_ScrollWindow(TreeCtrl *tree, GC gc, int x, int y,
 	int width, int height, int dx, int dy, TkRegion damageRgn);
 extern void Tree_UnsetClipMask(TreeCtrl *tree, Drawable drawable, GC gc);
-extern void Tree_XImage2Photo(Tcl_Interp *interp, Tk_PhotoHandle photoH, XImage *ximage, int alpha);
+extern void Tree_XImage2Photo(Tcl_Interp *interp, Tk_PhotoHandle photoH,
+    XImage *ximage, unsigned long trans, int alpha);
 
 #define PAD_TOP_LEFT     0
 #define PAD_BOTTOM_RIGHT 1

@@ -748,6 +748,41 @@ TreeTheme_Relayout(
 {
 }
 
+int
+TreeTheme_IsDesktopComposited(
+    TreeCtrl *tree
+    )
+{
+    /* TODO:
+	Detect Vista/Win7 use of Desktop Window Manager using
+	  DwmIsCompositionEnabled().
+	WndProc should listen for WM_DWMCOMPOSITIONCHANGED.
+    */
+#if 0
+/* http://weblogs.asp.net/kennykerr/archive/2006/08/10/Windows-Vista-for-Developers-_1320_-Part-3-_1320_-The-Desktop-Window-Manager.aspx */
+bool IsCompositionEnabled()
+{
+    HMODULE library = ::LoadLibrary(L"dwmapi.dll");
+    bool result = false;
+
+    if (0 != library)
+    {
+        if (0 != ::GetProcAddress(library,
+                                  "DwmIsCompositionEnabled"))
+        {
+            BOOL enabled = FALSE;
+            result = SUCCEEDED(::DwmIsCompositionEnabled(&enabled)) && enabled;
+        }
+
+        VERIFY(::FreeLibrary(library));
+    }
+
+    return result;
+}
+#endif
+    return FALSE;
+}
+
 #if !defined(WM_THEMECHANGED)
 #define WM_THEMECHANGED 0x031A
 #endif
@@ -926,7 +961,97 @@ int TreeTheme_InitInterp(Tcl_Interp *interp)
     return TCL_OK;
 }
 
-#elif defined(MAC_OSX_TK)
+#elif defined(MAC_TK_COCOA)
+
+#import <Cocoa/Cocoa.h>
+#include "tkMacOSXInt.h"
+
+int TreeTheme_DrawHeaderItem(TreeCtrl *tree, Drawable drawable, int state, int arrow, int x, int y, int width, int height)
+{
+    return TCL_ERROR;
+}
+
+/* List headers are a fixed height on Aqua */
+int TreeTheme_GetHeaderFixedHeight(TreeCtrl *tree, int *heightPtr)
+{
+    return TCL_ERROR;
+}
+
+int TreeTheme_GetHeaderContentMargins(TreeCtrl *tree, int state, int arrow, int bounds[4])
+{
+    return TCL_ERROR;
+}
+
+int TreeTheme_DrawHeaderArrow(TreeCtrl *tree, Drawable drawable, int up, int x, int y, int width, int height)
+{
+    return TCL_ERROR;
+}
+
+int TreeTheme_DrawButton(TreeCtrl *tree, Drawable drawable, int open, int x, int y, int width, int height)
+{
+    return TCL_ERROR;
+}
+
+int TreeTheme_GetButtonSize(TreeCtrl *tree, Drawable drawable, int open, int *widthPtr, int *heightPtr)
+{
+    return TCL_ERROR;
+}
+
+int TreeTheme_GetArrowSize(TreeCtrl *tree, Drawable drawable, int up, int *widthPtr, int *heightPtr)
+{
+    return TCL_ERROR;
+}
+
+int TreeTheme_SetBorders(TreeCtrl *tree)
+{
+    return TCL_ERROR;
+}
+
+int
+TreeTheme_DrawBorders(
+    TreeCtrl *tree,
+    Drawable drawable
+    )
+{
+    return TCL_ERROR;
+}
+
+
+void
+TreeTheme_Relayout(
+    TreeCtrl *tree
+    )
+{
+}
+
+int
+TreeTheme_IsDesktopComposited(
+    TreeCtrl *tree
+    )
+{
+    return TRUE;
+}
+
+void TreeTheme_ThemeChanged(TreeCtrl *tree)
+{
+}
+
+int TreeTheme_Init(TreeCtrl *tree)
+{
+    return TCL_OK;
+}
+
+int TreeTheme_Free(TreeCtrl *tree)
+{
+    return TCL_OK;
+}
+
+int TreeTheme_InitInterp(Tcl_Interp *interp)
+{
+    return TCL_OK;
+}
+
+#elif defined(MAC_TK_CARBON)
 
 #include <Carbon/Carbon.h>
 #include "tkMacOSXInt.h"
@@ -1146,6 +1271,14 @@ TreeTheme_Relayout(
 {
 }
 
+int
+TreeTheme_IsDesktopComposited(
+    TreeCtrl *tree
+    )
+{
+    return TRUE;
+}
+
 void TreeTheme_ThemeChanged(TreeCtrl *tree)
 {
 }
@@ -1165,7 +1298,7 @@ int TreeTheme_InitInterp(Tcl_Interp *interp)
     return TCL_OK;
 }
 
-#else /* MAC_OSX_TK */
+#else /* MAC_TK_CARBON */
 
 int TreeTheme_DrawHeaderItem(TreeCtrl *tree, Drawable drawable, int state, int arrow, int x, int y, int width, int height)
 {
@@ -1218,6 +1351,14 @@ TreeTheme_Relayout(
     TreeCtrl *tree
     )
 {
+}
+
+int
+TreeTheme_IsDesktopComposited(
+    TreeCtrl *tree
+    )
+{
+    return FALSE;
 }
 
 void TreeTheme_ThemeChanged(TreeCtrl *tree)

@@ -125,11 +125,11 @@ if test "${TEA_PLATFORM}" = "windows" ; then
     TEA_ADD_LIBS([gdi32.lib user32.lib])
 
     AC_ARG_ENABLE(shellicon,
-	AC_HELP_STRING([--enable-shellicon],
-	    [build the shellicon extension (default: no)]),
-	[tcl_ok=$enableval], [tcl_ok=no])
+        AC_HELP_STRING([--enable-shellicon],
+        [build the shellicon extension (default: no)]),
+        [tcl_ok=$enableval], [tcl_ok=no])
     if test "$tcl_ok" = "yes" ; then
-	AC_CONFIG_SUBDIRS(shellicon)
+        AC_CONFIG_SUBDIRS(shellicon)
     fi
 
     # Find rc.exe or windres.exe.
@@ -151,9 +151,42 @@ if test "${TEA_PLATFORM}" = "windows" ; then
 else
     CLEANFILES="pkgIndex.tcl"
 fi
+
 if test "${TEA_WINDOWINGSYSTEM}" = "aqua"; then
-    TEA_ADD_LIBS([-framework Carbon])
+    # Tk 8.6 supports Cocoa and Carbon builds, Cocoa by default
+    if test "${TCL_MAJOR_VERSION}.${TCL_MINOR_VERSION}" = "8.6"; then
+        AC_MSG_CHECKING([whether to use Cocoa or Carbon])
+        AC_ARG_ENABLE(cocoa,
+            AC_HELP_STRING([--enable-cocoa=yes|no],
+                [use Cocoa on Mac OS X (default: yes)]),
+            [tcl_ok=$enableval], [tcl_ok=yes])
+        if test "$tcl_ok" = "yes"; then
+            TEA_ADD_CFLAGS([-DMAC_TK_COCOA -std=gnu99 -x objective-c -fobjc-gc])
+            TEA_ADD_LIBS([-framework Cocoa])
+        else
+            TEA_ADD_CFLAGS([-DMAC_TK_CARBON])
+            TEA_ADD_LIBS([-framework Carbon])
+        fi
+    # Tk 8.5 supports Cocoa (back-port) and Carbon builds, Carbon by default
+    elif test "${TCL_MAJOR_VERSION}.${TCL_MINOR_VERSION}" = "8.5"; then
+        AC_MSG_CHECKING([whether to use Cocoa or Carbon])
+        AC_ARG_ENABLE(cocoa,
+            AC_HELP_STRING([--enable-cocoa=yes|no],
+                [use Cocoa on Mac OS X (default: no)]),
+            [tcl_ok=$enableval], [tcl_ok=no])
+        if test "$tcl_ok" = "yes"; then
+            TEA_ADD_CFLAGS([-DMAC_TK_COCOA -std=gnu99 -x objective-c -fobjc-gc])
+            TEA_ADD_LIBS([-framework Cocoa])
+        else
+            TEA_ADD_CFLAGS([-DMAC_TK_CARBON])
+            TEA_ADD_LIBS([-framework Carbon])
+        fi
+    else
+        TEA_ADD_CFLAGS([-DMAC_TK_CARBON])
+        TEA_ADD_LIBS([-framework Carbon])
+    fi
 fi
+
 AC_SUBST(CLEANFILES)
 
 #--------------------------------------------------------------------

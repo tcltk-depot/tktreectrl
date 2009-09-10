@@ -37,6 +37,12 @@ struct TreeDragImage_
     DragElem *elem;
     int onScreen; /* TRUE if is displayed */
     int sx, sy; /* Window coords where displayed */
+    int sw, sh; /* Width/height of previously-displayed image */
+#ifdef DRAG_PIXMAP
+    int pixmapW, pixmapH;
+    Pixmap pixmap;
+    Tk_Image image;
+#endif /* DRAG_PIXMAP */
 };
 
 #define DRAG_CONF_VISIBLE		0x0001
@@ -48,6 +54,202 @@ static Tk_OptionSpec optionSpecs[] = {
     {TK_OPTION_END, (char *) NULL, (char *) NULL, (char *) NULL,
 	(char *) NULL, 0, -1, 0, 0, 0}
 };
+
+#ifdef DRAG_PIXMAP
+static void
+UpdateImage(
+    TreeDragImage dragImage	/* Drag image record. */
+    )
+{
+    TreeCtrl *tree = dragImage->tree;
+    Tk_PhotoHandle photoH;
+    XImage *ximage;
+    int width = dragImage->bounds[2] - dragImage->bounds[0];
+    int height = dragImage->bounds[3] - dragImage->bounds[1];
+    int alpha = 128;
+    XColor *colorPtr;
+
+    if (dragImage->image != NULL) {
+	Tk_FreeImage(dragImage->image);
+	dragImage->image = NULL;
+    }
+
+    photoH = Tk_FindPhoto(tree->interp, "::TreeCtrl::ImageDrag");
+    if (photoH == NULL) {
+	Tcl_GlobalEval(tree->interp, "image create photo ::TreeCtrl::ImageDrag");
+	photoH = Tk_FindPhoto(tree->interp, "::TreeCtrl::ImageDrag");
+	if (photoH == NULL)
+	    return;
+    }
+
+    /* Pixmap -> XImage */
+    ximage = XGetImage(tree->display, dragImage->pixmap, 0, 0,
+	    (unsigned int)width, (unsigned int)height, AllPlanes, ZPixmap);
+    if (ximage == NULL)
+	panic("tkTreeDrag.c:UpdateImage() ximage is NULL");
+
+    /* XImage -> Tk_Image */
+    colorPtr = Tk_GetColor(tree->interp, tree->tkwin, "pink");
+    Tree_XImage2Photo(tree->interp, photoH, ximage, colorPtr->pixel, alpha);
+
+    XDestroyImage(ximage);
+
+    dragImage->image = Tk_GetImage(tree->interp, tree->tkwin,
+	"::TreeCtrl::ImageDrag", NULL, (ClientData) NULL);
+}
+
+static void
+UpdatePixmap(
+    TreeDragImage dragImage	/* Drag image record. */
+    )
+{
+    TreeCtrl *tree = dragImage->tree;
+    int w, h;
+    XColor *colorPtr;
+    GC gc;
+    DragElem *elem;
+    unsigned long trans;
+
+    w = dragImage->bounds[2] - dragImage->bounds[0];
+    h = dragImage->bounds[3] - dragImage->bounds[1];
+    if (w > dragImage->pixmapW || h > dragImage->pixmapH)
+    {
+
+	if (dragImage->pixmap != None)
+	    Tk_FreePixmap(tree->display, dragImage->pixmap);
+	dragImage->pixmap = Tk_GetPixmap(tree->display,
+	    Tk_WindowId(tree->tkwin),
+	    w, h, Tk_Depth(tree->tkwin));
+
+	dragImage->pixmapW = w;
+	dragImage->pixmapH = h;
+    }
+
+    colorPtr = Tk_GetColor(tree->interp, tree->tkwin, "pink");
+    gc = Tk_GCForColor(colorPtr, Tk_WindowId(tree->tkwin));
+    XFillRectangle(tree->display, dragImage->pixmap, gc,
+	0, 0, w, h);
+
+    trans = colorPtr->pixel;
+
+    colorPtr = Tk_GetColor(tree->interp, tree->tkwin, "gray50");
+    gc = Tk_GCForColor(colorPtr, Tk_WindowId(tree->tkwin));
+
+    for (elem = dragImage->elem; elem != NULL; elem = elem->next) {
+	XFillRectangle(tree->display, dragImage->pixmap, gc,
+	    elem->x - dragImage->bounds[0],
+	    elem->y - dragImage->bounds[1],
+	    elem->width, elem->height);
+    }
+
+    if (dragImage->image != NULL) {
+	Tk_FreeImage(dragImage->image);
+	dragImage->image = NULL;
+    }
+}
+
+void
+TreeDragImage_DrawSome(
+    TreeDragImage dragImage,	/* Drag image record. */
+    TreeDrawable td,
+    int x, int y,
+    int width, int height
+    )
+{
+    TreeCtrl *tree = dragImage->tree;
+    int ix, iy, iw, ih;
+
+    if (!dragImage->visible)
+	return;
+
+    if (dragImage->image == NULL)
+	UpdateImage(dragImage);
+
+    if (dragImage->image == NULL)
+	return;
+
+    ix = iy = 0;
+    iw = dragImage->bounds[2] - dragImage->bounds[0];
+    ih = dragImage->bounds[3] - dragImage->bounds[1];
+
+    /* FIXME: clip src image to area to be redrawn */
+
+    Tree_RedrawImage(dragImage->image, ix, iy, iw, ih, td,
+	dragImage->x + dragImage->bounds[0] - tree->drawableXOrigin,
+	dragImage->y + dragImage->bounds[1] - tree->drawableYOrigin);
+}
+#endif /* DRAG_PIXMAP */
+
+void
+TreeDragImage_DrawClipped(
+    TreeDragImage dragImage,	/* Drag image record. */
+    TreeDrawable td,
+    TkRegion region)		/* Clipping region. */
+{
+    TreeCtrl *tree = dragImage->tree;
+    XColor *colorPtr;
+    GC gc;
+    DragElem *elem;
+#if 1
+    XGCValues gcValues;
+    unsigned long mask;
+    XPoint points[5];
+
+    if (!dragImage->visible)
+	return;
+
+    gcValues.stipple = Tk_GetBitmap(tree->interp, tree->tkwin, "gray50");
+    gcValues.fill_style = FillStippled;
+    mask = GCStipple|GCFillStyle;
+    gc = Tk_GetGC(tree->tkwin, mask, &gcValues);
+
+    for (elem = dragImage->elem; elem != NULL; elem = elem->next) {
+	XRectangle rect;
+	rect.x = dragImage->x + elem->x /*- dragImage->bounds[0]*/ - tree->drawableXOrigin;
+	rect.y = dragImage->y + elem->y /*- dragImage->bounds[1]*/ - tree->drawableYOrigin;
+	rect.width = elem->width;
+	rect.height = elem->height;
+
+#ifdef WIN32
+	points[0].x = rect.x, points[0].y = rect.y;
+	points[1].x = rect.x + rect.width - 1, points[1].y = rect.y;
+	points[2].x = rect.x + rect.width - 1, points[2].y = rect.y + rect.height - 1;
+	points[3].x = rect.x, points[3].y = rect.y + rect.height - 1;
+	points[4] = points[0];
+	XDrawLines(tree->display, td.drawable, gc, points, 5, CoordModeOrigin);
+#else
+	XDrawRectangle(tree->display, td.drawable, gc, rect.x, rect.y,
+	    rect.width - 1, rect.height - 1);
+#endif
+    }
+
+    Tk_FreeGC(tree->display, gc);
+#else
+    TkRegion rgn;
+
+    if (!dragImage->visible)
+	return;
+
+    colorPtr = Tk_GetColor(tree->interp, tree->tkwin, "gray50");
+    gc = Tk_GCForColor(colorPtr, Tk_WindowId(tree->tkwin));
+
+    rgn = Tree_GetRegion(tree);
+
+    for (elem = dragImage->elem; elem != NULL; elem = elem->next) {
+	XRectangle rect;
+	rect.x = dragImage->x + elem->x /*- dragImage->bounds[0]*/ - tree->drawableXOrigin;
+	rect.y = dragImage->y + elem->y /*- dragImage->bounds[1]*/ - tree->drawableYOrigin;
+	rect.width = elem->width;
+	rect.height = elem->height;
+	TkUnionRectWithRegion(&rect, rgn, rgn);
+    }
+
+    TkIntersectRegion(rgn, region, rgn);
+    Tree_FillRegion(tree->display, td.drawable, gc, rgn);
+
+    Tree_FreeRegion(tree, rgn);
+#endif
+}
 
 /*
  *----------------------------------------------------------------------
@@ -173,9 +375,63 @@ TreeDragImage_Free(
 
     while (elem != NULL)
 	elem = DragElem_Free(dragImage, elem);
+#ifdef DRAG_PIXMAP
+    if (dragImage->image != NULL)
+	Tk_FreeImage(dragImage->image);
+    if (dragImage->pixmap != None)
+	Tk_FreePixmap(dragImage->tree->display, dragImage->pixmap);
+#endif /* DRAG_PIXMAP */
     Tk_FreeConfigOptions((char *) dragImage, dragImage->optionTable,
 	dragImage->tree->tkwin);
     WFREE(dragImage, TreeDragImage_);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeDragImage_IsXOR --
+ *
+ *	Return true if the dragimage is being drawn with XOR.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int TreeDragImage_IsXOR(TreeDragImage dragImage)
+{
+#if defined(WIN32) || defined(MAC_TK_CARBON)
+    return TRUE;
+#elif defined(MAC_TK_COCOA)
+    return FALSE;
+#else
+    return TRUE; /* X11 */
+#endif
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeDragImage_IsVisible --
+ *
+ *	Return true if the dragimage is being drawn.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int TreeDragImage_IsVisible(TreeDragImage dragImage)
+{
+    return dragImage->visible;
 }
 
 /*
@@ -203,9 +459,19 @@ TreeDragImage_Display(
     TreeCtrl *tree = dragImage->tree;
 
     if (!dragImage->onScreen && dragImage->visible) {
-	dragImage->sx = 0 - tree->xOrigin;
-	dragImage->sy = 0 - tree->yOrigin;
-	TreeDragImage_Draw(dragImage, Tk_WindowId(tree->tkwin), dragImage->sx, dragImage->sy);
+	if (TreeDragImage_IsXOR(dragImage) == FALSE) {
+	    dragImage->sx = dragImage->x + dragImage->bounds[0] - tree->xOrigin;
+	    dragImage->sy = dragImage->y + dragImage->bounds[1] - tree->yOrigin;
+	    dragImage->sw = dragImage->bounds[2] - dragImage->bounds[0];
+	    dragImage->sh = dragImage->bounds[3] - dragImage->bounds[1];
+/*	    Tree_InvalidateItemArea(tree, dragImage->sx, dragImage->sy,
+		dragImage->sx + dragImage->sw, dragImage->sy + dragImage->sh);*/
+	    Tree_EventuallyRedraw(tree);
+	} else {
+	    dragImage->sx = 0 - tree->xOrigin;
+	    dragImage->sy = 0 - tree->yOrigin;
+	    TreeDragImage_Draw(dragImage, Tk_WindowId(tree->tkwin), dragImage->sx, dragImage->sy);
+	}
 	dragImage->onScreen = TRUE;
     }
 }
@@ -234,7 +500,14 @@ TreeDragImage_Undisplay(
     TreeCtrl *tree = dragImage->tree;
 
     if (dragImage->onScreen) {
-	TreeDragImage_Draw(dragImage, Tk_WindowId(tree->tkwin), dragImage->sx, dragImage->sy);
+	if (TreeDragImage_IsXOR(dragImage) == FALSE) {
+/*	    Tree_InvalidateItemArea(tree, dragImage->sx, dragImage->sy,
+		dragImage->sx + dragImage->sw, dragImage->sy + dragImage->sh);*/
+	    Tree_EventuallyRedraw(tree);
+	} else {
+	    TreeDragImage_Draw(dragImage, Tk_WindowId(tree->tkwin),
+		dragImage->sx, dragImage->sy);
+	}
 	dragImage->onScreen = FALSE;
     }
 }
@@ -484,6 +757,9 @@ doneADD:
 		if (elem->y + elem->height > dragImage->bounds[3])
 		    dragImage->bounds[3] = elem->y + elem->height;
 	    }
+#ifdef DRAG_PIXMAP
+	    UpdatePixmap(dragImage);
+#endif /* DRAG_PIXMAP */
 	    TreeDragImage_Display(tree->dragImage);
 	    return result;
 	}

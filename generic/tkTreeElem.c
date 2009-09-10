@@ -3490,7 +3490,14 @@ TreeElement_GetSortData(
 		}
 	    }
 	    if (elemX->textCfg != NULL) {
-		if (TclGetLong(tree->interp, elemX->textCfg, lv) != TCL_OK)
+		Tcl_Obj obj;
+
+		obj.refCount = 1;
+		obj.bytes = (char *) elemX->textCfg;
+		obj.length = strlen(elemX->textCfg);
+		obj.typePtr = NULL;
+
+		if (Tcl_GetLongFromObj(tree->interp, &obj, lv) != TCL_OK)
 		    return TCL_ERROR;
 		break;
 	    }
