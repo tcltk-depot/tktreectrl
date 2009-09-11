@@ -162,7 +162,7 @@ if test "${TEA_WINDOWINGSYSTEM}" = "aqua"; then
             [tcl_ok=$enableval], [tcl_ok=yes])
         if test "$tcl_ok" = "yes"; then
             TEA_ADD_CFLAGS([-DMAC_TK_COCOA -std=gnu99 -x objective-c -fobjc-gc])
-            TEA_ADD_LIBS([-framework Cocoa])
+            TEA_ADD_LIBS([-framework Cocoa -framework Carbon])
         else
             TEA_ADD_CFLAGS([-DMAC_TK_CARBON])
             TEA_ADD_LIBS([-framework Carbon])
@@ -176,7 +176,7 @@ if test "${TEA_WINDOWINGSYSTEM}" = "aqua"; then
             [tcl_ok=$enableval], [tcl_ok=no])
         if test "$tcl_ok" = "yes"; then
             TEA_ADD_CFLAGS([-DMAC_TK_COCOA -std=gnu99 -x objective-c -fobjc-gc])
-            TEA_ADD_LIBS([-framework Cocoa])
+            TEA_ADD_LIBS([-framework Cocoa -framework Carbon])
         else
             TEA_ADD_CFLAGS([-DMAC_TK_CARBON])
             TEA_ADD_LIBS([-framework Carbon])
