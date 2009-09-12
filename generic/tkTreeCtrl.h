@@ -871,7 +871,8 @@ extern int TreeTheme_InitInterp(Tcl_Interp *interp);
 extern void TreeTheme_ThemeChanged(TreeCtrl *tree);
 extern int TreeTheme_Init(TreeCtrl *tree);
 extern int TreeTheme_Free(TreeCtrl *tree);
-extern int TreeTheme_DrawHeaderItem(TreeCtrl *tree, Drawable drawable, int state, int arrow, int x, int y, int width, int height);
+extern int TreeTheme_DrawHeaderItem(TreeCtrl *tree, Drawable drawable,
+    int state, int arrow, int visIndex, int x, int y, int width, int height);
 extern int TreeTheme_GetHeaderFixedHeight(TreeCtrl *tree, int *heightPtr);
 extern int TreeTheme_GetHeaderContentMargins(TreeCtrl *tree, int state, int arrow, int bounds[4]);
 extern int TreeTheme_DrawHeaderArrow(TreeCtrl *tree, Drawable drawable, int up, int x, int y, int width, int height);

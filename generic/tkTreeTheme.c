@@ -364,7 +364,7 @@ LoadXPThemeProcs(HINSTANCE *phlib)
 }
 
 int TreeTheme_DrawHeaderItem(TreeCtrl *tree, Drawable drawable, int state,
-    int arrow, int x, int y, int width, int height)
+    int arrow, int visIndex, int x, int y, int width, int height)
 {
     HTHEME hTheme;
     HDC hDC;
@@ -993,24 +993,13 @@ GetCGContextForDrawable(
     return macDraw->context;
 }
 
-int TreeTheme_DrawHeaderItem(TreeCtrl *tree, Drawable drawable, int state,
-    int arrow, int x, int y, int width, int height)
+static HIThemeButtonDrawInfo
+GetThemeButtonDrawInfo(
+    TreeCtrl *tree,
+    int state,
+    int arrow)
 {
-    MacDrawable *macDraw = (MacDrawable *) drawable;
-    CGRect bounds;
     HIThemeButtonDrawInfo info;
-    CGContextRef context;
-    HIShapeRef boundsRgn;
-    CGAffineTransform t = { .a = 1, .b = 0, .c = 0, .d = -1, .tx = 0,
-	.ty = macDraw->size.height};
-
-    if (!(macDraw->flags & TK_IS_PIXMAP))
-	return TCL_ERROR;
-
-    bounds.origin.x = macDraw->xOff + x;
-    bounds.origin.y = macDraw->yOff + y;
-    bounds.size.width = width;
-    bounds.size.height = height;
 
     info.version = 0;
     switch (state) {
@@ -1029,6 +1018,26 @@ int TreeTheme_DrawHeaderItem(TreeCtrl *tree, Drawable drawable, int state,
 	case ARROW_DOWN: info.adornment = kThemeAdornmentDefault; break;
     }
 
+    return info;
+}
+
+int TreeTheme_DrawHeaderItem(TreeCtrl *tree, Drawable drawable, int state,
+    int arrow, int visIndex, int x, int y, int width, int height)
+{
+    MacDrawable *macDraw = (MacDrawable *) drawable;
+    CGRect bounds;
+    HIThemeButtonDrawInfo info;
+    CGContextRef context;
+    HIShapeRef boundsRgn;
+    CGAffineTransform t = { .a = 1, .b = 0, .c = 0, .d = -1, .tx = 0,
+	.ty = macDraw->size.height};
+    int leftEdgeOffset;
+
+    if (!(macDraw->flags & TK_IS_PIXMAP))
+	return TCL_ERROR;
+
+    info = GetThemeButtonDrawInfo(tree, state, arrow);
+
     /* Really want TkMacOSXSetupDrawingContext here. */
     context = GetCGContextForDrawable(tree, drawable, x, y, width, height);
     if (context == NULL)
@@ -1036,17 +1045,33 @@ int TreeTheme_DrawHeaderItem(TreeCtrl *tree, Drawable drawable, int state,
     CGContextSaveGState(context);
     CGContextConcatCTM(context, t);
 
+    /* See SF patch 'aqua header drawing - ID: 1356447' */
+    /* The left edge overlaps the right edge of the previous column. */
+    /* Only show the left edge if this is the first column or the
+     * "blue" column (with a sort arrow). */
+    if (visIndex == 0 || arrow == ARROW_NONE)
+	leftEdgeOffset = 0;
+    else
+	leftEdgeOffset = -1;
+
     /* Create a clipping region as big as the header. */
+    bounds.origin.x = macDraw->xOff + x + leftEdgeOffset;
+    bounds.origin.y = macDraw->yOff + y;
+    bounds.size.width = width - leftEdgeOffset;
+    bounds.size.height = height;
     boundsRgn = HIShapeCreateWithRect(&bounds);
 
     /* Set the clipping region */
     HIShapeReplacePathInCGContext(boundsRgn, context);
     CGContextEOClip(context);
 
-    /* Draw the left edge outside of the clipping region. */
     /* See SF patch 'aqua header drawing - ID: 1356447' */
-    bounds.origin.x -= 1;
-    bounds.size.width += 1;
+    if (visIndex == 0)
+	leftEdgeOffset = 0;
+    else
+	leftEdgeOffset = -1;
+    bounds.origin.x = macDraw->xOff + x + leftEdgeOffset;
+    bounds.size.width = width - leftEdgeOffset;
 
     (void) HIThemeDrawButton(&bounds, &info, context,
 	kHIThemeOrientationNormal, NULL);
@@ -1067,7 +1092,8 @@ int TreeTheme_GetHeaderFixedHeight(TreeCtrl *tree, int *heightPtr)
     return TCL_OK;
 }
 
-int TreeTheme_GetHeaderContentMargins(TreeCtrl *tree, int state, int arrow, int bounds[4])
+int TreeTheme_GetHeaderContentMargins(TreeCtrl *tree, int state, int arrow,
+    int bounds[4])
 {
     CGRect inBounds, outBounds;
     HIThemeButtonDrawInfo info;
@@ -1079,22 +1105,7 @@ int TreeTheme_GetHeaderContentMargins(TreeCtrl *tree, int state, int arrow, int 
     GetThemeMetric(kThemeMetricListHeaderHeight, &metric);
     inBounds.size.height = metric;
 
-    info.version = 0;
-    switch (state) {
-	case COLUMN_STATE_ACTIVE:  info.state = kThemeStateActive /* kThemeStateRollover */; break;
-	case COLUMN_STATE_PRESSED: info.state = kThemeStatePressed; break;
-	default:		   info.state = kThemeStateActive; break;
-    }
-    /* Background window */
-    if (!tree->isActive)
-	info.state = kThemeStateInactive;
-    info.kind = kThemeListHeaderButton;
-    info.value = (arrow != ARROW_NONE) ? kThemeButtonOn : kThemeButtonOff;
-    switch (arrow) {
-	case ARROW_NONE: info.adornment = kThemeAdornmentHeaderButtonNoSortArrow; break;
-	case ARROW_UP: info.adornment = kThemeAdornmentHeaderButtonSortUp; break;
-	case ARROW_DOWN: info.adornment = kThemeAdornmentDefault; break;
-    }
+    info = GetThemeButtonDrawInfo(tree, state, arrow);
 
     (void) HIThemeGetButtonContentBounds(
 	&inBounds,
@@ -1114,14 +1125,70 @@ int TreeTheme_DrawHeaderArrow(TreeCtrl *tree, Drawable drawable, int up, int x, 
     return TCL_ERROR;
 }
 
-int TreeTheme_DrawButton(TreeCtrl *tree, Drawable drawable, int open, int x, int y, int width, int height)
+int TreeTheme_DrawButton(TreeCtrl *tree, Drawable drawable, int open,
+    int x, int y, int width, int height)
 {
-    return TCL_ERROR;
+    MacDrawable *macDraw = (MacDrawable *) drawable;
+    CGRect bounds;
+    HIThemeButtonDrawInfo info;
+    CGContextRef context;
+    CGAffineTransform t = { .a = 1, .b = 0, .c = 0, .d = -1, .tx = 0,
+	.ty = macDraw->size.height};
+    HIShapeRef clipRgn;
+
+    if (!(macDraw->flags & TK_IS_PIXMAP))
+	return TCL_ERROR;
+
+    bounds.origin.x = macDraw->xOff + x;
+    bounds.origin.y = macDraw->yOff + y;
+    bounds.size.width = width;
+    bounds.size.height = height;
+
+    info.version = 0;
+    info.state = kThemeStateActive;
+    info.kind = kThemeDisclosureButton;
+    info.value = open ? kThemeDisclosureDown : kThemeDisclosureRight;
+    info.adornment = kThemeAdornmentDrawIndicatorOnly;
+
+    /* Really want TkMacOSXSetupDrawingContext here. */
+    /* FIXME: If the context doesn't exist, this will draw a box under
+     * the button. But the item background will already have been drawn
+     * into the Pixmap, creating the context, so this should work. */
+    context = GetCGContextForDrawable(tree, drawable, x, y, width, height);
+    if (context == NULL)
+	return TCL_ERROR;
+    CGContextSaveGState(context);
+    CGContextConcatCTM(context, t);
+
+    /* Set the clipping region */
+    clipRgn = HIShapeCreateWithRect(&bounds);
+    HIShapeReplacePathInCGContext(clipRgn, context);
+    CGContextEOClip(context);
+
+    (void) HIThemeDrawButton(&bounds, &info, context,
+	kHIThemeOrientationNormal, NULL);
+
+    CGContextRestoreGState(context);
+    CFRelease(clipRgn);
+
+    return TCL_OK;
 }
 
 int TreeTheme_GetButtonSize(TreeCtrl *tree, Drawable drawable, int open, int *widthPtr, int *heightPtr)
 {
-    return TCL_ERROR;
+    SInt32 metric;
+
+    (void) GetThemeMetric(
+	kThemeMetricDisclosureTriangleWidth,
+	&metric);
+    *widthPtr = metric;
+
+    (void) GetThemeMetric(
+	kThemeMetricDisclosureTriangleHeight,
+	&metric);
+    *heightPtr = metric;
+
+    return TCL_OK;
 }
 
 int TreeTheme_GetArrowSize(TreeCtrl *tree, Drawable drawable, int up, int *widthPtr, int *heightPtr)
@@ -1185,7 +1252,7 @@ int TreeTheme_InitInterp(Tcl_Interp *interp)
 static RgnHandle oldClip = NULL, boundsRgn = NULL;
 
 int TreeTheme_DrawHeaderItem(TreeCtrl *tree, Drawable drawable, int state,
-    int arrow, int x, int y, int width, int height)
+    int arrow, int visIndex, int x, int y, int width, int height)
 {
     MacDrawable *macWin = (MacDrawable *) drawable;
     Rect bounds;
@@ -1425,7 +1492,8 @@ int TreeTheme_InitInterp(Tcl_Interp *interp)
 
 #else /* MAC_TK_CARBON */
 
-int TreeTheme_DrawHeaderItem(TreeCtrl *tree, Drawable drawable, int state, int arrow, int x, int y, int width, int height)
+int TreeTheme_DrawHeaderItem(TreeCtrl *tree, Drawable drawable, int state,
+    int arrow, int visIndex, int x, int y, int width, int height)
 {
     return TCL_ERROR;
 }
@@ -1520,7 +1588,8 @@ typedef struct TreeThemeData_
     Ttk_Padding buttonPadding[2];
 } TreeThemeData_;
 
-int TreeTheme_DrawHeaderItem(TreeCtrl *tree, Drawable drawable, int state, int arrow, int x, int y, int width, int height)
+int TreeTheme_DrawHeaderItem(TreeCtrl *tree, Drawable drawable, int state,
+    int arrow, int visIndex, int x, int y, int width, int height)
 {
     TreeThemeData themeData = tree->themeData;
     Ttk_Layout layout = themeData->headingLayout;

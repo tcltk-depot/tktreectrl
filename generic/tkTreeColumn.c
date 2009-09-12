@@ -4513,6 +4513,8 @@ Column_Draw(
     TreeColumn column,		/* Column record. */
     TreeDrawable td,		/* Where to draw. */
     int x, int y,		/* Top-left corner of the column's header. */
+    int visIndex,		/* 0-based index in the list of visible
+				 * columns. */
     int dragImage		/* TRUE if we are creating a transparent
 				 * drag image for this header. */
     )
@@ -4541,7 +4543,7 @@ Column_Draw(
     } else {
 	if (tree->useTheme) {
 	    theme = TreeTheme_DrawHeaderItem(tree, td.drawable, column->state,
-		    column->arrow, x, y, width, height);
+		    column->arrow, visIndex, x, y, width, height);
 	}
 	if (theme != TCL_OK)
 	    Tk_Fill3DRectangle(tree->tkwin, td.drawable, border,
@@ -4685,7 +4687,7 @@ SetImageForColumn(
     td.drawable = Tk_GetPixmap(tree->display, Tk_WindowId(tree->tkwin),
 	    width, height, Tk_Depth(tree->tkwin));
 
-    Column_Draw(column, td, 0, 0, TRUE);
+    Column_Draw(column, td, 0, 0, 0, TRUE);
 
     /* Pixmap -> XImage */
     ximage = XGetImage(tree->display, td.drawable, 0, 0,
@@ -4760,6 +4762,7 @@ DrawHeaderLeft(
     int x = Tree_HeaderLeft(tree), y = Tree_HeaderTop(tree);
     int height = tree->headerHeight;
     TreeDrawable td2;
+    int visIndex = 0;
 
     td2.width = Tk_Width(tkwin);
     td2.height = Tree_HeaderBottom(tree);
@@ -4768,7 +4771,7 @@ DrawHeaderLeft(
 
     while (column != NULL && column->lock == COLUMN_LOCK_LEFT) {
 	if (column->visible) {
-	    Column_Draw(column, td2, x, y, FALSE);
+	    Column_Draw(column, td2, x, y, visIndex++, FALSE);
 	    x += column->useWidth;
 	}
 	column = column->next;
@@ -4796,6 +4799,7 @@ DrawHeaderRight(
     int x = Tree_ContentRight(tree), y = Tree_HeaderTop(tree);
     int height = tree->headerHeight;
     TreeDrawable td2;
+    int visIndex = 0;
 
     td2.width = Tk_Width(tkwin);
     td2.height = Tree_HeaderBottom(tree);
@@ -4804,7 +4808,7 @@ DrawHeaderRight(
 
     while (column != NULL && column->lock == COLUMN_LOCK_RIGHT) {
 	if (column->visible) {
-	    Column_Draw(column, td2, x, y, FALSE);
+	    Column_Draw(column, td2, x, y, visIndex++, FALSE);
 	    x += column->useWidth;
 	}
 	column = column->next;
@@ -4850,6 +4854,7 @@ Tree_DrawHeader(
     Drawable drawable = td.drawable;
     TreeDrawable tp;
     Drawable pixmap;
+    int visIndex = 0;
 
     /* Update layout if needed */
     (void) Tree_HeaderHeight(tree);
@@ -4872,7 +4877,7 @@ Tree_DrawHeader(
     while (column != NULL && column->lock == COLUMN_LOCK_NONE) {
 	if (column->visible) {
 	    if ((x < maxX) && (x + column->useWidth > minX))
-		Column_Draw(column, tp, x, y, FALSE);
+		Column_Draw(column, tp, x, y, visIndex++, FALSE);
 	    x += column->useWidth;
 	}
 	column = column->next;
@@ -4887,7 +4892,8 @@ Tree_DrawHeader(
 	    Tk_Fill3DRectangle(tkwin, pixmap, tree->border,
 		    x, y, width, height, 0, TK_RELIEF_FLAT);
 	} else if (tree->useTheme &&
-	    (TreeTheme_DrawHeaderItem(tree, pixmap, 0, 0, x, y, width, height) == TCL_OK)) {
+	    (TreeTheme_DrawHeaderItem(tree, pixmap, 0, 0, tree->columnCountVis,
+		x, y, width, height) == TCL_OK)) {
 	} else {
 	    Tk_3DBorder border;
 	    border = PerStateBorder_ForState(tree, &column->border,
