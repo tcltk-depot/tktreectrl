@@ -3,7 +3,7 @@
  *
  *	This module implements treectrl widget's main display code.
  *
- * Copyright (c) 2002-2008 Tim Baker
+ * Copyright (c) 2002-2009 Tim Baker
  *
  * RCS: @(#) $Id$
  */
@@ -4372,9 +4372,37 @@ ScrollHorizontalComplex(
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
+ * Proxy_IsXOR --
+ *
+ *	Return true if the column/row proxies should be drawn with XOR.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+Proxy_IsXOR(void)
+{
+#if defined(WIN32) || defined(MAC_TK_CARBON)
+    return TRUE;
+#elif defined(MAC_TK_COCOA)
+    return FALSE;
+#else
+    return TRUE; /* X11 */
+#endif
+}
+
+/*
  *--------------------------------------------------------------
  *
- * Proxy_Draw --
+ * Proxy_DrawXOR --
  *
  *	Draw (or erase) the visual indicator used when the user is
  *	resizing a column or row (and -columnresizemode is "proxy").
@@ -4390,7 +4418,7 @@ ScrollHorizontalComplex(
  */
 
 static void
-Proxy_Draw(
+Proxy_DrawXOR(
     TreeCtrl *tree,		/* Widget info. */
     int x1,			/* Vertical or horizontal line window coords. */
     int y1,
@@ -4428,35 +4456,6 @@ Proxy_Draw(
 /*
  *--------------------------------------------------------------
  *
- * TreeColumnProxy_Undisplay --
- *
- *	Hide the visual indicator used when the user is
- *	resizing a column (if it is displayed).
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Stuff is erased in the TreeCtrl window.
- *
- *--------------------------------------------------------------
- */
-
-void
-TreeColumnProxy_Undisplay(
-    TreeCtrl *tree		/* Widget info. */
-    )
-{
-    if (tree->columnProxy.onScreen) {
-	Proxy_Draw(tree, tree->columnProxy.sx, Tree_BorderTop(tree),
-		tree->columnProxy.sx, Tree_BorderBottom(tree));
-	tree->columnProxy.onScreen = FALSE;
-    }
-}
-
-/*
- *--------------------------------------------------------------
- *
  * TreeColumnProxy_Display --
  *
  *	Display the visual indicator used when the user is
@@ -4479,9 +4478,38 @@ TreeColumnProxy_Display(
 {
     if (!tree->columnProxy.onScreen && (tree->columnProxy.xObj != NULL)) {
 	tree->columnProxy.sx = tree->columnProxy.x;
-	Proxy_Draw(tree, tree->columnProxy.x, Tree_BorderTop(tree),
+	Proxy_DrawXOR(tree, tree->columnProxy.x, Tree_BorderTop(tree),
 		tree->columnProxy.x, Tree_BorderBottom(tree));
 	tree->columnProxy.onScreen = TRUE;
+    }
+}
+
+/*
+ *--------------------------------------------------------------
+ *
+ * TreeColumnProxy_Undisplay --
+ *
+ *	Hide the visual indicator used when the user is
+ *	resizing a column (if it is displayed).
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Stuff is erased in the TreeCtrl window.
+ *
+ *--------------------------------------------------------------
+ */
+
+void
+TreeColumnProxy_Undisplay(
+    TreeCtrl *tree		/* Widget info. */
+    )
+{
+    if (tree->columnProxy.onScreen) {
+	Proxy_DrawXOR(tree, tree->columnProxy.sx, Tree_BorderTop(tree),
+		tree->columnProxy.sx, Tree_BorderBottom(tree));
+	tree->columnProxy.onScreen = FALSE;
     }
 }
 
@@ -4510,7 +4538,7 @@ TreeRowProxy_Display(
 {
     if (!tree->rowProxy.onScreen && (tree->rowProxy.yObj != NULL)) {
 	tree->rowProxy.sy = tree->rowProxy.y;
-	Proxy_Draw(tree, Tree_BorderLeft(tree), tree->rowProxy.y,
+	Proxy_DrawXOR(tree, Tree_BorderLeft(tree), tree->rowProxy.y,
 		Tree_BorderRight(tree), tree->rowProxy.y);
 	tree->rowProxy.onScreen = TRUE;
     }
@@ -4539,10 +4567,56 @@ TreeRowProxy_Undisplay(
     )
 {
     if (tree->rowProxy.onScreen) {
-	Proxy_Draw(tree, Tree_BorderLeft(tree), tree->rowProxy.sy,
+	Proxy_DrawXOR(tree, Tree_BorderLeft(tree), tree->rowProxy.sy,
 		Tree_BorderRight(tree), tree->rowProxy.sy);
 	tree->rowProxy.onScreen = FALSE;
     }
+}
+
+static void
+Proxy_Draw(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeDrawable td,		/* Where to draw. */
+    int x1,			/* Vertical or horizontal line window coords. */
+    int y1,
+    int x2,
+    int y2
+    )
+{
+    XGCValues gcValues;
+    unsigned long gcMask;
+    GC gc;
+
+    gcValues.function = GXcopy;
+    gcValues.graphics_exposures = False;
+    gcMask = GCFunction | GCGraphicsExposures;
+    gc = Tree_GetGC(tree, gcMask, &gcValues);
+
+    XDrawLine(tree->display, td.drawable, gc, x1, y1, x2, y2);
+}
+
+static void
+TreeColumnProxy_Draw(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeDrawable td		/* Where to draw. */
+    )
+{
+    if (tree->columnProxy.xObj == NULL)
+	return;
+    Proxy_Draw(tree, td, tree->columnProxy.x, Tree_BorderTop(tree),
+	    tree->columnProxy.x, Tree_BorderBottom(tree));
+}
+
+static void
+TreeRowProxy_Draw(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeDrawable td		/* Where to draw. */
+    )
+{
+    if (tree->rowProxy.yObj == NULL)
+	return;
+    Proxy_Draw(tree, td, Tree_BorderLeft(tree), tree->rowProxy.y,
+	    Tree_BorderRight(tree), tree->rowProxy.y);
 }
 
 /*
@@ -5428,6 +5502,23 @@ DisplayGetPixmap(
     return dPixmap->drawable;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * SetBuffering --
+ *
+ *	Chooses the appropriate level of offscreen buffering depending
+ *	on whether we need to draw the dragimage or marquee in non-XOR.
+ *
+ * Results:
+ *	tree->doubleBuffer is possibly updated.
+ *
+ * Side effects:
+ *	If the buffering level changes then the whole list is redrawn.
+ *
+ *----------------------------------------------------------------------
+ */
+
 static void
 SetBuffering(
     TreeCtrl *tree)
@@ -5438,7 +5529,9 @@ SetBuffering(
     if ((TreeDragImage_IsVisible(tree->dragImage) &&
 	!TreeDragImage_IsXOR(tree->dragImage)) ||
 	(TreeMarquee_IsVisible(tree->marquee) &&
-	!TreeMarquee_IsXOR(tree->marquee))) {
+	!TreeMarquee_IsXOR(tree->marquee)) ||
+	((tree->columnProxy.xObj || tree->rowProxy.yObj) &&
+	!Proxy_IsXOR())) {
 
 	overlays = TRUE;
     }
@@ -5779,8 +5872,10 @@ displayRetry:
     drawable = tdrawable.drawable;
 
     /* XOR off */
-    TreeColumnProxy_Undisplay(tree);
-    TreeRowProxy_Undisplay(tree);
+    if (Proxy_IsXOR())
+	TreeColumnProxy_Undisplay(tree);
+    if (Proxy_IsXOR())
+	TreeRowProxy_Undisplay(tree);
     if (TreeDragImage_IsXOR(tree->dragImage))
 	TreeDragImage_Undisplay(tree->dragImage);
     if (TreeMarquee_IsXOR(tree->marquee))
@@ -6071,13 +6166,16 @@ displayRetry:
 		    0, 0,
 		    0, 0);
 #else /* DRAG_PIXMAP */
-	    TreeDragImage_DrawClipped(tree->dragImage, tdrawable, NULL);
+	    TreeDragImage_Draw(tree->dragImage, tdrawable);
 #endif /* DRAG_PIXMAP */
 	if (TreeMarquee_IsXOR(tree->marquee) == FALSE)
-	    TreeMarquee_DrawClipped(tree->marquee, tdrawable, NULL);
+	    TreeMarquee_Draw(tree->marquee, tdrawable);
+	if (Proxy_IsXOR() == FALSE)
+	    TreeColumnProxy_Draw(tree, tdrawable);
+	if (Proxy_IsXOR() == FALSE)
+	    TreeRowProxy_Draw(tree, tdrawable);
 
-	if (TreeTheme_IsDesktopComposited(tree)) {
-	} else {
+	if (TreeTheme_IsDesktopComposited(tree) == FALSE) {
 
 	    /* Copy tripple-buffer to window */
 	    /* FIXME: only copy what is in dirtyRgn plus overlays */
@@ -6119,13 +6217,16 @@ displayRetry:
 	TreeMarquee_Display(tree->marquee);
     if (TreeDragImage_IsXOR(tree->dragImage))
 	TreeDragImage_Display(tree->dragImage);
-    TreeRowProxy_Display(tree);
-    TreeColumnProxy_Display(tree);
+    if (Proxy_IsXOR())
+	TreeRowProxy_Display(tree);
+    if (Proxy_IsXOR())
+	TreeColumnProxy_Display(tree);
 
     if (tree->doubleBuffer == DOUBLEBUFFER_NONE)
 	dInfo->flags |= DINFO_DRAW_HIGHLIGHT | DINFO_DRAW_BORDER;
 
     if (dInfo->flags & (DINFO_DRAW_BORDER | DINFO_DRAW_HIGHLIGHT)) {
+	drawable = Tk_WindowId(tkwin);
 	if (tree->useTheme && TreeTheme_DrawBorders(tree, drawable) == TCL_OK) {
 	    /* nothing */
 	} else {

@@ -3,7 +3,7 @@
  *
  *	This module implements platform-specific visual themes.
  *
- * Copyright (c) 2006-2008 Tim Baker
+ * Copyright (c) 2006-2009 Tim Baker
  *
  * RCS: @(#) $Id$
  */

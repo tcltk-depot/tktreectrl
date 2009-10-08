@@ -3,7 +3,7 @@
  *
  *	This module implements quasi-events.
  *
- * Copyright (c) 2002-2008 Tim Baker
+ * Copyright (c) 2002-2009 Tim Baker
  *
  * RCS: @(#) $Id$
  */
@@ -34,7 +34,7 @@
 #include "qebind.h"
 
 #define dbwin TreeCtrl_dbwin
-extern void dbwin(char *fmt, ...);
+MODULE_SCOPE void dbwin(char *fmt, ...);
 
 /*
  * The macro below is used to modify a "char" value (e.g. by casting

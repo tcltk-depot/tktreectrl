@@ -3,7 +3,7 @@
  *
  *	This module implements outline dragging for treectrl widgets.
  *
- * Copyright (c) 2002-2008 Tim Baker
+ * Copyright (c) 2002-2009 Tim Baker
  *
  * RCS: @(#) $Id$
  */
@@ -180,11 +180,26 @@ TreeDragImage_DrawSome(
 }
 #endif /* DRAG_PIXMAP */
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeDragImage_Draw --
+ *
+ *	Draw the elements that make up the drag image if it is visible.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Stuff is drawn.
+ *
+ *----------------------------------------------------------------------
+ */
+
 void
-TreeDragImage_DrawClipped(
+TreeDragImage_Draw(
     TreeDragImage dragImage,	/* Drag image record. */
-    TreeDrawable td,
-    TkRegion region)		/* Clipping region. */
+    TreeDrawable td)		/* Where to draw. */
 {
     TreeCtrl *tree = dragImage->tree;
     XColor *colorPtr;
@@ -244,7 +259,6 @@ TreeDragImage_DrawClipped(
 	TkUnionRectWithRegion(&rect, rgn, rgn);
     }
 
-    TkIntersectRegion(rgn, region, rgn);
     Tree_FillRegion(tree->display, td.drawable, gc, rgn);
 
     Tree_FreeRegion(tree, rgn);
@@ -470,7 +484,7 @@ TreeDragImage_Display(
 	} else {
 	    dragImage->sx = 0 - tree->xOrigin;
 	    dragImage->sy = 0 - tree->yOrigin;
-	    TreeDragImage_Draw(dragImage, Tk_WindowId(tree->tkwin), dragImage->sx, dragImage->sy);
+	    TreeDragImage_DrawXOR(dragImage, Tk_WindowId(tree->tkwin), dragImage->sx, dragImage->sy);
 	}
 	dragImage->onScreen = TRUE;
     }
@@ -505,7 +519,7 @@ TreeDragImage_Undisplay(
 		dragImage->sx + dragImage->sw, dragImage->sy + dragImage->sh);*/
 	    Tree_EventuallyRedraw(tree);
 	} else {
-	    TreeDragImage_Draw(dragImage, Tk_WindowId(tree->tkwin),
+	    TreeDragImage_DrawXOR(dragImage, Tk_WindowId(tree->tkwin),
 		dragImage->sx, dragImage->sy);
 	}
 	dragImage->onScreen = FALSE;
@@ -581,7 +595,7 @@ DragImage_Config(
 /*
  *----------------------------------------------------------------------
  *
- * TreeDragImage_Draw --
+ * TreeDragImage_DrawXOR --
  *
  *	Draw (or erase) the elements that make up the drag image.
  *
@@ -594,7 +608,7 @@ DragImage_Config(
  *----------------------------------------------------------------------
  */
 
-void TreeDragImage_Draw(TreeDragImage dragImage, Drawable drawable, int x, int y)
+void TreeDragImage_DrawXOR(TreeDragImage dragImage, Drawable drawable, int x, int y)
 {
     TreeCtrl *tree = dragImage->tree;
     DragElem *elem = dragImage->elem;

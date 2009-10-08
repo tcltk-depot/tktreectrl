@@ -3,7 +3,7 @@
  *
  *	This module implements items for treectrl widgets.
  *
- * Copyright (c) 2002-2008 Tim Baker
+ * Copyright (c) 2002-2009 Tim Baker
  *
  * RCS: @(#) $Id$
  */

@@ -3,7 +3,7 @@
  *
  *	This module implements the selection rectangle for treectrl widgets.
  *
- * Copyright (c) 2002-2008 Tim Baker
+ * Copyright (c) 2002-2009 Tim Baker
  *
  * RCS: @(#) $Id$
  */
@@ -178,7 +178,7 @@ TreeMarquee_Display(
 	if (TreeMarquee_IsXOR(marquee)) {
 	    marquee->sx = 0 - tree->xOrigin;
 	    marquee->sy = 0 - tree->yOrigin;
-	    TreeMarquee_Draw(marquee, Tk_WindowId(tree->tkwin),
+	    TreeMarquee_DrawXOR(marquee, Tk_WindowId(tree->tkwin),
 		marquee->sx, marquee->sy);
 	} else {
 	    marquee->sx = MIN(marquee->x1, marquee->x2) - tree->xOrigin;
@@ -218,7 +218,7 @@ TreeMarquee_Undisplay(
 
     if (marquee->onScreen) {
 	if (TreeMarquee_IsXOR(marquee)) {
-	    TreeMarquee_Draw(marquee, Tk_WindowId(tree->tkwin), marquee->sx, marquee->sy);
+	    TreeMarquee_DrawXOR(marquee, Tk_WindowId(tree->tkwin), marquee->sx, marquee->sy);
 	} else {
 /*	    Tree_InvalidateItemArea(tree, marquee->sx, marquee->sy,
 		marquee->sx + marquee->sw, marquee->sy + marquee->sh);*/
@@ -231,7 +231,7 @@ TreeMarquee_Undisplay(
 /*
  *----------------------------------------------------------------------
  *
- * TreeMarquee_Draw --
+ * TreeMarquee_DrawXOR --
  *
  *	Draw (or erase) the selection rectangle.
  *
@@ -245,7 +245,7 @@ TreeMarquee_Undisplay(
  */
 
 void
-TreeMarquee_Draw(
+TreeMarquee_DrawXOR(
     TreeMarquee marquee,	/* Marquee token. */
     Drawable drawable,		/* Where to draw. */
     int x1, int y1		/* Offset of canvas from top-left corner
@@ -269,24 +269,23 @@ TreeMarquee_Draw(
 /*
  *----------------------------------------------------------------------
  *
- * TreeMarquee_DrawClipped --
+ * TreeMarquee_Draw --
  *
- *	Draw the selection rectangle.
+ *	Draw the selection rectangle if it is visible.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	Stuff is drawn (or erased, since this is XOR drawing).
+ *	Stuff is drawn.
  *
  *----------------------------------------------------------------------
  */
 
 void
-TreeMarquee_DrawClipped(
+TreeMarquee_Draw(
     TreeMarquee marquee,	/* Marquee token. */
-    TreeDrawable td,
-    TkRegion clipRgn)
+    TreeDrawable td)		/* Where to draw. */
 {
     TreeCtrl *tree = marquee->tree;
     int x, y, w, h;

@@ -3,7 +3,7 @@
  *
  *	This module implements treectrl widgets for the Tk toolkit.
  *
- * Copyright (c) 2002-2008 Tim Baker
+ * Copyright (c) 2002-2009 Tim Baker
  * Copyright (c) 2002-2003 Christian Krone
  * Copyright (c) 2003-2005 ActiveState, a division of Sophos
  *
@@ -64,7 +64,6 @@ static CONST char *lineStyleST[] = {
 static CONST char *orientStringTable[] = {
     "horizontal", "vertical", (char *) NULL
 };
-extern Tk_ObjCustomOption TreeCtrlCO_column_NOT_TAIL;
 
 static Tk_OptionSpec optionSpecs[] = {
     {TK_OPTION_BORDER, "-background", "background", "Background",
@@ -3570,7 +3569,6 @@ TreeDebugCmd(
 	}
 
 	case COMMAND_DINFO: {
-	    extern int Tree_DumpDInfo(TreeCtrl *tree, int objc, Tcl_Obj *CONST objv[]);
 	    return Tree_DumpDInfo(tree, objc, objv);
 	}
 
