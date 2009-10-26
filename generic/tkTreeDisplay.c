@@ -4804,7 +4804,7 @@ Tree_IntersectRect(
 
     *resultPtr = result;
     return 1;
-};
+}
 
 /*
  *--------------------------------------------------------------
@@ -5899,7 +5899,7 @@ displayRetry:
 		DblBufWinDirty(tree, minX, minY, maxX, maxY);
 	    }
 #ifdef REDRAW_RGN
-//	    AddRectToRedrawRgn(tree, minX, minY, maxX, maxY);
+/*	    AddRectToRedrawRgn(tree, minX, minY, maxX, maxY); */
 #endif /* REDRAW_RGN */
 	}
 	dInfo->flags &= ~DINFO_DRAW_HEADER;
@@ -7850,7 +7850,7 @@ Tree_DumpDInfo(
     static CONST char *optionNames[] = {
 	"alloc", "ditem", "onscreen", "range", (char *) NULL
     };
-#undef DUMP_ALLOC // [BUG 2233922] SunOS: build error
+#undef DUMP_ALLOC /* [BUG 2233922] SunOS: build error */
     enum { DUMP_ALLOC, DUMP_DITEM, DUMP_ONSCREEN, DUMP_RANGE };
 
     if (objc != 4) {

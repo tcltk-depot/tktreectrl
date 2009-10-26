@@ -4083,7 +4083,7 @@ LoupeCmd(
     unsigned char *screenBytes;
     int bPerPixel, byPerRow, byPerPixel;
 
-    // Gets all the screen info:
+    /* Gets all the screen info: */
     CGDisplayHideCursor(kCGDirectMainDisplay);
     bPerPixel  = CGDisplayBitsPerPixel(kCGDirectMainDisplay);
     byPerRow   = CGDisplayBytesPerRow(kCGDirectMainDisplay);

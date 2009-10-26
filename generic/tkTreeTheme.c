@@ -140,7 +140,7 @@ GetActCtxProcs(void)
     HINSTANCE hInst;
     ActCtxProcs *procs = (ActCtxProcs *) ckalloc(sizeof(ActCtxProcs));
 
-    hInst = LoadLibrary("kernel32.dll"); // FIXME: leak?
+    hInst = LoadLibrary("kernel32.dll"); /* FIXME: leak? */
     if (hInst != 0)
     {
  #define LOADPROC(name) \

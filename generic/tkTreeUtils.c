@@ -640,7 +640,7 @@ TreeDotRect_Setup(
     /* Save the old clip region. */
 #ifdef MAC_OSX_HISHAPE
     /* NOTE: Tree_GetRegion returns a HIShapeRef which isn't wanted. */
-    dotState->rgn = NewRgn(); // FIXME: want to cache these regions.
+    dotState->rgn = NewRgn(); /* FIXME: want to cache these regions. */
 #else
     dotState->rgn = (RgnHandle) Tree_GetRegion(tree);
 #endif
@@ -648,7 +648,7 @@ TreeDotRect_Setup(
 
     /* Keep drawing inside the contentbox. */
 #ifdef MAC_OSX_HISHAPE
-    clipRgn = NewRgn(); // FIXME: want to cache these regions.
+    clipRgn = NewRgn(); /* FIXME: want to cache these regions. */
 #else
     clipRgn = (RgnHandle) Tree_GetRegion(tree);
 #endif
