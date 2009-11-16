@@ -3098,7 +3098,7 @@ TreeItem_RemoveColumns(
     }
     if (prev != NULL)
 	prev->next = next;
-    else
+    else if (first == 0)
 	item->columns = next;
 }
 
@@ -8013,7 +8013,7 @@ TreeItemCmd(
 	/* T item span I ?C? ?span? ?C span ...? */
 	case COMMAND_SPAN: {
 	    TreeColumn treeColumn = tree->columns;
-	    Column *column = item->columns;
+	    Column *column;
 	    Tcl_Obj *listObj;
 	    struct columnSpan {
 		TreeColumnList columns;
@@ -8029,6 +8029,7 @@ TreeItemCmd(
 	    }
 	    if (objc == 4) {
 		listObj = Tcl_NewListObj(0, NULL);
+		column = item->columns;
 		while (treeColumn != NULL) {
 		    Tcl_ListObjAppendElement(interp, listObj,
 			    Tcl_NewIntObj(column ? column->span : 1));
