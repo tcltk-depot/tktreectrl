@@ -6036,7 +6036,7 @@ CompareProc(
 	}
     }
 #ifdef STABLE_SORT
-    return (a->index < b->index) ? -1 : 1;
+    return ((a->index < b->index) == sortData->columns[0].order) ? -1 : 1;
 #else
     return 0;
 #endif
