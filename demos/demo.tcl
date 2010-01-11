@@ -2,7 +2,7 @@
 
 # RCS: @(#) $Id$
 
-set VERSION 2.2.9
+set VERSION 2.2.10
 
 package require Tk 8.4
 
@@ -963,7 +963,7 @@ proc MakeListPopup {T} {
     $m2 add checkbutton -label Enable -variable Popup(debug,enable) \
 	-command {$Popup(T) debug configure -enable $Popup(debug,enable)}
     $m add cascade -label Debug -menu $m2
-
+if 0 {
     set m2 [menu $m.mBuffer -tearoff no]
     $m2 add radiobutton -label "none" -variable Popup(doublebuffer) -value none \
 	-command {$Popup(T) configure -doublebuffer $Popup(doublebuffer)}
@@ -972,7 +972,7 @@ proc MakeListPopup {T} {
     $m2 add radiobutton -label "window" -variable Popup(doublebuffer) -value window \
 	-command {$Popup(T) configure -doublebuffer $Popup(doublebuffer)}
     $m add cascade -label Buffering -menu $m2
-
+}
     set m2 [menu $m.mItemWrap -tearoff no]
     $m add cascade -label "Item Wrap" -menu $m2
 
