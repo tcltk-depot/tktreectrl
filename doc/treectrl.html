@@ -9,7 +9,7 @@
    -->
 
 <body>
-<h1> treectrl(n) 2.2.9 treectrl &quot;Tk Commands&quot;</h1>
+<h1> treectrl(n) 2.2.10 treectrl &quot;Tk Commands&quot;</h1>
 <h2><a name="name">NAME</a></h2>
 <p>
 <p> treectrl - Create and manipulate hierarchical multicolumn widgets
@@ -45,7 +45,7 @@
 &nbsp;&nbsp;&nbsp;&nbsp;<a href="#keywords">KEYWORDS</a><br>
 <h2><a name="synopsis">SYNOPSIS</a></h2>
 <p>
-package require <b>treectrl 2.2.9</b><br>
+package require <b>treectrl 2.2.10</b><br>
 <br><table border=1 width=100% cellspacing=0 cellpadding=0><tr            bgcolor=lightyellow><td bgcolor=lightyellow><table 0 width=100% cellspacing=0 cellpadding=0><tr valign=top ><td ><a href="#1"><b class='cmd'>treectrl</b> <i class='arg'>pathName</i> ?<i class='arg'>options</i>?</a></td></tr>
 <tr valign=top ><td ><a href="#2"><i class='arg'>pathName</i> <b class='cmd'>activate</b> <i class='arg'>itemDesc</i></a></td></tr>
 <tr valign=top ><td ><a href="#3"><i class='arg'>pathName</i> <b class='cmd'>bbox</b> ?<i class='arg'>area</i>?</a></td></tr>
@@ -420,14 +420,9 @@ is updated if a style is deleted or if a column is moved.
 Database Name:	<strong>doubleBuffer</strong><br>
 Database Class:	<strong>DoubleBuffer</strong><br>
 <dd>
-Specifies if double-buffering should be used to improve displaying.
-The value should be one of <strong>none</strong>, <strong>window</strong>, or <strong>item</strong>.
-For <strong>none</strong> no double-buffering is used at all, which may be most memory
-efficient, but will probably generate some flickering on the screen.
-For <strong>window</strong> the complete tree is double-buffered, which requires
-a buffer big enough to contain the complete widget.
-For <strong>item</strong>, which is the default, every item is separately
-double-buffered, so it works with a buffer size as big as the biggest item.
+This option no longer has any effect, but was left in for compatibility.
+It used to control the amount of double-buffering that was used when
+displaying a treectrl.
 
 <br><br>
 <dt>Command-Line Switch:	<strong>-height</strong><br>

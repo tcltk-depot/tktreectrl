@@ -8,12 +8,12 @@
 '\"
 '\"   $Id$
 .so man.macros
-.TH "treectrl" n 2.2.9 treectrl "Tk Commands"
+.TH "treectrl" n 2.2.10 treectrl "Tk Commands"
 .BS
 .SH NAME
 treectrl \- Create and manipulate hierarchical multicolumn widgets
 .SH SYNOPSIS
-package require \fBtreectrl  2.2.9\fR
+package require \fBtreectrl  2.2.10\fR
 .sp
 \fBtreectrl\fR \fIpathName\fR ?\fIoptions\fR?
 .sp
@@ -598,14 +598,9 @@ Database Class:	\fBDoubleBuffer\fR
 
 .fi
 .IP
-Specifies if double-buffering should be used to improve displaying.
-The value should be one of \fBnone\fR, \fBwindow\fR, or \fBitem\fR.
-For \fBnone\fR no double-buffering is used at all, which may be most memory
-efficient, but will probably generate some flickering on the screen.
-For \fBwindow\fR the complete tree is double-buffered, which requires
-a buffer big enough to contain the complete widget.
-For \fBitem\fR, which is the default, every item is separately
-double-buffered, so it works with a buffer size as big as the biggest item.
+This option no longer has any effect, but was left in for compatibility.
+It used to control the amount of double-buffering that was used when
+displaying a treectrl.
 .LP
 .nf
 .ta 6c
