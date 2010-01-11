@@ -127,11 +127,11 @@ static Tk_OptionSpec optionSpecs[] = {
     {TK_OPTION_STRING, "-defaultstyle", "defaultStyle", "DefaultStyle",
      (char *) NULL, Tk_Offset(TreeCtrl, defaultStyle.stylesObj), -1,
      TK_OPTION_NULL_OK, (ClientData) NULL, TREE_CONF_DEFSTYLE},
-#endif /* DEPRECATED */
     {TK_OPTION_STRING_TABLE, "-doublebuffer",
      "doubleBuffer", "DoubleBuffer",
      "item", -1, Tk_Offset(TreeCtrl, doubleBuffer),
      0, (ClientData) doubleBufferST, TREE_CONF_REDISPLAY},
+#endif /* DEPRECATED */
     {TK_OPTION_SYNONYM, "-fg", (char *) NULL, (char *) NULL,
      (char *) NULL, 0, -1, 0, (ClientData) "-foreground"},
     {TK_OPTION_FONT, "-font", "font", "Font",
