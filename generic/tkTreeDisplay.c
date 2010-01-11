@@ -5508,7 +5508,7 @@ DisplayGetPixmap(
  * SetBuffering --
  *
  *	Chooses the appropriate level of offscreen buffering depending
- *	on whether we need to draw the dragimage or marquee in non-XOR.
+ *	on whether we need to draw the dragimage|marquee|proxies in non-XOR.
  *
  * Results:
  *	tree->doubleBuffer is possibly updated.
@@ -6157,7 +6157,7 @@ displayRetry:
 	    Tree_BorderBottom(tree) - Tree_BorderTop(tree),
 	    Tree_BorderLeft(tree), Tree_BorderTop(tree));
 
-	/* Draw dragimage|marquee */
+	/* Draw dragimage|marquee|proxies */
 	tree->drawableXOrigin = tree->xOrigin;
 	tree->drawableYOrigin = tree->yOrigin;
 	if (TreeDragImage_IsXOR(tree->dragImage) == FALSE)
