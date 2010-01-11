@@ -292,11 +292,13 @@ TreeMarquee_Draw(
     GC gc;
     XGCValues gcValues;
     unsigned long mask;
-#ifdef WIN32
+#ifdef WIN32xxx
     XPoint points[5];
     XRectangle rect;
 #endif
+#if 0
     XColor *colorPtr;
+#endif
 
     if (!marquee->visible)
 	return;

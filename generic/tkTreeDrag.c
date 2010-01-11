@@ -202,7 +202,6 @@ TreeDragImage_Draw(
     TreeDrawable td)		/* Where to draw. */
 {
     TreeCtrl *tree = dragImage->tree;
-    XColor *colorPtr;
     GC gc;
     DragElem *elem;
 #if 1
@@ -240,6 +239,7 @@ TreeDragImage_Draw(
 
     Tk_FreeGC(tree->display, gc);
 #else
+    XColor *colorPtr;
     TkRegion rgn;
 
     if (!dragImage->visible)
