@@ -3946,6 +3946,11 @@ LoupeCmd(
     int xx, yy;
     HWND hwnd;
     HDC hdc;
+#define WIN7
+#ifdef WIN7
+    HDC hdcCopy;
+    HBITMAP hBitmap, hBitmapSave;
+#endif /* WIN7 */
 #elif defined(MAC_OSX_TK)
 #else
     Visual *visual = Tk_Visual(tkwin);
@@ -4038,6 +4043,17 @@ LoupeCmd(
     hwnd = GetDesktopWindow();
     hdc = GetWindowDC(hwnd);
 
+#ifdef WIN7
+    /* Doing GetPixel() on the desktop DC under Windows 7 (Aero) is buggy
+     * and *very* slow.  So BitBlt() from the desktop DC to an in-memory
+     * bitmap and run GetPixel() on that. */
+    hdcCopy = CreateCompatibleDC(hdc);
+    hBitmap = CreateCompatibleBitmap(hdc, grabW, grabH);
+    hBitmapSave = SelectObject(hdcCopy, hBitmap);
+    BitBlt(hdcCopy, 0, 0, grabW, grabH, hdc, grabX, grabY,
+	SRCCOPY | CAPTUREBLT);
+#endif /* WIN7 */
+
     /* XImage -> Tk_Image */
     pixelPtr = (unsigned char *) Tcl_Alloc(grabW * grabH * 4);
     memset(pixelPtr, 0, (grabW * grabH * 4));
@@ -4059,7 +4075,11 @@ LoupeCmd(
 	COLORREF pixel;
 	unsigned long stepDest = yy * photoBlock.pitch;
 	for (xx = 0; xx < grabW; xx++) {
+#ifdef WIN7
+	    pixel = GetPixel(hdcCopy, xx, yy);
+#else /* WIN7 */
 	    pixel = GetPixel(hdc, grabX + xx, grabY + yy);
+#endif /* WIN7 */
 	    if (pixel == CLR_INVALID) {
 		/*
 		 * Skip just this pixel, as others will be valid depending on
@@ -4073,6 +4093,11 @@ LoupeCmd(
 	    pixelPtr[stepDest + xx * 4 + 3] = 255;
 	}
     }
+#ifdef WIN7
+    SelectObject(hdcCopy, hBitmapSave);
+    DeleteObject(hBitmap);
+    DeleteDC(hdcCopy);
+#endif /* WIN7 */
     ReleaseDC(hwnd, hdc);
 #elif defined(MAC_OSX_TK)
     /*
