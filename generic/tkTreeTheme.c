@@ -763,7 +763,29 @@ TreeTheme_IsDesktopComposited(
 	  DwmIsCompositionEnabled().
 	WndProc should listen for WM_DWMCOMPOSITIONCHANGED.
     */
-#if 0
+#if 1
+    /* On Win7 I see lots of flickering with the dragimage in the demo
+     * "Explorer (Large Icons)", so Composition must not work quite how I
+     * expected. */
+    return FALSE;
+#elif 0
+    HMODULE library = LoadLibrary("dwmapi.dll");
+    int result = FALSE;
+
+    if (0 != library) {
+	typedef BOOL (STDAPICALLTYPE DwmIsCompositionEnabledProc)(BOOL *pfEnabled);
+	DwmIsCompositionEnabledProc *proc;
+
+	if (0 != (proc = GetProcAddress(library, "DwmIsCompositionEnabled"))) {
+	    BOOL enabled = FALSE;
+	    result = SUCCEEDED(proc(&enabled)) && enabled;
+	}
+
+	FreeLibrary(library);
+    }
+
+    return result;
+#else
 /* http://weblogs.asp.net/kennykerr/archive/2006/08/10/Windows-Vista-for-Developers-_1320_-Part-3-_1320_-The-Desktop-Window-Manager.aspx */
 bool IsCompositionEnabled()
 {

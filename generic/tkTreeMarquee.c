@@ -120,7 +120,9 @@ TreeMarquee_Free(
 
 int TreeMarquee_IsXOR(TreeMarquee marquee)
 {
-#if defined(WIN32) || defined(MAC_TK_CARBON)
+#if defined(WIN32)
+    return FALSE; /* TRUE on XP, FALSE on Win7 (lots of flickering) */
+#elif defined(MAC_TK_CARBON)
     return TRUE;
 #elif defined(MAC_TK_COCOA)
     return FALSE;
@@ -287,12 +289,23 @@ TreeMarquee_Draw(
     TreeMarquee marquee,	/* Marquee token. */
     TreeDrawable td)		/* Where to draw. */
 {
+#if 1 /* Use XOR dotted rectangles where possible. */
+    TreeCtrl *tree = marquee->tree;
+
+    if (!marquee->visible)
+	return;
+
+    /* Yes this is XOR drawing but we aren't erasing the previous
+     * marquee as when TreeMarquee_IsXOR() returns TRUE. */
+    TreeMarquee_DrawXOR(marquee, td.drawable,
+	0 - tree->xOrigin, 0 - tree->yOrigin);
+#else /* */
     TreeCtrl *tree = marquee->tree;
     int x, y, w, h;
     GC gc;
     XGCValues gcValues;
     unsigned long mask;
-#ifdef WIN32xxx
+#ifdef WIN32
     XPoint points[5];
     XRectangle rect;
 #endif
@@ -315,13 +328,14 @@ TreeMarquee_Draw(
     XFillRectangle(tree->display, td.drawable, gc,
 	x - tree->drawableXOrigin, y - tree->drawableYOrigin,
 	w - 1, h - 1);
-#else
+#else /* Stippled rectangles: BUG not clipped to contentbox. */
     gcValues.stipple = Tk_GetBitmap(tree->interp, tree->tkwin, "gray50");
     gcValues.fill_style = FillStippled;
     mask = GCStipple|GCFillStyle;
     gc = Tk_GetGC(tree->tkwin, mask, &gcValues);
 
-#ifdef WIN32xxx
+#ifdef WIN32
+    /* XDrawRectangle ignores the stipple pattern. */
     rect.x = x - tree->drawableXOrigin;
     rect.y = y - tree->drawableYOrigin;
     rect.width = w;
@@ -339,6 +353,7 @@ TreeMarquee_Draw(
 #endif
     Tk_FreeGC(tree->display, gc);
 #endif
+#endif /* */
 }
 
 /*

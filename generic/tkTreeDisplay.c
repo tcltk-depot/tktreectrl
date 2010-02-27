@@ -4390,10 +4390,12 @@ ScrollHorizontalComplex(
 static int
 Proxy_IsXOR(void)
 {
-#if defined(WIN32) || defined(MAC_TK_CARBON)
+#if defined(WIN32)
+    return FALSE; /* TRUE on XP, FALSE on Win7 (lots of flickering) */
+#elif defined(MAC_TK_CARBON)
     return TRUE;
 #elif defined(MAC_TK_COCOA)
-    return FALSE;
+    return FALSE; /* Cocoa doesn't have XOR */
 #else
     return TRUE; /* X11 */
 #endif
@@ -4442,8 +4444,8 @@ Proxy_DrawXOR(
     gcMask = GCFunction | GCGraphicsExposures;
     gc = Tree_GetGC(tree, gcMask, &gcValues);
 
-    /* GXinvert doesn't work with XFillRectangle() on Win32 */
 #if defined(WIN32)
+    /* GXinvert doesn't work with XFillRectangle() on Win32 */
     XDrawLine(tree->display, Tk_WindowId(tree->tkwin), gc, x1, y1, x2, y2);
 #else
     XFillRectangle(tree->display, Tk_WindowId(tree->tkwin), gc,
@@ -4478,8 +4480,12 @@ TreeColumnProxy_Display(
 {
     if (!tree->columnProxy.onScreen && (tree->columnProxy.xObj != NULL)) {
 	tree->columnProxy.sx = tree->columnProxy.x;
-	Proxy_DrawXOR(tree, tree->columnProxy.x, Tree_BorderTop(tree),
-		tree->columnProxy.x, Tree_BorderBottom(tree));
+	if (Proxy_IsXOR()) {
+	    Proxy_DrawXOR(tree, tree->columnProxy.x, Tree_BorderTop(tree),
+		    tree->columnProxy.x, Tree_BorderBottom(tree));
+	} else {
+	    Tree_EventuallyRedraw(tree);
+	}
 	tree->columnProxy.onScreen = TRUE;
     }
 }
@@ -4507,8 +4513,12 @@ TreeColumnProxy_Undisplay(
     )
 {
     if (tree->columnProxy.onScreen) {
-	Proxy_DrawXOR(tree, tree->columnProxy.sx, Tree_BorderTop(tree),
-		tree->columnProxy.sx, Tree_BorderBottom(tree));
+	if (Proxy_IsXOR()) {
+	    Proxy_DrawXOR(tree, tree->columnProxy.sx, Tree_BorderTop(tree),
+		    tree->columnProxy.sx, Tree_BorderBottom(tree));
+	} else {
+	    Tree_EventuallyRedraw(tree);
+	}
 	tree->columnProxy.onScreen = FALSE;
     }
 }
@@ -4538,8 +4548,12 @@ TreeRowProxy_Display(
 {
     if (!tree->rowProxy.onScreen && (tree->rowProxy.yObj != NULL)) {
 	tree->rowProxy.sy = tree->rowProxy.y;
-	Proxy_DrawXOR(tree, Tree_BorderLeft(tree), tree->rowProxy.y,
-		Tree_BorderRight(tree), tree->rowProxy.y);
+	if (Proxy_IsXOR()) {
+	    Proxy_DrawXOR(tree, Tree_BorderLeft(tree), tree->rowProxy.y,
+		    Tree_BorderRight(tree), tree->rowProxy.y);
+	} else {
+	    Tree_EventuallyRedraw(tree);
+	}
 	tree->rowProxy.onScreen = TRUE;
     }
 }
@@ -4567,11 +4581,31 @@ TreeRowProxy_Undisplay(
     )
 {
     if (tree->rowProxy.onScreen) {
-	Proxy_DrawXOR(tree, Tree_BorderLeft(tree), tree->rowProxy.sy,
-		Tree_BorderRight(tree), tree->rowProxy.sy);
+	if (Proxy_IsXOR()) {
+	    Proxy_DrawXOR(tree, Tree_BorderLeft(tree), tree->rowProxy.sy,
+		    Tree_BorderRight(tree), tree->rowProxy.sy);
+	} else {
+	    Tree_EventuallyRedraw(tree);
+	}
 	tree->rowProxy.onScreen = FALSE;
     }
 }
+
+/*
+ *--------------------------------------------------------------
+ *
+ * Proxy_Draw --
+ *
+ *	Draw the non-XOR -columnproxy or -rowproxy indicator.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Stuff is drawn into a drawable.
+ *
+ *--------------------------------------------------------------
+ */
 
 static void
 Proxy_Draw(
@@ -4595,6 +4629,22 @@ Proxy_Draw(
     XDrawLine(tree->display, td.drawable, gc, x1, y1, x2, y2);
 }
 
+/*
+ *--------------------------------------------------------------
+ *
+ * TreeColumnProxy_Draw --
+ *
+ *	Draw the non-XOR -columnproxy indicator if it is visible.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Stuff is drawn into a drawable.
+ *
+ *--------------------------------------------------------------
+ */
+
 static void
 TreeColumnProxy_Draw(
     TreeCtrl *tree,		/* Widget info. */
@@ -4606,6 +4656,22 @@ TreeColumnProxy_Draw(
     Proxy_Draw(tree, td, tree->columnProxy.x, Tree_BorderTop(tree),
 	    tree->columnProxy.x, Tree_BorderBottom(tree));
 }
+
+/*
+ *--------------------------------------------------------------
+ *
+ * TreeRowProxy_Draw --
+ *
+ *	Draw the non-XOR -rowproxy indicator if it is visible.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Stuff is drawn into a drawable.
+ *
+ *--------------------------------------------------------------
+ */
 
 static void
 TreeRowProxy_Draw(

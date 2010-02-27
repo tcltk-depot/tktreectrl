@@ -201,10 +201,21 @@ TreeDragImage_Draw(
     TreeDragImage dragImage,	/* Drag image record. */
     TreeDrawable td)		/* Where to draw. */
 {
+#if 1 /* Use XOR dotted rectangles where possible. */
+    TreeCtrl *tree = dragImage->tree;
+
+    if (!dragImage->visible)
+	return;
+
+    /* Yes this is XOR drawing but we aren't erasing the previous
+     * dragimage as when TreeDragImage_IsXOR() returns TRUE. */
+    TreeDragImage_DrawXOR(dragImage, td.drawable,
+	0 - tree->xOrigin, 0 - tree->yOrigin);
+#else /* */
     TreeCtrl *tree = dragImage->tree;
     GC gc;
     DragElem *elem;
-#if 1
+#if 1 /* Stippled rectangles: BUG not clipped to contentbox. */
     XGCValues gcValues;
     unsigned long mask;
     XPoint points[5];
@@ -225,20 +236,21 @@ TreeDragImage_Draw(
 	rect.height = elem->height;
 
 #ifdef WIN32
+	/* XDrawRectangle ignores the stipple pattern. */
 	points[0].x = rect.x, points[0].y = rect.y;
 	points[1].x = rect.x + rect.width - 1, points[1].y = rect.y;
 	points[2].x = rect.x + rect.width - 1, points[2].y = rect.y + rect.height - 1;
 	points[3].x = rect.x, points[3].y = rect.y + rect.height - 1;
 	points[4] = points[0];
 	XDrawLines(tree->display, td.drawable, gc, points, 5, CoordModeOrigin);
-#else
+#else /* !WIN32 */
 	XDrawRectangle(tree->display, td.drawable, gc, rect.x, rect.y,
 	    rect.width - 1, rect.height - 1);
 #endif
     }
 
     Tk_FreeGC(tree->display, gc);
-#else
+#else /* Debug/test: gray rectangles */
     XColor *colorPtr;
     TkRegion rgn;
 
@@ -262,7 +274,8 @@ TreeDragImage_Draw(
     Tree_FillRegion(tree->display, td.drawable, gc, rgn);
 
     Tree_FreeRegion(tree, rgn);
-#endif
+#endif /* Debug/test: gray rectangles */
+#endif /* XOR */
 }
 
 /*
@@ -418,10 +431,12 @@ TreeDragImage_Free(
 
 int TreeDragImage_IsXOR(TreeDragImage dragImage)
 {
-#if defined(WIN32) || defined(MAC_TK_CARBON)
+#if defined(WIN32)
+    return FALSE; /* TRUE on XP, FALSE on Win7 (lots of flickering) */
+#elif defined(MAC_TK_CARBON)
     return TRUE;
 #elif defined(MAC_TK_COCOA)
-    return FALSE;
+    return FALSE; /* Cocoa doesn't have XOR */
 #else
     return TRUE; /* X11 */
 #endif
