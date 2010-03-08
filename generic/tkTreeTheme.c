@@ -1752,7 +1752,7 @@ TreeTheme_DrawBorders(
 		Tk_Width(tkwin), MAX(top, bottom), Tk_Depth(tkwin));
     }
 
-    DebugDrawBorder(tree, 0, left, top, right, bottom);
+/*    DebugDrawBorder(tree, 0, left, top, right, bottom);*/
 
     if (left > 0) {
 	eTtk_DrawLayout(themeData->layout, state, pixmapLR);

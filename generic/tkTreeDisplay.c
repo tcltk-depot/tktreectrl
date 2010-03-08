@@ -1500,7 +1500,7 @@ B_IncrementFind(
  *----------------------------------------------------------------------
  */
 
-int
+static int
 B_IncrementFindX(
     TreeCtrl *tree,		/* Widget info. */
     int offset			/* Offset to search with. */
@@ -1532,7 +1532,7 @@ B_IncrementFindX(
  *----------------------------------------------------------------------
  */
 
-int
+static int
 B_IncrementFindY(
     TreeCtrl *tree,		/* Widget info. */
     int offset			/* Offset to search with. */
@@ -3181,7 +3181,7 @@ UpdateDInfoForRange(
  *--------------------------------------------------------------
  */
 
-void
+static void
 Tree_UpdateDInfo(
     TreeCtrl *tree		/* Widget info. */
     )
@@ -5438,7 +5438,7 @@ DisplayDItem(
     return 1;
 }
 
-void
+static void
 DebugDrawBorder(
     TreeCtrl *tree,
     int inset,
@@ -5635,7 +5635,7 @@ SetBuffering(
  *--------------------------------------------------------------
  */
 
-void
+static void
 Tree_Display(
     ClientData clientData	/* Widget info. */
     )
@@ -6257,7 +6257,8 @@ displayRetry:
 	Tree_SetEmptyRegion(dInfo->dirtyRgn);
 	DisplayDelay(tree);
     }
-#else
+    else
+#endif
     if (tree->doubleBuffer == DOUBLEBUFFER_WINDOW) {
 	XRectangle box;
 
@@ -6276,7 +6277,6 @@ displayRetry:
 	Tree_SetEmptyRegion(dInfo->dirtyRgn);
 	DisplayDelay(tree);
     }
-#endif
 
     /* XOR on */
     if (TreeMarquee_IsXOR(tree->marquee))

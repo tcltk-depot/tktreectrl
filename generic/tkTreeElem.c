@@ -470,7 +470,7 @@ IntegerCO_Init(
     return TCL_OK;
 }
 
-Tk_ObjCustomOption *
+static Tk_ObjCustomOption *
 StringTableCO_Alloc(
     CONST char *optionName,
     CONST char **tablePtr

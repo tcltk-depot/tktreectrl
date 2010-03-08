@@ -52,10 +52,13 @@ MODULE_SCOPE QE_BindingTable QE_CreateBindingTable(Tcl_Interp *interp);
 MODULE_SCOPE void QE_DeleteBindingTable(QE_BindingTable bindingTable);
 MODULE_SCOPE int QE_InstallEvent(QE_BindingTable bindingTable, char *name, QE_ExpandProc expand);
 MODULE_SCOPE int QE_InstallDetail(QE_BindingTable bindingTable, char *name, int eventType, QE_ExpandProc expand);
+MODULE_SCOPE int QE_UninstallEvent(QE_BindingTable bindingTable, int eventType);
+MODULE_SCOPE int QE_UninstallDetail(QE_BindingTable bindingTable, int eventType, int detail);
 MODULE_SCOPE int QE_CreateBinding(QE_BindingTable bindingTable,
 	ClientData object, char *eventString, char *command, int append);
 MODULE_SCOPE int QE_DeleteBinding(QE_BindingTable bindingTable,
 	ClientData object, char *eventString);
+MODULE_SCOPE int QE_GetAllObjects(QE_BindingTable bindingTable);
 MODULE_SCOPE int QE_GetBinding(QE_BindingTable bindingTable,
 	ClientData object, char *eventString);
 MODULE_SCOPE int QE_GetAllBindings(QE_BindingTable bindingTable,

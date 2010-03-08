@@ -132,6 +132,7 @@ MODULE_SCOPE TreeElement Tree_ElementIterateGet(TreeIterate iter_);
 MODULE_SCOPE void Tree_ElementIterateChanged(TreeIterate iter_, int mask);
 MODULE_SCOPE void Tree_ElementChangedItself(TreeCtrl *tree, TreeItem item,
     TreeItemColumn column, TreeElement elem, int flags, int mask);
+MODULE_SCOPE int TreeCtrl_RegisterElementType(Tcl_Interp *interp, TreeElementType *newTypePtr);
 
 typedef struct TreeCtrlStubs TreeCtrlStubs;
 struct TreeCtrlStubs

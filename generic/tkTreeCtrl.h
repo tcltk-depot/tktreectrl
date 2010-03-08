@@ -573,10 +573,14 @@ MODULE_SCOPE void TreeItem_AppendChild(TreeCtrl *tree, TreeItem self, TreeItem c
 MODULE_SCOPE void TreeItem_RemoveFromParent(TreeCtrl *tree, TreeItem self);
 MODULE_SCOPE int TreeItem_FirstAndLast(TreeCtrl *tree, TreeItem *first, TreeItem *last);
 MODULE_SCOPE void TreeItem_ListDescendants(TreeCtrl *tree, TreeItem item_, TreeItemList *items);
+MODULE_SCOPE void TreeItem_UpdateDepth(TreeCtrl *tree, TreeItem item);
+MODULE_SCOPE void TreeItem_AddToParent(TreeCtrl *tree, TreeItem item);
 MODULE_SCOPE int TreeItem_Height(TreeCtrl *tree, TreeItem self);
 MODULE_SCOPE int TreeItem_TotalHeight(TreeCtrl *tree, TreeItem self);
 MODULE_SCOPE void TreeItem_InvalidateHeight(TreeCtrl *tree, TreeItem self);
 MODULE_SCOPE void TreeItem_SpansInvalidate(TreeCtrl *tree, TreeItem item_);
+MODULE_SCOPE int TreeItem_SpansRedo(TreeCtrl *tree, TreeItem item_);
+MODULE_SCOPE void TreeItem_SpansRedoIfNeeded(TreeCtrl *tree, TreeItem item_);
 MODULE_SCOPE int *TreeItem_GetSpans(TreeCtrl *tree, TreeItem item_);
 MODULE_SCOPE void TreeItem_Draw(TreeCtrl *tree, TreeItem self, int lock, int x, int y, int width, int height, TreeDrawable td, int minX, int maxX, int index);
 MODULE_SCOPE void TreeItem_DrawLines(TreeCtrl *tree, TreeItem self, int x, int y, int width, int height, TreeDrawable td);
@@ -699,10 +703,12 @@ MODULE_SCOPE void TreeNotify_ItemDeleted(TreeCtrl *tree, TreeItemList *items);
 MODULE_SCOPE void TreeNotify_ItemVisibility(TreeCtrl *tree, TreeItemList *v, TreeItemList *h);
 
 /* tkTreeColumn.c */
+MODULE_SCOPE Tk_ObjCustomOption TreeCtrlCO_column;
 MODULE_SCOPE Tk_ObjCustomOption TreeCtrlCO_column_NOT_TAIL;
 MODULE_SCOPE int TreeColumn_InitInterp(Tcl_Interp *interp);
 MODULE_SCOPE void Tree_InitColumns(TreeCtrl *tree);
 MODULE_SCOPE TreeColumn Tree_FindColumn(TreeCtrl *tree, int columnIndex);
+MODULE_SCOPE int TreeColumn_FirstAndLast(TreeColumn *first, TreeColumn *last);
 
 #define COLUMN_ALL ((TreeColumn) -1)	/* Every column. */
 #define COLUMN_NTAIL ((TreeColumn) -2)	/* Every column but the tail. */
@@ -743,6 +749,7 @@ MODULE_SCOPE int TreeColumn_FixedWidth(TreeColumn column_);
 MODULE_SCOPE int TreeColumn_MinWidth(TreeColumn column_);
 MODULE_SCOPE int TreeColumn_MaxWidth(TreeColumn column_);
 MODULE_SCOPE int TreeColumn_NeededWidth(TreeColumn column_);
+MODULE_SCOPE int TreeColumn_NeededHeight(TreeColumn column_);
 MODULE_SCOPE int TreeColumn_UseWidth(TreeColumn column_);
 MODULE_SCOPE int TreeColumn_Offset(TreeColumn column_);
 MODULE_SCOPE Tk_Justify TreeColumn_ItemJustify(TreeColumn column_);
@@ -802,10 +809,12 @@ MODULE_SCOPE int Tree_TotalHeight(TreeCtrl *tree);
 MODULE_SCOPE TreeItem Tree_ItemUnderPoint(TreeCtrl *tree, int *x, int *y, int nearest);
 MODULE_SCOPE void Tree_FreeItemRInfo(TreeCtrl *tree, TreeItem item);
 MODULE_SCOPE int Tree_ItemBbox(TreeCtrl *tree, TreeItem item, int lock, int *x, int *y, int *w, int *h);
+MODULE_SCOPE TreeItem Tree_ItemLARB(TreeCtrl *tree, TreeItem item, int vertical, int prev);
 MODULE_SCOPE TreeItem Tree_ItemAbove(TreeCtrl *tree, TreeItem item);
 MODULE_SCOPE TreeItem Tree_ItemBelow(TreeCtrl *tree, TreeItem item);
 MODULE_SCOPE TreeItem Tree_ItemLeft(TreeCtrl *tree, TreeItem item);
 MODULE_SCOPE TreeItem Tree_ItemRight(TreeCtrl *tree, TreeItem item);
+MODULE_SCOPE TreeItem Tree_ItemFL(TreeCtrl *tree, TreeItem item, int vertical, int first);
 MODULE_SCOPE TreeItem Tree_ItemTop(TreeCtrl *tree, TreeItem item);
 MODULE_SCOPE TreeItem Tree_ItemBottom(TreeCtrl *tree, TreeItem item);
 MODULE_SCOPE TreeItem Tree_ItemLeftMost(TreeCtrl *tree, TreeItem item);
@@ -1043,6 +1052,7 @@ MODULE_SCOPE void TreeAlloc_Stats(Tcl_Interp *interp, ClientData data);
 /*****/
 
 MODULE_SCOPE void TreePtrList_Init(TreeCtrl *tree, TreePtrList *tilPtr, int count);
+MODULE_SCOPE void TreePtrList_Grow(TreePtrList *tilPtr, int count);
 MODULE_SCOPE ClientData *TreePtrList_Append(TreePtrList *tilPtr, ClientData ptr);
 MODULE_SCOPE ClientData *TreePtrList_Concat(TreePtrList *tilPtr, TreePtrList *til2Ptr);
 MODULE_SCOPE void TreePtrList_Free(TreePtrList *tilPtr);

@@ -4017,7 +4017,7 @@ typedef int (*TreeItemWalkSpansProc)(
  *----------------------------------------------------------------------
  */
 
-void
+static void
 TreeItem_WalkSpans(
     TreeCtrl *tree,		/* Widget info. */
     TreeItem item,		/* Item token. */

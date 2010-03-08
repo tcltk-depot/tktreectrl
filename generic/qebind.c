@@ -1944,7 +1944,8 @@ static void Percents_Command(QE_ExpandArgs *args)
 
 #if ALLOW_INSTALL
 
-int QE_InstallCmd_New(QE_BindingTable bindingTable, int objOffset, int objc,
+static int
+QE_InstallCmd_New(QE_BindingTable bindingTable, int objOffset, int objc,
 	Tcl_Obj *CONST objv[])
 {
 	int objC = objc - objOffset;
@@ -2074,7 +2075,8 @@ int QE_InstallCmd_New(QE_BindingTable bindingTable, int objOffset, int objc,
 	return TCL_OK;
 }
 
-int QE_InstallCmd_Old(QE_BindingTable bindingTable, int objOffset, int objc,
+static int
+QE_InstallCmd_Old(QE_BindingTable bindingTable, int objOffset, int objc,
 	Tcl_Obj *CONST objv[])
 {
 	int objC = objc - objOffset;
@@ -2195,7 +2197,8 @@ int QE_InstallCmd_Old(QE_BindingTable bindingTable, int objOffset, int objc,
 	return TCL_OK;
 }
 
-int QE_InstallCmd(QE_BindingTable bindingTable, int objOffset, int objc,
+int
+QE_InstallCmd(QE_BindingTable bindingTable, int objOffset, int objc,
 	Tcl_Obj *CONST objv[])
 {
 	int objC = objc - objOffset;
@@ -2217,7 +2220,8 @@ int QE_InstallCmd(QE_BindingTable bindingTable, int objOffset, int objc,
 	return QE_InstallCmd_New(bindingTable, objOffset, objc, objv);
 }
 
-int QE_UninstallCmd_New(QE_BindingTable bindingTable, int objOffset, int objc,
+static int
+QE_UninstallCmd_New(QE_BindingTable bindingTable, int objOffset, int objc,
 	Tcl_Obj *CONST objv[])
 {
 	int objC = objc - objOffset;
@@ -2259,7 +2263,8 @@ int QE_UninstallCmd_New(QE_BindingTable bindingTable, int objOffset, int objc,
 	return QE_UninstallEvent(bindingTable, eiPtr->type);
 }
 
-int QE_UninstallCmd_Old(QE_BindingTable bindingTable, int objOffset, int objc,
+static int
+QE_UninstallCmd_Old(QE_BindingTable bindingTable, int objOffset, int objc,
 	Tcl_Obj *CONST objv[])
 {
 	int objC = objc - objOffset;
@@ -2394,7 +2399,8 @@ int QE_UninstallCmd(QE_BindingTable bindingTable, int objOffset, int objc,
 	return QE_UninstallCmd_New(bindingTable, objOffset, objc, objv);
 }
 
-int QE_LinkageCmd_New(QE_BindingTable bindingTable, int objOffset, int objc,
+static int
+QE_LinkageCmd_New(QE_BindingTable bindingTable, int objOffset, int objc,
 	Tcl_Obj *CONST objv[])
 {
 	int objC = objc - objOffset;
@@ -2427,7 +2433,8 @@ int QE_LinkageCmd_New(QE_BindingTable bindingTable, int objOffset, int objc,
 	return TCL_OK;
 }
 
-int QE_LinkageCmd_Old(QE_BindingTable bindingTable, int objOffset, int objc,
+static int
+QE_LinkageCmd_Old(QE_BindingTable bindingTable, int objOffset, int objc,
 	Tcl_Obj *CONST objv[])
 {
 	int objC = objc - objOffset;
