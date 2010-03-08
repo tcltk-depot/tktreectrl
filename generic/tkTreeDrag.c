@@ -437,8 +437,10 @@ int TreeDragImage_IsXOR(TreeDragImage dragImage)
     return TRUE;
 #elif defined(MAC_TK_COCOA)
     return FALSE; /* Cocoa doesn't have XOR */
-#else
-    return TRUE; /* X11 */
+#else /* X11 */
+    /* With VirtualBox+Ubuntu get extreme lag if TRUE with Compiz. */
+    /* With VirtualBox+Ubuntu get lots of flickering if TRUE without Compiz. */
+    return FALSE;
 #endif
 }
 
