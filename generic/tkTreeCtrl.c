@@ -4206,6 +4206,7 @@ LoupeCmd(
     } else {
 	for (i = 0; i < ncolors; i++)
 	    xcolors[i].pixel = i;
+    	red_shift = green_shift = blue_shift = 0; /* compiler warning */
     }
 
     XQueryColors(display, Tk_Colormap(tkwin), xcolors, ncolors);

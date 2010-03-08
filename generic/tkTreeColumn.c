@@ -2066,6 +2066,11 @@ Column_Config(
     int visible = column->visible;
     int lock = column->lock;
 
+    /* Init these to prevent compiler warnings */
+    saved.image = NULL;
+    saved.itemBgCount = 0;
+    saved.itemBgColor = NULL;
+
     for (error = 0; error <= 1; error++) {
 	if (error == 0) {
 	    if (Tk_SetOptions(tree->interp, (char *) column,
