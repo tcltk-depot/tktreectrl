@@ -346,47 +346,57 @@ dist: dist-clean
 	list='aclocal.m4 ChangeLog configure configure.ac license.terms Makefile.in README.txt treectrl.dll.manifest.in treectrl.rc winrc.m4'; \
 	for p in $$list; do \
 	    cp -p $(srcdir)/$$p $(DIST_DIR)/$$p; \
+	    chmod 664 $(DIST_DIR)/$$p; \
 	done
-	chmod 664 $(DIST_DIR)/Makefile.in $(DIST_DIR)/aclocal.m4
 	chmod 775 $(DIST_DIR)/configure $(DIST_DIR)/configure.ac
 
 	list='$(DIST_DEMOS)'; for p in $$list; do \
 	    cp -p $(srcdir)/demos/$$p.tcl $(DIST_DIR)/demos/$$p.tcl; \
+	    chmod 664 $(DIST_DIR)/demos/$$p.tcl; \
 	done
 
 	cp -p $(srcdir)/demos/pics/*.gif $(DIST_DIR)/demos/pics/
+	chmod 664 $(DIST_DIR)/demos/pics/*.gif
 
 	list='$(DIST_DOCS)'; for p in $$list; do \
 	    cp -p $(srcdir)/doc/$$p $(DIST_DIR)/doc/$$p; \
+	    chmod 664 $(DIST_DIR)/doc/$$p; \
 	done
 	cp -p $(srcdir)/doc/$(DIST_DOCS2) $(DIST_DIR)/doc/$(DIST_DOCS2)
+	chmod 664 $(DIST_DIR)/doc/$(DIST_DOCS2)
 
 	cp -p $(srcdir)/generic/*.[ch] $(DIST_DIR)/generic/
+	chmod 664 $(DIST_DIR)/generic/*.[ch]
 
 	list='$(DIST_LIBRARY)'; for p in $$list; do \
 	    cp -p $(srcdir)/library/$$p $(DIST_DIR)/library/$$p; \
+	    chmod 664 $(DIST_DIR)/library/$$p; \
 	done
 
 	list='aclocal.m4 configure configure.ac Makefile.in shellicon.c'; \
 	for p in $$list; do \
 	    cp -p $(srcdir)/shellicon/$$p $(DIST_DIR)/shellicon/$$p; \
+	    chmod 664 $(DIST_DIR)/shellicon/$$p; \
 	done
-	chmod 664 $(DIST_DIR)/shellicon/Makefile.in $(DIST_DIR)/shellicon/aclocal.m4
 	chmod 775 $(DIST_DIR)/shellicon/configure $(DIST_DIR)/shellicon/configure.ac
 
 	list='install-sh README.txt tcl.m4'; \
 	for p in $$list; do \
 	    cp -p $(srcdir)/shellicon/tclconfig/$$p $(DIST_DIR)/shellicon/tclconfig/$$p; \
+	    chmod 664 $(DIST_DIR)/shellicon/tclconfig/$$p; \
 	done
-	chmod 664 $(DIST_DIR)/shellicon/tclconfig/tcl.m4
-	chmod +x $(DIST_DIR)/shellicon/tclconfig/install-sh
+	chmod 775 $(DIST_DIR)/shellicon/tclconfig/install-sh
 
-	cp $(srcdir)/tclconfig/install-sh $(srcdir)/tclconfig/tcl.m4 \
-		$(DIST_DIR)/tclconfig/
+	list='install-sh tcl.m4'; \
+	for p in $$list; do \
+	    cp $(srcdir)/tclconfig/$$p $(DIST_DIR)/tclconfig/$$p; \
+	done
 	chmod 664 $(DIST_DIR)/tclconfig/tcl.m4
-	chmod +x $(DIST_DIR)/tclconfig/install-sh
+	chmod 775 $(DIST_DIR)/tclconfig/install-sh
 
 	cp -p $(srcdir)/tests/all.tcl $(srcdir)/tests/*.test $(DIST_DIR)/tests/
+	chmod 664 $(DIST_DIR)/tests/all.tcl
+	chmod 664 $(DIST_DIR)/tests/*.test
 
 	(cd $(DIST_ROOT); $(COMPRESS);)
 
