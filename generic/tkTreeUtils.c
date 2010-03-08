@@ -1130,7 +1130,7 @@ Tree_UnionRegion(
 #elif defined(MAC_TK)
     UnionRgn((RgnHandle) rgnA, (RgnHandle) rgnB, (RgnHandle) rgnOut);
 #else
-    XUnionRegion(rgnA, rgnB, rgnOut);
+    XUnionRegion((Region) rgnA, (Region) rgnB, (Region) rgnOut);
 #endif
 }
 
@@ -4361,7 +4361,7 @@ TagInfo_FromObj(
     return TCL_OK;
 }
 
-Tcl_Obj *
+static Tcl_Obj *
 TagInfo_ToObj(
     TreeCtrl *tree,		/* Widget info. */
     TagInfo *tagInfo
@@ -5423,7 +5423,7 @@ static CONST char *DynamicOptionUid = "DynamicOption";
  *----------------------------------------------------------------------
  */
 
-DynamicOption *
+static DynamicOption *
 DynamicOption_Find(
     DynamicOption *first,	/* Head of linked list. */
     int id			/* Unique id. */
