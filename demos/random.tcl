@@ -216,6 +216,7 @@ proc RandomButton1 {T x y} {
 
 proc RandomMotion1 {T x y} {
     variable TreeCtrl::Priv
+    if {![info exists Priv(buttonMode)]} return
     switch $Priv(buttonMode) {
 	"drag" {
 	    set Priv(autoscan,command,$T) {RandomMotion %T %x %y}
