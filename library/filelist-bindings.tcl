@@ -342,8 +342,13 @@ proc ::TreeCtrl::FileListMotion {T x y} {
 	    set Priv(drop) $drop
 
 	    # Show the dragimage in its new position
+if {0 && [$T dragimage cget -style] ne ""} {
+    set x [$T canvasx $x]
+    set y [$T canvasy $y]
+} else {
 	    set x [expr {[$T canvasx $x] - $Priv(drag,x)}]
 	    set y [expr {[$T canvasy $y] - $Priv(drag,y)}]
+}
 	    $T dragimage offset $x $y
 	    $T dragimage configure -visible yes
 	}

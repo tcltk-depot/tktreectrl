@@ -43,11 +43,25 @@ struct TreeDragImage_
     Pixmap pixmap;
     Tk_Image image;
 #endif /* DRAG_PIXMAP */
+#ifdef DRAGIMAGE_STYLE
+    TreeStyle masterStyle; /* Style to create the drag image from. */
+    TreeStyle instanceStyle; /* Style to create the drag image from. */
+    int styleX, styleY; /* Mouse cursor hotspot offset into dragimage. */
+    int styleW, styleH; /* Width/Height of dragimage style. */
+    int pixmapW, pixmapH; /* Width/Height of 'pixmap'. */
+    Pixmap pixmap; /* Pixmap -> Tk_Image. */
+    Tk_Image tkimage; /* Transparent image that is drawn in the widget. */
+#endif /* DRAGIMAGE_STYLE */
 };
 
 #define DRAG_CONF_VISIBLE		0x0001
 
 static Tk_OptionSpec optionSpecs[] = {
+#ifdef DRAGIMAGE_STYLE
+    {TK_OPTION_CUSTOM, "-style", (char *) NULL, (char *) NULL,
+     (char *) NULL, -1, Tk_Offset(TreeDragImage_, masterStyle),
+     TK_OPTION_NULL_OK, (ClientData) &TreeCtrlCO_style, 0},
+#endif /* DRAGIMAGE_STYLE */
     {TK_OPTION_BOOLEAN, "-visible", (char *) NULL, (char *) NULL,
 	"0", -1, Tk_Offset(TreeDragImage_, visible),
 	0, (ClientData) NULL, DRAG_CONF_VISIBLE},
@@ -148,13 +162,10 @@ UpdatePixmap(
     }
 }
 
-void
-TreeDragImage_DrawSome(
+static void
+DrawPixmap(
     TreeDragImage dragImage,	/* Drag image record. */
-    TreeDrawable td,
-    int x, int y,
-    int width, int height
-    )
+    TreeDrawable td)
 {
     TreeCtrl *tree = dragImage->tree;
     int ix, iy, iw, ih;
@@ -180,6 +191,141 @@ TreeDragImage_DrawSome(
 }
 #endif /* DRAG_PIXMAP */
 
+#ifdef DRAGIMAGE_STYLE
+void
+TreeDragImage_StyleDeleted(
+    TreeDragImage dragImage,	/* Drag image record. */
+    TreeStyle style)		/* Style that was deleted. */
+{
+    TreeCtrl *tree = dragImage->tree;
+
+    if (dragImage->masterStyle == style) {
+	TreeStyle_FreeResources(tree, dragImage->instanceStyle);
+	dragImage->masterStyle = NULL;
+	dragImage->instanceStyle = NULL;
+    }
+}
+
+static void
+DragImage_UpdateStyleTkImage(
+    TreeDragImage dragImage)	/* Drag image record. */
+{
+    TreeCtrl *tree = dragImage->tree;
+    Tk_PhotoHandle photoH;
+    XImage *ximage;
+    int width = dragImage->styleW;
+    int height = dragImage->styleH;
+    int alpha = 128;
+    XColor *colorPtr;
+
+    if (dragImage->tkimage != NULL) {
+	Tk_FreeImage(dragImage->tkimage);
+	dragImage->tkimage = NULL;
+    }
+
+    photoH = Tk_FindPhoto(tree->interp, "::TreeCtrl::ImageDrag");
+    if (photoH == NULL) {
+	Tcl_GlobalEval(tree->interp, "image create photo ::TreeCtrl::ImageDrag");
+	photoH = Tk_FindPhoto(tree->interp, "::TreeCtrl::ImageDrag");
+	if (photoH == NULL)
+	    return;
+    }
+
+    /* Pixmap -> XImage */
+    ximage = XGetImage(tree->display, dragImage->pixmap, 0, 0,
+	    (unsigned int)width, (unsigned int)height, AllPlanes, ZPixmap);
+    if (ximage == NULL)
+	panic("tkTreeDrag.c:DragImage_UpdateStyleTkImage() ximage is NULL");
+
+    /* XImage -> Tk_Image */
+    colorPtr = Tk_GetColor(tree->interp, tree->tkwin, "pink");
+    Tree_XImage2Photo(tree->interp, photoH, ximage, colorPtr->pixel, alpha);
+
+    XDestroyImage(ximage);
+
+    dragImage->tkimage = Tk_GetImage(tree->interp, tree->tkwin,
+	"::TreeCtrl::ImageDrag", NULL, (ClientData) NULL);
+}
+
+static void
+DragImage_UpdateStylePixmap(
+    TreeDragImage dragImage)	/* Drag image record. */
+{
+    TreeCtrl *tree = dragImage->tree;
+    int w, h, state = 0;
+    XColor *colorPtr;
+    GC gc;
+    StyleDrawArgs drawArgs;
+
+    w = dragImage->styleW = TreeStyle_NeededWidth(tree, dragImage->instanceStyle, state);
+    h = dragImage->styleH = TreeStyle_NeededHeight(tree, dragImage->instanceStyle, state);
+    if (w > dragImage->pixmapW || h > dragImage->pixmapH)
+    {
+
+	if (dragImage->pixmap != None)
+	    Tk_FreePixmap(tree->display, dragImage->pixmap);
+	dragImage->pixmap = Tk_GetPixmap(tree->display,
+	    Tk_WindowId(tree->tkwin),
+	    w, h, Tk_Depth(tree->tkwin));
+
+	dragImage->pixmapW = w;
+	dragImage->pixmapH = h;
+    }
+
+    colorPtr = Tk_GetColor(tree->interp, tree->tkwin, "pink");
+    gc = Tk_GCForColor(colorPtr, Tk_WindowId(tree->tkwin));
+    XFillRectangle(tree->display, dragImage->pixmap, gc,
+	0, 0, w, h);
+
+    drawArgs.tree = tree;
+
+    drawArgs.td.drawable = dragImage->pixmap;
+    drawArgs.td.width = w; drawArgs.td.height = h;
+
+    drawArgs.bounds[0] = drawArgs.bounds[1] = 0;
+    drawArgs.bounds[2] = w; drawArgs.bounds[3] = h;
+
+    drawArgs.state = state;
+    drawArgs.style = dragImage->instanceStyle;
+
+    drawArgs.indent = 0;
+
+    drawArgs.x = drawArgs.y = 0;
+    drawArgs.width = w; drawArgs.height = h;
+
+    drawArgs.justify = TK_JUSTIFY_LEFT;
+
+    TreeStyle_Draw(&drawArgs);
+
+    if (dragImage->tkimage != NULL) {
+	Tk_FreeImage(dragImage->tkimage);
+	dragImage->tkimage = NULL;
+    }
+}
+
+static void
+DragImage_DrawStyle(
+    TreeDragImage dragImage,	/* Drag image record. */
+    TreeDrawable td)		/* Where to draw. */
+{
+    TreeCtrl *tree = dragImage->tree;
+    int ix, iy, iw, ih;
+
+    if (dragImage->tkimage == NULL)
+	DragImage_UpdateStyleTkImage(dragImage);
+
+    if (dragImage->tkimage == NULL)
+	return;
+
+    ix = iy = 0;
+    iw = dragImage->styleW; ih = dragImage->styleH;
+
+    Tree_RedrawImage(dragImage->tkimage, ix, iy, iw, ih, td,
+	dragImage->x + -dragImage->styleX - tree->drawableXOrigin,
+	dragImage->y + -dragImage->styleY - tree->drawableYOrigin);
+}
+#endif /* DRAGIMAGE_STYLE */
+
 /*
  *----------------------------------------------------------------------
  *
@@ -201,11 +347,21 @@ TreeDragImage_Draw(
     TreeDragImage dragImage,	/* Drag image record. */
     TreeDrawable td)		/* Where to draw. */
 {
-#if 1 /* Use XOR dotted rectangles where possible. */
+#ifdef DRAG_PIXMAP
+    DrawPixmap(tree->dragImage, tdrawable);
+
+#elif 1 /* Use XOR dotted rectangles where possible. */
     TreeCtrl *tree = dragImage->tree;
 
     if (!dragImage->visible)
 	return;
+
+#ifdef DRAGIMAGE_STYLE
+    if (dragImage->instanceStyle != NULL) {
+	DragImage_DrawStyle(dragImage, td);
+	return;
+    }
+#endif /* DRAGIMAGE_STYLE */
 
     /* Yes this is XOR drawing but we aren't erasing the previous
      * dragimage as when TreeDragImage_IsXOR() returns TRUE. */
@@ -606,6 +762,17 @@ DragImage_Config(
 	TreeDragImage_Display((TreeDragImage) dragImage);
     }
 
+#ifdef DRAGIMAGE_STYLE
+    if (dragImage->instanceStyle != NULL) {
+	TreeStyle_FreeResources(tree, dragImage->instanceStyle);
+	dragImage->instanceStyle = NULL;
+    }
+    if (dragImage->masterStyle != NULL) {
+	dragImage->instanceStyle = TreeStyle_NewInstance(tree, dragImage->masterStyle);
+	DragImage_UpdateStylePixmap(dragImage);
+    }
+#endif /* DRAGIMAGE_STYLE */
+
     return TCL_OK;
 }
 
@@ -678,9 +845,17 @@ TreeDragImageCmd(
     TreeCtrl *tree = clientData;
     TreeDragImage dragImage = tree->dragImage;
     static CONST char *commandNames[] = { "add", "cget", "clear", "configure",
-	"offset", (char *) NULL };
+	"offset",
+#ifdef DRAGIMAGE_STYLE
+	"stylehotspot",
+#endif /* DRAGIMAGE_STYLE */
+	(char *) NULL };
     enum { COMMAND_ADD, COMMAND_CGET, COMMAND_CLEAR, COMMAND_CONFIGURE,
-	COMMAND_OFFSET };
+	COMMAND_OFFSET
+#ifdef DRAGIMAGE_STYLE
+	, COMMAND_STYLEHOTSPOT
+#endif /* DRAGIMAGE_STYLE */
+    };
     int index;
 
     if (objc < 3) {
@@ -874,6 +1049,31 @@ doneADD:
 	    TreeDragImage_Display(tree->dragImage);
 	    break;
 	}
+
+#ifdef DRAGIMAGE_STYLE
+	/* T dragimage stylehotspot ?x y? */
+	case COMMAND_STYLEHOTSPOT: {
+	    int x, y;
+
+	    if (objc != 3 && objc != 5) {
+		Tcl_WrongNumArgs(interp, 3, objv, "?x y?");
+		return TCL_ERROR;
+	    }
+	    if (objc == 3) {
+		FormatResult(interp, "%d %d", dragImage->styleX, dragImage->styleY);
+		break;
+	    }
+	    if (Tcl_GetIntFromObj(interp, objv[3], &x) != TCL_OK)
+		return TCL_ERROR;
+	    if (Tcl_GetIntFromObj(interp, objv[4], &y) != TCL_OK)
+		return TCL_ERROR;
+	    TreeDragImage_Undisplay(tree->dragImage);
+	    dragImage->styleX = x;
+	    dragImage->styleY = y;
+	    TreeDragImage_Display(tree->dragImage);
+	    break;
+	}
+#endif /* DRAGIMAGE_STYLE */
     }
 
     return TCL_OK;

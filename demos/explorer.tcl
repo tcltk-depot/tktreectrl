@@ -614,3 +614,42 @@ proc ExplorerDoubleButton1 {w x y} {
     }
     return
 }
+
+proc DragStyleInit {} {
+
+    set T [DemoList]
+
+    set boxW 100
+    set boxH 100
+    set imgW 32
+    set imgH 32
+
+    $T element create DragStyleElemRect rect -fill #D0ffff -width $boxW -height $boxH
+    $T element create DragStyleElemImg image -image big-file
+    $T element create DragStyleElemTxt text -text DragImage!
+    $T element create DragStyleElemTxtBg rect -fill white -outline black -outlinewidth 1
+
+    $T style create DragStyle -orient vertical
+    $T style elements DragStyle {DragStyleElemRect DragStyleElemImg DragStyleElemTxtBg DragStyleElemTxt}
+
+    set cursorW 16
+    $T style layout DragStyle DragStyleElemRect -detach yes
+
+    set dx [expr {($boxW - $imgW) / 2}]
+    set dy [expr {($boxH - $imgH) / 2}]
+    $T style layout DragStyle DragStyleElemImg -detach yes -padx "$dx 0" -pady "$dy 0"
+
+    set dx [expr {$boxW / 2 + $cursorW}]
+    set dy $boxH
+    $T style layout DragStyle DragStyleElemTxt -detach yes -padx "$dx 0" -pady "$dy 0"
+
+    $T style layout DragStyle DragStyleElemTxtBg -union DragStyleElemTxt -ipadx 3 -ipady 2
+
+    $T dragimage configure -style DragStyle
+
+    set x [expr {$boxW / 2 - 0 * $cursorW / 2}]
+    set y [expr {$boxH - $cursorW * 2/3}]
+    $T dragimage stylehotspot $x $y
+
+    return
+}

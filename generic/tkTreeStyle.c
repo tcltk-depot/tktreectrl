@@ -4229,6 +4229,10 @@ Style_Deleted(
 	}
     }
 #endif /* DEPRECATED */
+
+#ifdef DRAGIMAGE_STYLE
+    TreeDragImage_StyleDeleted(tree->dragImage, (TreeStyle) masterStyle);
+#endif
 }
 
 /*

@@ -57,7 +57,8 @@ MODULE_SCOPE void dbwin_add_interp(Tcl_Interp *interp);
 #define SELECTION_VISIBLE
 #define ALLOC_HAX
 #define DEPRECATED
-#define DRAG_PIXMAPxxx
+/* #define DRAG_PIXMAP */
+/* #define DRAGIMAGE_STYLE */ /* Use an item style as the dragimage instead of XOR rectangles. */
 
 typedef struct TreeCtrl TreeCtrl;
 typedef struct TreeColumn_ *TreeColumn;

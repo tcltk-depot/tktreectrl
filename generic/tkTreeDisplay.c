@@ -6227,13 +6227,7 @@ displayRetry:
 	tree->drawableXOrigin = tree->xOrigin;
 	tree->drawableYOrigin = tree->yOrigin;
 	if (TreeDragImage_IsXOR(tree->dragImage) == FALSE)
-#ifdef DRAG_PIXMAP
-	    TreeDragImage_DrawSome(tree->dragImage, tdrawable,
-		    0, 0,
-		    0, 0);
-#else /* DRAG_PIXMAP */
 	    TreeDragImage_Draw(tree->dragImage, tdrawable);
-#endif /* DRAG_PIXMAP */
 	if (TreeMarquee_IsXOR(tree->marquee) == FALSE)
 	    TreeMarquee_Draw(tree->marquee, tdrawable);
 	if (Proxy_IsXOR() == FALSE)
