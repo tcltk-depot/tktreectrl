@@ -724,10 +724,13 @@ MakeMenuBar
 
 # http://wiki.tcl.tk/950
 proc sbset {sb first last} {
-    if {$first <= 0 && $last >= 1} {
-	grid remove $sb
-    } else {
-	grid $sb
+    # Get infinite loop on X11
+    if {$::thisPlatform ne "unix"} {
+	if {$first <= 0 && $last >= 1} {
+	    grid remove $sb
+	} else {
+	    grid $sb
+	}
     }
     $sb set $first $last
     return
