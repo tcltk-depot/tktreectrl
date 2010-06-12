@@ -62,23 +62,6 @@ proc DemoMyComputer {} {
     $T style elements $S txtOther
     $T style layout $S txtOther -padx 6 -squeeze x -expand ns
 
-    # List of lists: {column style element ...} specifying text elements
-    # the user can edit
-    TreeCtrl::SetEditable $T {
-    }
-
-    # List of lists: {column style element ...} specifying elements
-    # the user can click on or select with the selection rectangle
-    TreeCtrl::SetSensitive $T {
-	{name styName txtName}
-    }
-
-    # List of lists: {column style element ...} specifying elements
-    # added to the drag image when dragging selected items
-    TreeCtrl::SetDragImage $T {
-	{name styName txtName}
-    }
-
     #
     # Create items and assign styles
     #
@@ -117,5 +100,24 @@ proc DemoMyComputer {} {
 	$T item lastchild root $I
     }
 
-#    bindtags $T [list $T TreeCtrlFileList TreeCtrl [winfo toplevel $T] all]
+if 0 {
+    # List of lists: {column style element ...} specifying text elements
+    # the user can edit
+    TreeCtrl::SetEditable $T {
+    }
+
+    # List of lists: {column style element ...} specifying elements
+    # the user can click on or select with the selection rectangle
+    TreeCtrl::SetSensitive $T {
+	{name styName txtName}
+    }
+
+    # List of lists: {column style element ...} specifying elements
+    # added to the drag image when dragging selected items
+    TreeCtrl::SetDragImage $T {
+	{name styName txtName}
+    }
+
+    bindtags $T [list $T TreeCtrlFileList TreeCtrl [winfo toplevel $T] all]
+}
 }
