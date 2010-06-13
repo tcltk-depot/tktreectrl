@@ -1,18 +1,15 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<html>
-<head>
-
+<html><head>
 <!-- $Id$ -->
-  <meta content="text/html; charset=ISO-8859-1" http-equiv="content-type">
-  <title>What's New in TkTreeCtrl</title>
 
 
-  <meta content="Tim Baker" name="author">
-
-</head>
 
 
-<body>
+  <meta content="text/html; charset=ISO-8859-1" http-equiv="content-type"><title>What's New in TkTreeCtrl</title>
+  
+
+
+  <meta content="Tim Baker" name="author"></head><body>
 
 <h1>What's New in TkTreeCtrl 2.2.10</h1>
 
@@ -129,6 +126,12 @@ AIX compliance. [BUG 2886595]<br>
 
   <li>Fixed [item sort -decreasing] not being a "stable" sort.
 [BUG ID 2909930]</li>
+  <li>Fixed flickering of the dragimage under Windows 7; this requires more doublebuffering than WinXP even with Aero.</li>
+  <li>Use more double-buffering on the dragimage to fix flickering/slowness (tested on Ubuntu VM).<br>
+  </li>
+  <li>Fixed drawing of column/row proxy lines where XOR isn't supported (i.e. MacOSX Cocoa).</li>
+  <li>Fixed the loupe (screen capture) command under Windows 7; tested on Win7 x64 (with and without Aero) and on WinXP x32.</li>
+
 
 </ul>
 
@@ -138,6 +141,13 @@ AIX compliance. [BUG 2886595]<br>
 
   <li>The "Layout" demo uses the new Text element option
 -lmargin2.</li>
+  <li>Fixed an undefined-variable error when double-clicking between column headers on X11 in the "Random" demo.</li>
+  <li>Fixed the resizing of items containing child windows when the
+Tile theme changes in the "Big List" demo.&nbsp; Also added some
+comments.</li>
+  <li>Disabled the dynamic-appearing scrollbars under X11 where I saw some infinite looping.<br>
+  </li>
+
 
 </ul>
 
@@ -1927,7 +1937,8 @@ buttons/lines.</td>
 
       <th style="background-color: rgb(255, 255, 204);">New</th>
 
-      <td></td>
+      <td><br>
+</td>
 
     </tr>
 
@@ -1935,7 +1946,8 @@ buttons/lines.</td>
 
       <td>-backgroundimage</td>
 
-      <td></td>
+      <td><br>
+</td>
 
     </tr>
 
@@ -1943,7 +1955,8 @@ buttons/lines.</td>
 
       <td>-columnprefix</td>
 
-      <td></td>
+      <td><br>
+</td>
 
     </tr>
 
@@ -1951,7 +1964,8 @@ buttons/lines.</td>
 
       <td>-columnresizemode</td>
 
-      <td></td>
+      <td><br>
+</td>
 
     </tr>
 
@@ -1959,7 +1973,8 @@ buttons/lines.</td>
 
       <td>-itemprefix</td>
 
-      <td></td>
+      <td><br>
+</td>
 
     </tr>
 
@@ -1967,7 +1982,8 @@ buttons/lines.</td>
 
       <td>-minitemheight</td>
 
-      <td></td>
+      <td><br>
+</td>
 
     </tr>
 
@@ -1975,7 +1991,8 @@ buttons/lines.</td>
 
       <td>-usetheme</td>
 
-      <td></td>
+      <td><br>
+</td>
 
     </tr>
 
@@ -2120,7 +2137,8 @@ for valid state names.</td>
 
       </th>
 
-      <td></td>
+      <td><br>
+</td>
 
     </tr>
 
@@ -2130,7 +2148,8 @@ for valid state names.</td>
 
       </td>
 
-      <td></td>
+      <td><br>
+</td>
 
     </tr>
 
@@ -2138,7 +2157,8 @@ for valid state names.</td>
 
       <td>-arrowimage</td>
 
-      <td></td>
+      <td><br>
+</td>
 
     </tr>
 
@@ -2146,7 +2166,8 @@ for valid state names.</td>
 
       <td>-arrowpady</td>
 
-      <td></td>
+      <td><br>
+</td>
 
     </tr>
 
@@ -2154,7 +2175,8 @@ for valid state names.</td>
 
       <td>-maxwidth</td>
 
-      <td></td>
+      <td><br>
+</td>
 
     </tr>
 
@@ -2162,7 +2184,8 @@ for valid state names.</td>
 
       <td>-resize</td>
 
-      <td></td>
+      <td><br>
+</td>
 
     </tr>
 
@@ -2170,7 +2193,8 @@ for valid state names.</td>
 
       <td>-state</td>
 
-      <td></td>
+      <td><br>
+</td>
 
     </tr>
 
@@ -2178,7 +2202,8 @@ for valid state names.</td>
 
       <td>-textlines</td>
 
-      <td></td>
+      <td><br>
+</td>
 
     </tr>
 
@@ -2264,7 +2289,8 @@ index in the list of columns.</td>
 
       <td>column compare</td>
 
-      <td></td>
+      <td><br>
+</td>
 
     </tr>
 
@@ -2280,7 +2306,8 @@ index in the list of columns.</td>
 
       <td>column dragconfigure</td>
 
-      <td></td>
+      <td><br>
+</td>
 
     </tr>
 
@@ -2288,7 +2315,8 @@ index in the list of columns.</td>
 
       <td>column dragcget</td>
 
-      <td></td>
+      <td><br>
+</td>
 
     </tr>
 
@@ -2304,7 +2332,8 @@ index in the list of columns.</td>
 
       <td>column list</td>
 
-      <td></td>
+      <td><br>
+</td>
 
     </tr>
 
@@ -2312,7 +2341,8 @@ index in the list of columns.</td>
 
       <td>column order</td>
 
-      <td></td>
+      <td><br>
+</td>
 
     </tr>
 
@@ -2530,7 +2560,8 @@ surrounds.</td>
 
       </th>
 
-      <td></td>
+      <td><br>
+</td>
 
     </tr>
 
@@ -2538,7 +2569,8 @@ surrounds.</td>
 
       <td>-height</td>
 
-      <td></td>
+      <td><br>
+</td>
 
     </tr>
 
@@ -2546,7 +2578,8 @@ surrounds.</td>
 
       <td>-maxheight</td>
 
-      <td></td>
+      <td><br>
+</td>
 
     </tr>
 
@@ -2554,7 +2587,8 @@ surrounds.</td>
 
       <td>-maxwidth</td>
 
-      <td></td>
+      <td><br>
+</td>
 
     </tr>
 
@@ -2562,7 +2596,8 @@ surrounds.</td>
 
       <td>-minheight</td>
 
-      <td></td>
+      <td><br>
+</td>
 
     </tr>
 
@@ -2570,7 +2605,8 @@ surrounds.</td>
 
       <td>-minwidth</td>
 
-      <td></td>
+      <td><br>
+</td>
 
     </tr>
 
@@ -2578,7 +2614,8 @@ surrounds.</td>
 
       <td>-sticky</td>
 
-      <td></td>
+      <td><br>
+</td>
 
     </tr>
 
@@ -2586,7 +2623,8 @@ surrounds.</td>
 
       <td>-width</td>
 
-      <td></td>
+      <td><br>
+</td>
 
     </tr>
 
@@ -2737,5 +2775,4 @@ the file name.</li>
 
 </ul>
 
-</body>
-</html>
+</body></html>
