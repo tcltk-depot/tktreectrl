@@ -408,7 +408,10 @@ DIST_WIN_NAME	= treectrl$(PACKAGE_PATCHLEVEL)
 DIST_WIN_DIR	= $(DIST_ROOT)/$(DIST_WIN_NAME)
 DIST_WIN_ARC	= tktreectrl-$(PACKAGE_PATCHLEVEL)-Tk@TK_VERSION@-win32.zip
 COMPRESS_WIN	= zip -r -v -9 $(DIST_WIN_ARC) $(DIST_WIN_NAME)
-UPX		= upx -9 $(DIST_WIN_DIR)/$(PKG_LIB_FILE)
+
+# An update to the gcc tools adds support for TLS callbacks which upx chokes on
+# UPX		= upx -9 $(DIST_WIN_DIR)/$(PKG_LIB_FILE)
+UPX		=
 
 dist-win-clean:
 	rm -rf $(DIST_WIN_DIR) $(DIST_ROOT)/$(DIST_WIN_ARC)
