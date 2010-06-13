@@ -3679,6 +3679,10 @@ DblBufWinDirty(
     TreeDInfo dInfo = tree->dInfo;
     XRectangle rect;
 
+    /* Fix BUG ID: 3015429 */
+    if (x1 >= x2 || y1 >= y2)
+	return;
+
     rect.x = x1;
     rect.y = y1;
     rect.width = x2 - x1;
