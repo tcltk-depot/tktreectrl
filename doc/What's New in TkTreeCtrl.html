@@ -1,6 +1,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<html><head>
-<!-- $Id$ -->
+<html><head><!-- $Id$ -->
+
+
 
 
 
@@ -131,6 +132,11 @@ AIX compliance. [BUG 2886595]<br>
   </li>
   <li>Fixed drawing of column/row proxy lines where XOR isn't supported (i.e. MacOSX Cocoa).</li>
   <li>Fixed the loupe (screen capture) command under Windows 7; tested on Win7 x64 (with and without Aero) and on WinXP x32.</li>
+  <li>Fixed an X server error caused by adding a bad rectangle to an
+XRegion while processing &lt;Expose&gt; events.&nbsp; This would show
+up with -doublebuffer=window while resizing the window. [BUG 3015429]<br>
+  </li>
+
 
 
 </ul>
