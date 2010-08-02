@@ -55,7 +55,7 @@ to display data in a multicolumn listbox,
 the specification of an orientation will give useful results.
 
 [section {STANDARD OPTIONS}]
-[list_begin opt]
+[list_begin options]
 [opt_def [option -background]]
 [opt_def [option -borderwidth]]
 [opt_def [option -cursor]]
@@ -73,7 +73,7 @@ the specification of an orientation will give useful results.
 See the [cmd option] manual entry for details on the standard options.
 
 [section {WIDGET SPECIFIC OPTIONS}]
-[list_begin tkoption]
+[list_begin tkoptions]
 [tkoption_def -backgroundimage backgroundImage BackgroundImage]
 Specifies the name of an image to draw as the list background. The image is
 tiled horizontally and vertically to fill the content area of the list. If
@@ -319,22 +319,22 @@ not request any size at all.
 
 [tkoption_def -wrap wrap Wrap]
 Specifies whether items are arranged in a 1- or 2-dimensional layout.
-[nl]
+[para]
 If the value is an empty string (the default), then items are arranged from top
 to bottom (-orient vertical) or from left to right (-orient horizontal) in
 a 1-dimensional layout.
-[nl]
+[para]
 If the value is "[emph N] [const items]", then no more than [emph N] items will appear in
 a vertical group (-orient vertical) or horizontal group (-orient horizontal).
-[nl]
+[para]
 If the value is "[emph N] [const pixels]", then no vertical group of items will be
 taller than [emph N] pixels (-orient vertical) or no horizontal group of items will
 be wider than [emph N] pixels (-orient horizontal).
-[nl]
+[para]
 If the value is [const window], then a no vertical group of items will be
 taller than the window (-orient vertical) or no horizontal group of items will
 be wider than the window (-orient horizontal).
-[nl]
+[para]
 It is also possible to cause wrapping to occur on a per-item basis by using
 the item option -wrap.  See the [cmd {item create}] command for that option.
 
@@ -527,7 +527,7 @@ is specified).
 If one or more [arg option]-[arg value] pairs are specified, then the command
 modifies the given option(s) to have the given value(s) for [arg columnDesc];
 in this case the command returns an empty string.
-[nl]
+[para]
 
 See [sectref COLUMNS] below for details on the options available for columns.
 
@@ -573,15 +573,15 @@ and a 2-pixel-thick vertical line to indicate where the column may be dropped.
 The drag image consists of a colored background rectangle plus the image and/or
 text displayed in the column header. The 2-pixel-thick line will be drawn
 over the left edge of the column before which the dragged column may be dropped.
-[nl]
+[para]
 
 The library scripts generate a <ColumnDrag-accept> event when the user has
 successfully drag-and-drop'd a column. You will have to bind a script to this
 event if you want to move the dragged column.
-[nl]
+[para]
 
 The following configuration options are supported:
-[list_begin opt]
+[list_begin options]
 [opt_def [option -enable] [arg boolean]]
 Controls whether the user is allowed to rearrange columns by drag-and-drop.
 
@@ -748,10 +748,10 @@ is specified).
 If one or more [arg option]-[arg value] pairs are specified, then the command
 modifies the given debugging option(s) to have the given value(s);
 in this case the command returns an empty string.
-[nl]
+[para]
 
 The following debugging options are supported:
-[list_begin opt]
+[list_begin options]
 [opt_def [option -displaydelay] [arg millis]]
 Specifies a time duration in milliseconds, which should be waited
 after something has been drawn to the screen.
@@ -864,11 +864,11 @@ is specified).
 If one or more [arg option]-[arg value] pairs are specified, then the command
 modifies the given dragimage option(s) to have the given value(s);
 in this case the command returns an empty string.
-[nl]
+[para]
 
 The following dragimage options are supported:
 
-[list_begin opt]
+[list_begin options]
 [opt_def [option -visible] [arg boolean]]
 Specifies a boolean value which determines
 whether the dragimage should currently be visible.
@@ -956,14 +956,14 @@ is displayed at the given window coordinates [arg x] and [arg y].
 If the coordinates are outside the window, over the borders, or over any
 whitespace in the window, then the result is an empty string;
 otherwise the first word of the result is [const header] or [const item].
-[nl]
+[para]
 
 If the coordinates are over a column header, then
 the first word of the result is [const header], followed by
 the unique id of the column (or the string [const tail]).
 If the x coordinate is near the left or right end of a column, then
 a third word [const left] or [const right] is appended to the result.
-[nl]
+[para]
 
 If the coordinates are over an item, then the first word of the result
 is [const item] followed by the unique id of that item.
@@ -972,12 +972,12 @@ then [const column] and a unique column id are the
 3rd and 4th words of the result. If the coordinates are over an element within
 that column, then [const element] and an element name are the 5th and 6th
 words of the result.
-[nl]
+[para]
 
 If the coordinates are over a button, then the first word of the result is
 [const item], followed by the unique id of that item, followed by the word
 [const button].
-[nl]
+[para]
 If the coordinates are over a line descending from an ancestor of an item
 (but not the parent of that item), then the first word of the result is
 [const item], followed by the unique id of that item, followed by the word
@@ -1058,16 +1058,16 @@ information on the format of this list). If [arg option] is specified with no
 value, then the command returns a list describing the one named option (this
 list will be identical to the corresponding sublist of the value returned if
 no [arg option] is specified).
-[nl]
+[para]
 If one or more [arg option]-[arg value] pairs
 are specified, then the command modifies the given item option(s) to have the
 given value(s); in this case the command returns an empty string. This is the
 only case where [arg itemDesc] may refer to multiple items.
-[nl]
+[para]
 The following options are supported by this command (see [cmd {item create}] for
 the meaning of each option):
 
-[list_begin opt]
+[list_begin options]
 
 [opt_def [option -button] [arg boolean|auto]]
 [opt_def [option -height] [arg height]]
@@ -1091,10 +1091,10 @@ those items.
 The new items have the states [const open] and [const enabled] set by default.
 If the treectrl widget currently has the focus,
 the state [const focus] is also set.
-[nl]
+[para]
 The following options are supported by this command:
 
-[list_begin opt]
+[list_begin options]
 
 [opt_def [option -button] [arg boolean|auto]]
 The value of this option must have one of the forms accepted by [fun Tcl_GetBoolean]
@@ -1167,13 +1167,13 @@ If both [arg first] and [arg last] are specified,
 they must each decribe a single item with a common ancestor;
 then the range of items between [arg first] and [arg last] is deleted.
 The order of [arg first] and [arg last] doesn't matter.
-[nl]
+[para]
 Deleting an item deletes any child items of the deleted item recursively.
 If the current [const active] item is deleted, the root item becomes the new active item.
 If the current selection [const anchor] item is deleted, the root item becomes the new anchor item.
 There is no way to delete the root item of the treectrl widget;
 in all cases the specification of the root item is ignored.
-[nl]
+[para]
 For each call to this command, two events may be generated.
 If any of the deleted items are selected, then a [const <Selection>] event
 is generated just before the items are deleted.
@@ -1221,13 +1221,13 @@ If [arg option] is specified with no [arg value], then the command returns
 a list describing the one named option (this list will be identical to
 the corresponding sublist of the value returned if no [arg option]
 is specified).
-[nl]
+[para]
 If one or more [arg option]-[arg value] pairs are specified, then the command
 modifies the given option(s) to have the given value(s) in the
 [arg element] inside [arg column] of the item(s) described by [arg itemDesc];
 in this case the command returns an empty string. This is the only case where
 [arg itemDesc] may refer to multiple items.
-[nl]
+[para]
 It is possible to configure multiple elements in multiple columns with
 a single call. To configure another element in the same column, append a
 '[const +]' argument followed by the element name. To configure elements in
@@ -1292,12 +1292,12 @@ If no [arg column] is specified, this command returns a list of values,
 one per column.
 
 If no [arg image] is specified, this command returns the value for [arg column].
-[nl]
+[para]
 If one or more [arg column]-[arg image] pairs is specified,
 then the value of the -image option in each [arg column] is set to [arg image].
 In this case [arg itemDesc] may refer to multiple items and each [arg column]
 may refer to multiple columns.
-[nl]
+[para]
 Note that this command is provided as a convenience. Use the
 [cmd "item element configure"] or [cmd "item element cget"] commands if you want
 to set or retrieve the value of the -image option for a specific image element.
@@ -1369,13 +1369,13 @@ options. If the item is not displayed, this command returns an empty string.
 [call [arg pathName] [cmd {item sort}] [arg itemDesc] [opt [arg {option ...}]]]
 Sorts the children of the item described by [arg itemDesc],
 and redisplays the tree with the items in the new order.
-[nl]
+[para]
 
 The range of items which should be sorted can be restricted
 by means of the [option -first] and/or [option -last] options,
 which should be children of the item described by [arg itemDesc];
 the order between these two limiting items doesn't matter.
-[nl]
+[para]
 
 The sort column can be specified by means of the [option -column] option;
 this option can be used repeatedly to define a multicolumn sort.
@@ -1383,19 +1383,19 @@ The sorting is done by looking at the [arg text]
 of the element specified by the [option -element] option,
 which must be a text element defined in the style of the sorting column,
 by default the first text element is used.
-[nl]
+[para]
 
 If the [option -notreally] option is specified,
 no rearranging of the items is done;
 instead the sorted items are returned as result of the command.
-[nl]
+[para]
 
 By default ASCII sorting is used with the result returned in increasing order.
 Any of the following options may be specified to control
 the sorting process of the previously specified column
 (unique abbreviations are accepted):
 
-[list_begin opt]
+[list_begin options]
 [opt_def [option -ascii]]
 Use string comparison with ASCII collation order. This is the default.
 
@@ -1434,7 +1434,7 @@ Convert to floating-point values and use floating comparison.
 This command sets or retrieves the number of columns that a style covers.
 If no [arg column] is specified, the return value is a list of spans, one per column.
 If no [arg numColumns] is specified, the return value is the span for [arg column].
-[nl]
+[para]
 If one or more [arg column]-[arg numColumns] pairs is specified, the
 span for each [arg column] is set to [arg numColumns]. In this case [arg itemDesc]
 may refer to multiple items and each [arg column] may refer to multiple
@@ -1455,7 +1455,7 @@ Just like [cmd {item state set}] but manipulates dynamic states for a single
 item column, not the item as a whole. If [arg stateDescList] is unspecified,
 this command returns a list containing the names of all the dynamic states
 which are switched on in [arg column].
-[nl]
+[para]
 If [arg stateDescList] is specified, then [arg itemDesc] may refer to multiple
 items and [arg column] may refer to multiple columns.
 
@@ -1522,7 +1522,7 @@ styles set for all columns of the item described by [arg itemDesc].
 If no [arg style] is specified, this command
 returns the name of the style set for the item described by
 [arg itemDesc] in [arg column].
-[nl]
+[para]
 If one or more [arg column]-[arg style] pairs is specified,
 then the style in each [arg column] is set to [arg style]. In this case
 [arg itemDesc] may refer to multiple items and each [arg column] may refer to
@@ -1573,12 +1573,12 @@ If no [arg column] is specified, this command returns a list of values,
 one per column.
 
 If no [arg text] is specified, this command returns the value for [arg column].
-[nl]
+[para]
 If one or more [arg column]-[arg text] pairs is specified,
 then the value of the -text option in each [arg column] is set to [arg text].
 In this case [arg itemDesc] may refer to multiple items and each [arg column]
 may refer to multiple columns.
-[nl]
+[para]
 Note that this command is provided as a convenience. Use the
 [cmd "item element configure"] or [cmd "item element cget"] commands if you
 want to set or retrieve the value of the -text option for a specific text element.
@@ -1635,11 +1635,11 @@ is specified).
 If one or more [arg option]-[arg value] pairs are specified, then the command
 modifies the given marquee option(s) to have the given value(s);
 in this case the command returns an empty string.
-[nl]
+[para]
 
 The following marquee options are supported:
 
-[list_begin opt]
+[list_begin options]
 [opt_def [option -visible] [arg boolean]]
 Specifies a boolean value which determines
 whether the dotted line surrounding the region of the marquee
@@ -1684,7 +1684,7 @@ evaluates its [option -yscrollcommand] when the view in the widget changes,
 and generates a <<Modified>> virtual event when text is inserted or deleted.
 A treectrl widget replaces both methods of communication with its own event
 mechanism accessed through the [cmd notify] subcommands.
-[nl]
+[para]
 
 The exact behavior of the command depends on the [arg option] argument
 that follows the [cmd notify] argument.
@@ -1706,13 +1706,13 @@ binding for [arg pattern];  otherwise [arg script] replaces any existing binding
 If [arg script] is an empty string then the current binding for [arg pattern]
 is destroyed, leaving [arg pattern] unbound. In all of the cases where a script
 argument is provided, [cmd {notify bind}] returns an empty string.
-[nl]
+[para]
 If [arg pattern] is specified without a [arg script], then the script currently
 bound to [arg pattern] is returned, or an empty string is returned if there is
 no binding for [arg pattern]. If neither [arg pattern] nor [arg script] is
 specified, then the return value is a list whose elements are all the patterns
 for which there exist bindings for [arg object]. 
-[nl]
+[para]
 The [arg object] argument determines which window(s) the binding applies to.
 If [arg object] begins with a dot, as in .a.b.c, then it must be the path name
 for a window; otherwise it may be an arbitrary string. Like the regular
@@ -1724,7 +1724,7 @@ that window is destroyed.
      [opt [arg {option value ...}]]]
 This command sets and retrieves options for bindings created by the
 [cmd {notify bind}] command.
-[nl]
+[para]
 If no [arg option] is specified, the command returns a list with
 [arg option]-[arg value] pairs describing all
 the available binding options for [arg pattern] on [arg object].
@@ -1733,10 +1733,10 @@ then the command returns the current value of that option.
 If one or more [arg option]-[arg value] pairs are specified, then the command
 modifies the given option(s) to have the given value(s) for the binding;
 in this case the command returns an empty string.
-[nl]
+[para]
 
 The following binding options are supported:
-[list_begin opt]
+[list_begin options]
 [opt_def [option -active] [arg boolean]]
 Specifies if the binding should be active.
 As long as this option is specified as false,
@@ -1765,13 +1765,13 @@ scripts on the event are evaluated after undergoing %-substitution.
 If there are details defined for the event,
 [arg pattern] must describe an <[arg eventName]-[arg detail]> pair,
 otherwise [arg pattern] should be <[arg eventName]>.
-[nl]
+[para]
 
 The optional [arg charMap] is a list of [arg char]-[arg value] pairs
 as in the form returned by [cmd {array get}].
 Each [arg char] has to be exactly one character.
 The [arg charMap] is used in %-substitution.
-[nl]
+[para]
 
 If [arg percentsCommand] is specified, then it will be used to perform %-substitution
 on any scripts bound to the event. If [arg percentsCommand] is not specified and
@@ -1786,7 +1786,7 @@ Events created by this command are called dynamic,
 whereas events created by the treectrl widget itself are called static.
 This command may be called to set or retrieve the [arg percentsCommand] for
 an existing dynamic event.
-[nl]
+[para]
 
 The optional [arg percentsCommand] is a list containing the name of a Tcl
 command, plus any optional arguments, to which five additional arguments
@@ -1809,7 +1809,7 @@ the event. [arg CharMap] is the same as the argument to [cmd {notify generate}].
 [arg PercentsCommand] should return the value to replace the %-character by.
 If an error occurs evaluating [arg percentsCommand], the %-character is replaced
 by itself.
-[nl]
+[para]
 [cmd {notify install}] returns the current [arg percentsCommand] for the event,
 or an error if the event is not dynamic.
 
@@ -1900,9 +1900,9 @@ otherwise the treectrl scrolls to bring the item into view,
 and the corresponding [const <Scroll-x>] and/or [const <Scroll-y>]
 events are generated. If [arg columnDesc] is specified then a specific column
 of the item is scrolled into view instead of the entire item.
-[nl]
+[para]
 The following options are supported:
-[list_begin opt]
+[list_begin options]
 [opt_def [option -center] [arg flags]]
 [arg Flags] is a string that contains zero or more of the characters [const x]
 or [const y]. This option is used to center the item horizontally and/or
@@ -2037,12 +2037,12 @@ is specified).
 If one or more [arg option]-[arg value] pairs are specified, then the command
 modifies the given option(s) to have the given value(s) in [arg style];
 in this case the command returns an empty string.
-[nl]
+[para]
 
 The options of a style have effect on all elements managed by the style.
 The following options are supported:
 
-[list_begin opt]
+[list_begin options]
 [opt_def [option -orient] [arg varName]]
 This option specifies which orientation should be used
 when laying out the elements associated with this style.
@@ -2075,7 +2075,7 @@ Duplicate names in [arg elementList] are ignored.
 An element which was specified in a former call of this command
 for [arg style] but is not included in [arg elementList],
 will be deleted from the elements layed out by [arg style].
-[nl]
+[para]
 
 If the [arg elementList] argument is not specified, a list is returned
 containing the currently defined elements of [arg style].
@@ -2093,13 +2093,13 @@ the value of the named option.
 If one or more [arg option]-[arg value] pairs are specified, then the command
 modifies the given option(s) to have the given value(s) for the layout;
 in this case the command returns an empty string.
-[nl]
+[para]
 
 The options of a layout have effect on exactly the one element [arg element]
 managed by [arg style].
 The following options are supported:
 
-[list_begin opt]
+[list_begin options]
 [opt_def [option -detach] [arg boolean]]
 Specifies whether the element should be positioned by itself,
 i.e. independent from the other elements.
@@ -2311,7 +2311,7 @@ do not use item state names.
 [para]
 The following options are supported for columns:
 
-[list_begin opt]
+[list_begin options]
 [opt_def [option -arrow] [arg direction]]
 Indicates whether or not an arrow should be drawn in the column header.
 [arg Direction] must have one of the values
@@ -2529,16 +2529,16 @@ See the [sectref EXAMPLES] section for examples.
 The initial part of a column description must begin with one of the following terms:
 
 [list_begin definitions]
-[lst_item [arg id]]
+[def [arg id]]
 Specifies the unique column identifier, where [arg id] should be
 the return value of a prior call of the [cmd {column create}] widget command.
 See also the [option -columnprefix] option.
 
-[lst_item [arg QUALIFIERS]]
+[def [arg QUALIFIERS]]
 Specifies a list of qualifiers. This gives the same result as [const all] followed
 by [arg QUALIFIERS]; i.e., every column is tested for a match.
 
-[lst_item "[arg tagExpr] [arg QUALIFIERS]"]
+[def "[arg tagExpr] [arg QUALIFIERS]"]
 [arg TagExpr] is a tag expression (see [sectref {ITEM AND COLUMN TAGS}]) against which
 every column's tags are tested for a match.
 This keyword cannot be followed by any modifiers unless a single column is
@@ -2547,35 +2547,35 @@ or other keyword; also, [arg tagExpr] must look like a single list element
 since column descriptions are properly-formed lists. To be safe you may want to
 use the [const tag] qualifier followed by [arg tagExpr].
 
-[lst_item "[const all] [arg QUALIFIERS]"]
+[def "[const all] [arg QUALIFIERS]"]
 Indicates every column, including the tail column if the command allows it,
 which match [arg QUALIFIERS].
 
-[lst_item "[const first] [arg QUALIFIERS]"]
+[def "[const first] [arg QUALIFIERS]"]
 Indicates the leftmost column of the treectrl which matches [arg QUALIFIERS].
 
-[lst_item "[const end] [arg QUALIFIERS]"]
-[lst_item "[const last] [arg QUALIFIERS]"]
+[def "[const end] [arg QUALIFIERS]"]
+[def "[const last] [arg QUALIFIERS]"]
 Indicates the rightmost column of the treectrl (but not the tail column)
 which matches [arg QUALIFIERS].
 
-[lst_item "[const list] [arg columnDescs]"]
+[def "[const list] [arg columnDescs]"]
 [arg ColumnDescs] is a list (a single argument, i.e. "list {a b c}" not "list a b c")
 of other column descriptions.
 This keyword cannot be followed by any modifiers unless a single column is matched.
 
-[lst_item "[const order] [arg n] [arg QUALIFIERS]"]
+[def "[const order] [arg n] [arg QUALIFIERS]"]
 Indicates the [arg n]th column in the list of columns as returned by the
 [cmd {column order}] command.
 
-[lst_item "[const range] [arg {first last}] [arg QUALIFIERS]"]
+[def "[const range] [arg {first last}] [arg QUALIFIERS]"]
 [arg First] and [arg last] specify a range of columns.
 This keyword cannot be followed by any modifiers unless a single column is specified.
 
-[lst_item [const tail]]
+[def [const tail]]
 Indicates the ever-present tail column of the treectrl.
 
-[lst_item [const tree]]
+[def [const tree]]
 Indicates the column specified by the -treecolumn option of the treectrl.
 [list_end]
 
@@ -2588,10 +2588,10 @@ It may be specified in any of the following forms:
 
 [list_begin definitions]
 
-[lst_item "[const next] [arg QUALIFIERS]"]
+[def "[const next] [arg QUALIFIERS]"]
 Use the column to the right matching [arg QUALIFIERS].
 
-[lst_item "[const prev] [arg QUALIFIERS]"]
+[def "[const prev] [arg QUALIFIERS]"]
 Use the column to the left matching [arg QUALIFIERS].
 
 [list_end]
@@ -2600,23 +2600,23 @@ The word [arg QUALIFIERS] above represents a sequence of zero or more of the
 following terms that changes which column is chosen:
 
 [list_begin definitions]
-[lst_item "[const state] [arg stateList]"]
+[def "[const state] [arg stateList]"]
 [arg StateList] is a list of column state names.
 Only columns that have the given states set (or unset if the '!' prefix is used)
 are considered.
 
-[lst_item "[const tag] [arg tagExpr]"]
+[def "[const tag] [arg tagExpr]"]
 [arg TagExpr] is a tag expression (see [sectref {ITEM AND COLUMN TAGS}]) against which
 a column's tags are tested for a match.
 
-[lst_item [const !tail]]
+[def [const !tail]]
 When this qualifier is given, the tail column is not matched.
 
-[lst_item [const visible]]
+[def [const visible]]
 When this qualifier is given, only columns whose [option -visible] option is
 TRUE are considered.
 
-[lst_item [const !visible]]
+[def [const !visible]]
 When this qualifier is given, only columns whose [option -visible] option is
 FALSE are considered.
 [list_end]
@@ -2627,26 +2627,26 @@ integral role in the appearance of each item.
 The following states are predefined for every item:
 
 [list_begin definitions]
-[lst_item [const active]]
+[def [const active]]
 At all times this state is set for exactly one item. The active item is
 used with keyboard navigation.
 When the treectrl widget is created or when the active item is deleted,
 the root item will become the active item.
 This state can be modified by means of the widget command [cmd activate].
 
-[lst_item [const enabled]]
+[def [const enabled]]
 This state is set for every item when it is created.
 Disabled items cannot be selected and are ignored by the default bindings
 when navigating via the keyboard.
 This state can be modified by means of the widget command [cmd {item enabled}].
 
-[lst_item [const focus]]
+[def [const focus]]
 This state is set for every item,
 if the treectrl widget currently has the focus.
 It cannot be modified by means of a widget command,
 but is maintained in reaction to the <FocusIn> and <FocusOut> events.
 
-[lst_item [const open]]
+[def [const open]]
 If this state is switched on,
 the descendants of the item are displayed
 - the item is expanded.
@@ -2657,7 +2657,7 @@ For a new item this state is switched on by default.
 This state can be modified by means of the widget commands
 [cmd {item expand}], [cmd {item collapse}], or [cmd {item toggle}].
 
-[lst_item [const selected]]
+[def [const selected]]
 This state is set for every item included in the selection.
 It can be modified by means of the widget command [cmd selection].
 [list_end]
@@ -2737,7 +2737,7 @@ master element's configuration options for a specific item.
 An element of type [const bitmap] can be used to display a bitmap in an item.
 The following options are supported for bitmap elements:
 
-[list_begin opt]
+[list_begin options]
 [opt_def [option -background] [arg color]]
 Specifies as a [sectref {PER-STATE OPTIONS} per-state] option
 the color to use for each of the bitmap's '0' valued pixels.
@@ -2765,7 +2765,7 @@ the bitmap's foreground color is black.
 An element of type [const border] can be used to display a 3D border in an item.
 The following options are supported for border elements:
 
-[list_begin opt]
+[list_begin options]
 [opt_def [option -background] [arg color]]
 Specifies as a [sectref {PER-STATE OPTIONS} per-state] option
 the color to use for the background of the border.
@@ -2810,7 +2810,7 @@ determined by the style layout options.
 An element of type [const image] can be used to display an image in an item.
 The following options are supported for image elements:
 
-[list_begin opt]
+[list_begin options]
 
 [opt_def [option -draw] [arg boolean]]
 Deprecated; use the style layout option [option -draw] instead.
@@ -2838,7 +2838,7 @@ width of the image, or zero if there is no image.
 An element of type [const rect] can be used to display a rectangle in an item.
 The following options are supported for rectangle elements:
 
-[list_begin opt]
+[list_begin options]
 
 [opt_def [option -draw] [arg boolean]]
 Deprecated; use the style layout option [option -draw] instead.
@@ -2896,7 +2896,7 @@ determined by the style layout options.
 An element of type [const text] can be used to display a text in an item.
 The following options are supported for text elements:
 
-[list_begin opt]
+[list_begin options]
 [opt_def [option -draw] [arg boolean]]
 Deprecated; use the style layout option [option -draw] instead.
 Specifies as a [sectref {PER-STATE OPTIONS} per-state] option
@@ -3008,7 +3008,7 @@ length is determined.
 An element of type [const window] can be used to display a Tk window in an item.
 The following options are supported for window elements:
 
-[list_begin opt]
+[list_begin options]
 [opt_def [option -clip] [arg boolean]]
 Specifies whether the associated Tk window is a borderless frame which should
 be used to clip its child window so it doesn't overlap the header, borders, or
@@ -3048,17 +3048,17 @@ tcl list of keywords and arguments.
 The first word of an item description must be one of the following:
 
 [list_begin definitions]
-[lst_item [arg id]]
+[def [arg id]]
 Specifies the unique item identifier, where [arg id] should be
 the return value of a prior call of the [cmd {item create}] widget command,
 or [const 0] to specify the ever-present root item. See also the
 [option -itemprefix] option.
 
-[lst_item [arg QUALIFIERS]]
+[def [arg QUALIFIERS]]
 Specifies a list of qualifiers. This gives the same result as [const all] followed
 by [arg QUALIFIERS]; i.e., every item is tested for a match.
 
-[lst_item "[arg tagExpr] [arg QUALIFIERS]"]
+[def "[arg tagExpr] [arg QUALIFIERS]"]
 [arg TagExpr] is a tag expression (see [sectref {ITEM AND COLUMN TAGS}]) against which
 every item's tags are tested for a match.
 This keyword cannot be followed by any modifiers unless a single item is
@@ -3067,48 +3067,48 @@ or other keyword; also, [arg tagExpr] must look like a single list element
 since item descriptions are properly-formed lists. To be safe you may want to
 use the [const tag] qualifier followed by [arg tagExpr].
 
-[lst_item [const active]]
+[def [const active]]
 Indicates the item that is currently active, i.e. normally
 the item specified as argument of the last successful [cmd activate]
 widget command, or the root item if no such call happened yet.
 
-[lst_item [const anchor]]
+[def [const anchor]]
 Indicates the anchor item of the selection, i.e. normally
 the item specified as argument of the last successful [cmd {selection anchor}]
 widget command, or the root item if no such call happened yet.
 
-[lst_item "[const all] [arg QUALIFIERS]"]
+[def "[const all] [arg QUALIFIERS]"]
 Indicates every item including orphans which match [arg QUALIFIERS].
 This keyword cannot be followed by any modifiers unless a single item is matched.
 
-[lst_item "[const first] [arg QUALIFIERS]"]
+[def "[const first] [arg QUALIFIERS]"]
 Indicates the first item of the treectrl (the root item),
 or the first item matching [arg QUALIFIERS].
 
-[lst_item "[const end] [arg QUALIFIERS]"]
-[lst_item "[const last] [arg QUALIFIERS]"]
+[def "[const end] [arg QUALIFIERS]"]
+[def "[const last] [arg QUALIFIERS]"]
 Indicates the last item which matches [arg QUALIFIERS].
 
-[lst_item "[const list] [arg itemDescs]"]
+[def "[const list] [arg itemDescs]"]
 [arg ItemDescs] is a list (a single argument, i.e. "list {a b c}" not "list a b c")
 of other item descriptions.
 This keyword cannot be followed by any modifiers unless a single item is matched.
 
-[lst_item "[const nearest] [arg {x y}]"]
+[def "[const nearest] [arg {x y}]"]
 Indicates the item nearest to the point given by [arg x] and [arg y].
 
-[lst_item "[const rnc] [arg {row column}]"]
+[def "[const rnc] [arg {row column}]"]
 Indicates the item in the given [arg row] and [arg column].
 The row and column corresponds to
 the on-screen arrangement of items as determined by the -orient and -wrap
 options.
 You can memorize [const rnc] as an abbreviation of "row 'n' column".
 
-[lst_item "[const range] [arg {first last}] [arg QUALIFIERS]"]
+[def "[const range] [arg {first last}] [arg QUALIFIERS]"]
 [arg First] and [arg last] specify a range of items.
 This keyword cannot be followed by any modifiers unless a single item is matched.
 
-[lst_item [const root]]
+[def [const root]]
 Indicates the root item of the treectrl.
 
 [list_end]
@@ -3121,73 +3121,73 @@ the description up to this point.
 It may be specified in any of the following forms:
 
 [list_begin definitions]
-[lst_item [const above]]
+[def [const above]]
 Use the item one row above in this column.
 
-[lst_item "[const ancestors] [arg QUALIFIERS]"]
+[def "[const ancestors] [arg QUALIFIERS]"]
 Use the ancestors of the item (like [cmd {item ancestors}] but QUALIFIERS
 may change which ancestors match).
 This keyword cannot be followed by any modifiers.
 
-[lst_item [const below]]
+[def [const below]]
 Use the item one row below in this column.
 
-[lst_item [const bottom]]
+[def [const bottom]]
 Use the item in the last row of this column.
 
-[lst_item "[const child] [arg n] [arg QUALIFIERS]"]
+[def "[const child] [arg n] [arg QUALIFIERS]"]
 Use the [arg n]th child of the item.
 
-[lst_item "[const children] [arg QUALIFIERS]"]
+[def "[const children] [arg QUALIFIERS]"]
 Use the children of the item (like [cmd {item children}] but QUALIFIERS
 may change which children match).
 This keyword cannot be followed by any modifiers.
 
-[lst_item "[const descendants] [arg QUALIFIERS]"]
+[def "[const descendants] [arg QUALIFIERS]"]
 Use the descendants of the item (like [cmd {item descendants}] but QUALIFIERS
 may change which descendants match).
 This keyword cannot be followed by any modifiers.
 
-[lst_item "[const firstchild] [arg QUALIFIERS]"]
+[def "[const firstchild] [arg QUALIFIERS]"]
 Use the first child of the item.
 
-[lst_item "[const lastchild] [arg QUALIFIERS]"]
+[def "[const lastchild] [arg QUALIFIERS]"]
 Use the last child of the item.
 
-[lst_item [const left]]
+[def [const left]]
 Use the item one column to the left in the same row.
 
-[lst_item [const leftmost]]
+[def [const leftmost]]
 Use the item of the first column in the same row.
 
-[lst_item "[const next] [arg QUALIFIERS]"]
+[def "[const next] [arg QUALIFIERS]"]
 Use the next item, which is the first item from the
 following list: the first child, the next sibling or the next sibling of
 the nearest ancestor which has one.
 
-[lst_item "[const nextsibling] [arg QUALIFIERS]"]
+[def "[const nextsibling] [arg QUALIFIERS]"]
 Use the next sibling of the item.
 
-[lst_item [const parent]]
+[def [const parent]]
 Use the parent of the item.
 
-[lst_item "[const prev] [arg QUALIFIERS]"]
+[def "[const prev] [arg QUALIFIERS]"]
 Use the last child of the previous sibling,
 or the parent if there is no previous sibling.
 
-[lst_item "[const prevsibling] [arg QUALIFIERS]"]
+[def "[const prevsibling] [arg QUALIFIERS]"]
 Use the previous sibling of the item.
 
-[lst_item [const right]]
+[def [const right]]
 Use the item one column to the right in the same row.
 
-[lst_item [const rightmost]]
+[def [const rightmost]]
 Use the item of the last column in the same row.
 
-[lst_item "[const sibling] [arg n] [arg QUALIFIERS]"]
+[def "[const sibling] [arg n] [arg QUALIFIERS]"]
 Use the [arg n]th child of the item's parent.
 
-[lst_item [const top]]
+[def [const top]]
 Use the item in the first row of this column.
 [list_end]
 
@@ -3195,23 +3195,23 @@ The word [arg QUALIFIERS] above represents a series of zero or more of the
 following terms that changes which item is chosen:
 
 [list_begin definitions]
-[lst_item "[const depth] [arg depth]"]
+[def "[const depth] [arg depth]"]
 Matches items whose depth (as returned by the [cmd depth] command) is equal to
 [arg depth].
 
-[lst_item "[const state] [arg stateList]"]
+[def "[const state] [arg stateList]"]
 [arg StateList] is a list of item state names (static and dynamic, see [sectref STATES]).
 Only items that have the given states set (or unset if the '!' prefix is used)
 are considered.
 
-[lst_item "[const tag] [arg tagExpr]"]
+[def "[const tag] [arg tagExpr]"]
 [arg TagExpr] is a tag expression (see [sectref {ITEM AND COLUMN TAGS}]) against which
 an item's tags are tested for a match.
 
-[lst_item [const visible]]
+[def [const visible]]
 When this qualifier is given, only items that are displayed are considered.
 
-[lst_item [const !visible]]
+[def [const !visible]]
 When this qualifier is given, only items that are *not* displayed are considered.
 [list_end]
 
@@ -3251,7 +3251,7 @@ event. Unlike the regular Tk [cmd bind] mechanism, each event generated by
 a treectrl widget has its own set of %-substitutions.
 [para]
 The following %-substitutions are valid for all static events:
-[list_begin opt]
+[list_begin options]
 [opt_def %%] Replaced with a single %
 [opt_def %d] The detail name
 [opt_def %e] The event name
@@ -3266,73 +3266,73 @@ The following %-substitutions are valid for all static events:
 The following events may be generated by a treectrl widget:
 
 [list_begin definitions]
-[lst_item [const <ActiveItem>]]
+[def [const <ActiveItem>]]
 Generated whenever the active item changes.
-[list_begin opt]
+[list_begin options]
 [opt_def %c] The current active item
 [opt_def %p] The previous active item
 [list_end]
 
-[lst_item [const <Collapse-before>]]
+[def [const <Collapse-before>]]
 Generated before an item is collapsed.
-[list_begin opt]
+[list_begin options]
 [opt_def %I] The item id
 [list_end]
 
-[lst_item [const <Collapse-after>]]
+[def [const <Collapse-after>]]
 Generated after an item is collapsed.
-[list_begin opt]
+[list_begin options]
 [opt_def %I] The item id
 [list_end]
 
-[lst_item [const <Expand-before>]]
+[def [const <Expand-before>]]
 Generated before an item is expanded. This event is useful if you want to add
 child items to the item just before the item is expanded.
-[list_begin opt]
+[list_begin options]
 [opt_def %I] The item id
 [list_end]
 
-[lst_item [const <Expand-after>]]
+[def [const <Expand-after>]]
 Generated after an item is expanded.
-[list_begin opt]
+[list_begin options]
 [opt_def %I] The item id
 [list_end]
 
-[lst_item [const <ItemDelete>]]
+[def [const <ItemDelete>]]
 Generated when items are about to be deleted by the [cmd {item delete}] command.
-[list_begin opt]
+[list_begin options]
 [opt_def %i] List of items ids being deleted.
 [list_end]
 
-[lst_item [const <ItemVisibility>]]
+[def [const <ItemVisibility>]]
 Generated when items become visible on screen and when items are no longer visible on screen.
 This event is useful if you have a very large number of items and want to assign
 styles only when items are actually going to be displayed.
-[list_begin opt]
+[list_begin options]
 [opt_def %h] List of items ids which are no longer visible.
 [opt_def %v] List of items ids which are now visible.
 [list_end]
 
-[lst_item [const <Scroll-x>]]
+[def [const <Scroll-x>]]
 Generated whenever the view in the treectrl changes in such a way that a
 horizontal scrollbar should be redisplayed.
-[list_begin opt]
+[list_begin options]
 [opt_def %l] Same as the first fraction appended to [const -xscrollcommand]. Think [emph lower].
 [opt_def %u] Same as the second fraction appended to [const -xscrollcommand]. Think [emph upper].
 [list_end]
 
-[lst_item [const <Scroll-y>]]
+[def [const <Scroll-y>]]
 Generated whenever the view in the treectrl changes in such a way that a
 vertical scrollbar should be redisplayed.
-[list_begin opt]
+[list_begin options]
 [opt_def %l] Same as the first fraction appended to [const -yscrollcommand]. Think [emph lower].
 [opt_def %u] Same as the second fraction appended to [const -yscrollcommand]. Think [emph upper].
 [list_end]
 
-[lst_item [const <Selection>]]
+[def [const <Selection>]]
 Generated whenever the selection changes. This event gives information about
 how the selection changed.
-[list_begin opt]
+[list_begin options]
 [opt_def %c] Same as the [cmd "selection count"] widget command
 [opt_def %D] List of newly-deselected item ids
 [opt_def %S] List of newly-selected item ids
@@ -3350,45 +3350,45 @@ The following events may be generated by the library scripts:
 
 [list_begin definitions]
 
-[lst_item [const <ColumnDrag-begin>]]
-[lst_item [const <ColumnDrag-receive>]]
-[lst_item [const <ColumnDrag-end>]]
+[def [const <ColumnDrag-begin>]]
+[def [const <ColumnDrag-receive>]]
+[def [const <ColumnDrag-end>]]
 Generated whenever the user drag-and-drops a column header. The library scripts
 do not actually move a dragged column. You must bind to the receive event to
 move the column. See [sectref EXAMPLES].
-[list_begin opt]
+[list_begin options]
 [opt_def %C] The column that was dragged
 [opt_def %b] The column to move the dragged column before
 [list_end]
 
-[lst_item [const <Drag-begin>]]
-[lst_item [const <Drag-receive>]]
-[lst_item [const <Drag-end>]]
+[def [const <Drag-begin>]]
+[def [const <Drag-receive>]]
+[def [const <Drag-end>]]
 Generated whenever the user drag-and-drops a file into a directory. This
 event is generated by the filelist-bindings.tcl library code, which is not
 used by default. See the "Explorer" demos.
-[list_begin opt]
+[list_begin options]
 [opt_def %I] The item that the user dropped the dragged items on.
 [opt_def %l] (lowercase L) The list of dragged items.
 [list_end]
 
-[lst_item [const <Edit-begin>]]
-[lst_item [const <Edit-accept>]]
-[lst_item [const <Edit-end>]]
+[def [const <Edit-begin>]]
+[def [const <Edit-accept>]]
+[def [const <Edit-end>]]
 The filelist-bindings.tcl code will display a text-editing window if the user
 clicks on a selected file/folder name. See the "Explorer" demos.
-[list_begin opt]
+[list_begin options]
 [opt_def %I] The item containing the edited text element
 [opt_def %C] The column containing the edited text element
 [opt_def %E] The name of the edited text element
 [opt_def %t] The edited text
 [list_end]
 
-[lst_item [const <Header-invoke>]]
+[def [const <Header-invoke>]]
 Generated whenever the user clicks and releases the left mouse button
 in a column header if the column's -button option is true. You can bind a
 script to this event to sort the list.
-[list_begin opt]
+[list_begin options]
 [opt_def %C] The column whose header was clicked
 [list_end]
 

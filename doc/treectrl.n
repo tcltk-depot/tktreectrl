@@ -1,13 +1,242 @@
 '\"
 '\" Generated from file 'doc/treectrl.man' by tcllib/doctools with format 'nroff'
 '\"
-'\" Copyright (c) 2002-2003 Christian Krone.
+'\" The definitions below are for supplemental macros used in Tcl/Tk
+'\" manual entries.
 '\"
-'\"   See the file "license.terms" for information on usage and redistribution
-'\"   of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" .AP type name in/out ?indent?
+'\"	Start paragraph describing an argument to a library procedure.
+'\"	type is type of argument (int, etc.), in/out is either "in", "out",
+'\"	or "in/out" to describe whether procedure reads or modifies arg,
+'\"	and indent is equivalent to second arg of .IP (shouldn't ever be
+'\"	needed;  use .AS below instead)
 '\"
-'\"   $Id$
-.so man.macros
+'\" .AS ?type? ?name?
+'\"	Give maximum sizes of arguments for setting tab stops.  Type and
+'\"	name are examples of largest possible arguments that will be passed
+'\"	to .AP later.  If args are omitted, default tab stops are used.
+'\"
+'\" .BS
+'\"	Start box enclosure.  From here until next .BE, everything will be
+'\"	enclosed in one large box.
+'\"
+'\" .BE
+'\"	End of box enclosure.
+'\"
+'\" .CS
+'\"	Begin code excerpt.
+'\"
+'\" .CE
+'\"	End code excerpt.
+'\"
+'\" .VS ?version? ?br?
+'\"	Begin vertical sidebar, for use in marking newly-changed parts
+'\"	of man pages.  The first argument is ignored and used for recording
+'\"	the version when the .VS was added, so that the sidebars can be
+'\"	found and removed when they reach a certain age.  If another argument
+'\"	is present, then a line break is forced before starting the sidebar.
+'\"
+'\" .VE
+'\"	End of vertical sidebar.
+'\"
+'\" .DS
+'\"	Begin an indented unfilled display.
+'\"
+'\" .DE
+'\"	End of indented unfilled display.
+'\"
+'\" .SO
+'\"	Start of list of standard options for a Tk widget.  The
+'\"	options follow on successive lines, in four columns separated
+'\"	by tabs.
+'\"
+'\" .SE
+'\"	End of list of standard options for a Tk widget.
+'\"
+'\" .OP cmdName dbName dbClass
+'\"	Start of description of a specific option.  cmdName gives the
+'\"	option's name as specified in the class command, dbName gives
+'\"	the option's name in the option database, and dbClass gives
+'\"	the option's class in the option database.
+'\"
+'\" .UL arg1 arg2
+'\"	Print arg1 underlined, then print arg2 normally.
+'\"
+'\" RCS: @(#) $Id$
+'\"
+'\"	# Set up traps and other miscellaneous stuff for Tcl/Tk man pages.
+.if t .wh -1.3i ^B
+.nr ^l \n(.l
+.ad b
+'\"	# Start an argument description
+.de AP
+.ie !"\\$4"" .TP \\$4
+.el \{\
+.   ie !"\\$2"" .TP \\n()Cu
+.   el          .TP 15
+.\}
+.ta \\n()Au \\n()Bu
+.ie !"\\$3"" \{\
+\&\\$1	\\fI\\$2\\fP	(\\$3)
+.\".b
+.\}
+.el \{\
+.br
+.ie !"\\$2"" \{\
+\&\\$1	\\fI\\$2\\fP
+.\}
+.el \{\
+\&\\fI\\$1\\fP
+.\}
+.\}
+..
+'\"	# define tabbing values for .AP
+.de AS
+.nr )A 10n
+.if !"\\$1"" .nr )A \\w'\\$1'u+3n
+.nr )B \\n()Au+15n
+.\"
+.if !"\\$2"" .nr )B \\w'\\$2'u+\\n()Au+3n
+.nr )C \\n()Bu+\\w'(in/out)'u+2n
+..
+.AS Tcl_Interp Tcl_CreateInterp in/out
+'\"	# BS - start boxed text
+'\"	# ^y = starting y location
+'\"	# ^b = 1
+.de BS
+.br
+.mk ^y
+.nr ^b 1u
+.if n .nf
+.if n .ti 0
+.if n \l'\\n(.lu\(ul'
+.if n .fi
+..
+'\"	# BE - end boxed text (draw box now)
+.de BE
+.nf
+.ti 0
+.mk ^t
+.ie n \l'\\n(^lu\(ul'
+.el \{\
+.\"	Draw four-sided box normally, but don't draw top of
+.\"	box if the box started on an earlier page.
+.ie !\\n(^b-1 \{\
+\h'-1.5n'\L'|\\n(^yu-1v'\l'\\n(^lu+3n\(ul'\L'\\n(^tu+1v-\\n(^yu'\l'|0u-1.5n\(ul'
+.\}
+.el \}\
+\h'-1.5n'\L'|\\n(^yu-1v'\h'\\n(^lu+3n'\L'\\n(^tu+1v-\\n(^yu'\l'|0u-1.5n\(ul'
+.\}
+.\}
+.fi
+.br
+.nr ^b 0
+..
+'\"	# VS - start vertical sidebar
+'\"	# ^Y = starting y location
+'\"	# ^v = 1 (for troff;  for nroff this doesn't matter)
+.de VS
+.if !"\\$2"" .br
+.mk ^Y
+.ie n 'mc \s12\(br\s0
+.el .nr ^v 1u
+..
+'\"	# VE - end of vertical sidebar
+.de VE
+.ie n 'mc
+.el \{\
+.ev 2
+.nf
+.ti 0
+.mk ^t
+\h'|\\n(^lu+3n'\L'|\\n(^Yu-1v\(bv'\v'\\n(^tu+1v-\\n(^Yu'\h'-|\\n(^lu+3n'
+.sp -1
+.fi
+.ev
+.\}
+.nr ^v 0
+..
+'\"	# Special macro to handle page bottom:  finish off current
+'\"	# box/sidebar if in box/sidebar mode, then invoked standard
+'\"	# page bottom macro.
+.de ^B
+.ev 2
+'ti 0
+'nf
+.mk ^t
+.if \\n(^b \{\
+.\"	Draw three-sided box if this is the box's first page,
+.\"	draw two sides but no top otherwise.
+.ie !\\n(^b-1 \h'-1.5n'\L'|\\n(^yu-1v'\l'\\n(^lu+3n\(ul'\L'\\n(^tu+1v-\\n(^yu'\h'|0u'\c
+.el \h'-1.5n'\L'|\\n(^yu-1v'\h'\\n(^lu+3n'\L'\\n(^tu+1v-\\n(^yu'\h'|0u'\c
+.\}
+.if \\n(^v \{\
+.nr ^x \\n(^tu+1v-\\n(^Yu
+\kx\h'-\\nxu'\h'|\\n(^lu+3n'\ky\L'-\\n(^xu'\v'\\n(^xu'\h'|0u'\c
+.\}
+.bp
+'fi
+.ev
+.if \\n(^b \{\
+.mk ^y
+.nr ^b 2
+.\}
+.if \\n(^v \{\
+.mk ^Y
+.\}
+..
+'\"	# DS - begin display
+.de DS
+.RS
+.nf
+.sp
+..
+'\"	# DE - end display
+.de DE
+.fi
+.RE
+.sp
+..
+'\"	# SO - start of list of standard options
+.de SO
+.SH "STANDARD OPTIONS"
+.LP
+.nf
+.ta 4c 8c 12c
+.ft B
+..
+'\"	# SE - end of list of standard options
+.de SE
+.fi
+.ft R
+.LP
+See the \\fBoptions\\fR manual entry for details on the standard options.
+..
+'\"	# OP - start of full description for a single option
+.de OP
+.LP
+.nf
+.ta 4c
+Command-Line Name:	\\fB\\$1\\fR
+Database Name:	\\fB\\$2\\fR
+Database Class:	\\fB\\$3\\fR
+.fi
+.IP
+..
+'\"	# CS - begin code excerpt
+.de CS
+.RS
+.nf
+.ta .25i .5i .75i 1i
+..
+'\"	# CE - end code excerpt
+.de CE
+.fi
+.RE
+..
+.de UL
+\\$1\l'|0\(ul'\\$2
+..
 .TH "treectrl" n 2.2.10 treectrl "Tk Commands"
 .BS
 .SH NAME
@@ -358,6 +587,7 @@ package require \fBtreectrl  2.2.10\fR
 .TP
 \fBtreectrl\fR \fIpathName\fR ?\fIoptions\fR?
 .PP
+.PP
 The \fBtreectrl\fR command creates a new window (given by the
 \fIpathName\fR argument) and makes it into a treectrl widget.
 Additional options, described above, may be specified on the
@@ -419,6 +649,7 @@ the specification of an orientation will give useful results.
 \fB\fB-yscrollcommand\fR\fR
 .TP
 \fB\fB-foreground\fR\fR
+.PP
 See the \fBoption\fR manual entry for details on the standard options.
 .SH "WIDGET SPECIFIC OPTIONS"
 .LP
@@ -1028,6 +1259,7 @@ are selected) will also be \fB-yscrollincrement\fR.  If the value of
 this option is less than or equal to zero, then vertical scrolling
 snaps to the top of an item, or part of an item if items are taller than the
 contentbox.
+.PP
 .SH "ITEM AND COLUMN TAGS"
 Columns and items may have any number of tags associated with them.
 A tag is just a string of characters, and it may take any form,
@@ -2868,6 +3100,7 @@ visible;  if it is positive then lower information
 becomes visible.
 A \fB<Scroll-y>\fR event is generated.
 .RE
+.PP
 .SH COLUMNS
 A treectrl widget is capable of displaying multiple columns next to each
 other.
@@ -3094,6 +3327,7 @@ if specified.
 .TP
 \fB\fB-widthhack\fR\fR \fIboolean\fR
 Deprecated. Use the treectrl's \fB-itemwidthequal\fR option instead.
+.PP
 .SH "COLUMN DESCRIPTION"
 Many of the commands and options for a treectrl take as an argument a
 description of which column to operate on.
@@ -3150,6 +3384,7 @@ Indicates the ever-present tail column of the treectrl.
 \fBtree\fR
 Indicates the column specified by the -treecolumn option of the treectrl.
 .PP
+.PP
 The initial part of the column description (matching any of the values above)
 may be followed by one or more \fImodifier\fRs.
 A modifier changes the column used relative to
@@ -3161,6 +3396,7 @@ Use the column to the right matching \fIQUALIFIERS\fR.
 .TP
 \fBprev\fR \fIQUALIFIERS\fR
 Use the column to the left matching \fIQUALIFIERS\fR.
+.PP
 The word \fIQUALIFIERS\fR above represents a sequence of zero or more of the
 following terms that changes which column is chosen:
 .TP
@@ -3183,6 +3419,7 @@ TRUE are considered.
 \fB!visible\fR
 When this qualifier is given, only columns whose \fB-visible\fR option is
 FALSE are considered.
+.PP
 .SH STATES
 For every item a set of boolean states is managed. These states play an
 integral role in the appearance of each item.
@@ -3221,6 +3458,7 @@ This state can be modified by means of the widget commands
 \fBselected\fR
 This state is set for every item included in the selection.
 It can be modified by means of the widget command \fBselection\fR.
+.PP
 .PP
 By means of the \fBstate define\fR widget command
 up to 27 additional states can be defined.
@@ -3320,6 +3558,7 @@ Specifies as a \fBper-state\fR option
 the color to use for each of the bitmap's '1' valued pixels.
 If the value for a certain state is an empty string (the default),
 the bitmap's foreground color is black.
+.PP
 .SH "BORDER ELEMENT"
 An element of type \fBborder\fR can be used to display a 3D border in an item.
 The following options are supported for border elements:
@@ -3361,6 +3600,7 @@ Specifies the thickness of the edges of the border.
 Specifies the width of the border. If this value is unspecified
 (the default), the border will be exactly as wide as its display area as
 determined by the style layout options.
+.PP
 .SH "IMAGE ELEMENT"
 An element of type \fBimage\fR can be used to display an image in an item.
 The following options are supported for image elements:
@@ -3384,6 +3624,7 @@ the image to display in the element.
 Specifies the requested width of the display area for this element.
 If unspecified (the default), the element requests a width equal to the
 width of the image, or zero if there is no image.
+.PP
 .SH "RECTANGLE ELEMENT"
 An element of type \fBrect\fR can be used to display a rectangle in an item.
 The following options are supported for rectangle elements:
@@ -3437,6 +3678,7 @@ then a focus rectangle is not drawn.
 Specifies the width of the rectangle. If this value is unspecified
 (the default), the rectangle will be exactly as wide as its display area as
 determined by the style layout options.
+.PP
 .SH "TEXT ELEMENT"
 An element of type \fBtext\fR can be used to display a text in an item.
 The following options are supported for text elements:
@@ -3545,6 +3787,7 @@ Acceptable values are \fBnone\fR, \fBchar\fR or \fBword\fR.
 If this option is unspecified (the default), \fBword\fR is used.
 See the \fB-width\fR option for a description of how the maximum line
 length is determined.
+.PP
 .SH "WINDOW ELEMENT"
 An element of type \fBwindow\fR can be used to display a Tk window in an item.
 The following options are supported for window elements:
@@ -3579,6 +3822,7 @@ top-level window. This option cannot be specified by
 the \fBelement create\fR or \fBelement configure\fR commands, only by the
 \fBitem element configure\fR command; i.e., the element must be associated
 with a particular item.
+.PP
 .SH "ITEM DESCRIPTION"
 Many of the commands for a treectrl take as an argument a
 description of which items to operate on. An item description is a properly-formed
@@ -3648,6 +3892,7 @@ This keyword cannot be followed by any modifiers unless a single item is matched
 .TP
 \fBroot\fR
 Indicates the root item of the treectrl.
+.PP
 .PP
 The initial part of the item description (matching any of the values above)
 may be followed by one or more \fImodifier\fRs.
@@ -3723,6 +3968,7 @@ Use the \fIn\fRth child of the item's parent.
 .TP
 \fBtop\fR
 Use the item in the first row of this column.
+.PP
 The word \fIQUALIFIERS\fR above represents a series of zero or more of the
 following terms that changes which item is chosen:
 .TP
@@ -3744,6 +3990,7 @@ When this qualifier is given, only items that are displayed are considered.
 .TP
 \fB!visible\fR
 When this qualifier is given, only items that are *not* displayed are considered.
+.PP
 To get the first item in the list that is enabled:
 .nf
 
@@ -3784,20 +4031,28 @@ a treectrl widget has its own set of %-substitutions.
 .PP
 The following %-substitutions are valid for all static events:
 .TP
-\fB%%\fR Replaced with a single %
+\fB%%\fR
+Replaced with a single %
 .TP
-\fB%d\fR The detail name
+\fB%d\fR
+The detail name
 .TP
-\fB%e\fR The event name
+\fB%e\fR
+The event name
 .TP
-\fB%P\fR The pattern, either <event> or <event-detail>
+\fB%P\fR
+The pattern, either <event> or <event-detail>
 .TP
-\fB%W\fR The object argument to the \fBnotify bind\fR command
+\fB%W\fR
+The object argument to the \fBnotify bind\fR command
 .TP
-\fB%T\fR The treectrl widget which generated the event
+\fB%T\fR
+The treectrl widget which generated the event
 .TP
-\fB%?\fR A list of the format {char value char value ...} for each
+\fB%?\fR
+A list of the format {char value char value ...} for each
 %-substitution character and the value it is replaced by
+.PP
 .PP
 The following events may be generated by a treectrl widget:
 .TP
@@ -3805,23 +4060,27 @@ The following events may be generated by a treectrl widget:
 Generated whenever the active item changes.
 .RS
 .TP
-\fB%c\fR The current active item
+\fB%c\fR
+The current active item
 .TP
-\fB%p\fR The previous active item
+\fB%p\fR
+The previous active item
 .RE
 .TP
 \fB<Collapse-before>\fR
 Generated before an item is collapsed.
 .RS
 .TP
-\fB%I\fR The item id
+\fB%I\fR
+The item id
 .RE
 .TP
 \fB<Collapse-after>\fR
 Generated after an item is collapsed.
 .RS
 .TP
-\fB%I\fR The item id
+\fB%I\fR
+The item id
 .RE
 .TP
 \fB<Expand-before>\fR
@@ -3829,21 +4088,24 @@ Generated before an item is expanded. This event is useful if you want to add
 child items to the item just before the item is expanded.
 .RS
 .TP
-\fB%I\fR The item id
+\fB%I\fR
+The item id
 .RE
 .TP
 \fB<Expand-after>\fR
 Generated after an item is expanded.
 .RS
 .TP
-\fB%I\fR The item id
+\fB%I\fR
+The item id
 .RE
 .TP
 \fB<ItemDelete>\fR
 Generated when items are about to be deleted by the \fBitem delete\fR command.
 .RS
 .TP
-\fB%i\fR List of items ids being deleted.
+\fB%i\fR
+List of items ids being deleted.
 .RE
 .TP
 \fB<ItemVisibility>\fR
@@ -3852,9 +4114,11 @@ This event is useful if you have a very large number of items and want to assign
 styles only when items are actually going to be displayed.
 .RS
 .TP
-\fB%h\fR List of items ids which are no longer visible.
+\fB%h\fR
+List of items ids which are no longer visible.
 .TP
-\fB%v\fR List of items ids which are now visible.
+\fB%v\fR
+List of items ids which are now visible.
 .RE
 .TP
 \fB<Scroll-x>\fR
@@ -3862,9 +4126,11 @@ Generated whenever the view in the treectrl changes in such a way that a
 horizontal scrollbar should be redisplayed.
 .RS
 .TP
-\fB%l\fR Same as the first fraction appended to \fB-xscrollcommand\fR. Think \fIlower\fR.
+\fB%l\fR
+Same as the first fraction appended to \fB-xscrollcommand\fR. Think \fIlower\fR.
 .TP
-\fB%u\fR Same as the second fraction appended to \fB-xscrollcommand\fR. Think \fIupper\fR.
+\fB%u\fR
+Same as the second fraction appended to \fB-xscrollcommand\fR. Think \fIupper\fR.
 .RE
 .TP
 \fB<Scroll-y>\fR
@@ -3872,9 +4138,11 @@ Generated whenever the view in the treectrl changes in such a way that a
 vertical scrollbar should be redisplayed.
 .RS
 .TP
-\fB%l\fR Same as the first fraction appended to \fB-yscrollcommand\fR. Think \fIlower\fR.
+\fB%l\fR
+Same as the first fraction appended to \fB-yscrollcommand\fR. Think \fIlower\fR.
 .TP
-\fB%u\fR Same as the second fraction appended to \fB-yscrollcommand\fR. Think \fIupper\fR.
+\fB%u\fR
+Same as the second fraction appended to \fB-yscrollcommand\fR. Think \fIupper\fR.
 .RE
 .TP
 \fB<Selection>\fR
@@ -3882,12 +4150,16 @@ Generated whenever the selection changes. This event gives information about
 how the selection changed.
 .RS
 .TP
-\fB%c\fR Same as the \fBselection count\fR widget command
+\fB%c\fR
+Same as the \fBselection count\fR widget command
 .TP
-\fB%D\fR List of newly-deselected item ids
+\fB%D\fR
+List of newly-deselected item ids
 .TP
-\fB%S\fR List of newly-selected item ids
+\fB%S\fR
+List of newly-selected item ids
 .RE
+.PP
 .SH "DYNAMIC EVENTS"
 In addition to the pre-defined static events such as <ActiveItem>
 and <Selection>, new dynamic events can be created by using the
@@ -3905,9 +4177,11 @@ do not actually move a dragged column. You must bind to the receive event to
 move the column. See \fBEXAMPLES\fR.
 .RS
 .TP
-\fB%C\fR The column that was dragged
+\fB%C\fR
+The column that was dragged
 .TP
-\fB%b\fR The column to move the dragged column before
+\fB%b\fR
+The column to move the dragged column before
 .RE
 .TP
 \fB<Drag-begin>\fR
@@ -3920,9 +4194,11 @@ event is generated by the filelist-bindings.tcl library code, which is not
 used by default. See the "Explorer" demos.
 .RS
 .TP
-\fB%I\fR The item that the user dropped the dragged items on.
+\fB%I\fR
+The item that the user dropped the dragged items on.
 .TP
-\fB%l\fR (lowercase L) The list of dragged items.
+\fB%l\fR
+(lowercase L) The list of dragged items.
 .RE
 .TP
 \fB<Edit-begin>\fR
@@ -3934,13 +4210,17 @@ The filelist-bindings.tcl code will display a text-editing window if the user
 clicks on a selected file/folder name. See the "Explorer" demos.
 .RS
 .TP
-\fB%I\fR The item containing the edited text element
+\fB%I\fR
+The item containing the edited text element
 .TP
-\fB%C\fR The column containing the edited text element
+\fB%C\fR
+The column containing the edited text element
 .TP
-\fB%E\fR The name of the edited text element
+\fB%E\fR
+The name of the edited text element
 .TP
-\fB%t\fR The edited text
+\fB%t\fR
+The edited text
 .RE
 .TP
 \fB<Header-invoke>\fR
@@ -3949,8 +4229,10 @@ in a column header if the column's -button option is true. You can bind a
 script to this event to sort the list.
 .RS
 .TP
-\fB%C\fR The column whose header was clicked
+\fB%C\fR
+The column whose header was clicked
 .RE
+.PP
 The library scripts provide an example
 of using a dynamic event called <Header-invoke>, which is generated when
 the mouse button is released over a column header.
@@ -4038,6 +4320,7 @@ the Return key toggles the active item.
 The mousewheel scrolls the view of the widget four lines up or down
 depending on the direction, the wheel was turned.
 The active cursor or the selection is not affected.
+.PP
 .SH EXAMPLES
 Get the unique identifier for the leftmost visible column:
 .nf
