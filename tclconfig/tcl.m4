@@ -1294,7 +1294,9 @@ dnl AC_CHECK_TOOL(AR, ar)
 
 	    if test "$GCC" = "yes"; then
 		# mingw gcc mode
-		RC="windres"
+		if test x"${RC}" = x ; then
+		    RC="windres"
+		fi
 		CFLAGS_DEBUG="-g"
 		CFLAGS_OPTIMIZE="-O2 -fomit-frame-pointer"
 		SHLIB_LD="$CC -shared"
@@ -3022,18 +3024,27 @@ TEA version not specified.])
     else
 	AC_MSG_RESULT([ok (TEA ${TEA_VERSION})])
     fi
+    compile_for_windows="no"
+    if test x"${host_alias}" != x ; then
+	case $host_alias in
+	    *mingw32*)
+		compile_for_windows="yes"
+	esac
+    fi
     case "`uname -s`" in
 	*win32*|*WIN32*|*CYGWIN_NT*|*CYGWIN_9*|*CYGWIN_ME*|*MINGW32_*)
+	    compile_for_windows="yes"
+	    ;;
+    esac
+    if test $compile_for_windows = yes ; then
 	    AC_CHECK_PROG(CYGPATH, cygpath, cygpath -w, echo)
 	    EXEEXT=".exe"
 	    TEA_PLATFORM="windows"
-	    ;;
-	*)
+    else
 	    CYGPATH=echo
 	    EXEEXT=""
 	    TEA_PLATFORM="unix"
-	    ;;
-    esac
+    fi
 
     # Check if exec_prefix is set. If not use fall back to prefix.
     # Note when adjusted, so that TEA_PREFIX can correct for this.
@@ -3797,7 +3808,7 @@ AC_DEFUN([TEA_PRIVATE_TK_HEADERS], [
 	   TK_INCLUDES="${TK_INCLUDES} -I\"${TK_SRC_DIR_NATIVE}/generic/ttk\""
 	fi
 	if test "${TEA_WINDOWINGSYSTEM}" != "x11"; then
-	   TK_INCLUDES="${TK_INCLUDES} -I\"${TK_XLIB_DIR_NATIVE}\""
+	   TK_INCLUDES="${TK_INCLUDES} -I${TK_XLIB_DIR_NATIVE}"
 	fi
 	if test "${TEA_WINDOWINGSYSTEM}" = "aqua"; then
 	   TK_INCLUDES="${TK_INCLUDES} -I\"${TK_SRC_DIR_NATIVE}/macosx\""
