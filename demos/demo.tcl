@@ -239,12 +239,22 @@ proc SetDemoFontSize {size} {
 }
 proc IncreaseFontSize {} {
     set size [font configure DemoFont -size]
-    SetDemoFontSize [incr size]
+    if {$size < 0} {
+	incr size -1
+    } else {
+	incr size
+    }
+    SetDemoFontSize $size
     return
 }
 proc DecreaseFontSize {} {
     set size [font configure DemoFont -size]
-    SetDemoFontSize [incr size -1]
+    if {$size < 0} {
+	incr size
+    } else {
+	incr size -1
+    }
+    SetDemoFontSize $size
     return
 }
 
