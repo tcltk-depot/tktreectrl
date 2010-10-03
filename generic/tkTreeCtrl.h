@@ -59,6 +59,7 @@ MODULE_SCOPE void dbwin_add_interp(Tcl_Interp *interp);
 #define DEPRECATED
 /* #define DRAG_PIXMAP */
 /* #define DRAGIMAGE_STYLE */ /* Use an item style as the dragimage instead of XOR rectangles. */
+#define GRADIENT
 
 typedef struct TreeCtrl TreeCtrl;
 typedef struct TreeColumn_ *TreeColumn;
@@ -73,6 +74,9 @@ typedef struct TreeItemRInfo_ *TreeItemRInfo;
 typedef struct TreeStyle_ *TreeStyle;
 typedef struct TreeElement_ *TreeElement;
 typedef struct TreeThemeData_ *TreeThemeData;
+#ifdef GRADIENT
+typedef struct TreeGradient_ *TreeGradient;
+#endif
 
 /*****/
 
@@ -425,6 +429,12 @@ struct TreeCtrl
 
     int itemTagExpr;		/* Enable/disable operators in item tags */
     int columnTagExpr;		/* Enable/disable operators in column tags */
+
+#ifdef GRADIENT
+    Tk_OptionTable gradientOptionTable;
+    Tcl_HashTable gradientHash;	/* TreeGradient.name -> TreeGradient */
+    int gradientAPI[2];		/* major.minor version */
+#endif
 };
 
 #define TREE_CONF_FONT 0x0001
@@ -985,6 +995,7 @@ MODULE_SCOPE int ObjectIsEmpty(Tcl_Obj *obj);
 #define pstBoolean TreeCtrl_pstBoolean
 #define pstBorder TreeCtrl_pstBorder
 #define pstColor TreeCtrl_pstColor
+#define pstFlags TreeCtrl_pstFlags
 #define pstFont TreeCtrl_pstFont
 #define pstImage TreeCtrl_pstImage
 #define pstRelief TreeCtrl_pstRelief
@@ -992,6 +1003,7 @@ MODULE_SCOPE PerStateType pstBitmap;
 MODULE_SCOPE PerStateType pstBoolean;
 MODULE_SCOPE PerStateType pstBorder;
 MODULE_SCOPE PerStateType pstColor;
+MODULE_SCOPE PerStateType pstFlags;
 MODULE_SCOPE PerStateType pstFont;
 MODULE_SCOPE PerStateType pstImage;
 MODULE_SCOPE PerStateType pstRelief;
@@ -1025,6 +1037,8 @@ MODULE_SCOPE int PerStateBoolean_ForState(TreeCtrl *tree, PerStateInfo *pInfo,
 MODULE_SCOPE Tk_3DBorder PerStateBorder_ForState(TreeCtrl *tree, PerStateInfo *pInfo,
     int state, int *match);
 MODULE_SCOPE XColor *PerStateColor_ForState(TreeCtrl *tree, PerStateInfo *pInfo,
+    int state, int *match);
+MODULE_SCOPE int PerStateFlags_ForState(TreeCtrl *tree, PerStateInfo *pInfo,
     int state, int *match);
 MODULE_SCOPE Tk_Font PerStateFont_ForState(TreeCtrl *tree, PerStateInfo *pInfo,
     int state, int *match);
@@ -1185,3 +1199,53 @@ MODULE_SCOPE Tk_ObjCustomOption TreeCtrlCO_style;
     if (P != P2) \
 	ckfree((char *) P)
 
+#ifdef GRADIENT
+
+#define pstGradient TreeCtrl_pstGradient
+MODULE_SCOPE PerStateType pstGradient;
+MODULE_SCOPE TreeGradient PerStateGradient_ForState(TreeCtrl *tree, PerStateInfo *pInfo,
+    int state, int *match);
+
+#define TREECTRL_GRADIENT_API_MAJOR 1
+#define TREECTRL_GRADIENT_API_MINOR 0
+
+/* *** Borrowed some gradient code from TkPath *** */
+
+/*
+ * Records for gradient fills.
+ * We need a separate GradientStopArray to simplify option parsing.
+ */
+ 
+typedef struct GradientStop {
+    double offset;
+    XColor *color;
+    double opacity;
+} GradientStop;
+
+typedef struct GradientStopArray {
+    int nstops;
+    GradientStop **stops;	/* Array of pointers to GradientStop. */
+} GradientStopArray;
+
+typedef struct TreeGradient_
+{
+    int refCount;		/* Number of users of gradient. */
+    int deletePending;		/* Non-zero if gradient should be deleted when
+				 * last reference goes away. */
+    Tk_Uid name;
+    Tcl_Obj *stopsObj;
+    GradientStopArray *stopArrPtr;
+    int vertical;
+
+    int steps;
+    int nStepColors;
+    XColor **stepColors;	/* calculated from color1,color2,steps */
+} TreeGradient_;
+MODULE_SCOPE void TreeGradient_Init(TreeCtrl *tree);
+MODULE_SCOPE void TreeGradient_Free(TreeCtrl *tree);
+MODULE_SCOPE int TreeGradientCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]);
+MODULE_SCOPE int TreeGradient_FromObj(TreeCtrl *tree, Tcl_Obj *objPtr, TreeGradient *gradientPtr);
+MODULE_SCOPE void TreeGradient_Release(TreeCtrl *tree, TreeGradient gradient);
+MODULE_SCOPE void TreeGradient_FillRect(TreeCtrl *tree, TreeDrawable td, TreeGradient gradient, TreeRectangle tr);
+
+#endif /* GRADIENT */

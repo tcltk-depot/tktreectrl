@@ -182,6 +182,8 @@ if {$tile} {
     set scrollbarCmd ::scrollbar
 }
 
+set UseGradient 1
+
 option add *TreeCtrl.useTheme 1
 #option add *TreeCtrl.itemPrefix item
 #option add *TreeCtrl.ColumnPrefix col
@@ -1258,7 +1260,8 @@ proc InitDemoList {} {
 	"Random $::RandomN Items, Button Images" DemoRandom2 random.tcl \
 	"Outlook Express (Folders)" DemoOutlookFolders outlook-folders.tcl \
 	"Outlook Express (Newsgroup)" DemoOutlookNewsgroup outlook-newgroup.tcl \
-	"Explorer (Details)" DemoExplorerDetails explorer.tcl \
+	"Explorer (Details, WinXP)" DemoExplorerDetails explorer.tcl \
+	"Explorer (Details, Win7)" DemoExplorerDetailsWin7 explorer.tcl \
 	"Explorer (List)" DemoExplorerList explorer.tcl \
 	"Explorer (Large icons)" DemoExplorerLargeIcons explorer.tcl \
 	"Explorer (Small icons)" DemoExplorerSmallIcons explorer.tcl \
@@ -1542,6 +1545,11 @@ proc DemoClear {} {
     foreach child [winfo children $T] {
 	if {[string equal $child $T.mTree] || [string equal $child $T.mHeader]} continue
 	destroy $child
+    }
+
+    # Delete gradients
+    if {$::UseGradient} {
+	eval $T gradient delete [$T gradient names]
     }
 
     $T item configure root -button no -wrap no

@@ -37,6 +37,19 @@ proc DemoSpan {} {
 	$T element create e$i rect -width [expr {$i * 40}] -height 20 \
 	    -fill [list white mouseover $color {}] -outlinewidth 1 \
 	    -outline gray70
+	if {[winfo depth .] >= 16} {
+	    lassign [winfo rgb . $color] r g b
+	    set r [expr {int(min(65535,$r * 1.3))}]
+	    set g [expr {int(min(65535,$g * 1.3))}]
+	    set b [expr {int(min(65535,$b * 1.3))}]
+	    set color2 [format "#%04x%04x%04x" $r $g $b]
+	    $T gradient api 1.0
+	    $T gradient create g$i -steps 16 \
+		-stops [list [list 0.0 $color] [list 0.5 $color] [list 1.0 $color2]]
+#		-stops [list [list 0.0 $color] [list 1.0 $color2]]
+	    $T element configure e$i -fill {white mouseover} \
+		-gradient [list "" mouseover g$i {}]
+	}
 	$T element create t$i text -text "Span $i"
     }
 

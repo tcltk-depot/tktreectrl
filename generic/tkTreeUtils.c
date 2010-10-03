@@ -2676,6 +2676,7 @@ PerStateInfo_ForState(
 
 #ifdef TREECTRL_DEBUG
     if ((pInfo->data != NULL) && (pInfo->type != typePtr)) {
+*(char*)0 = 0;
 	panic("PerStateInfo_ForState type mismatch: got %s expected %s",
 		pInfo->type ? pInfo->type->name : "NULL", typePtr->name);
     }
@@ -3374,6 +3375,80 @@ PerStateRelief_ForState(
     if (pData != NULL)
 	return pData->relief;
     return TK_RELIEF_NULL;
+}
+
+/*****/
+
+/* The rect element's -open option */
+typedef struct PerStateDataFlags PerStateDataFlags;
+struct PerStateDataFlags
+{
+    PerStateData header;
+    int flags;
+};
+
+static int
+PSDFlagsFromObj(
+    TreeCtrl *tree,
+    Tcl_Obj *obj,
+    PerStateDataFlags *pFlags)
+{
+    if (ObjectIsEmpty(obj)) {
+	pFlags->flags = 0xFFFFFFFF;
+    } else {
+	int length, i, flags = 0;
+	char *string;
+
+	string = Tcl_GetStringFromObj(obj, &length);
+	for (i = 0; i < length; i++) {
+	    switch (string[i]) {
+		case 'w': case 'W': flags |= 0x01; break;
+		case 'n': case 'N': flags |= 0x02; break;
+		case 'e': case 'E': flags |= 0x04; break;
+		case 's': case 'S': flags |= 0x08; break;
+		default: {
+		    Tcl_ResetResult(tree->interp);
+		    Tcl_AppendResult(tree->interp, "bad open value \"",
+			    string, "\": must be a string ",
+			    "containing zero or more of n, e, s, and w",
+			    (char *) NULL);
+		    return TCL_ERROR;
+		}
+	    }
+	}
+	pFlags->flags = flags;
+    }
+    return TCL_OK;
+}
+
+static void
+PSDFlagsFree(
+    TreeCtrl *tree,
+    PerStateDataFlags *pFlags)
+{
+}
+
+PerStateType pstFlags =
+{
+    "pstFlags",
+    sizeof(PerStateDataFlags),
+    (PerStateType_FromObjProc) PSDFlagsFromObj,
+    (PerStateType_FreeProc) PSDFlagsFree
+};
+
+int
+PerStateFlags_ForState(
+    TreeCtrl *tree,
+    PerStateInfo *pInfo,
+    int state,
+    int *match)
+{
+    PerStateDataFlags *pData;
+
+    pData = (PerStateDataFlags *) PerStateInfo_ForState(tree, &pstFlags, pInfo, state, match);
+    if (pData != NULL)
+	return pData->flags;
+    return 0xFFFFFFFF;
 }
 
 /*****/
@@ -6549,3 +6624,1056 @@ Tree_GetIntForIndex(
     }
     return TCL_OK;
 }
+
+#ifdef GRADIENT
+
+/*****/
+
+typedef struct PerStateDataGradient PerStateDataGradient;
+struct PerStateDataGradient
+{
+    PerStateData header;
+    TreeGradient gradient;
+};
+
+static int
+PSDGradientFromObj(
+    TreeCtrl *tree,
+    Tcl_Obj *obj,
+    PerStateDataGradient *pGradient)
+{
+    if (ObjectIsEmpty(obj)) {
+	/* Specify empty string to override masterX */
+	pGradient->gradient = NULL;
+    } else {
+	if (TreeGradient_FromObj(tree, obj, &pGradient->gradient) != TCL_OK)
+	    return TCL_ERROR;
+	pGradient->gradient->refCount++;
+    }
+    return TCL_OK;
+}
+
+static void
+PSDGradientFree(
+    TreeCtrl *tree,
+    PerStateDataGradient *pGradient)
+{
+    if (pGradient->gradient != NULL)
+	TreeGradient_Release(tree, pGradient->gradient);
+}
+
+PerStateType pstGradient =
+{
+    "pstGradient",
+    sizeof(PerStateDataGradient),
+    (PerStateType_FromObjProc) PSDGradientFromObj,
+    (PerStateType_FreeProc) PSDGradientFree
+};
+
+TreeGradient
+PerStateGradient_ForState(
+    TreeCtrl *tree,
+    PerStateInfo *pInfo,
+    int state,
+    int *match)
+{
+    PerStateDataGradient *pData;
+
+    pData = (PerStateDataGradient *) PerStateInfo_ForState(tree, &pstGradient, pInfo, state, match);
+    if (pData != NULL)
+	return pData->gradient;
+    return NULL;
+}
+
+/*****/
+
+/* *** Borrowed some gradient code from TkPath *** */
+
+static GradientStop *
+NewGradientStop(double offset, XColor *color, double opacity)
+{
+    GradientStop *stopPtr;
+    
+    stopPtr = (GradientStop *) ckalloc(sizeof(GradientStop));
+    memset(stopPtr, '\0', sizeof(GradientStop));
+    stopPtr->offset = offset;
+    stopPtr->color = color;
+    stopPtr->opacity = opacity;
+    return stopPtr;
+}
+
+static GradientStopArray *NewGradientStopArray(int nstops)
+{
+    GradientStopArray *stopArrPtr;
+    GradientStop **stops;
+
+    stopArrPtr = (GradientStopArray *) ckalloc(sizeof(GradientStopArray));
+    memset(stopArrPtr, '\0', sizeof(GradientStopArray));
+
+    /* Array of *pointers* to GradientStop. */
+    stops = (GradientStop **) ckalloc(nstops*sizeof(GradientStop *));
+    memset(stops, '\0', nstops*sizeof(GradientStop *));
+    stopArrPtr->nstops = nstops;
+    stopArrPtr->stops = stops;
+    return stopArrPtr;
+}
+
+static void
+FreeAllStops(GradientStop **stops, int nstops)
+{
+    int i;
+    for (i = 0; i < nstops; i++) {
+        if (stops[i] != NULL) {
+            Tk_FreeColor(stops[i]->color);
+            ckfree((char *) (stops[i]));
+        }
+    }
+    ckfree((char *) stops);
+}
+
+static void
+FreeStopArray(GradientStopArray *stopArrPtr)
+{
+    if (stopArrPtr != NULL) {
+        FreeAllStops(stopArrPtr->stops, stopArrPtr->nstops);
+        ckfree((char *) stopArrPtr);
+    }
+}
+
+/*
+ * The stops are a list of stop lists where each stop list is:
+ *		{offset color ?opacity?}
+ */
+static int StopsSet(
+    ClientData clientData,
+    Tcl_Interp *interp,		/* Current interp; may be used for errors. */
+    Tk_Window tkwin,		/* Window for which option is being set. */
+    Tcl_Obj **value,		/* Pointer to the pointer to the value object.
+				 * We use a pointer to the pointer because
+				 * we may need to return a value (NULL). */
+    char *recordPtr,		/* Pointer to storage for the widget record. */
+    int internalOffset,		/* Offset within *recordPtr at which the
+				 internal value is to be stored. */
+    char *oldInternalPtr,	/* Pointer to storage for the old value. */
+    int flags)			/* Flags for the option, set Tk_SetOptions. */
+{
+    char *internalPtr;
+    int i, nstops, stopLen;
+    int objEmpty = 0;
+    Tcl_Obj *valuePtr;
+    double offset, lastOffset, opacity;
+    Tcl_Obj **objv;
+    Tcl_Obj *stopObj;
+    Tcl_Obj *obj;
+    XColor *color;
+    GradientStopArray *new = NULL;
+    
+    valuePtr = *value;
+    if (internalOffset >= 0)
+	internalPtr = recordPtr + internalOffset;
+    else
+	internalPtr = NULL;
+    objEmpty = ObjectIsEmpty(valuePtr);
+
+    if ((flags & TK_OPTION_NULL_OK) && objEmpty) {
+        valuePtr = NULL;
+    } else {
+        
+        /* Deal with each stop list in turn. */
+        if (Tcl_ListObjGetElements(interp, valuePtr, &nstops, &objv) != TCL_OK) {
+            return TCL_ERROR;
+        }
+        if (nstops < 2) {
+	    FormatResult(interp, "at least 2 stops required, %d given", nstops);
+	    return TCL_ERROR;
+        }
+        new = NewGradientStopArray(nstops);
+        lastOffset = 0.0;
+        
+        for (i = 0; i < nstops; i++) {
+            stopObj = objv[i];
+            if (Tcl_ListObjLength(interp, stopObj, &stopLen) != TCL_OK) {
+                goto error;
+            }
+            if ((stopLen < 2) || (stopLen > 3)) {
+                Tcl_SetObjResult(interp, Tcl_NewStringObj(
+                        "stop list not {offset color ?opacity?}", -1));
+                goto error;
+            }
+	    Tcl_ListObjIndex(interp, stopObj, 0, &obj);
+	    if (Tcl_GetDoubleFromObj(interp, obj, &offset) != TCL_OK) {
+		goto error;
+	    }
+	    if ((offset < 0.0) || (offset > 1.0)) {
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"stop offsets must be in the range 0.0 to 1.0", -1));
+		goto error;
+	    }
+	    if ((i == 0) && (offset != 0.0)) {
+		FormatResult(interp, "first stop offset must be 0.0, got %.4g", offset);
+		goto error;
+	    }
+	    if ((i == nstops - 1) && (offset != 1.0)) {
+		FormatResult(interp, "last stop offset must be 1.0, got %.4g", offset);
+		goto error;
+	    }
+	    if (offset < lastOffset) {
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"stop offsets must be ordered", -1));
+		goto error;
+	    }
+	    Tcl_ListObjIndex(interp, stopObj, 1, &obj);
+	    color = Tk_AllocColorFromObj(interp, Tk_MainWindow(interp), obj);
+	    if (color == NULL)
+		goto error;
+	    if (stopLen == 3) {
+		Tcl_ListObjIndex(interp, stopObj, 2, &obj);
+		if (Tcl_GetDoubleFromObj(interp, obj, &opacity) != TCL_OK) {
+		    goto error;
+		}
+	    } else {
+		opacity = 1.0;
+	    }
+	    
+	    /* Make new stop. */
+	    new->stops[i] = NewGradientStop(offset, color, opacity);
+	    lastOffset = offset;
+        }
+    }
+    if (internalPtr != NULL) {
+        *((GradientStopArray **) oldInternalPtr) = *((GradientStopArray **) internalPtr);
+        *((GradientStopArray **) internalPtr) = new;
+    }
+    return TCL_OK;
+    
+error:
+    if (new != NULL) {
+        FreeStopArray(new);
+    }
+    return TCL_ERROR;
+}
+
+static void
+StopsRestore(
+    ClientData clientData,
+    Tk_Window tkwin,
+    char *internalPtr,		/* Pointer to storage for value. */
+    char *oldInternalPtr)	/* Pointer to old value. */
+{
+    *(GradientStopArray **)internalPtr = *(GradientStopArray **)oldInternalPtr;
+}
+
+static void StopsFree(
+    ClientData clientData,
+    Tk_Window tkwin,
+    char *internalPtr)
+{
+    if (*((char **) internalPtr) != NULL) {
+        FreeStopArray(*(GradientStopArray **)internalPtr);
+    }    
+}
+
+static Tk_ObjCustomOption stopsCO = 
+{
+    "stops",
+    StopsSet,
+    NULL,
+    StopsRestore,
+    StopsFree,
+    (ClientData) NULL
+};
+
+#define GRAD_CONF_STOPS 0x0001
+#define GRAD_CONF_STEPS 0x0002
+
+static char *orientStringTable[] = { "horizontal", "vertical", (char *) NULL };
+
+static Tk_OptionSpec gradientOptionSpecs[] = {
+    {TK_OPTION_STRING_TABLE, "-orient", (char *) NULL, (char *) NULL,
+	"horizontal", -1, Tk_Offset(TreeGradient_, vertical),
+	0, (ClientData) orientStringTable, 0},
+    {TK_OPTION_INT, "-steps", (char *) NULL, (char *) NULL,
+     "2", -1, Tk_Offset(TreeGradient_, steps),
+     0, (ClientData) NULL, GRAD_CONF_STEPS},
+    {TK_OPTION_CUSTOM, "-stops", NULL, NULL,
+	NULL, Tk_Offset(TreeGradient_, stopsObj),
+        Tk_Offset(TreeGradient_, stopArrPtr),
+	TK_OPTION_NULL_OK, (ClientData) &stopsCO, GRAD_CONF_STOPS},
+    {TK_OPTION_END, (char *) NULL, (char *) NULL, (char *) NULL,
+	(char *) NULL, 0, -1, 0, (ClientData) NULL, 0}
+};
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeGradient_FromObj --
+ *
+ *	Convert a Tcl_Obj to a TreeGradient.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TreeGradient_FromObj(
+    TreeCtrl *tree,		/* Widget info. */
+    Tcl_Obj *obj,		/* Object to convert from. */
+    TreeGradient *gradientPtr)	/* Returned gradient token. */
+{
+    char *name;
+    Tcl_HashEntry *hPtr;
+
+    name = Tcl_GetString(obj);
+    hPtr = Tcl_FindHashEntry(&tree->gradientHash, name);
+    if (hPtr != NULL) {
+	(*gradientPtr) = (TreeGradient) Tcl_GetHashValue(hPtr);
+    }
+    if ((hPtr == NULL) || ((*gradientPtr)->deletePending != 0)) {
+	Tcl_AppendResult(tree->interp, "gradient \"", name, "\" doesn't exist",
+	    NULL);
+	return TCL_ERROR;
+    }
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Gradient_ToObj --
+ *
+ *	Create a new Tcl_Obj representing a gradient.
+ *
+ * Results:
+ *	A Tcl_Obj.
+ *
+ * Side effects:
+ *	Memory is allocated.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static Tcl_Obj *
+Gradient_ToObj(
+    TreeGradient gradient	/* Gradient to create Tcl_Obj from. */
+    )
+{
+    return Tcl_NewStringObj(gradient->name, -1);
+}
+
+#undef CLAMP
+#define CLAMP(a,b,c) (((a)<(b))?(b):(((a)>(c))?(c):(a)))
+
+static void
+CalcStepColors(
+    TreeCtrl *tree,		/* Widget info. */
+    GradientStop *stop1,
+    GradientStop *stop2,
+    XColor *stepColors[],
+    int steps
+    )
+{
+    int i;
+    XColor *c1 = stop1->color, *c2 = stop2->color;
+
+    if (steps == 1) {
+	stepColors[0] = Tk_GetColorByValue(tree->tkwin, stop1->offset > 0 ? stop2->color : stop1->color);
+	return;
+    }
+
+    for (i = 1; i <= steps; i++) {
+	XColor pref;
+	int range, increment;
+	double factor = (i-1) * 1.0f/(steps-1);
+
+	range = (c2->red - c1->red);
+	increment = (int)(range * factor);
+	pref.red = CLAMP(c1->red + increment,0,USHRT_MAX);
+
+	range = (c2->green - c1->green);
+	increment = (int)(range * factor);
+	pref.green = CLAMP(c1->green + increment,0,USHRT_MAX);
+
+	range = (c2->blue - c1->blue);
+	increment = (int)(range * factor);
+	pref.blue = CLAMP(c1->blue + increment,0,USHRT_MAX);
+
+	stepColors[i-1] = Tk_GetColorByValue(tree->tkwin, &pref);
+    }
+}
+
+int sameXColor(XColor *c1, XColor *c2)
+{
+    return c1->red == c2->red && c1->green==c2->green && c1->blue==c2->blue;
+}
+static void
+Gradient_CalcStepColors(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeGradient gradient	/* Gradient token. */
+    )
+{
+#if 1
+    int i, step1, step2;
+
+    for (i = 0; i < gradient->stopArrPtr->nstops - 1; i++) {
+	GradientStop *stop1 = gradient->stopArrPtr->stops[i];
+	GradientStop *stop2 = gradient->stopArrPtr->stops[i+1];
+	step1 = (int)floor(stop1->offset * (gradient->nStepColors));
+	step2 = (int)floor(stop2->offset * (gradient->nStepColors))-1;
+dbwin("CalcStepColors %g -> %g steps=%d-%d\n", stop1->offset,stop2->offset,step1,step2);
+	CalcStepColors(tree, stop1, stop2, gradient->stepColors+step1, step2-step1+1);
+   }
+if (!sameXColor(gradient->stepColors[0], gradient->stopArrPtr->stops[0]->color)) dbwin("stepColors[0] not same");
+if (!sameXColor(gradient->stepColors[gradient->nStepColors - 1], gradient->stopArrPtr->stops[gradient->stopArrPtr->nstops - 1]->color)) dbwin("stepColors[end-1] not same");
+#else
+    int i;
+    XColor *c1 = gradient->color1, *c2 = gradient->color2;
+
+    for (i = 1; i <= gradient->steps; i++) {
+	XColor pref;
+	int range, increment;
+	double factor = (i-1) * 1.0f/(gradient->steps-1);
+
+	range = (c2->red - c1->red);
+	increment = range * factor;
+	pref.red = CLAMP(c1->red + increment,0,USHRT_MAX);
+
+	range = (c2->green - c1->green);
+	increment = range * factor;
+	pref.green = CLAMP(c1->green + increment,0,USHRT_MAX);
+
+	range = (c2->blue - c1->blue);
+	increment = range * factor;
+	pref.blue = CLAMP(c1->blue + increment,0,USHRT_MAX);
+
+	gradient->stepColors[i-1] = Tk_GetColorByValue(tree->tkwin, &pref);
+    }
+    gradient->stepColors[gradient->steps] = NULL;
+#endif
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Gradient_Config --
+ *
+ *	This procedure is called to process an objc/objv list to set
+ *	configuration options for a TreeGradient.
+ *
+ * Results:
+ *	The return value is a standard Tcl result.  If TCL_ERROR is
+ *	returned, then an error message is left in interp's result.
+ *
+ * Side effects:
+ *	Configuration information, such as text string, colors, font,
+ *	etc. get set for gradient;  old resources get freed, if there
+ *	were any.  Display changes may occur.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+Gradient_Config(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeGradient gradient,	/* Gradient token. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *CONST objv[],	/* Argument values. */
+    int createFlag		/* TRUE if the gradient is being created. */
+    )
+{
+    TreeGradient_ saved;
+    Tk_SavedOptions savedOptions;
+    int error;
+    Tcl_Obj *errorResult = NULL;
+    int mask, maskFree = 0;
+
+    saved.nStepColors = 0;
+    saved.stepColors = NULL;
+
+    for (error = 0; error <= 1; error++) {
+	if (error == 0) {
+	    if (Tk_SetOptions(tree->interp, (char *) gradient,
+			tree->gradientOptionTable,
+			objc, objv, tree->tkwin,
+			&savedOptions, &mask) != TCL_OK) {
+		mask = 0;
+		continue;
+	    }
+
+	    /* Wouldn't have to do this if Tk_InitOptions() would return
+	     * a mask of configured options like Tk_SetOptions() does. */
+	    if (createFlag) {
+		mask |= GRAD_CONF_STOPS | GRAD_CONF_STEPS;
+	    }
+
+	    /*
+	     * Step 1: Save old values
+	     */
+	    
+	    if (mask & (GRAD_CONF_STOPS | GRAD_CONF_STEPS)) {
+		saved.nStepColors = gradient->nStepColors;
+		saved.stepColors = gradient->stepColors;
+	    }
+
+	    /*
+	     * Step 2: Process new values
+	     */
+
+	    if (mask & (GRAD_CONF_STOPS | GRAD_CONF_STEPS)) {
+		if (gradient->steps < 1 || gradient->steps > 25) {
+		    FormatResult(tree->interp, "steps must be >= 1 and <= 25");
+		    continue;
+		}
+		if ((gradient->stopArrPtr != NULL) &&
+			(gradient->stopArrPtr->nstops > 0)) {
+		    gradient->nStepColors = gradient->stopArrPtr->nstops * gradient->steps;
+		    gradient->stepColors = (XColor **)ckalloc(sizeof(XColor*)*gradient->nStepColors);
+		    Gradient_CalcStepColors(tree, gradient);
+		    maskFree |= GRAD_CONF_STEPS;
+		} else {
+		    gradient->nStepColors = 0;
+		    gradient->stepColors = NULL;
+		}
+	    }
+
+	    /*
+	     * Step 3: Free saved values
+	     */
+
+	    if (mask & (GRAD_CONF_STOPS | GRAD_CONF_STEPS)) {
+		if (saved.stepColors != NULL) { /* will be NULL when createFlag==1 */
+		    int i;
+		    for (i = 0; i < saved.nStepColors; i++) {
+			Tk_FreeColor(saved.stepColors[i]);
+		    }
+		    ckfree((char *)saved.stepColors);
+		}
+	    }
+
+	    Tk_FreeSavedOptions(&savedOptions);
+	    break;
+	} else {
+	    errorResult = Tcl_GetObjResult(tree->interp);
+	    Tcl_IncrRefCount(errorResult);
+	    Tk_RestoreSavedOptions(&savedOptions);
+
+	    /*
+	     * Free new values.
+	     */
+
+	    if (maskFree & (GRAD_CONF_STOPS | GRAD_CONF_STEPS)) {
+		if (gradient->stepColors != NULL) {
+		    int i;
+		    for (i = 0; i < gradient->nStepColors; i++) {
+			Tk_FreeColor(gradient->stepColors[i]);
+		    }
+		    ckfree((char *)gradient->stepColors);
+		}
+	    }
+
+	    /*
+	     * Restore old values.
+	     */
+	    if (mask & (GRAD_CONF_STOPS | GRAD_CONF_STEPS)) {
+		gradient->nStepColors = saved.nStepColors;
+		gradient->stepColors = saved.stepColors;
+	    }
+
+	    Tcl_SetObjResult(tree->interp, errorResult);
+	    Tcl_DecrRefCount(errorResult);
+	    return TCL_ERROR;
+	}
+    }
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Gradient_FreeResources --
+ *
+ *	Free memory etc associated with an Element.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Memory is deallocated.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+Gradient_FreeResources(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeGradient gradient,	/* Gradient token. */
+    int deleting		/* TRUE if deleting the gradient,
+				   FALSE if createing a new gradient to
+				   replace a deletePending gradient. */
+    )
+{
+    Tcl_HashEntry *hPtr;
+    int i;
+
+    Tk_FreeConfigOptions((char *) gradient,
+	tree->gradientOptionTable,
+	tree->tkwin);
+
+    if (gradient->stepColors != NULL) {
+	for (i = 0; i < gradient->nStepColors; i++)
+	    Tk_FreeColor(gradient->stepColors[i]);
+	WCFREE(gradient->stepColors, XColor*, gradient->nStepColors);
+    }
+
+    if (deleting == 0)
+	return;
+
+    hPtr = Tcl_FindHashEntry(&tree->gradientHash, gradient->name);
+    if (hPtr) /* NULL during creation */
+	Tcl_DeleteHashEntry(hPtr);
+
+    WFREE(gradient, TreeGradient_);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeGradient_Release --
+ *
+ *	Decrease refCount on a gradient and free it if deletion was
+ *	pending.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Memory may be deallocated.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TreeGradient_Release(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeGradient gradient	/* Gradient token. */
+    )
+{
+    gradient->refCount--;
+    if ((gradient->refCount == 0) && (gradient->deletePending != 0)) {
+	Gradient_FreeResources(tree, gradient, 1);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Gradient_CreateAndConfig --
+ *
+ *	Allocate and initialize a gradient.
+ *
+ * Results:
+ *	Pointer to the new Gradient, or NULL if an error occurs.
+ *
+ * Side effects:
+ *	Memory is allocated.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static TreeGradient
+Gradient_CreateAndConfig(
+    TreeCtrl *tree,		/* Widget info. */
+    char *name,			/* Name of new gradient. */
+    int objc,			/* Number of config-option arg-value pairs. */
+    Tcl_Obj *CONST objv[]	/* Config-option arg-value pairs. */
+    )
+{
+    TreeGradient gradient;
+
+    gradient = (TreeGradient) ckalloc(sizeof(TreeGradient_));
+    memset(gradient, '\0', sizeof(TreeGradient_));
+    gradient->name = Tk_GetUid(name);
+
+    if (Tk_InitOptions(tree->interp, (char *) gradient,
+	tree->gradientOptionTable, tree->tkwin) != TCL_OK) {
+	WFREE(gradient, TreeGradient_);
+	return NULL;
+    }
+
+    if (Gradient_Config(tree, gradient, objc, objv, TRUE) != TCL_OK) {
+	Gradient_FreeResources(tree, gradient, 1);
+	return NULL;
+    }
+
+    return gradient;
+}
+
+static void
+Gradient_Changed(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeGradient gradient	/* Gradient token. */
+    )
+{
+    /* FIXME: could redraw only items that are using this gradient */
+    Tree_DInfoChanged(tree, DINFO_INVALIDATE | DINFO_OUT_OF_DATE);
+}
+
+static void
+Gradient_Deleted(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeGradient gradient	/* Gradient token. */
+    )
+{
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeGradientCmd --
+ *
+ *	This procedure is invoked to process the [gradient]
+ *	widget command.  See the user documentation for details on what
+ *	it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TreeGradientCmd(
+    ClientData clientData,	/* Widget info. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *CONST objv[]	/* Argument values. */
+    )
+{
+    TreeCtrl *tree = clientData;
+    static CONST char *commandNames[] = {
+	"api", "cget", "configure", "create", "delete", "names",
+	(char *) NULL
+    };
+    enum {
+	COMMAND_API, COMMAND_CGET, COMMAND_CONFIGURE, COMMAND_CREATE,
+	COMMAND_DELETE, COMMAND_NAMES
+    };
+    int index;
+
+    if (objc < 3) {
+	Tcl_WrongNumArgs(interp, 2, objv, "command ?arg arg ...?");
+	return TCL_ERROR;
+    }
+
+    if (Tcl_GetIndexFromObj(interp, objv[2], commandNames, "command", 0,
+	&index) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    switch (index) {
+	case COMMAND_API: {
+	    char *string;
+	    int length, n, major, minor;
+	    if (objc == 3) {
+		char versionBuf[64];
+		strcpy(versionBuf, "{available 1.0} {current ");
+		if (tree->gradientAPI[0] != 0) {
+		    sprintf(versionBuf + strlen(versionBuf), "%d.%d}",
+			tree->gradientAPI[0], tree->gradientAPI[1]);
+		} else {
+		    strcpy(versionBuf + strlen(versionBuf), "unspecified}");
+		}
+		Tcl_SetResult(interp, versionBuf, TCL_VOLATILE);
+		break;
+	    }
+	    if (objc != 4) {
+		Tcl_WrongNumArgs(interp, 3, objv, "?version?");
+		return TCL_ERROR;
+	    }
+	    string = Tcl_GetStringFromObj(objv[3], &length);
+	    if ((sscanf(string, "%d.%d%n", &major, &minor, &n) == 2)
+		    && (n == length)) {
+		if (major == 1 && minor == 0) {
+		    tree->gradientAPI[0] = major;
+		    tree->gradientAPI[1] = minor;
+		} else {
+		    FormatResult(interp, "invalid api version \"%s\"",
+			string);
+		    return TCL_ERROR;
+		}
+		break;
+	    }
+	    FormatResult(interp, "expected api version string but got \"%s\"",
+		string);
+	    return TCL_ERROR;
+	}
+	case COMMAND_CGET: {
+	    Tcl_Obj *resultObjPtr = NULL;
+	    TreeGradient gradient;
+
+	    if (objc != 5) {
+		Tcl_WrongNumArgs(interp, 3, objv, "name option");
+		return TCL_ERROR;
+	    }
+	    if (TreeGradient_FromObj(tree, objv[3], &gradient) != TCL_OK)
+		return TCL_ERROR;
+	    resultObjPtr = Tk_GetOptionValue(interp, (char *) gradient,
+		tree->gradientOptionTable, objv[4], tree->tkwin);
+	    if (resultObjPtr == NULL)
+		return TCL_ERROR;
+	    Tcl_SetObjResult(interp, resultObjPtr);
+	    break;
+	}
+	case COMMAND_CONFIGURE: {
+	    Tcl_Obj *resultObjPtr = NULL;
+	    TreeGradient gradient;
+
+	    if (objc < 4) {
+		Tcl_WrongNumArgs(interp, 3, objv, "name ?option? ?value option value ...?");
+		return TCL_ERROR;
+	    }
+	    if (TreeGradient_FromObj(tree, objv[3], &gradient) != TCL_OK)
+		return TCL_ERROR;
+	    if (objc <= 5) {
+		resultObjPtr = Tk_GetOptionInfo(interp, (char *) gradient,
+		    tree->gradientOptionTable,
+		    (objc == 4) ? (Tcl_Obj *) NULL : objv[4],
+		    tree->tkwin);
+		if (resultObjPtr == NULL)
+		    return TCL_ERROR;
+		Tcl_SetObjResult(interp, resultObjPtr);
+	    } else {
+		if (Gradient_Config(tree, gradient,
+		    objc - 4, objv + 4, 0) != TCL_OK)
+		    return TCL_ERROR;
+		Gradient_Changed(tree, gradient);
+	    }
+	    break;
+	}
+	case COMMAND_CREATE: {
+	    char *name;
+	    int len;
+	    Tcl_HashEntry *hPtr;
+	    int isNew;
+	    TreeGradient gradient;
+
+	    if (tree->gradientAPI[0] == 0) {
+		FormatResult(interp, "you must call the 'api' command before calling 'create'");
+		return TCL_ERROR;
+	    }
+	    if (objc < 4) {
+		Tcl_WrongNumArgs(interp, 3, objv, "name ?option value ...?");
+		return TCL_ERROR;
+	    }
+	    name = Tcl_GetStringFromObj(objv[3], &len);
+	    if (!len) {
+		FormatResult(interp, "invalid gradient name \"\"");
+		return TCL_ERROR;
+	    }
+	    /* Just like named fonts, if we create a new gradient that has the
+	     * same name as one that is awaiting deletion, we copy the new
+	     * config to the old gradient and forget it is being deleted. */
+	    hPtr = Tcl_FindHashEntry(&tree->gradientHash, name);
+	    if (hPtr != NULL) {
+		TreeGradient gradient2;
+		gradient = (TreeGradient) Tcl_GetHashValue(hPtr);
+		if (gradient->deletePending == 0) {
+		    FormatResult(interp, "gradient \"%s\" already exists", name);
+		    return TCL_ERROR;
+		}
+		gradient2 = Gradient_CreateAndConfig(tree, name, objc - 4, objv + 4);
+		if (gradient2 == NULL)
+		    return TCL_ERROR;
+		Gradient_FreeResources(tree, gradient, 0);
+		gradient->stopArrPtr = gradient2->stopArrPtr;
+		gradient->steps = gradient2->steps;
+		gradient->nStepColors = gradient2->nStepColors;
+		gradient->stepColors = gradient2->stepColors;
+		gradient->deletePending = 0;
+		WFREE(gradient2, TreeGradient_);
+		Gradient_Changed(tree, gradient);
+		break;
+	    }
+	    gradient = Gradient_CreateAndConfig(tree, name, objc - 4, objv + 4);
+	    if (gradient == NULL)
+		return TCL_ERROR;
+	    hPtr = Tcl_CreateHashEntry(&tree->gradientHash, name, &isNew);
+	    Tcl_SetHashValue(hPtr, gradient);
+	    Tcl_SetObjResult(interp, Gradient_ToObj((TreeGradient) gradient));
+	    break;
+	}
+	case COMMAND_DELETE: {
+	    int i;
+	    TreeGradient gradient;
+
+	    if (objc < 3) {
+		Tcl_WrongNumArgs(interp, 3, objv, "?name ...?");
+		return TCL_ERROR;
+	    }
+	    for (i = 3; i < objc; i++) {
+		if (TreeGradient_FromObj(tree, objv[i], &gradient) != TCL_OK)
+		    return TCL_ERROR;
+		if (gradient->refCount > 0) {
+		    gradient->deletePending = 1;
+		} else {
+		    Gradient_Deleted(tree, gradient);
+		    Gradient_FreeResources(tree, gradient, 1);
+		}
+	    }
+	    break;
+	}
+	case COMMAND_NAMES: {
+	    Tcl_Obj *listObj;
+	    Tcl_HashSearch search;
+	    Tcl_HashEntry *hPtr;
+	    TreeGradient gradient;
+
+	    if (objc != 3) {
+		Tcl_WrongNumArgs(interp, 3, objv, NULL);
+		return TCL_ERROR;
+	    }
+	    listObj = Tcl_NewListObj(0, NULL);
+	    hPtr = Tcl_FirstHashEntry(&tree->gradientHash, &search);
+	    while (hPtr != NULL) {
+		gradient = (TreeGradient) Tcl_GetHashValue(hPtr);
+		if (gradient->deletePending == 0) {
+		    Tcl_ListObjAppendElement(interp, listObj, Gradient_ToObj(gradient));
+		}
+		hPtr = Tcl_NextHashEntry(&search);
+	    }
+	    Tcl_SetObjResult(interp, listObj);
+	    break;
+	}
+    }
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeGradient_FillRect --
+ *
+ *	Paint a rectangle with a gradient.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Drawing.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TreeGradient_FillRect(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeDrawable td,
+    TreeGradient gradient,	/* Gradient token. */
+    TreeRectangle tr
+    )
+{
+    int x = tr.x, y = tr.y;
+    int width = tr.width, height = tr.height;
+    int i;
+    float delta;
+    GC gc;
+
+    if (tr.height <= 0 || tr.width <= 0 || gradient->nStepColors <= 0)
+	return;
+
+    if (gradient->vertical) {
+	delta = ((float)tr.height) / gradient->nStepColors;
+	for (i = 0; i < gradient->nStepColors; i++) {
+	    float y1 = tr.y + i * delta;
+	    float y2 = tr.y + (i+1) * delta;
+	    height = (int)(ceil(y2) - floor(y1));
+	    gc = Tk_GCForColor(gradient->stepColors[i], Tk_WindowId(tree->tkwin));
+	    XFillRectangle(tree->display, td.drawable, gc,
+		    x, (int)y1, width, height);
+	}
+    } else {
+	delta = ((float)tr.width) / gradient->nStepColors;
+	for (i = 0; i < gradient->nStepColors; i++) {
+	    float x1 = tr.x + i * delta;
+	    float x2 = tr.x + (i+1) * delta;
+	    width = (int)(ceil(x2) - floor(x1));
+	    gc = Tk_GCForColor(gradient->stepColors[i], Tk_WindowId(tree->tkwin));
+	    XFillRectangle(tree->display, td.drawable, gc,
+		    (int)x1, y, width, height);
+	}
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeGradient_Init --
+ *
+ *	Gradient-related package initialization.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TreeGradient_Init(
+    TreeCtrl *tree		/* Widget info. */
+    )
+{
+    tree->gradientAPI[0] = tree->gradientAPI[1] = 0; /* UNSPECIFIED */
+    tree->gradientOptionTable = Tk_CreateOptionTable(tree->interp,
+	gradientOptionSpecs); 
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeGradient_Free --
+ *
+ *	Free gradient-related resources for a deleted TreeCtrl.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Memory is freed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TreeGradient_Free(
+    TreeCtrl *tree		/* Widget info. */
+    )
+{
+    Tcl_HashEntry *hPtr;
+    Tcl_HashSearch search;
+    TreeGradient gradient;
+
+    while (1) {
+	hPtr = Tcl_FirstHashEntry(&tree->gradientHash, &search);
+	if (hPtr == NULL)
+	    break;
+	gradient = (TreeGradient) Tcl_GetHashValue(hPtr);
+	if (gradient->refCount != 0) {
+	    panic("TreeGradient_Free: one or more gradients still being used");
+	}
+	Gradient_FreeResources(tree, gradient, 1);
+    }
+
+    Tcl_DeleteHashTable(&tree->gradientHash);
+}
+
+#endif /* GRADIENT */

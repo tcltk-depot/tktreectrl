@@ -578,8 +578,14 @@ static void AdjustForSticky(int sticky, int cavityWidth, int cavityHeight,
     OPTION_FOR_STATE(PerStateBorder_ForState,Tk_3DBorder,xVAR,xFIELD,xSTATE)
 #define COLOR_FOR_STATE(xVAR,xFIELD,xSTATE) \
     OPTION_FOR_STATE(PerStateColor_ForState,XColor*,xVAR,xFIELD,xSTATE)
+#define FLAGS_FOR_STATE(xVAR,xFIELD,xSTATE) \
+    OPTION_FOR_STATE(PerStateFlags_ForState,int,xVAR,xFIELD,xSTATE)
 #define FONT_FOR_STATE(xVAR,xFIELD,xSTATE) \
     OPTION_FOR_STATE(PerStateFont_ForState,Tk_Font,xVAR,xFIELD,xSTATE)
+#ifdef GRADIENT
+#define GRADIENT_FOR_STATE(xVAR,xFIELD,xSTATE) \
+    OPTION_FOR_STATE(PerStateGradient_ForState,TreeGradient,xVAR,xFIELD,xSTATE)
+#endif
 #define IMAGE_FOR_STATE(xVAR,xFIELD,xSTATE) \
     OPTION_FOR_STATE(PerStateImage_ForState,Tk_Image,xVAR,xFIELD,xSTATE)
 #define RELIEF_FOR_STATE(xVAR,xFIELD,xSTATE) \
@@ -1915,10 +1921,12 @@ struct ElementRect
     Tcl_Obj *heightObj;
     PerStateInfo fill;
     PerStateInfo outline;
+#ifdef GRADIENT
+    PerStateInfo gradient;
+#endif
     int outlineWidth;
     Tcl_Obj *outlineWidthObj;
-    int open;
-    char *openString;
+    PerStateInfo open;
     int showFocus;
 };
 
@@ -1943,12 +1951,18 @@ static Tk_OptionSpec rectOptionSpecs[] = {
      (char *) NULL,
      Tk_Offset(ElementRect, fill.obj), Tk_Offset(ElementRect, fill),
      TK_OPTION_NULL_OK, (ClientData) NULL, RECT_CONF_FILL},
+#ifdef GRADIENT
+    {TK_OPTION_CUSTOM, "-gradient", (char *) NULL, (char *) NULL,
+     (char *) NULL,
+     Tk_Offset(ElementRect, gradient.obj), Tk_Offset(ElementRect, gradient),
+     TK_OPTION_NULL_OK, (ClientData) NULL, RECT_CONF_FILL},
+#endif
     {TK_OPTION_PIXELS, "-height", (char *) NULL, (char *) NULL,
      (char *) NULL, Tk_Offset(ElementRect, heightObj),
      Tk_Offset(ElementRect, height),
      TK_OPTION_NULL_OK, (ClientData) NULL, RECT_CONF_SIZE},
-    {TK_OPTION_STRING, "-open", (char *) NULL, (char *) NULL,
-     (char *) NULL, -1, Tk_Offset(ElementRect, openString),
+    {TK_OPTION_CUSTOM, "-open", (char *) NULL, (char *) NULL, (char *) NULL,
+     Tk_Offset(ElementRect, open.obj), Tk_Offset(ElementRect, open),
      TK_OPTION_NULL_OK, (ClientData) NULL, RECT_CONF_OPEN},
     {TK_OPTION_CUSTOM, "-outline", (char *) NULL, (char *) NULL,
      (char *) NULL,
@@ -2000,13 +2014,17 @@ static int ConfigProcRect(TreeElementArgs *args)
     TreeCtrl *tree = args->tree;
     TreeElement elem = args->elem;
     ElementRect *elemX = (ElementRect *) elem;
+#if 0
     ElementRect savedX;
+#endif
     Tk_SavedOptions savedOptions;
     int error;
     Tcl_Obj *errorResult = NULL;
+#if 0
     int i;
 
     savedX.open = 0; /* Prevent compiler warning */
+#endif
 
     for (error = 0; error <= 1; error++) {
 	if (error == 0) {
@@ -2017,7 +2035,7 @@ static int ConfigProcRect(TreeElementArgs *args)
 		args->config.flagSelf = 0;
 		continue;
 	    }
-
+#if 0
 	    if (args->config.flagSelf & RECT_CONF_OPEN)
 		savedX.open = elemX->open;
 
@@ -2049,17 +2067,17 @@ static int ConfigProcRect(TreeElementArgs *args)
 			continue;
 		}
 	    }
-
+#endif
 	    Tk_FreeSavedOptions(&savedOptions);
 	    break;
 	} else {
 	    errorResult = Tcl_GetObjResult(tree->interp);
 	    Tcl_IncrRefCount(errorResult);
 	    Tk_RestoreSavedOptions(&savedOptions);
-
+#if 0
 	    if (args->config.flagSelf & RECT_CONF_OPEN)
 		elemX->open = savedX.open;
-
+#endif
 	    Tcl_SetObjResult(tree->interp, errorResult);
 	    Tcl_DecrRefCount(errorResult);
 	    return TCL_ERROR;
@@ -2091,6 +2109,9 @@ static void DisplayProcRect(TreeElementArgs *args)
     int draw;
 #endif
     XColor *color;
+#ifdef GRADIENT
+    TreeGradient gradient;
+#endif
     int open = 0;
     int outlineWidth = 0;
     int showFocus = 0;
@@ -2106,10 +2127,9 @@ static void DisplayProcRect(TreeElementArgs *args)
     else if ((masterX != NULL) && (masterX->outlineWidthObj != NULL))
 	outlineWidth = masterX->outlineWidth;
 
-    if (elemX->openString != NULL)
-	open = elemX->open;
-    else if ((masterX != NULL) && (masterX->openString != NULL))
-	open = masterX->open;
+    FLAGS_FOR_STATE(open, open, state)
+    if (open == 0xFFFFFFFF) /* unspecified */
+	open = 0;
 
     if (elemX->showFocus != -1)
 	showFocus = elemX->showFocus;
@@ -2138,8 +2158,17 @@ static void DisplayProcRect(TreeElementArgs *args)
 		x, y, width, height);
     }
 
+#ifdef GRADIENT
+    GRADIENT_FOR_STATE(gradient, gradient, state)
+    if (gradient != NULL) {
+	TreeRectangle tr;
+	tr.x = x, tr.y = y, tr.width = width, tr.height = height;
+	TreeGradient_FillRect(tree, args->display.td, gradient, tr);
+    }
+#endif
+
     COLOR_FOR_STATE(color, outline, state)
-    if ((color != NULL) && (outlineWidth > 0)) {
+    if ((color != NULL) && (outlineWidth > 0) && (open != 0xFFFFFFFF)) {
 	GC gc = Tk_GCForColor(color, Tk_WindowId(tree->tkwin));
 	if (!(open & 0x01))
 	    XFillRectangle(tree->display, args->display.drawable, gc,
@@ -2200,7 +2229,11 @@ static int StateProcRect(TreeElementArgs *args)
 #ifdef DEPRECATED
     int draw1, draw2;
 #endif
+    int open1, open2;
     XColor *f1, *f2;
+#ifdef GRADIENT
+    TreeGradient g1, g2;
+#endif
     XColor *o1, *o2;
     int s1, s2;
     int showFocus = 0;
@@ -2240,6 +2273,18 @@ static int StateProcRect(TreeElementArgs *args)
     if (f1 != f2)
 	return CS_DISPLAY;
 
+    FLAGS_FOR_STATE(open1, open, args->states.state1)
+    FLAGS_FOR_STATE(open2, open, args->states.state2)
+    if (open1 != open2)
+	return CS_DISPLAY;
+
+#ifdef GRADIENT
+    GRADIENT_FOR_STATE(g1, gradient, args->states.state1)
+    GRADIENT_FOR_STATE(g2, gradient, args->states.state2)
+    if (g1 != g2)
+	return CS_DISPLAY;
+#endif
+
     COLOR_FOR_STATE(o1, outline, args->states.state1)
     COLOR_FOR_STATE(o2, outline, args->states.state2)
     if (o1 != o2)
@@ -2258,6 +2303,10 @@ static int UndefProcRect(TreeElementArgs *args)
     modified |= PerStateInfo_Undefine(tree, &pstBoolean, &elemX->draw, args->state);
 #endif
     modified |= PerStateInfo_Undefine(tree, &pstColor, &elemX->fill, args->state);
+    modified |= PerStateInfo_Undefine(tree, &pstFlags, &elemX->open, args->state);
+#ifdef GRADIENT
+    modified |= PerStateInfo_Undefine(tree, &pstGradient, &elemX->gradient, args->state);
+#endif
     modified |= PerStateInfo_Undefine(tree, &pstColor, &elemX->outline, args->state);
     return modified;
 }
@@ -2271,8 +2320,24 @@ static int ActualProcRect(TreeElementArgs *args)
 #ifdef DEPRECATED
 	"-draw",
 #endif
-	"-fill", "-outline",
+	"-fill",
+#ifdef GRADIENT
+	"-gradient",
+#endif
+	 "-open",
+	 "-outline",
 	(char *) NULL };
+    enum optionEnum {
+#ifdef DEPRECATED
+	OPT_DRAW,
+#endif
+	OPT_FILL,
+#ifdef GRADIENT
+	OPT_GRADIENT,
+#endif
+	OPT_OPEN,
+	OPT_OUTLINE
+    };
     int index, match, matchM;
     Tcl_Obj *obj = NULL;
 
@@ -2280,30 +2345,31 @@ static int ActualProcRect(TreeElementArgs *args)
 		"option", 0, &index) != TCL_OK)
 	return TCL_ERROR;
 
-    switch (index) {
+    switch ((enum optionEnum) index) {
 #ifdef DEPRECATED
-	case 0: {
+	case OPT_DRAW: {
 	    OBJECT_FOR_STATE(obj, pstBoolean, draw, args->state)
 	    break;
 	}
-	case 1: {
-	    OBJECT_FOR_STATE(obj, pstColor, fill, args->state)
-	    break;
-	}
-	case 2: {
-	    OBJECT_FOR_STATE(obj, pstColor, outline, args->state)
-	    break;
-	}
-#else
-	case 0: {
-	    OBJECT_FOR_STATE(obj, pstColor, fill, args->state)
-	    break;
-	}
-	case 1: {
-	    OBJECT_FOR_STATE(obj, pstColor, outline, args->state)
-	    break;
-	}
 #endif
+	case OPT_FILL: {
+	    OBJECT_FOR_STATE(obj, pstColor, fill, args->state)
+	    break;
+	}
+#ifdef GRADIENT
+	case OPT_GRADIENT: {
+	    OBJECT_FOR_STATE(obj, pstGradient, gradient, args->state)
+	    break;
+	}
+#endif /* GRADIENT */
+	case OPT_OPEN: {
+	    OBJECT_FOR_STATE(obj, pstFlags, open, args->state)
+	    break;
+	}
+	case OPT_OUTLINE: {
+	    OBJECT_FOR_STATE(obj, pstColor, outline, args->state)
+	    break;
+	}
     }
     if (obj != NULL)
 	Tcl_SetObjResult(tree->interp, obj);
@@ -4439,6 +4505,12 @@ int TreeElement_Init(Tcl_Interp *interp)
 #endif
     PerStateCO_Init(treeElemTypeRect.optionSpecs, "-fill",
 	&pstColor, TreeStateFromObj);
+#ifdef GRADIENT
+    PerStateCO_Init(treeElemTypeRect.optionSpecs, "-gradient",
+	&pstGradient, TreeStateFromObj);
+#endif
+    PerStateCO_Init(treeElemTypeRect.optionSpecs, "-open",
+	&pstFlags, TreeStateFromObj);
     PerStateCO_Init(treeElemTypeRect.optionSpecs, "-outline",
 	&pstColor, TreeStateFromObj);
 

@@ -704,7 +704,9 @@ proc StyleEditor::StyleToCanvas {{scroll 0}} {
 	$T element create $E [$Tdemo element type $E]
 	foreach list [$Tdemo element configure $E] {
 	    lassign $list name x y default current
-	    $T element configure $E $name $current
+	    if {$name ne "-gradient"} {
+		$T element configure $E $name $current
+	    }
 	}
     }
 

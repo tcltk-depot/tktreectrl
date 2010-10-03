@@ -14,7 +14,7 @@ if {$tcl_platform(os) eq "Windows NT" &&
     }
 }
 
-proc DemoExplorerAux {scriptDir scriptFile} {
+proc DemoExplorerAux {scriptDir scriptFile {scriptFollowup ""}} {
     global Explorer
     global Dir
 
@@ -61,12 +61,23 @@ proc DemoExplorerAux {scriptDir scriptFile} {
 
     set ::TreeCtrl::Priv(DirCnt,$T) [llength $globDirs]
 
+    eval $scriptFollowup
+
     # Double-clicking a directory displays its contents.
     set Explorer(scriptDir) $scriptDir
     set Explorer(scriptFile) $scriptFile
+    set Explorer(scriptFollowup) $scriptFollowup
     bind DemoExplorer <Double-ButtonPress-1> {
 	ExplorerDoubleButton1 %W %x %y
     }
+
+    bind DemoExplorer <Motion> {
+	ExplorerMotion %W %x %y
+    }
+    bind DemoExplorer <Leave> {
+	ExplorerMotion %W -1 -1
+    }
+    set ::Explorer(prev) ""
 
     return
 }
@@ -75,6 +86,8 @@ proc DemoExplorerAux {scriptDir scriptFile} {
 # Demo: explorer files
 #
 proc DemoExplorerDetails {} {
+
+    global Explorer
 
     set T [DemoList]
 
@@ -110,7 +123,6 @@ proc DemoExplorerDetails {} {
     #
     # Create elements
     #
-
     if {$::shellicon} {
 	$T element create elemImg shellicon -size small
     } else {
@@ -235,7 +247,8 @@ proc DemoExplorerDetails {} {
 
     DemoExplorerAux $scriptDir $scriptFile
 
-    set ::SortColumn name
+    set ::Explorer(sortColumn) name
+    set ::Explorer(sortColor) #F7F7F7
     $T notify bind $T <Header-invoke> { ExplorerHeaderInvoke %T %C }
 
     bindtags $T [list $T DemoExplorer TreeCtrlFileList TreeCtrl [winfo toplevel $T] all]
@@ -244,9 +257,9 @@ proc DemoExplorerDetails {} {
 }
 
 proc ExplorerHeaderInvoke {T C} {
-    global SortColumn
-    if {[$T column compare $C == $SortColumn]} {
-	if {[$T column cget $SortColumn -arrow] eq "down"} {
+    global Explorer
+    if {[$T column compare $C == $Explorer(sortColumn)]} {
+	if {[$T column cget $Explorer(sortColumn) -arrow] eq "down"} {
 	    set order -increasing
 	    set arrow up
 	} else {
@@ -254,17 +267,17 @@ proc ExplorerHeaderInvoke {T C} {
 	    set arrow down
 	}
     } else {
-	if {[$T column cget $SortColumn -arrow] eq "down"} {
+	if {[$T column cget $Explorer(sortColumn) -arrow] eq "down"} {
 	    set order -decreasing
 	    set arrow down
 	} else {
 	    set order -increasing
 	    set arrow up
 	}
-	$T column configure $SortColumn -arrow none -itembackground {}
-	set SortColumn $C
+	$T column configure $Explorer(sortColumn) -arrow none -itembackground {}
+	set Explorer(sortColumn) $C
     }
-    $T column configure $C -arrow $arrow -itembackground #F7F7F7
+    $T column configure $C -arrow $arrow -itembackground $Explorer(sortColor)
     set dirCount $::TreeCtrl::Priv(DirCnt,$T)
     set fileCount [expr {[$T item count] - 1 - $dirCount}]
     set lastDir [expr {$dirCount - 1}]
@@ -606,7 +619,7 @@ proc ExplorerDoubleButton1 {w x y} {
 		set Dir [file join $Dir $name]
 	    }
 	    $w item delete all
-	    DemoExplorerAux $Explorer(scriptDir) $Explorer(scriptFile)
+	    DemoExplorerAux $Explorer(scriptDir) $Explorer(scriptFile) $Explorer(scriptFollowup)
 	    $w activate "root firstchild"
 	    $w xview moveto 0.0
 	    $w yview moveto 0.0
@@ -615,6 +628,7 @@ proc ExplorerDoubleButton1 {w x y} {
     return
 }
 
+# Experimental code to create a style that is used with drag-and-drop
 proc DragStyleInit {} {
 
     set T [DemoList]
@@ -653,3 +667,305 @@ proc DragStyleInit {} {
 
     return
 }
+
+#
+# Demo: explorer files with Windows-7-like gradients
+#
+proc DemoExplorerDetailsWin7 {} {
+
+    global Explorer
+
+    set T [DemoList]
+
+    set height [font metrics [$T cget -font] -linespace]
+    if {$height < 16} {
+	set height 16 ; # small icon height
+    }
+    incr height 5
+
+    #
+    # Configure the treectrl widget
+    #
+
+    $T configure -showroot no -showbuttons no -showlines no -itemheight $height \
+	-selectmode extended -xscrollincrement 20 \
+	-scrollmargin 16 -xscrolldelay "500 50" -yscrolldelay "500 50"
+
+    InitPics small-*
+
+    #
+    # Create columns
+    #
+
+    $T column create -text Name -tags name -width 200 \
+	-arrow up
+    $T column create -text Size -tags size -justify right -width 60 \
+	-arrowside left -arrowgravity right
+    $T column create -text Type -tags type -width 120
+    $T column create -text Modified -tags modified -width 120
+
+    # Demonstration of per-state column options and configure "all"
+    $T column configure all -background {gray90 active gray70 normal gray50 pressed}
+
+    #
+    # Create gradients
+    #
+
+    set steps [expr {($height - 5)/2}]
+    $T gradient api 1.0
+    $T gradient create G_mouseover       -steps $steps -stops {{0.0 white} {1.0 #ebf3fd}} -orient vertical
+    $T gradient create G_selected_active -steps $steps -stops {{0.0 #dcebfc} {1.0 #c1dbfc}} -orient vertical
+    $T gradient create G_selected        -steps $steps -stops {{0.0 #ebf4fe} {1.0 #cfe4fe}} -orient vertical
+    $T gradient create G_focusout        -steps $steps -stops {{0.0 #f8f8f8} {1.0 #e5e5e5}} -orient vertical
+
+    #
+    # Create elements
+    #
+
+    if {$::shellicon} {
+	$T element create elemImg shellicon -size small
+    } else {
+	$T element create elemImg image -image small-folder
+    }
+    $T element create txtName text -lines 1
+    $T element create txtType text -lines 1 -fill #6d6d6d
+    $T element create txtSize text -datatype integer -format "%dKB" -lines 1 -fill #6d6d6d
+    $T element create txtDate text -datatype time -format "%d/%m/%y %I:%M %p" -lines 1 -fill #6d6d6d
+
+    $T state define mouseover
+    $T state define openW
+    $T state define openE
+    $T state define openWE
+
+    $T element create elemRectGradient rect \
+	-gradient [list G_selected_active {selected mouseover} \
+			G_focusout {selected !focus} \
+			G_selected_active {selected active} \
+			G_selected selected \
+			G_mouseover mouseover]
+
+    $T element create elemRectOutline rect \
+	-open [list we openWE w openW e openE] \
+	-outline [list #7da2ce {selected mouseover} \
+		       #d9d9d9 {selected !focus} \
+		       #7da2ce selected \
+		       #7da2ce {active focus} \
+		       #b8d6fb mouseover] -outlinewidth 1
+
+    #
+    # Create styles using the elements
+    #
+
+    # column 0: image + text
+    set S [$T style create styName -orient horizontal]
+    $T style elements $S {elemRectGradient elemRectOutline elemImg txtName}
+    $T style layout $S elemRectGradient -detach yes -padx {2 0} -pady {2 3} -iexpand xy
+    $T style layout $S elemRectOutline -detach yes -pady {0 1} -iexpand xy
+    $T style layout $S elemImg -padx {2 2} -pady {2 3} -expand ns
+    $T style layout $S txtName -pady {2 3} -squeeze x -expand ns
+
+    # column 1: text
+    set S [$T style create stySize]
+    $T style elements $S {elemRectGradient elemRectOutline txtSize}
+    $T style layout $S elemRectGradient -detach yes -padx 0 -pady {2 3} -iexpand xy
+    $T style layout $S elemRectOutline -detach yes -pady {0 1} -iexpand xy
+    $T style layout $S txtSize -padx 6 -pady {2 3} -squeeze x -expand ns
+
+    # column 2: text
+    set S [$T style create styType]
+    $T style elements $S {elemRectGradient elemRectOutline txtType}
+    $T style layout $S elemRectGradient -detach yes -padx 0 -pady {2 3} -iexpand xy
+    $T style layout $S elemRectOutline -detach yes -pady {0 1} -iexpand xy
+    $T style layout $S txtType -padx 6 -pady {2 3} -squeeze x -expand ns
+
+    # column 3: text
+    set S [$T style create styDate]
+    $T style elements $S {elemRectGradient elemRectOutline txtDate}
+    $T style layout $S elemRectGradient -detach yes -padx {0 2} -pady {2 3} -iexpand xy
+    $T style layout $S elemRectOutline -detach yes -pady {0 1} -iexpand xy
+    $T style layout $S txtDate -padx 6 -pady {2 3} -squeeze x -expand ns
+
+    # List of lists: {column style element ...} specifying text elements
+    # the user can edit
+    TreeCtrl::SetEditable $T {
+	{name styName txtName}
+    }
+
+    # List of lists: {column style element ...} specifying elements
+    # the user can click on or select with the selection rectangle
+    TreeCtrl::SetSensitive $T {
+	{name styName elemImg txtName}
+    }
+
+    # List of lists: {column style element ...} specifying elements
+    # added to the drag image when dragging selected items
+    TreeCtrl::SetDragImage $T {
+	{name styName elemImg txtName}
+    }
+
+    # During editing, hide the text and selection-rectangle elements.
+    $T state define edit
+    $T style layout styName txtName -draw {no edit}
+    $T notify bind $T <Edit-begin> {
+	%T item state set %I ~edit
+    }
+    $T notify bind $T <Edit-accept> {
+	%T item element configure %I %C %E -text %t
+    }
+    $T notify bind $T <Edit-end> {
+	%T item state set %I ~edit
+    }
+
+    #
+    # Create items and assign styles
+    #
+
+    set scriptDir {
+	set item [$T item create -open no]
+	$T item style set $item name styName size stySize type styType modified styDate
+	$T item element configure $item \
+	    name txtName -text [file tail $file] , \
+	    type txtType -text "Folder" , \
+	    modified txtDate -data [file mtime $file]
+	if {$::shellicon} {
+	    # The shellicon extension fails randomly (by putting GDB into the
+	    # background!?) if the filename is not valid. MSDN says "relative
+	    # paths are valid" but perhaps that is misinformation.
+	    if {$file eq ".."} { set file [file dirname $::Dir] }
+	    $T item element configure $item \
+		name elemImg -path $file
+	}
+	$T item lastchild root $item
+    }
+
+    set scriptFile {
+	set item [$T item create -open no]
+	$T item style set $item name styName size stySize type styType modified styDate
+	switch [file extension $file] {
+	    .dll { set img small-dll }
+	    .exe { set img small-exe }
+	    .txt { set img small-txt }
+	    default { set img small-file }
+	}
+	set type [string toupper [file extension $file]]
+	if {$type ne ""} {
+	    set type "[string range $type 1 end] "
+	}
+	append type "File"
+	if {$::shellicon} {
+	    $T item element configure $item \
+		name elemImg -path $file + txtName -text [file tail $file] , \
+		size txtSize -data [expr {[file size $file] / 1024 + 1}] , \
+		type txtType -text $type , \
+		modified txtDate -data [file mtime $file]
+	} else {
+	    $T item element configure $item \
+		name elemImg -image $img + txtName -text [file tail $file] , \
+		size txtSize -data [expr {[file size $file] / 1024 + 1}] , \
+		type txtType -text $type , \
+		modified txtDate -data [file mtime $file]
+	}
+	$T item lastchild root $item
+    }
+
+    set scriptFollowup {
+	DemoExplorerDetailsWin7_FixItemStyles $T
+    }
+
+    DemoExplorerAux $scriptDir $scriptFile $scriptFollowup
+
+    # Fix the display when a column is dragged
+    $T notify bind $T <ColumnDrag-receive> {
+	%T column move %C %b
+	DemoExplorerDetailsWin7_FixItemStyles %T
+    }
+
+    # Fix the display when a column's visibility changes
+    $T notify bind $T <DemoColumnVisibility> {
+	DemoExplorerDetailsWin7_FixItemStyles %T
+    }
+
+    set ::Explorer(sortColumn) name
+    set ::Explorer(sortColor) ""
+    $T notify bind $T <Header-invoke> { ExplorerHeaderInvoke %T %C }
+
+    bindtags $T [list $T DemoExplorer TreeCtrlFileList TreeCtrl [winfo toplevel $T] all]
+
+    return
+}
+
+proc DemoExplorerDetailsWin7_FixItemStyles {T} {
+    foreach C [$T column id "visible !tail"] {
+	if {[$T column compare $C == "first visible"]} {
+	    set firstColumnPad 16
+	    set padx {2 0}
+	    set state openE
+	} elseif {[$T column compare $C == "last visible"]} {
+	    set firstColumnPad 0
+	    set padx {0 2}
+	    set state openW
+	} else {
+	    set firstColumnPad 0
+	    set padx {0 0}
+	    set state openWE
+	}
+	switch [$T column cget $C -tags] {
+	    name {
+		set style styName
+		set padelem elemImg
+		set padelemX {6 2}
+	    }
+	    size {
+		set style stySize
+		set padelem txtSize
+		set padelemX {6 6}
+	    }
+	    type {
+		set style styType
+		set padelem txtType
+		set padelemX {6 6}
+	    }
+	    modified {
+		set style styDate
+		set padelem txtDate
+		set padelemX {6 6}
+	    }
+	}
+	lset padx 0 [expr {[lindex $padx 0] + $firstColumnPad}]
+	lset padelemX 0 [expr {[lindex $padelemX 0] + $firstColumnPad}]
+	#puts "$C padx=$padx state=$state style=$style padelem=$padelem padelemX=$padelemX"
+	$T column configure $C -textpadx [list [expr {$firstColumnPad + 6}] 6]
+	$T item state forcolumn all $C [list !openW !openE !openWE $state]
+	$T style layout $style elemRectGradient -padx $padx
+	set padx [list $firstColumnPad 0]
+	$T style layout $style elemRectOutline -padx $padx
+	$T style layout $style $padelem -padx $padelemX
+    }
+}
+
+proc ExplorerMotion {w x y} {
+    global Explorer
+    if {[lsearch -exact [$w state names] mouseover] == -1} return
+    set id [$w identify $x $y]
+    if {$id eq ""} {
+    } elseif {[lindex $id 0] eq "header"} {
+    } elseif {[lindex $id 0] eq "item"} {
+	set item [lindex $id 1]
+	set column all ; # [lindex $id 3]
+	set curr [list $item $column]
+	if {$curr ne $Explorer(prev)} {
+	    if {$Explorer(prev) ne ""} {
+		eval $w item state forcolumn $Explorer(prev) !mouseover
+	    }
+	    $w item state forcolumn $item $column mouseover
+	    set Explorer(prev) $curr
+	}
+	return
+    }
+    if {$Explorer(prev) ne ""} {
+	eval $w item state forcolumn $Explorer(prev) !mouseover
+	set Explorer(prev) ""
+    }
+    return
+}
+
