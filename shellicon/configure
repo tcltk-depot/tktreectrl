@@ -606,6 +606,7 @@ SHLIB_CFLAGS
 SHLIB_LD_LIBS
 SHLIB_LD
 STLIB_LD
+CC_OBJNAME
 CFLAGS_WARNING
 CFLAGS_OPTIMIZE
 CFLAGS_DEBUG
@@ -616,6 +617,14 @@ AR
 SHARED_BUILD
 TCL_THREADS
 CLEANFILES
+MACHINE
+RES
+RC_DEPARG
+RC_DEFINE
+RC_INCLUDE
+RC_TYPE
+RC_OUT
+RC
 XMKMF
 TK_XLIB_DIR_NATIVE
 TK_TOP_DIR_NATIVE
@@ -5385,7 +5394,7 @@ $as_echo_n "checking for Tk private include files... " >&6; }
 	   TK_INCLUDES="${TK_INCLUDES} -I\"${TK_SRC_DIR_NATIVE}/generic/ttk\""
 	fi
 	if test "${TEA_WINDOWINGSYSTEM}" != "x11"; then
-	   TK_INCLUDES="${TK_INCLUDES} -I\"${TK_XLIB_DIR_NATIVE}\""
+	   TK_INCLUDES="${TK_INCLUDES} -I${TK_XLIB_DIR_NATIVE}"
 	fi
 	if test "${TEA_WINDOWINGSYSTEM}" = "aqua"; then
 	   TK_INCLUDES="${TK_INCLUDES} -I\"${TK_SRC_DIR_NATIVE}/macosx\""
@@ -5995,12 +6004,14 @@ $as_echo "#define AC_APPLE_UNIVERSAL_BUILD 1" >>confdefs.h
 # your system.
 #--------------------------------------------------------------------
 
+OUTPUTFILES=Makefile
+
 if test "${TEA_PLATFORM}" = "windows" ; then
     $as_echo "#define BUILD_shellicon 1" >>confdefs.h
 
-    CLEANFILES="pkgIndex.tcl *.lib *.dll *.exp *.ilk *.pdb vc*.pch"
+    CLEANFILES="pkgIndex.tcl *.lib *.dll *.exp *.ilk *.pdb vc*.pch *.manifest"
 
-    vars="gdi32.lib user32.lib comctl32.lib ole32.lib"
+    vars="gdi32.lib user32.lib comctl32.lib ole32.lib shell32.lib"
     for i in $vars; do
 	if test "${TEA_PLATFORM}" = "windows" -a "$GCC" = "yes" ; then
 	    # Convert foo.lib to -lfoo for GCC.  No-op if not *.lib
@@ -6008,6 +6019,160 @@ if test "${TEA_PLATFORM}" = "windows" ; then
 	fi
 	PKG_LIBS="$PKG_LIBS $i"
     done
+
+
+
+    # Find rc.exe or windres.exe.
+    # Defined in winrc.m4.
+
+
+#    AC_MSG_CHECKING([for windows resource compiler])
+    RC_DEPARG='"$<"'
+    if test "${GCC}" = "yes" ; then
+	# Extract the first word of "windres", so it can be a program name with args.
+set dummy windres; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_prog_RC+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$RC"; then
+  ac_cv_prog_RC="$RC" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_prog_RC="windres"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+fi
+fi
+RC=$ac_cv_prog_RC
+if test -n "$RC"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $RC" >&5
+$as_echo "$RC" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+	if test "${RC}" = "" ; then
+	    as_fn_error $? "Required resource tool 'windres' not found on PATH." "$LINENO" 5
+	fi
+	RC_OUT=-o
+	RC_TYPE=
+	RC_INCLUDE=--include
+	RC_DEFINE=--define
+	RES=res.o
+
+	# Check for a bug in gcc's windres that causes the
+	# compile to fail when a Windows native path is
+	# passed into windres. The mingw toolchain requires
+	# Windows native paths while Cygwin should work
+	# with both. Avoid the bug by passing a POSIX
+	# path when using the Cygwin toolchain.
+
+	if test "$ac_cv_cygwin" != "yes" -a "$CYGPATH" != "echo" ; then
+	    conftest=/tmp/conftest.rc
+	    echo "STRINGTABLE BEGIN" > $conftest
+	    echo "101 \"name\"" >> $conftest
+	    echo "END" >> $conftest
+
+	    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Windows native path bug in windres" >&5
+$as_echo_n "checking for Windows native path bug in windres... " >&6; }
+	    cyg_conftest=`$CYGPATH $conftest`
+	    if { ac_try='$RC -o conftest.res.o $cyg_conftest'
+  { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_try\""; } >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; } ; then
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+		RC_DEPARG='"$(shell $(CYGPATH) $<)"'
+	    else
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	    fi
+	    conftest=
+	    cyg_conftest=
+	fi
+
+    else
+	if test "$do64bit" != "no" ; then
+	    RC="\"${MSSDK}/bin/rc.exe\""
+	elif test "$doWince" != "no" ; then
+	    RC="\"${WCEROOT}/Common/EVC/bin/rc.exe\""
+	else
+	    RC="rc"
+	fi
+	RC_OUT=-fo
+	RC_TYPE=-r
+	RC_INCLUDE=-i
+	RC_DEFINE=-d
+	RES=res
+    fi
+
+
+
+
+
+
+
+
+
+
+    # X86|AMD64|IA64 for manifest
+
+
+    # Create shellicon.dll.manifest from shellicon.dll.manifest.in.
+    # shellicon.dll.manifest is included by shellicon.rc.
+    # If building with a Microsoft compiler that generates
+    # shelliconNN.dll.manifest (to pick the correct MSVCRT runtime) then
+    # that manifest is merged with mine using mt.exe (see the Makefile
+    # rule for PKG_LIB_FILE).
+    OUTPUTFILES="Makefile shellicon.dll.manifest"
+
+
+    vars="shellicon.rc"
+    for i in $vars; do
+	case $i in
+	    \$*)
+		# allow $-var names
+		PKG_SOURCES="$PKG_SOURCES $i"
+		PKG_OBJECTS="$PKG_OBJECTS $i"
+		;;
+	    *)
+		# check for existence - allows for generic/win/unix VPATH
+		if test ! -f "${srcdir}/$i" -a ! -f "${srcdir}/generic/$i" \
+		    -a ! -f "${srcdir}/win/$i" -a ! -f "${srcdir}/unix/$i" \
+		    ; then
+		    as_fn_error $? "could not find source file '$i'" "$LINENO" 5
+		fi
+		PKG_SOURCES="$PKG_SOURCES $i"
+		# this assumes it is in a VPATH dir
+		i=`basename $i`
+		# handle user calling this before or after TEA_SETUP_COMPILER
+		if test x"${RES}" != x ; then
+		    j="`echo $i | sed -e 's/\.[^.]*$//'`.${RES}"
+		else
+		    j="`echo $i | sed -e 's/\.[^.]*$//'`.\${RES}"
+		fi
+		PKG_OBJECTS="$PKG_OBJECTS $j"
+		;;
+	esac
+    done
+
 
 
 else
@@ -6624,6 +6789,7 @@ fi
 else
   CFLAGS_WARNING=""
 fi
+    CC_OBJNAME="-o \$@"
     TCL_NEEDS_EXP_FILE=0
     TCL_BUILD_EXP_FILE=""
     TCL_EXP_FILE=""
@@ -6925,6 +7091,9 @@ _ACEOF
 		# This essentially turns it all on.
 		LDFLAGS_DEBUG="-debug -debugtype:cv"
 		LDFLAGS_OPTIMIZE="-release"
+		CFLAGS_DEBUG="${CFLAGS_DEBUG} -D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE"
+		CFLAGS_OPTIMIZE="${CFLAGS_OPTIMIZE} -D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE"
+		CC_OBJNAME="-Fo\$@"
 		if test "$doWince" != "no" ; then
 		    LDFLAGS_CONSOLE="-link ${lflags}"
 		    LDFLAGS_WINDOW=${LDFLAGS_CONSOLE}
@@ -8544,6 +8713,7 @@ fi
 
 
 
+
     # These must be called after we do the basic CFLAGS checks and
     # verify any possible 64-bit or similar switches are necessary
 
@@ -9121,7 +9291,7 @@ $as_echo "${WISH_PROG}" >&6; }
 # which require substituting th AC variables in.  Include these here.
 #--------------------------------------------------------------------
 
-ac_config_files="$ac_config_files Makefile"
+ac_config_files="$ac_config_files $OUTPUTFILES"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -9832,7 +10002,7 @@ cat >>$CONFIG_STATUS <<\_ACEOF || ac_write_fail=1
 for ac_config_target in $ac_config_targets
 do
   case $ac_config_target in
-    "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
+    "$OUTPUTFILES") CONFIG_FILES="$CONFIG_FILES $OUTPUTFILES" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5 ;;
   esac
@@ -10283,4 +10453,5 @@ if test -n "$ac_unrecognized_opts" && test "$enable_option_checking" != no; then
   { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: unrecognized options: $ac_unrecognized_opts" >&5
 $as_echo "$as_me: WARNING: unrecognized options: $ac_unrecognized_opts" >&2;}
 fi
+
 

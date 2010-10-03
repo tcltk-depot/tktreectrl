@@ -97,6 +97,7 @@ PACKAGE_PATCHLEVEL	= @PACKAGE_PATCHLEVEL@
 CC		= @CC@
 CFLAGS_DEFAULT	= @CFLAGS_DEFAULT@
 CFLAGS_WARNING	= @CFLAGS_WARNING@
+CC_OBJNAME	= @CC_OBJNAME@
 CLEANFILES	= @CLEANFILES@
 EXEEXT		= @EXEEXT@
 LDFLAGS_DEFAULT	= @LDFLAGS_DEFAULT@
@@ -249,12 +250,24 @@ depend:
 # The $(PKG_OBJECTS) objects are created and linked into the final
 # library.  In most cases these object files will correspond to the
 # source files above.
+#
+# NOTE regarding the manifest(s):  When building on a non-Windows box the
+# shelliconNN.dll.manifest file should not exist.  When building with
+# MingW GCC the manifest will also not exist.  Only when building with
+# a Microsoft compiler that auto-generates a manifest (to pick the correct
+# MSVCRT runtime) will $@.manifest exist; in this case mt.exe should
+# also exist.  If mt.exe is used there is actually no need for shellicon.rc
+# to include shellicon.dll.manifest since mt.exe will clobber that resource
+# with the merged manifests.
 #========================================================================
 
 $(PKG_LIB_FILE): $(PKG_OBJECTS)
 	-rm -f $(PKG_LIB_FILE)
 	${MAKE_LIB}
 	$(RANLIB) $(PKG_LIB_FILE)
+	if test -f $@.manifest; then \
+	    mt -nologo -manifest $@.manifest shellicon.dll.manifest "-outputresource:$@;#2"; \
+	fi;
 
 #========================================================================
 # In the following lines, $(srcdir) refers to the toplevel directory
@@ -273,7 +286,10 @@ $(PKG_LIB_FILE): $(PKG_OBJECTS)
 VPATH = $(srcdir):$(srcdir)/generic:$(srcdir)/unix:$(srcdir)/win
 
 .c.@OBJEXT@:
-	$(COMPILE) -c `@CYGPATH@ $<` -o $@
+	$(COMPILE) -c `@CYGPATH@ $<` $(CC_OBJNAME)
+
+.rc.@RES@:
+	@RC@ @RC_OUT@ $@ @RC_INCLUDE@ "`@CYGPATH@ $(srcdir)`" @RC_DEPARG@
 
 #========================================================================
 # Create the pkgIndex.tcl file.
@@ -400,6 +416,8 @@ install-bin-binaries:
 	done
 
 .SUFFIXES: .c .$(OBJEXT)
+.SUFFIXES: .@RES@
+.SUFFIXES: .rc
 
 Makefile: $(srcdir)/Makefile.in  $(top_builddir)/config.status
 	cd $(top_builddir) \

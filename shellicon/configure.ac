@@ -115,10 +115,29 @@ AC_C_BIGENDIAN
 # your system.
 #--------------------------------------------------------------------
 
+OUTPUTFILES=Makefile
+
 if test "${TEA_PLATFORM}" = "windows" ; then
     AC_DEFINE(BUILD_shellicon)
-    CLEANFILES="pkgIndex.tcl *.lib *.dll *.exp *.ilk *.pdb vc*.pch"
-    TEA_ADD_LIBS([gdi32.lib user32.lib comctl32.lib ole32.lib])
+    CLEANFILES="pkgIndex.tcl *.lib *.dll *.exp *.ilk *.pdb vc*.pch *.manifest"
+    TEA_ADD_LIBS([gdi32.lib user32.lib comctl32.lib ole32.lib shell32.lib])
+
+    # Find rc.exe or windres.exe.
+    # Defined in winrc.m4.
+    TREECTRL_PROG_RC
+
+    # X86|AMD64|IA64 for manifest
+    AC_SUBST(MACHINE)
+
+    # Create shellicon.dll.manifest from shellicon.dll.manifest.in.
+    # shellicon.dll.manifest is included by shellicon.rc.
+    # If building with a Microsoft compiler that generates
+    # shelliconNN.dll.manifest (to pick the correct MSVCRT runtime) then
+    # that manifest is merged with mine using mt.exe (see the Makefile
+    # rule for PKG_LIB_FILE).
+    OUTPUTFILES="Makefile shellicon.dll.manifest"
+
+    TREECTRL_ADD_RC([shellicon.rc])
 else
     CLEANFILES="pkgIndex.tcl"
 fi
@@ -194,4 +213,5 @@ TEA_PROG_WISH
 # which require substituting th AC variables in.  Include these here.
 #--------------------------------------------------------------------
 
-AC_OUTPUT([Makefile])
+AC_OUTPUT([$OUTPUTFILES])
+
