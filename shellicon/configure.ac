@@ -23,7 +23,7 @@ AC_INIT([shellicon], [2.2])
 AC_SUBST([PACKAGE_PATCHLEVEL], [2.2.10])
 AC_DEFINE_UNQUOTED(PACKAGE_PATCHLEVEL, "$PACKAGE_PATCHLEVEL")
 
-TEA_INIT([3.7])
+TEA_INIT([3.9])
 
 AC_CONFIG_AUX_DIR(tclconfig)
 
@@ -118,8 +118,6 @@ AC_C_BIGENDIAN
 OUTPUTFILES=Makefile
 
 if test "${TEA_PLATFORM}" = "windows" ; then
-    AC_DEFINE(BUILD_shellicon)
-    CLEANFILES="pkgIndex.tcl *.lib *.dll *.exp *.ilk *.pdb vc*.pch *.manifest"
     TEA_ADD_LIBS([gdi32.lib user32.lib comctl32.lib ole32.lib shell32.lib])
 
     # Find rc.exe or windres.exe.
@@ -128,6 +126,9 @@ if test "${TEA_PLATFORM}" = "windows" ; then
 
     # X86|AMD64|IA64 for manifest
     AC_SUBST(MACHINE)
+
+    # PKG_MANIFEST -> VC_MANIFEST_EMBED_DLL -> MAKE_SHARED_LIB
+    TEA_ADD_MANIFEST([shellicon.dll.manifest])
 
     # Create shellicon.dll.manifest from shellicon.dll.manifest.in.
     # shellicon.dll.manifest is included by shellicon.rc.
@@ -138,13 +139,10 @@ if test "${TEA_PLATFORM}" = "windows" ; then
     OUTPUTFILES="Makefile shellicon.dll.manifest"
 
     TREECTRL_ADD_RC([shellicon.rc])
-else
-    CLEANFILES="pkgIndex.tcl"
 fi
 if test "${TEA_WINDOWINGSYSTEM}" = "aqua"; then
     TEA_ADD_LIBS([-framework Carbon])
 fi
-AC_SUBST(CLEANFILES)
 
 #--------------------------------------------------------------------
 # Check whether --enable-threads or --disable-threads was given.

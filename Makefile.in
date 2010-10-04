@@ -52,6 +52,8 @@ PKG_EXTRA_FILES =
 
 PKG_MAN_PAGES	= 
 
+PKG_MANIFEST	= @PKG_MANIFEST@
+
 #========================================================================
 # "PKG_LIB_FILE" refers to the library (dynamic or static as per
 # configuration options) composed of the named objects.
@@ -61,7 +63,7 @@ PKG_LIB_FILE	= @PKG_LIB_FILE@
 PKG_STUB_LIB_FILE = @PKG_STUB_LIB_FILE@
 
 lib_BINARIES	= $(PKG_LIB_FILE)
-BINARIES	= $(lib_BINARIES)
+BINARIES	= $(lib_BINARIES) pkgIndex.tcl
 
 SHELL		= @SHELL@
 
@@ -148,7 +150,7 @@ PKG_CFLAGS	= @PKG_CFLAGS@
 
 DEFS		= @DEFS@ $(PKG_CFLAGS)
 
-CONFIG_CLEAN_FILES = Makefile
+CONFIG_CLEAN_FILES = Makefile $(PKG_MANIFEST)
 
 CPPFLAGS	= @CPPFLAGS@
 LIBS		= @PKG_LIBS@ @LIBS@
@@ -177,7 +179,7 @@ all: binaries libraries doc
 # of the Makefile, in the "BINARIES" variable.
 #========================================================================
 
-binaries: $(BINARIES) pkgIndex.tcl
+binaries: $(BINARIES)
 
 libraries:
 
@@ -264,9 +266,6 @@ $(PKG_LIB_FILE): $(PKG_OBJECTS)
 	-rm -f $(PKG_LIB_FILE)
 	${MAKE_LIB}
 	$(RANLIB) $(PKG_LIB_FILE)
-	if test -f $@.manifest; then \
-	    mt -nologo -manifest $@.manifest treectrl.dll.manifest "-outputresource:$@;#2"; \
-	fi;
 
 #========================================================================
 # In the following lines, $(srcdir) refers to the toplevel directory

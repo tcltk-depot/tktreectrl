@@ -23,7 +23,7 @@ AC_INIT([treectrl], [2.2])
 AC_SUBST([PACKAGE_PATCHLEVEL], [2.2.10])
 AC_DEFINE_UNQUOTED(PACKAGE_PATCHLEVEL, "$PACKAGE_PATCHLEVEL")
 
-TEA_INIT([3.7])
+TEA_INIT([3.9])
 
 AC_CONFIG_AUX_DIR(tclconfig)
 
@@ -120,8 +120,6 @@ AC_C_BIGENDIAN
 OUTPUTFILES=Makefile
 
 if test "${TEA_PLATFORM}" = "windows" ; then
-    AC_DEFINE(BUILD_treectrl)
-    CLEANFILES="pkgIndex.tcl *.lib *.dll *.exp *.ilk *.pdb vc*.pch *.manifest"
     TEA_ADD_LIBS([gdi32.lib user32.lib])
 
     AC_ARG_ENABLE(shellicon,
@@ -139,6 +137,9 @@ if test "${TEA_PLATFORM}" = "windows" ; then
     # X86|AMD64|IA64 for manifest
     AC_SUBST(MACHINE)
 
+    # PKG_MANIFEST -> VC_MANIFEST_EMBED_DLL -> MAKE_SHARED_LIB
+    TEA_ADD_MANIFEST([treectrl.dll.manifest])
+
     # Create treectrl.dll.manifest from treectrl.dll.manifest.in.
     # treectrl.dll.manifest is included by treectrl.rc.
     # If building with a Microsoft compiler that generates
@@ -148,8 +149,6 @@ if test "${TEA_PLATFORM}" = "windows" ; then
     OUTPUTFILES="Makefile treectrl.dll.manifest"
 
     TREECTRL_ADD_RC([treectrl.rc])
-else
-    CLEANFILES="pkgIndex.tcl"
 fi
 
 if test "${TEA_WINDOWINGSYSTEM}" = "aqua"; then
@@ -186,8 +185,6 @@ if test "${TEA_WINDOWINGSYSTEM}" = "aqua"; then
         TEA_ADD_LIBS([-framework Carbon])
     fi
 fi
-
-AC_SUBST(CLEANFILES)
 
 #--------------------------------------------------------------------
 # Check whether --enable-threads or --disable-threads was given.
