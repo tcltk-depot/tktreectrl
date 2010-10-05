@@ -693,10 +693,18 @@ proc StyleEditor::StyleToCanvas {{scroll 0}} {
     eval $T style delete [$T style names]
     eval $T element delete [$T element names]
 
+    $T gradient api 1.0
+    eval $T gradient delete [$T gradient names]
+
 
     # Copy states
     foreach state [$Tdemo state names] {
 	$T state define $state
+    }
+
+    # Copy gradients (name only)
+    foreach gradient [$Tdemo gradient names] {
+	$T gradient create $gradient
     }
 
     # Copy elements
@@ -704,9 +712,7 @@ proc StyleEditor::StyleToCanvas {{scroll 0}} {
 	$T element create $E [$Tdemo element type $E]
 	foreach list [$Tdemo element configure $E] {
 	    lassign $list name x y default current
-	    if {$name ne "-gradient"} {
-		$T element configure $E $name $current
-	    }
+	    $T element configure $E $name $current
 	}
     }
 
