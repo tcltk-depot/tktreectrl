@@ -3710,7 +3710,7 @@ AddRectToRedrawRgn(
     int maxY)
 {
     TkRegion rgn = Tree_GetRegion(tree);
-    XRectangle rect;
+    TreeRectangle rect;
 
     rect.x = minX;
     rect.y = minY;
@@ -4852,13 +4852,13 @@ CalcWhiteSpaceRegion(
 
 static int
 Tree_IntersectRect(
-    XRectangle *resultPtr,	/* Out: area of overlap. May be the same
+    TreeRectangle *resultPtr,	/* Out: area of overlap. May be the same
 				 * as r1 or r2. */
-    CONST XRectangle *r1,	/* First rectangle. */
-    CONST XRectangle *r2	/* Second rectangle. */
+    CONST TreeRectangle *r1,	/* First rectangle. */
+    CONST TreeRectangle *r2	/* Second rectangle. */
     )
 {
-    XRectangle result;
+    TreeRectangle result;
 
     if (r1->width == 0 || r1->height == 0) return 0;
     if (r2->width == 0 || r2->height == 0) return 0;
@@ -4946,11 +4946,11 @@ GetItemBgIndex(
 static void
 DrawColumnBackground(
     TreeCtrl *tree,		/* Widget info. */
-    Drawable drawable,		/* Where to draw. */
+    TreeDrawable td,		/* Where to draw. */
     TreeColumn treeColumn,	/* Column to get background colors from. */
     TkRegion dirtyRgn,		/* Area that needs painting. Will be
 				 * inside 'bounds' and inside borders. */
-    XRectangle *bounds,		/* Window coords of column to paint. */
+    TreeRectangle *bounds,	/* Window coords of column to paint. */
     RItem *rItem,		/* Item(s) to get row heights from when drawing
 				 * in the tail column, otherwise NULL. */
     int height,			/* Height of each row below actual items. */
@@ -4959,15 +4959,16 @@ DrawColumnBackground(
 {
     int bgCount = TreeColumn_BackgroundCount(treeColumn);
     GC gc = None, backgroundGC;
-    XRectangle dirtyBox, drawBox, rowBox;
+    TreeRectangle dirtyBox, drawBox, rowBox;
     int top, bottom;
+    TreeColor *tc;
 
-    TkClipBox(dirtyRgn, &dirtyBox);
+    Tree_GetRegionBounds(dirtyRgn, &dirtyBox);
     if (!dirtyBox.width || !dirtyBox.height)
 	return;
 
     backgroundGC = Tk_3DBorderGC(tree->tkwin, tree->border, TK_3D_FLAT_GC);
-
+#if 0
     /* If the column has zero -itembackground colors, paint with the
      * treectrl's -background color. If a single -itembackground color
      * is specified, then paint with it. */
@@ -4979,7 +4980,7 @@ DrawColumnBackground(
 	Tree_FillRegion(tree->display, drawable, gc, dirtyRgn);
 	return;
     }
-
+#endif
     top = bounds->y;
     bottom = dirtyBox.y + dirtyBox.height;
     while (top < bottom) {
@@ -4993,11 +4994,14 @@ DrawColumnBackground(
 	    if (rItem != NULL) {
 		index = GetItemBgIndex(tree, rItem);
 	    }
-	    gc = TreeColumn_BackgroundGC(treeColumn, index);
-	    if (gc == None)
+	    tc = TreeColumn_BackgroundColor(treeColumn, index);
+	    if (tc == NULL) {
 		gc = backgroundGC;
-	    XFillRectangle(tree->display, drawable, gc,
-		drawBox.x, drawBox.y, drawBox.width, drawBox.height);
+		XFillRectangle(tree->display, td.drawable, gc,
+		    drawBox.x, drawBox.y, drawBox.width, drawBox.height);
+	    } else {
+		TreeColor_FillRect(tree, td, tc, drawBox);
+	    }
 	}
 	if (rItem != NULL && rItem == rItem->range->last) {
 	    index = GetItemBgIndex(tree, rItem);
@@ -5031,7 +5035,7 @@ DrawColumnBackground(
 static void
 DrawWhitespaceBelowItem(
     TreeCtrl *tree,		/* Widget info. */
-    Drawable drawable,		/* Where to draw. */
+    TreeDrawable td,		/* Where to draw. */
     int lock,			/* Which columns to draw. */
     int bounds[4],		/* TREE_AREA_xxx bounds. */
     int left,			/* Window coord of first column's left edge. */
@@ -5044,7 +5048,7 @@ DrawWhitespaceBelowItem(
 {
     int i = 0, width;
     TreeColumn treeColumn = NULL;
-    XRectangle boundsBox, columnBox;
+    TreeRectangle boundsBox, columnBox;
 
     switch (lock) {
 	case COLUMN_LOCK_LEFT:
@@ -5076,7 +5080,7 @@ DrawWhitespaceBelowItem(
 	if (Tree_IntersectRect(&columnBox, &boundsBox, &columnBox)) {
 	    Tree_SetRectRegion(columnRgn, &columnBox);
 	    TkIntersectRegion(dirtyRgn, columnRgn, columnRgn);
-	    DrawColumnBackground(tree, drawable, treeColumn,
+	    DrawColumnBackground(tree, td, treeColumn,
 		    columnRgn, &columnBox, (RItem *) NULL, height, index);
 	}
 	left += width;
@@ -5148,7 +5152,7 @@ ComplexWhitespace(
 static void
 DrawWhitespace(
     TreeCtrl *tree,
-    Drawable drawable,
+    TreeDrawable td,
     TkRegion dirtyRgn
     )
 {
@@ -5156,7 +5160,7 @@ DrawWhitespace(
     int x, y, minX, minY, maxX, maxY;
     int top, bottom;
     int height, index;
-    XRectangle columnBox;
+    TreeRectangle columnBox;
     TkRegion columnRgn;
     Range *range;
     RItem *rItem;
@@ -5166,7 +5170,7 @@ DrawWhitespace(
      * color. */
     if (!ComplexWhitespace(tree)) {
 	GC gc = Tk_3DBorderGC(tree->tkwin, tree->border, TK_3D_FLAT_GC);
-	Tree_FillRegion(tree->display, drawable, gc, dirtyRgn);
+	Tree_FillRegion(tree->display, td.drawable, gc, dirtyRgn);
 	return;
     }
 
@@ -5220,7 +5224,7 @@ DrawWhitespace(
 	    columnBox.height = maxY - columnBox.y;
 	    Tree_SetRectRegion(columnRgn, &columnBox);
 	    TkIntersectRegion(dirtyRgn, columnRgn, columnRgn);
-	    DrawColumnBackground(tree, drawable, tree->columnTail,
+	    DrawColumnBackground(tree, td, tree->columnTail,
 		    columnRgn, &columnBox, rItem, height, index);
 	}
     }
@@ -5240,7 +5244,7 @@ DrawWhitespace(
 
 	/* Draw below non-locked columns. */
 	if (!dInfo->empty && Tree_TotalWidth(tree)/* && dInfo->rangeFirst != NULL */) {
-	    DrawWhitespaceBelowItem(tree, drawable, COLUMN_LOCK_NONE,
+	    DrawWhitespaceBelowItem(tree, td, COLUMN_LOCK_NONE,
 		    dInfo->bounds, x, top, dirtyRgn, columnRgn,
 		    height, index);
 	}
@@ -5248,7 +5252,7 @@ DrawWhitespace(
 	/* Draw below the left columns. */
 	if (!dInfo->emptyL) {
 	    minX = dInfo->boundsL[0];
-	    DrawWhitespaceBelowItem(tree, drawable, COLUMN_LOCK_LEFT,
+	    DrawWhitespaceBelowItem(tree, td, COLUMN_LOCK_LEFT,
 		    dInfo->boundsL,
 		    minX, top, dirtyRgn, columnRgn,
 		    height, index);
@@ -5257,7 +5261,7 @@ DrawWhitespace(
 	/* Draw below the right columns. */
 	if (!dInfo->emptyR) {
 	    minX = dInfo->boundsR[0];
-	    DrawWhitespaceBelowItem(tree, drawable, COLUMN_LOCK_RIGHT,
+	    DrawWhitespaceBelowItem(tree, td, COLUMN_LOCK_RIGHT,
 		    dInfo->boundsR,
 		    minX, top, dirtyRgn, columnRgn,
 		    height, index);
@@ -5657,7 +5661,7 @@ Tree_Display(
 #ifdef COMPLEX_WHITESPACE
     int complexWhitespace;
 #endif
-    XRectangle wsBox;
+    TreeRectangle wsBox;
     int requests;
 
     if (tree->debug.enable && tree->debug.display && 0)
@@ -6010,7 +6014,7 @@ displayRetry:
 	    wsRgnDif = Tree_GetRegion(tree);
 	    TkSubtractRegion(wsRgnNew, dInfo->wsRgn, wsRgnDif);
 	}
-	TkClipBox(wsRgnDif, &wsBox);
+	Tree_GetRegionBounds(wsRgnDif, &wsBox);
 	if ((wsBox.width > 0) && (wsBox.height > 0)) {
 	    Drawable pixmap = Tk_GetPixmap(tree->display, Tk_WindowId(tkwin),
 		    wsBox.width, wsBox.height, Tk_Depth(tkwin));
@@ -6071,7 +6075,7 @@ displayRetry:
 	wsRgnNew = CalcWhiteSpaceRegion(tree);
 	wsRgnDif = Tree_GetRegion(tree);
 	TkSubtractRegion(wsRgnNew, dInfo->wsRgn, wsRgnDif);
-	TkClipBox(wsRgnDif, &wsBox);
+	Tree_GetRegionBounds(wsRgnDif, &wsBox);
 	if ((wsBox.width > 0) && (wsBox.height > 0)) {
 #ifndef COMPLEX_WHITESPACE
 	    GC gc = Tk_3DBorderGC(tkwin, tree->border, TK_3D_FLAT_GC);
@@ -6082,7 +6086,7 @@ displayRetry:
 		DisplayDelay(tree);
 	    }
 #ifdef COMPLEX_WHITESPACE
-	    DrawWhitespace(tree, drawable, wsRgnDif);
+	    DrawWhitespace(tree, tdrawable, wsRgnDif);
 #else
 	    Tree_FillRegion(tree->display, drawable, gc, wsRgnDif);
 #endif
@@ -6258,11 +6262,11 @@ displayRetry:
     else
 #endif
     if (tree->doubleBuffer == DOUBLEBUFFER_WINDOW) {
-	XRectangle box;
+	TreeRectangle box;
 
 	drawable = Tk_WindowId(tkwin);
 
-	TkClipBox(dInfo->dirtyRgn, &box);
+	Tree_GetRegionBounds(dInfo->dirtyRgn, &box);
 	if (box.width > 0 && box.height > 0) {
 	    TkSetRegion(tree->display, tree->copyGC, dInfo->dirtyRgn);
 	    XCopyArea(tree->display, dInfo->pixmapW.drawable, drawable,
@@ -7577,11 +7581,11 @@ Tree_InvalidateRegion(
     TreeDInfo dInfo = tree->dInfo;
     DItem *dItem;
     int minX, minY, maxX, maxY;
-    XRectangle rect;
+    TreeRectangle rect;
     int x1, x2, y1, y2;
     TkRegion rgn;
 
-    TkClipBox(region, &rect);
+    Tree_GetRegionBounds(region, &rect);
     if (!rect.width || !rect.height)
 	return;
 
@@ -7601,7 +7605,7 @@ Tree_InvalidateRegion(
 	    rect.height = dItem->height;
 	    Tree_SetRectRegion(rgn, &rect);
 	    TkIntersectRegion(region, rgn, rgn);
-	    TkClipBox(rgn, &rect);
+	    Tree_GetRegionBounds(rgn, &rect);
 	    if (rect.width > 0 && rect.height > 0) {
 		InvalidateDItemX(dItem, &dItem->area, dItem->area.x, rect.x, rect.width);
 		InvalidateDItemY(dItem, &dItem->area, dItem->y, rect.y, rect.height);
@@ -7615,7 +7619,7 @@ Tree_InvalidateRegion(
 	    rect.height = dItem->height;
 	    Tree_SetRectRegion(rgn, &rect);
 	    TkIntersectRegion(region, rgn, rgn);
-	    TkClipBox(rgn, &rect);
+	    Tree_GetRegionBounds(rgn, &rect);
 	    if (rect.width > 0 && rect.height > 0) {
 		InvalidateDItemX(dItem, &dItem->left, dItem->left.x, rect.x, rect.width);
 		InvalidateDItemY(dItem, &dItem->left, dItem->y, rect.y, rect.height);
@@ -7629,7 +7633,7 @@ Tree_InvalidateRegion(
 	    rect.height = dItem->height;
 	    Tree_SetRectRegion(rgn, &rect);
 	    TkIntersectRegion(region, rgn, rgn);
-	    TkClipBox(rgn, &rect);
+	    Tree_GetRegionBounds(rgn, &rect);
 	    if (rect.width > 0 && rect.height > 0) {
 		InvalidateDItemX(dItem, &dItem->right, dItem->right.x, rect.x, rect.width);
 		InvalidateDItemY(dItem, &dItem->right, dItem->y, rect.y, rect.height);
@@ -7639,7 +7643,7 @@ Tree_InvalidateRegion(
 	dItem = dItem->next;
     }
 
-    TkClipBox(region, &rect);
+    Tree_GetRegionBounds(region, &rect);
     x1 = rect.x, x2 = rect.x + rect.width;
     y1 = rect.y, y2 = rect.y + rect.height;
     if ((x1 < Tree_BorderLeft(tree)) ||

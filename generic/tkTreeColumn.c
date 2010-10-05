@@ -104,8 +104,8 @@ struct TreeColumn_
     int offset;			/* Total width of preceding columns */
     int useWidth;		/* -width, -minwidth, or required+expansion */
     int widthOfItems;		/* width of all TreeItemColumns */
-    int itemBgCount;
-    XColor **itemBgColor;
+    int itemBgCount;		/* -itembackground colors */
+    TreeColor **itemBgColor;	/* -itembackground colors */
     GC bitmapGC;
     TreeColumn prev;
     TreeColumn next;
@@ -1834,7 +1834,8 @@ TreeColumn_Prev(
 
 static void
 Column_FreeColors(
-    XColor **colors,		/* Array of colors. May be NULL. */
+    TreeColumn column,		/* Column token. */
+    TreeColor **colors,		/* Array of colors. May be NULL. */
     int count			/* Number of colors. */
     )
 {
@@ -1845,7 +1846,7 @@ Column_FreeColors(
     }
     for (i = 0; i < count; i++) {
 	if (colors[i] != NULL) {
-	    Tk_FreeColor(colors[i]);
+	    Tree_FreeColor(column->tree, colors[i]);
 	}
     }
     WCFREE(colors, XColor *, count);
@@ -2137,26 +2138,25 @@ Column_Config(
 		} else {
 		    int i, length, listObjc;
 		    Tcl_Obj **listObjv;
-		    XColor **colors;
+		    TreeColor **colors;
 
 		    if (Tcl_ListObjGetElements(tree->interp, column->itemBgObj,
 				&listObjc, &listObjv) != TCL_OK)
 			continue;
-		    colors = (XColor **) ckalloc(sizeof(XColor *) * listObjc);
+		    colors = (TreeColor **) ckalloc(sizeof(TreeColor *) * listObjc);
 		    for (i = 0; i < listObjc; i++)
 			colors[i] = NULL;
 		    for (i = 0; i < listObjc; i++) {
 			/* Can specify "" for tree background */
 			(void) Tcl_GetStringFromObj(listObjv[i], &length);
 			if (length != 0) {
-			    colors[i] = Tk_AllocColorFromObj(tree->interp,
-				    tree->tkwin, listObjv[i]);
+			    colors[i] = Tree_AllocColorFromObj(tree, listObjv[i]);
 			    if (colors[i] == NULL)
 				break;
 			}
 		    }
 		    if (i < listObjc) {
-			Column_FreeColors(colors, listObjc);
+			Column_FreeColors(column, colors, listObjc);
 			continue;
 		    }
 		    column->itemBgColor = colors;
@@ -2174,7 +2174,7 @@ Column_Config(
 		    Tk_FreeImage(saved.image);
 	    }
 	    if (mask & COLU_CONF_ITEMBG)
-		Column_FreeColors(saved.itemBgColor, saved.itemBgCount);
+		Column_FreeColors(column, saved.itemBgColor, saved.itemBgCount);
 	    Tk_FreeSavedOptions(&savedOptions);
 	    break;
 	} else {
@@ -2188,7 +2188,7 @@ Column_Config(
 	    if (maskFree & COLU_CONF_IMAGE)
 		Tk_FreeImage(column->image);
 	    if (maskFree & COLU_CONF_ITEMBG)
-		Column_FreeColors(column->itemBgColor, column->itemBgCount);
+		Column_FreeColors(column, column->itemBgColor, column->itemBgCount);
 
 	    /*
 	     * Restore old values.
@@ -2396,7 +2396,7 @@ Column_Free(
     TreeCtrl *tree = column->tree;
     TreeColumn next = column->next;
 
-    Column_FreeColors(column->itemBgColor, column->itemBgCount);
+    Column_FreeColors(column, column->itemBgColor, column->itemBgCount);
     if (column->bitmapGC != None)
 	Tk_FreeGC(tree->display, column->bitmapGC);
     if (column->image != NULL)
@@ -3424,37 +3424,30 @@ TreeColumn_BackgroundCount(
 /*
  *----------------------------------------------------------------------
  *
- * TreeColumn_BackgroundGC --
+ * TreeColumn_BackgroundColor --
  *
- *	Return a graphics context for one color of the -itembackground
+ *	Return a TreeColor for one color of the -itembackground
  *	config option for a column.
  *
  * Results:
- *	A graphics context, or None.
+ *	A TreeColor, or NULL.
  *
  * Side effects:
- *	Might allocate a new graphics context? But the GC is freed
- *	when the last reference to the color is lost, so the caller
- *	need not worry about it.
+ *	None.
  *
  *----------------------------------------------------------------------
  */
 
-GC
-TreeColumn_BackgroundGC(
+TreeColor *
+TreeColumn_BackgroundColor(
     TreeColumn column,		/* Column token. */
     int index			/* This number is determined by the display
 				 * code. */
     )
 {
-    XColor *color;
-
     if ((index < 0) || (column->itemBgCount == 0))
-	return None;
-    color = column->itemBgColor[index % column->itemBgCount];
-    if (color == NULL)
-	return None;
-    return Tk_GCForColor(color, Tk_WindowId(column->tree->tkwin));
+	return NULL;
+    return column->itemBgColor[index % column->itemBgCount];
 }
 
 /*

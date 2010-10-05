@@ -118,7 +118,7 @@ struct PerStateType
 typedef struct
 {
     XColor *color;
-    double opacity;
+    double opacity; /* UNUSED */
     TreeGradient gradient;
 } TreeColor;
 
@@ -137,6 +137,11 @@ typedef struct
     int x, y;
     int width, height;
 } TreeRectangle;
+
+#define XRectToTreeRect(xr,trp) ((trp)->x=(xr).x, (trp)->y=(xr).y, \
+	    (trp)->width=(xr).width, (trp)->height=(xr).height)
+#define TreeRectToXRect(tr,xrp) ((xrp)->x=(tr).x, (xrp)->y=(tr).y, \
+	    (xrp)->width=(tr).width, (xrp)->height=(tr).height)
 
 typedef struct GCCache GCCache;
 struct GCCache
@@ -783,7 +788,7 @@ MODULE_SCOPE void TreeColumn_StyleDeleted(TreeColumn column_, TreeStyle style);
 MODULE_SCOPE int TreeColumn_Visible(TreeColumn column_);
 MODULE_SCOPE int TreeColumn_Squeeze(TreeColumn column_);
 MODULE_SCOPE int TreeColumn_BackgroundCount(TreeColumn column_);
-MODULE_SCOPE GC TreeColumn_BackgroundGC(TreeColumn column_, int which);
+MODULE_SCOPE TreeColor *TreeColumn_BackgroundColor(TreeColumn column_, int which);
 MODULE_SCOPE void Tree_DrawHeader(TreeCtrl *tree, TreeDrawable td, int x, int y);
 MODULE_SCOPE int TreeColumn_WidthOfItems(TreeColumn column_);
 MODULE_SCOPE void TreeColumn_InvalidateWidth(TreeColumn column_);
@@ -979,7 +984,8 @@ MODULE_SCOPE void Tree_FreeRegion(TreeCtrl *tree, TkRegion region);
 MODULE_SCOPE void Tree_FillRegion(Display *display, Drawable drawable, GC gc, TkRegion rgn);
 MODULE_SCOPE void Tree_OffsetRegion(TkRegion region, int xOffset, int yOffset);
 MODULE_SCOPE void Tree_SetEmptyRegion(TkRegion region);
-MODULE_SCOPE void Tree_SetRectRegion(TkRegion region, XRectangle *rect);
+MODULE_SCOPE void Tree_SetRectRegion(TkRegion region, TreeRectangle *rect);
+MODULE_SCOPE void Tree_GetRegionBounds(TkRegion region, TreeRectangle *rect);
 MODULE_SCOPE void Tree_UnionRegion(TkRegion rgnA, TkRegion rgnB, TkRegion rgnOut);
 MODULE_SCOPE int Tree_ScrollWindow(TreeCtrl *tree, GC gc, int x, int y,
 	int width, int height, int dx, int dy, TkRegion damageRgn);
@@ -1264,3 +1270,6 @@ MODULE_SCOPE void TreeGradient_FillRect(TreeCtrl *tree, TreeDrawable td, TreeGra
 MODULE_SCOPE int TreeDraw_InitInterp(Tcl_Interp *interp);
 
 #endif /* GRADIENT */
+
+MODULE_SCOPE void TreeColor_FillRect(TreeCtrl *tree, TreeDrawable td, TreeColor *tc, TreeRectangle tr);
+

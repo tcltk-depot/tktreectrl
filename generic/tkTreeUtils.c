@@ -1083,7 +1083,7 @@ Tree_SetEmptyRegion(
  *	Set a region to a single rectangle.
  *
  * Results:
- *	None.
+ *	Changes a region.
  *
  * Side effects:
  *	None.
@@ -1094,11 +1094,40 @@ Tree_SetEmptyRegion(
 void
 Tree_SetRectRegion(
     TkRegion region,		/* Region to modify. */
-    XRectangle *rect		/* Rectangle */
+    TreeRectangle *rect		/* Rectangle */
     )
 {
+    XRectangle xr;
     Tree_SetEmptyRegion(region);
-    TkUnionRectWithRegion(rect, region, region);
+    TreeRectToXRect(*rect, &xr);
+    TkUnionRectWithRegion(&xr, region, region);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tree_GetRegionBounds --
+ *
+ *	Return the bounding rectangle of a region.
+ *
+ * Results:
+ *	Result rect is filled in with the bounds of the given region.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tree_GetRegionBounds(
+    TkRegion region,		/* Region to modify. */
+    TreeRectangle *rect		/* Rectangle */
+    )
+{
+    XRectangle xr;
+    TkClipBox(region, &xr);
+    XRectToTreeRect(xr, rect);
 }
 
 /*
@@ -7896,7 +7925,23 @@ static ARGB MakeGDIPlusColor(XColor *xc, double opacity)
 	(BYTE)(((xc)->pixel >> 16) & 0xFF));
 }
 
-/* All this just to fill a rectangle with a gradient. */
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeGradient_FillRect --
+ *
+ *	Paint a rectangle with a gradient using GDI+.
+ *
+ * Results:
+ *	If GDI+ isn't available then fall back to X11.  If the gradient
+ *	has <2 stops then nothing is drawn.
+ *
+ * Side effects:
+ *	Drawing.
+ *
+ *----------------------------------------------------------------------
+ */
+
 void
 TreeGradient_FillRect(
     TreeCtrl *tree,		/* Widget info. */
@@ -7929,8 +7974,18 @@ TreeGradient_FillRect(
     status = DllExports._GdipCreateFromHDC(hDC, &graphics);
     if (status != Ok)
 	goto error1;
-    
+
     rect.X = tr.x, rect.Y = tr.y, rect.Width = tr.width, rect.Height = tr.height;
+
+    /* BUG BUG BUG: A linear gradient brush will *sometimes* wrap when it
+     * shouldn't due to rounding errors or something, resulting in a line
+     * of color2 where color1 starts. The recommended solution is to
+     * make the brush 1-pixel larger on all sides than the area being
+     * painted.  The downside of this is you will lose a bit of the gradient. */
+    if (gradient->vertical)
+	rect.Y -= 1, rect.Height += 1;
+    else
+	rect.X -= 1, rect.Width += 1;
 
     stop = gradient->stopArrPtr->stops[0];
     color1 = MakeGDIPlusColor(stop->color, stop->opacity);
@@ -7962,6 +8017,12 @@ TreeGradient_FillRect(
 	}
     }
 
+    /* BUG BUG BUG: Undo correction from above */
+    if (gradient->vertical)
+	rect.Y += 1, rect.Height -= 1;
+    else
+	rect.X += 1, rect.Width -= 1;
+
     DllExports._GdipFillRectangle(graphics, lineGradient,
 	rect.X, rect.Y, rect.Width, rect.Height);
 
@@ -7986,12 +8047,28 @@ TreeDraw_InitInterp(
     return TCL_OK;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeGradient_FillRect --
+ *
+ *	Paint a rectangle with a gradient.
+ *
+ * Results:
+ *	If the gradient has <2 stops then nothing is drawn.
+ *
+ * Side effects:
+ *	Drawing.
+ *
+ *----------------------------------------------------------------------
+ */
+
 void
 TreeGradient_FillRect(
     TreeCtrl *tree,		/* Widget info. */
-    TreeDrawable td,
+    TreeDrawable td,		/* Where to draw. */
     TreeGradient gradient,	/* Gradient token. */
-    TreeRectangle tr
+    TreeRectangle tr		/* Where to draw. */
     )
 {
     TreeGradient_FillRectX11(tree, td, gradient, tr);
@@ -8004,3 +8081,38 @@ TreeGradient_FillRect(
 #endif /* not WIN32 */
 
 #endif /* GRADIENT */
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeColor_FillRect --
+ *
+ *	Paint a rectangle with a gradient or solid color.
+ *
+ * Results:
+ *	If the gradient has <2 stops then nothing is drawn.
+ *
+ * Side effects:
+ *	Drawing.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TreeColor_FillRect(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeDrawable td,		/* Where to draw. */
+    TreeColor *tc,		/* Color info. */
+    TreeRectangle tr		/* Where to draw. */
+    )
+{
+    if (tc != NULL) {
+	if (tc->gradient != NULL)
+	    TreeGradient_FillRect(tree, td, tc->gradient, tr);
+	if (tc->color != NULL) {
+	    GC gc = Tk_GCForColor(tc->color, td.drawable);
+	    XFillRectangle(tree->display, td.drawable, gc,
+		tr.x, tr.y, tr.width, tr.height);
+	}
+    }
+}

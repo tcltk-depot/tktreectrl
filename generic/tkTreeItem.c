@@ -3702,25 +3702,30 @@ ItemDrawBackground(
     TreeColumn treeColumn,	/* Tree-column token. */
     TreeItem item,		/* Item record. */
     Column *column,		/* First column. */
-    TreeDrawable drawable,	/* Where to draw. */
+    TreeDrawable td,		/* Where to draw. */
     int x, int y,		/* Area of the item to draw. */
     int width, int height,	/* ^ */
     int index			/* Used to select a color from the
 				 * tree-column's -itembackground option. */
     )
 {
-    GC gc = None;
+    TreeColor *tc;
 
-    gc = TreeColumn_BackgroundGC(treeColumn, index);
-    if (gc == None)
-	gc = Tk_3DBorderGC(tree->tkwin, tree->border, TK_3D_FLAT_GC);
     /*
-     * FIXME: If the background image is non-transparent, there is no
-     * need to erase first.
-     */
-    XFillRectangle(tree->display, drawable.drawable, gc, x, y, width, height);
+    * FIXME: If the background image is non-transparent, there is no
+    * need to erase first.
+    */
+    tc = TreeColumn_BackgroundColor(treeColumn, index);
+    if (tc != NULL) {
+	TreeRectangle tr;
+	tr.x = x, tr.y = y, tr.width = width, tr.height = height;
+	TreeColor_FillRect(tree, td, tc, tr);
+    } else {
+	GC gc = Tk_3DBorderGC(tree->tkwin, tree->border, TK_3D_FLAT_GC);
+	XFillRectangle(tree->display, td.drawable, gc, x, y, width, height);
+    }
     if (tree->backgroundImage != NULL) {
-	Tree_DrawTiledImage(tree, drawable.drawable, tree->backgroundImage, x, y, 
+	Tree_DrawTiledImage(tree, td.drawable, tree->backgroundImage, x, y, 
 		x + width, y + height,
 		tree->drawableXOrigin, tree->drawableYOrigin);
     }

@@ -1734,9 +1734,6 @@ TreeDestroy(
     TreeMarquee_Free(tree->marquee);
     TreeDInfo_Free(tree);
     TreeTheme_Free(tree);
-#ifdef GRADIENT
-    TreeGradient_Free(tree);
-#endif
 
     if (tree->copyGC != None)
 	Tk_FreeGC(tree->display, tree->copyGC);
@@ -1775,6 +1772,10 @@ TreeDestroy(
     Tcl_DeleteHashTable(&tree->imageTokenHash);
 
     Tcl_DeleteHashTable(&tree->selection);
+
+#ifdef GRADIENT
+    TreeGradient_Free(tree);
+#endif
 
 #ifdef DEPRECATED
     if (tree->defaultStyle.styles != NULL)
