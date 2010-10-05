@@ -46,6 +46,12 @@ proc DemoOutlookNewsgroup {} {
     # State for a message with unread descendants
     $T state define unread
 
+    # States for "open" rectangles.  This is an ugly hack to get the
+    # active outline to span multiple columns.
+    $T state define openWE
+    $T state define openE
+    $T state define openW
+
     #
     # Create elements
     #
@@ -58,11 +64,13 @@ proc DemoOutlookNewsgroup {} {
 	outlook-unreadSel {selected}
 	outlook-unread {}
     }
+
     $T element create elemTxt text -fill [list $::SystemHighlightText {selected focus}] \
 	-font [list DemoFontBold {read unread !open} DemoFontBold {!read}] -lines 1
-    $T element create sel.e rect -fill [list $::SystemHighlight {selected focus} gray {selected !focus}] -open e -showfocus yes
-    $T element create sel.w rect -fill [list $::SystemHighlight {selected focus} gray {selected !focus}] -open w -showfocus yes
-    $T element create sel.we rect -fill [list $::SystemHighlight {selected focus} gray {selected !focus}] -open we -showfocus yes
+
+    $T element create sel rect \
+	-fill [list $::SystemHighlight {selected focus} gray {selected !focus}] \
+	-open {we openWE e openE w openW} -showfocus yes
 
     #
     # Create styles using the elements
@@ -70,28 +78,22 @@ proc DemoOutlookNewsgroup {} {
 
     # Image + text
     set S [$T style create s1]
-    $T style elements $S {sel.e elemImg elemTxt}
+    $T style elements $S {sel elemImg elemTxt}
     $T style layout $S elemImg -expand ns
     $T style layout $S elemTxt -padx {2 6} -squeeze x -expand ns
-    $T style layout $S sel.e -union [list elemTxt] -iexpand nes -ipadx {2 0}
+    $T style layout $S sel -union [list elemTxt] -iexpand nes -ipadx {2 0}
 
     # Text
-    set S [$T style create s2.we]
-    $T style elements $S {sel.we elemTxt}
+    set S [$T style create s2]
+    $T style elements $S {sel elemTxt}
     $T style layout $S elemTxt -padx 6 -squeeze x -expand ns
-    $T style layout $S sel.we -detach yes -iexpand xy
-
-    # Text
-    set S [$T style create s2.w]
-    $T style elements $S {sel.w elemTxt}
-    $T style layout $S elemTxt -padx 6 -squeeze x -expand ns
-    $T style layout $S sel.w -detach yes -iexpand xy
+    $T style layout $S sel -detach yes -iexpand xy
 
     # Set default item styles
     $T column configure subject -itemstyle s1
-    $T column configure from -itemstyle s2.we
-    $T column configure sent -itemstyle s2.we
-    $T column configure size -itemstyle s2.w
+    $T column configure from -itemstyle s2
+    $T column configure sent -itemstyle s2
+    $T column configure size -itemstyle s2
 
     #
     # Create items and assign styles
@@ -158,6 +160,11 @@ proc DemoOutlookNewsgroup {} {
 
 #		$T item style set $i 3 s1 4 s2.we 5 s2.we 6 s2.w
 	$T item text $itemi subject $subject from $from sent $sent size $size
+
+	$T item state forcolumn $itemi subject openE
+	$T item state forcolumn $itemi from openWE
+	$T item state forcolumn $itemi sent openWE
+	$T item state forcolumn $itemi size openW
     }
 
     # Do something when the selection changes
@@ -444,7 +451,8 @@ proc DemoOutlookNewgroup_FixItemStyles {T} {
 	if {$C in $columns1} {
 	    if {[$T column compare $C > [lindex $columns2 0]] &&
 		[$T column compare $C < [lindex $columns2 end]]} {
-		$T item style set all $C s2.we
+		$T item style set all $C s2
+		$T item state forcolumn all $C {!openW !openE openWE}
 	    } else {
 		$T item style set all $C ""
 	    }
@@ -458,11 +466,15 @@ proc DemoOutlookNewgroup_FixItemStyles {T} {
 	if {$C eq [lindex $columns2 0]} {
 	    $T configure -treecolumn $C
 	    set S s1
+	    set state openE
 	} elseif {$C eq [lindex $columns2 end]} {
-	    set S s2.w
+	    set S s2
+	    set state openW
 	} else {
-	    set S s2.we
+	    set S s2
+	    set state openWE
 	}
+	$T item state forcolumn all $C [list !openWE !openE !openW $state]
 
 	# Change the style, but keep the text so we don't have to reset it.
 	$T item style map all $C $S {elemTxt elemTxt}
