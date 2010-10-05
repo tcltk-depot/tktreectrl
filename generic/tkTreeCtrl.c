@@ -4420,6 +4420,8 @@ Treectrl_Init(
 	return TCL_ERROR;
     }
 
+    (void) TreeDraw_InitInterp(interp);
+
     /* We don't care if this fails. */
     (void) TreeTheme_InitInterp(interp);
 

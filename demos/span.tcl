@@ -48,7 +48,7 @@ proc DemoSpan {} {
 		-stops [list [list 0.0 $color] [list 0.5 $color] [list 1.0 $color2]]
 #		-stops [list [list 0.0 $color] [list 1.0 $color2]]
 	    $T element configure e$i -fill {white mouseover} \
-		-gradient [list "" mouseover g$i {}]
+		-fill [list white mouseover g$i {}]
 	}
 	$T element create t$i text -text "Span $i"
     }

@@ -12,6 +12,7 @@
 
 #ifdef WIN32
 #include "tkWinInt.h"
+#include <gdiplus.h>
 #endif
 
 #if defined(MAC_TK_CARBON)
@@ -3120,7 +3121,7 @@ typedef struct PerStateDataColor PerStateDataColor;
 struct PerStateDataColor
 {
     PerStateData header;
-    XColor *color;
+    TreeColor *color;
 };
 
 static int
@@ -3133,7 +3134,7 @@ PSDColorFromObj(
 	/* Specify empty string to override masterX */
 	pColor->color = NULL;
     } else {
-	pColor->color = Tk_AllocColorFromObj(tree->interp, tree->tkwin, obj);
+	pColor->color = Tree_AllocColorFromObj(tree, obj);
 	if (pColor->color == NULL)
 	    return TCL_ERROR;
     }
@@ -3146,7 +3147,7 @@ PSDColorFree(
     PerStateDataColor *pColor)
 {
     if (pColor->color != NULL)
-	Tk_FreeColor(pColor->color);
+	Tree_FreeColor(tree, pColor->color);
 }
 
 PerStateType pstColor =
@@ -3157,7 +3158,7 @@ PerStateType pstColor =
     (PerStateType_FreeProc) PSDColorFree
 };
 
-XColor *
+TreeColor *
 PerStateColor_ForState(
     TreeCtrl *tree,
     PerStateInfo *pInfo,
@@ -6687,6 +6688,86 @@ PerStateGradient_ForState(
 
 /*****/
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tree_AllocColorFromObj --
+ *
+ *	Allocate a TreeColor structure based on the given object.
+ *
+ * Results:
+ *	A new TreeColor struct or NULL if an error occurred.
+ *
+ * Side effects:
+ *	Memory may be allocated.  If the color refers to a gradient
+ *	its refCount is incremented.
+ *
+ *----------------------------------------------------------------------
+ */
+
+TreeColor *
+Tree_AllocColorFromObj(
+    TreeCtrl *tree,		/* Widget info. */
+    Tcl_Obj *obj		/* Gradient name or Tk color specification */
+    )
+{
+    TreeGradient gradient = NULL;
+    XColor *color = NULL;
+    TreeColor *tc;
+
+    if (TreeGradient_FromObj(tree, obj, &gradient) == TCL_OK) {
+	gradient->refCount++;
+    } else {
+	Tcl_ResetResult(tree->interp);
+	color = Tk_AllocColorFromObj(tree->interp, tree->tkwin, obj);
+	if (color == NULL) {
+	    FormatResult(tree->interp, "unrecognized color or gradient name \"%s\"",
+		Tcl_GetString(obj));
+	    return NULL;
+	}
+    }
+
+    tc = (TreeColor *) ckalloc(sizeof(TreeColor));
+    tc->color = color;
+    tc->gradient = gradient;
+
+    return tc;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tree_FreeColor --
+ *
+ *	Free a TreeColor.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Memory may be freed.  If the color refers to a gradient
+ *	its refCount is decremented.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tree_FreeColor(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeColor *tc		/* Color to free, may be NULL */
+    )
+{
+    if (tc != NULL) {
+	if (tc->color)
+	    Tk_FreeColor(tc->color);
+	if (tc->gradient)
+	   TreeGradient_Release(tree, tc->gradient);
+	WFREE(tc, TreeColor);
+    }
+}
+
+/*****/
+
 /* *** Borrowed some gradient code from TkPath *** */
 
 static GradientStop *
@@ -6725,10 +6806,10 @@ FreeAllStops(GradientStop **stops, int nstops)
     for (i = 0; i < nstops; i++) {
         if (stops[i] != NULL) {
             Tk_FreeColor(stops[i]->color);
-            ckfree((char *) (stops[i]));
+            WFREE(stops[i], GradientStop);
         }
     }
-    ckfree((char *) stops);
+    WCFREE(stops, GradientStop*, nstops);
 }
 
 static void
@@ -6736,7 +6817,7 @@ FreeStopArray(GradientStopArray *stopArrPtr)
 {
     if (stopArrPtr != NULL) {
         FreeAllStops(stopArrPtr->stops, stopArrPtr->nstops);
-        ckfree((char *) stopArrPtr);
+        WFREE(stopArrPtr, GradientStopArray);
     }
 }
 
@@ -7024,11 +7105,13 @@ Gradient_CalcStepColors(
 	GradientStop *stop2 = gradient->stopArrPtr->stops[i+1];
 	step1 = (int)floor(stop1->offset * (gradient->nStepColors));
 	step2 = (int)floor(stop2->offset * (gradient->nStepColors))-1;
-dbwin("CalcStepColors %g -> %g steps=%d-%d\n", stop1->offset,stop2->offset,step1,step2);
+/*dbwin("CalcStepColors %g -> %g steps=%d-%d\n", stop1->offset,stop2->offset,step1,step2);*/
 	CalcStepColors(tree, stop1, stop2, gradient->stepColors+step1, step2-step1+1);
    }
+#ifdef TREECTRL_DEBUG
 if (!sameXColor(gradient->stepColors[0], gradient->stopArrPtr->stops[0]->color)) dbwin("stepColors[0] not same");
 if (!sameXColor(gradient->stepColors[gradient->nStepColors - 1], gradient->stopArrPtr->stops[gradient->stopArrPtr->nstops - 1]->color)) dbwin("stepColors[end-1] not same");
+#endif
 #else
     int i;
     XColor *c1 = gradient->color1, *c2 = gradient->color2;
@@ -7150,7 +7233,7 @@ Gradient_Config(
 		    for (i = 0; i < saved.nStepColors; i++) {
 			Tk_FreeColor(saved.stepColors[i]);
 		    }
-		    ckfree((char *)saved.stepColors);
+		    WCFREE(saved.stepColors, XColor*, saved.nStepColors);
 		}
 	    }
 
@@ -7171,7 +7254,7 @@ Gradient_Config(
 		    for (i = 0; i < gradient->nStepColors; i++) {
 			Tk_FreeColor(gradient->stepColors[i]);
 		    }
-		    ckfree((char *)gradient->stepColors);
+		    WCFREE(gradient->stepColors, XColor*, gradient->nStepColors);
 		}
 	    }
 
@@ -7558,62 +7641,6 @@ TreeGradientCmd(
 /*
  *----------------------------------------------------------------------
  *
- * TreeGradient_FillRect --
- *
- *	Paint a rectangle with a gradient.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Drawing.
- *
- *----------------------------------------------------------------------
- */
-
-void
-TreeGradient_FillRect(
-    TreeCtrl *tree,		/* Widget info. */
-    TreeDrawable td,
-    TreeGradient gradient,	/* Gradient token. */
-    TreeRectangle tr
-    )
-{
-    int x = tr.x, y = tr.y;
-    int width = tr.width, height = tr.height;
-    int i;
-    float delta;
-    GC gc;
-
-    if (tr.height <= 0 || tr.width <= 0 || gradient->nStepColors <= 0)
-	return;
-
-    if (gradient->vertical) {
-	delta = ((float)tr.height) / gradient->nStepColors;
-	for (i = 0; i < gradient->nStepColors; i++) {
-	    float y1 = tr.y + i * delta;
-	    float y2 = tr.y + (i+1) * delta;
-	    height = (int)(ceil(y2) - floor(y1));
-	    gc = Tk_GCForColor(gradient->stepColors[i], Tk_WindowId(tree->tkwin));
-	    XFillRectangle(tree->display, td.drawable, gc,
-		    x, (int)y1, width, height);
-	}
-    } else {
-	delta = ((float)tr.width) / gradient->nStepColors;
-	for (i = 0; i < gradient->nStepColors; i++) {
-	    float x1 = tr.x + i * delta;
-	    float x2 = tr.x + (i+1) * delta;
-	    width = (int)(ceil(x2) - floor(x1));
-	    gc = Tk_GCForColor(gradient->stepColors[i], Tk_WindowId(tree->tkwin));
-	    XFillRectangle(tree->display, td.drawable, gc,
-		    (int)x1, y, width, height);
-	}
-    }
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * TreeGradient_Init --
  *
  *	Gradient-related package initialization.
@@ -7675,5 +7702,305 @@ TreeGradient_Free(
 
     Tcl_DeleteHashTable(&tree->gradientHash);
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeGradient_FillRectX11 --
+ *
+ *	Paint a rectangle with a gradient using XFillRectangle.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Drawing.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TreeGradient_FillRectX11(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeDrawable td,
+    TreeGradient gradient,	/* Gradient token. */
+    TreeRectangle tr
+    )
+{
+    int x = tr.x, y = tr.y;
+    int width = tr.width, height = tr.height;
+    int i;
+    float delta;
+    GC gc;
+
+    if (tr.height <= 0 || tr.width <= 0 || gradient->nStepColors <= 0)
+	return;
+
+    if (gradient->vertical) {
+	delta = ((float)tr.height) / gradient->nStepColors;
+	for (i = 0; i < gradient->nStepColors; i++) {
+	    float y1 = tr.y + i * delta;
+	    float y2 = tr.y + (i+1) * delta;
+	    height = (int)(ceil(y2) - floor(y1));
+	    gc = Tk_GCForColor(gradient->stepColors[i], Tk_WindowId(tree->tkwin));
+	    XFillRectangle(tree->display, td.drawable, gc,
+		    x, (int)y1, width, height);
+	}
+    } else {
+	delta = ((float)tr.width) / gradient->nStepColors;
+	for (i = 0; i < gradient->nStepColors; i++) {
+	    float x1 = tr.x + i * delta;
+	    float x2 = tr.x + (i+1) * delta;
+	    width = (int)(ceil(x2) - floor(x1));
+	    gc = Tk_GCForColor(gradient->stepColors[i], Tk_WindowId(tree->tkwin));
+	    XFillRectangle(tree->display, td.drawable, gc,
+		    (int)x1, y, width, height);
+	}
+    }
+}
+
+#ifdef WIN32
+
+/*
+ * GDI+ flat api
+ */
+
+/* After gdiplus.dll is dynamically loaded, this structure is
+ * filled in with pointers to functions that are used below. */
+static struct
+{
+    HMODULE handle; /* gdiplus.dll */
+
+    VOID* WINGDIPAPI (*_GdipAlloc)(size_t);
+    VOID WINGDIPAPI (*_GdipFree)(VOID*);
+
+    GpStatus WINGDIPAPI (*_GdiplusStartup)(ULONG_PTR*,GDIPCONST GdiplusStartupInput*,GdiplusStartupOutput*);
+    VOID WINGDIPAPI (*_GdiplusShutdown)(ULONG_PTR);
+
+    /* Graphics */
+    GpStatus WINGDIPAPI (*_GdipCreateFromHDC)(HDC,GpGraphics**);
+    GpStatus WINGDIPAPI (*_GdipFillRectangle)(GpGraphics*,GpBrush*,REAL,REAL,REAL,REAL);
+    GpStatus WINGDIPAPI (*_GdipDeleteGraphics)(GpGraphics*);
+
+    /* Linear Gradient*/
+    GpStatus WINGDIPAPI (*_GdipCreateLineBrushFromRectI)(GDIPCONST GpRect*,ARGB,ARGB,LinearGradientMode,GpWrapMode,GpLineGradient**);
+    GpStatus WINGDIPAPI (*_GdipSetLinePresetBlend)(GpLineGradient*,GDIPCONST ARGB*,GDIPCONST REAL*,INT);
+    GpStatus WINGDIPAPI (*_GdipDeleteBrush)(GpBrush*);
+} DllExports = {0};
+
+/* Per-application global data */
+typedef struct
+{
+    ULONG_PTR token;			/* Result of GdiplusStartup() */
+    GdiplusStartupOutput output;	/* Result of GdiplusStartup() */
+} TreeDrawAppData;
+
+static TreeDrawAppData *appDrawData = NULL;
+
+/* Linked to ::TreeCtrl::gdiplus in each interpreter */
+static int gUseGdiPlus = 1;
+
+/* Tcl_CreateExitHandler() callback that shuts down GDI+ */
+static void
+TreeDraw_ExitHandler(
+    ClientData clientData
+    )
+{
+    if (appDrawData != NULL) {
+	if (DllExports.handle != NULL)
+	    DllExports._GdiplusShutdown(appDrawData->token);
+    }
+}
+
+/* Load gdiplus.dll (if it exists) and fill in the DllExports global */
+/* If gdiplus.dll can't be loaded DllExports.handle is set to NULL which
+ * should be used to test whether GDI+ can be used. */
+static int
+LoadGdiplus(void)
+{
+    DllExports.handle = LoadLibrary("gdiplus.dll");
+    if (DllExports.handle != NULL) {
+#define LOADPROC(name) \
+	(0 != (DllExports._ ## name = (VOID *)GetProcAddress(DllExports.handle, #name) ))
+	if (   LOADPROC(GdipAlloc)
+	    && LOADPROC(GdipFree)
+	    && LOADPROC(GdiplusStartup)
+	    && LOADPROC(GdiplusShutdown)
+	    && LOADPROC(GdipCreateFromHDC)
+	    && LOADPROC(GdipFillRectangle)
+	    && LOADPROC(GdipDeleteGraphics)
+	    && LOADPROC(GdipCreateLineBrushFromRectI)
+	    && LOADPROC(GdipSetLinePresetBlend)
+	    && LOADPROC(GdipDeleteBrush)
+	) {
+	    return 1;
+	}
+#undef LOADPROC
+    }
+    DllExports.handle = NULL;
+    return 0;
+}
+
+/* Per-interp init */
+int
+TreeDraw_InitInterp(
+    Tcl_Interp *interp
+    )
+{
+    /* This is done once per-application */
+    if (appDrawData == NULL) {
+	appDrawData = (TreeDrawAppData *) ckalloc(sizeof(TreeDrawAppData));
+	memset(appDrawData, '\0', sizeof(TreeDrawAppData));
+	if (LoadGdiplus()) {
+	    GdiplusStartupInput input;
+	    GpStatus status;
+	    input.GdiplusVersion = 1;
+	    input.DebugEventCallback = NULL;
+	    input.SuppressBackgroundThread = FALSE;
+	    input.SuppressExternalCodecs = FALSE;
+	    /* Not sure what happens when the main application or other
+	     * DLLs also call this, probably its okay. */
+	    status = DllExports._GdiplusStartup(&appDrawData->token, &input,
+		&appDrawData->output);
+	    if (status != Ok) {
+		DllExports.handle = NULL;
+	    }
+	}
+	Tcl_CreateExitHandler(TreeDraw_ExitHandler, NULL);
+    }
+
+    if (Tcl_CreateNamespace(interp, "::TreeCtrl", NULL, NULL) == NULL) {
+	Tcl_ResetResult(interp);
+    }
+    if (Tcl_LinkVar(interp, "::TreeCtrl::gdiplus",
+	(char *) &gUseGdiPlus, TCL_LINK_BOOLEAN) != TCL_OK) {
+	Tcl_ResetResult(interp);
+    }
+
+    return TCL_OK;
+}
+
+/* ARGB is a DWORD color used by GDI+ */
+static ARGB MakeARGB(BYTE a, BYTE r, BYTE g, BYTE b)
+{
+    return (ARGB) ((((DWORD) a) << 24) | (((DWORD) r) << 16)
+		 | (((DWORD) g) << 8) | ((DWORD) b));
+}
+
+static ARGB MakeGDIPlusColor(XColor *xc, double opacity)
+{
+    return MakeARGB(
+	(BYTE)(opacity*255),
+	(BYTE)((xc)->pixel & 0xFF),
+	(BYTE)(((xc)->pixel >> 8) & 0xFF),
+	(BYTE)(((xc)->pixel >> 16) & 0xFF));
+}
+
+/* All this just to fill a rectangle with a gradient. */
+void
+TreeGradient_FillRect(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeDrawable td,		/* Where to draw. */
+    TreeGradient gradient,	/* Gradient token. */
+    TreeRectangle tr		/* Where to draw. */
+    )
+{
+    HDC hDC;
+    TkWinDCState dcState;
+    GpGraphics *graphics;
+    GpLineGradient *lineGradient = NULL;
+    Status status;
+    Rect rect;
+    GradientStop *stop;
+    int i, nstops;
+    ARGB color1, color2;
+
+    if (!gUseGdiPlus || (DllExports.handle == NULL)) {
+	TreeGradient_FillRectX11(tree,td,gradient,tr);
+	return;
+    }
+
+    nstops = gradient->stopArrPtr->nstops;
+    if (nstops < 2) /* can be 0, but < 2 isn't allowed */
+	return;
+
+    hDC = TkWinGetDrawableDC(tree->display, td.drawable, &dcState);
+
+    status = DllExports._GdipCreateFromHDC(hDC, &graphics);
+    if (status != Ok)
+	goto error1;
+    
+    rect.X = tr.x, rect.Y = tr.y, rect.Width = tr.width, rect.Height = tr.height;
+
+    stop = gradient->stopArrPtr->stops[0];
+    color1 = MakeGDIPlusColor(stop->color, stop->opacity);
+    stop = gradient->stopArrPtr->stops[nstops-1];
+    color2 = MakeGDIPlusColor(stop->color, stop->opacity);
+
+    status = DllExports._GdipCreateLineBrushFromRectI(
+	&rect, color1, color2,
+	gradient->vertical ? LinearGradientModeVertical : LinearGradientModeHorizontal,
+	WrapModeTile, &lineGradient);
+    if (status != Ok)
+	goto error2;
+
+    if (nstops > 2) {
+	ARGB *col = DllExports._GdipAlloc(nstops * sizeof(ARGB));
+	if (col != NULL) {
+	    REAL *pos = DllExports._GdipAlloc(nstops * sizeof(REAL));
+	    if (pos != NULL) {
+		for (i = 0; i < nstops; i++) {
+		    stop = gradient->stopArrPtr->stops[i];
+		    col[i] = MakeGDIPlusColor(stop->color, stop->opacity);
+		    pos[i] = (REAL)stop->offset;
+		}
+		status = DllExports._GdipSetLinePresetBlend(lineGradient,
+		    col, pos, nstops);
+		DllExports._GdipFree((void*) pos);
+	    }
+	    DllExports._GdipFree((void*) col);
+	}
+    }
+
+    DllExports._GdipFillRectangle(graphics, lineGradient,
+	rect.X, rect.Y, rect.Width, rect.Height);
+
+    DllExports._GdipDeleteBrush(lineGradient);
+
+error2:
+    DllExports._GdipDeleteGraphics(graphics);
+
+error1:
+    TkWinReleaseDrawableDC(td.drawable, hDC, &dcState);
+
+    if (status != Ok) dbwin("TreeGradient_FillRect gdiplus status != Ok");
+}
+
+#else /* WIN32 */
+
+int
+TreeDraw_InitInterp(
+    Tcl_Interp *interp
+    )
+{
+    return TCL_OK;
+}
+
+void
+TreeGradient_FillRect(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeDrawable td,
+    TreeGradient gradient,	/* Gradient token. */
+    TreeRectangle tr
+    )
+{
+    TreeGradient_FillRectX11(tree, td, gradient, tr);
+
+    /* FIXME: MacOSX can handle gradient rects no problem (see TkPath) */
+
+    /* FIXME: Can use 'cairo' on Unix, but need to add it to configure + Make */
+}
+
+#endif /* not WIN32 */
 
 #endif /* GRADIENT */

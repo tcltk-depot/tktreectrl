@@ -117,6 +117,16 @@ struct PerStateType
 
 typedef struct
 {
+    XColor *color;
+    double opacity;
+    TreeGradient gradient;
+} TreeColor;
+
+#define TREECOLOR_CMP2(a,b) (((a)->color!=(b)->color)||((a)->gradient!=(b)->gradient))
+#define TREECOLOR_CMP(a,b) ((!(a)!=!(b))||(((a)&&(b))&&TREECOLOR_CMP2(a,b)))
+
+typedef struct
+{
     Drawable drawable;
     int width;
     int height;
@@ -1036,7 +1046,7 @@ MODULE_SCOPE int PerStateBoolean_ForState(TreeCtrl *tree, PerStateInfo *pInfo,
     int state, int *match);
 MODULE_SCOPE Tk_3DBorder PerStateBorder_ForState(TreeCtrl *tree, PerStateInfo *pInfo,
     int state, int *match);
-MODULE_SCOPE XColor *PerStateColor_ForState(TreeCtrl *tree, PerStateInfo *pInfo,
+MODULE_SCOPE TreeColor *PerStateColor_ForState(TreeCtrl *tree, PerStateInfo *pInfo,
     int state, int *match);
 MODULE_SCOPE int PerStateFlags_ForState(TreeCtrl *tree, PerStateInfo *pInfo,
     int state, int *match);
@@ -1199,6 +1209,9 @@ MODULE_SCOPE Tk_ObjCustomOption TreeCtrlCO_style;
     if (P != P2) \
 	ckfree((char *) P)
 
+MODULE_SCOPE TreeColor *Tree_AllocColorFromObj(TreeCtrl *tree, Tcl_Obj *obj);
+MODULE_SCOPE void Tree_FreeColor(TreeCtrl *tree, TreeColor *tc);
+
 #ifdef GRADIENT
 
 #define pstGradient TreeCtrl_pstGradient
@@ -1247,5 +1260,7 @@ MODULE_SCOPE int TreeGradientCmd(ClientData clientData, Tcl_Interp *interp, int 
 MODULE_SCOPE int TreeGradient_FromObj(TreeCtrl *tree, Tcl_Obj *objPtr, TreeGradient *gradientPtr);
 MODULE_SCOPE void TreeGradient_Release(TreeCtrl *tree, TreeGradient gradient);
 MODULE_SCOPE void TreeGradient_FillRect(TreeCtrl *tree, TreeDrawable td, TreeGradient gradient, TreeRectangle tr);
+
+MODULE_SCOPE int TreeDraw_InitInterp(Tcl_Interp *interp);
 
 #endif /* GRADIENT */

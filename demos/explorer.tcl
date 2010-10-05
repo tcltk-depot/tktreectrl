@@ -718,6 +718,9 @@ proc DemoExplorerDetailsWin7 {} {
     $T gradient create G_selected        -steps $steps -stops {{0.0 #ebf4fe} {1.0 #cfe4fe}} -orient vertical
     $T gradient create G_focusout        -steps $steps -stops {{0.0 #f8f8f8} {1.0 #e5e5e5}} -orient vertical
 
+    # With gdiplus this gives similar results
+    # $T gradient configure G_mouseover -stops {{0.0 SystemHighlight 0.0} {1.0 SystemHighlight 0.1}} -orient vertical
+
     #
     # Create elements
     #
@@ -738,7 +741,7 @@ proc DemoExplorerDetailsWin7 {} {
     $T state define openWE
 
     $T element create elemRectGradient rect \
-	-gradient [list G_selected_active {selected mouseover} \
+	-fill [list	G_selected_active {selected mouseover} \
 			G_focusout {selected !focus} \
 			G_selected_active {selected active} \
 			G_selected selected \
@@ -803,7 +806,7 @@ proc DemoExplorerDetailsWin7 {} {
 	{name styName elemImg txtName}
     }
 
-    # During editing, hide the text and selection-rectangle elements.
+    # During editing, hide the text
     $T state define edit
     $T style layout styName txtName -draw {no edit}
     $T notify bind $T <Edit-begin> {
