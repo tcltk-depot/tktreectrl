@@ -96,7 +96,8 @@ struct IStyle
 #define ELF_EXPAND_S (ELF_eEXPAND_S | ELF_iEXPAND_S)
 #define ELF_STICKY (ELF_STICKY_W | ELF_STICKY_N | ELF_STICKY_E | ELF_STICKY_S)
 
-#define DETACH_OR_UNION(e) (((e)->onion != NULL) || ((e)->flags & ELF_DETACH))
+#define IS_UNION(e) ((e)->onion != NULL)
+#define DETACH_OR_UNION(e) (IS_UNION(e) || ((e)->flags & ELF_DETACH))
 
 /*
  * An array of these is kept for each master style, one per element.
@@ -172,6 +173,10 @@ struct Layout
     int uPadY[2];	/* padding due to -union */
     int temp;
     int visible;	/* TRUE if the element should be displayed. */
+    int unionFirst, unionLast; /* First and last visible elements in this
+				* element's -union */
+    int unionParent;	/* TRUE if this element is in one or more element's
+			 * -union */
 };
 
 #define IS_HIDDEN(L) ((L)->visible == 0)
@@ -520,6 +525,483 @@ Element_NeededSize(
 /*
  *----------------------------------------------------------------------
  *
+ * Layout_CalcVisibility --
+ *
+ *	Recursively calculate the visibility of each element.
+ *
+ * Results:
+ *	Layout.visible is set for each element if it wasn't done
+ *	already.  For -union elements the first and last visible
+ *	elements in the union are determined.  If there are no
+ *	visible elements in the union then the union element
+ *	itself is marked 'not visible'.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+Layout_CalcVisibility(
+    TreeCtrl *tree,
+    int state,
+    MStyle *masterStyle,
+    struct Layout layouts[],
+    int iElem
+    )
+{
+    struct Layout *layout = &layouts[iElem];
+    MElementLink *eLink = &masterStyle->elements[iElem];
+    int i, visible = 0;
+
+    if (layout->temp != 0)
+	return; /* Already did this one */
+    layout->temp = 1;
+
+    layout->visible = PerStateBoolean_ForState(tree, &eLink->visible,
+	state, NULL) != 0;
+
+    if (IS_HIDDEN(layout) || !IS_UNION(eLink))
+	return;
+
+    /* Remember the first and last visible elements surrounded by
+     * this -union element. */
+    layout->unionFirst = layout->unionLast = -1;
+
+    for (i = 0; i < eLink->onionCount; i++) {
+	struct Layout *layout2 = &layouts[eLink->onion[i]];
+	Layout_CalcVisibility(tree, state, masterStyle, layouts, eLink->onion[i]);
+	if (!IS_HIDDEN(layout2)) {
+	    if (layout->unionFirst == -1)
+		layout->unionFirst = eLink->onion[i];
+	    layout->unionLast =  eLink->onion[i];
+	    visible++;
+	}
+    }
+
+    /* If there are no visible elements surrounded by this -union
+     * element, then hide it. */
+    if (visible == 0)
+	layout->visible = 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Layout_AddUnionPadding --
+ *
+ *	Recursively determine the amount of -union padding around
+ *	each element that is part of a -union.
+ *
+ * Results:
+ *	If the element isn't a -union element itself then the
+ *	Layout.uPadX and Layout.uPadY fields are updated.
+ *	If the element is a -union element itself then its padding
+ *	is added to the total padding and passed on to its -union
+ *	elements recursively.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+Layout_AddUnionPadding(
+    MStyle *masterStyle,		/* Style being layed out. */
+    struct Layout layouts[],		/* Layout info for every element. */
+    int iElemParent,			/* Whose -union iElem is in. */
+    int iElem,				/* The element to update. */
+    const int totalPadX[2],		/* The cumulative padding around */
+    const int totalPadY[2]		/* iElemParent plus the -ipad */
+					/* padding of iElemParent itself. */
+    )
+{
+    struct Layout *layoutP = &layouts[iElemParent];
+    struct Layout *layout = &layouts[iElem];
+    MElementLink *eLink = &masterStyle->elements[iElem];
+    int *ePadX, *ePadY, *iPadX, *iPadY, *uPadX, *uPadY;
+    int padX[2], padY[2];
+    int i;
+
+#ifdef TREECTRL_DEBUG
+    if (IS_HIDDEN(layoutP) || IS_HIDDEN(layout))
+	panic("Layout_AddUnionPadding: element is hidden");
+#endif
+
+    uPadX = layout->uPadX;
+    uPadY = layout->uPadY;
+
+    if (masterStyle->vertical) {
+	uPadX[PAD_TOP_LEFT] = MAX(uPadX[PAD_TOP_LEFT], totalPadX[PAD_TOP_LEFT]);
+	uPadX[PAD_BOTTOM_RIGHT] = MAX(uPadX[PAD_BOTTOM_RIGHT], totalPadX[PAD_BOTTOM_RIGHT]);
+	if (iElem == layoutP->unionFirst) /* topmost */
+	    uPadY[PAD_TOP_LEFT] = MAX(uPadY[PAD_TOP_LEFT], totalPadY[PAD_TOP_LEFT]);
+	if (iElem == layoutP->unionLast) /* bottommost */
+	    uPadY[PAD_BOTTOM_RIGHT] = MAX(uPadY[PAD_BOTTOM_RIGHT], totalPadY[PAD_BOTTOM_RIGHT]);
+    } else {
+	if (iElem == layoutP->unionFirst) /* leftmost */
+	    uPadX[PAD_TOP_LEFT] = MAX(uPadX[PAD_TOP_LEFT], totalPadX[PAD_TOP_LEFT]);
+	if (iElem == layoutP->unionLast) /* rightmost */
+	    uPadX[PAD_BOTTOM_RIGHT] = MAX(uPadX[PAD_BOTTOM_RIGHT], totalPadX[PAD_BOTTOM_RIGHT]);
+	uPadY[PAD_TOP_LEFT] = MAX(uPadY[PAD_TOP_LEFT], totalPadY[PAD_TOP_LEFT]);
+	uPadY[PAD_BOTTOM_RIGHT] = MAX(uPadY[PAD_BOTTOM_RIGHT], totalPadY[PAD_BOTTOM_RIGHT]);
+    }
+
+    if (!IS_UNION(eLink)){
+	return;
+    }
+
+    ePadX = layout->ePadX;
+    ePadY = layout->ePadY;
+    iPadX = layout->iPadX;
+    iPadY = layout->iPadY;
+
+    for (i = 0; i < 2; i++) {
+	padX[i] = MAX(totalPadX[i], ePadX[i]) + iPadX[i];
+	padY[i] = MAX(totalPadY[i], ePadY[i]) + iPadY[i];
+    }
+    for (i = 0; i < eLink->onionCount; i++) {
+	struct Layout *layout2 = &layouts[eLink->onion[i]];
+	if (IS_HIDDEN(layout2))
+	    continue;
+	Layout_AddUnionPadding(masterStyle, layouts, iElem, eLink->onion[i],
+	    padX, padY);
+    }
+}
+
+    /* Expand -union elements if needed: horizontal. */
+    /* Expansion of "-union" elements is different than non-"-union" elements.
+     * Expanding a -union element never changes the size or position of any
+     * element other than the -union element itself. */
+static void
+Layout_ExpandUnionH(
+    StyleDrawArgs *drawArgs,		/* Various args. */
+    MStyle *masterStyle,		/* Style being layed out. */
+    struct Layout layouts[],		/* Layout info for every element. */
+    int iElem				/* The element to update. */
+    )
+{
+    struct Layout *layout = &layouts[iElem];
+    MElementLink *eLink1 = &masterStyle->elements[iElem];
+    int *ePadX, *iPadX, *uPadX;
+    int extraWidth, x;
+
+#ifdef TREECTRL_DEBUG
+    if (IS_HIDDEN(layout))
+	panic("Layout_ExpandUnionH: element is hidden");
+    if (!IS_UNION(eLink1))
+	panic("Layout_ExpandUnionH: element is !union");
+#endif
+
+    if (!(eLink1->flags & ELF_EXPAND_WE))
+	return;
+
+    if (drawArgs->width - (layout->eWidth + drawArgs->indent) <= 0)
+	return;
+
+    ePadX = layout->ePadX;
+    iPadX = layout->iPadX;
+    uPadX = layout->uPadX;
+
+    x = layout->x + ePadX[PAD_TOP_LEFT] - MAX(ePadX[PAD_TOP_LEFT], uPadX[PAD_TOP_LEFT]);
+    extraWidth = x - drawArgs->indent;
+    if ((extraWidth > 0) && (eLink1->flags & ELF_EXPAND_W)) {
+
+	/* External and internal expansion: W */
+	if ((eLink1->flags & ELF_EXPAND_W) == ELF_EXPAND_W) {
+	    int eExtra = extraWidth / 2;
+	    int iExtra = extraWidth - extraWidth / 2;
+
+	    layout->x = drawArgs->indent + uPadX[PAD_TOP_LEFT];
+
+	    /* External expansion */
+	    ePadX[PAD_TOP_LEFT] += eExtra;
+	    layout->eWidth += extraWidth;
+
+	    /* Internal expansion */
+	    iPadX[PAD_TOP_LEFT] += iExtra;
+	    layout->iWidth += iExtra;
+	}
+
+	/* External expansion only: W */
+	else if (eLink1->flags & ELF_eEXPAND_W) {
+	    ePadX[PAD_TOP_LEFT] += extraWidth;
+	    layout->x = drawArgs->indent + uPadX[PAD_TOP_LEFT];
+	    layout->eWidth += extraWidth;
+	}
+
+	/* Internal expansion only: W */
+	else {
+	    iPadX[PAD_TOP_LEFT] += extraWidth;
+	    layout->x = drawArgs->indent + uPadX[PAD_TOP_LEFT];
+	    layout->iWidth += extraWidth;
+	    layout->eWidth += extraWidth;
+	}
+    }
+
+    x = layout->x + layout->eWidth - ePadX[PAD_BOTTOM_RIGHT] + MAX(ePadX[PAD_BOTTOM_RIGHT], uPadX[PAD_BOTTOM_RIGHT]);
+    extraWidth = drawArgs->width - x;
+    if ((extraWidth > 0) && (eLink1->flags & ELF_EXPAND_E)) {
+
+	/* External and internal expansion: E */
+	if ((eLink1->flags & ELF_EXPAND_E) == ELF_EXPAND_E) {
+	    int eExtra = extraWidth / 2;
+	    int iExtra = extraWidth - extraWidth / 2;
+
+	    /* External expansion */
+	    ePadX[PAD_BOTTOM_RIGHT] += eExtra;
+	    layout->eWidth += extraWidth; /* all the space */
+
+	    /* Internal expansion */
+	    iPadX[PAD_BOTTOM_RIGHT] += iExtra;
+	    layout->iWidth += iExtra;
+	}
+
+	/* External expansion only: E */
+	else if (eLink1->flags & ELF_eEXPAND_E) {
+	    ePadX[PAD_BOTTOM_RIGHT] += extraWidth;
+	    layout->eWidth += extraWidth;
+	}
+
+	/* Internal expansion only: E */
+	else {
+	    iPadX[PAD_BOTTOM_RIGHT] += extraWidth;
+	    layout->iWidth += extraWidth;
+	    layout->eWidth += extraWidth;
+	}
+    }
+}
+
+/* Expand -union elements if needed: vertical */
+static void
+Layout_ExpandUnionV(
+    StyleDrawArgs *drawArgs,		/* Various args. */
+    MStyle *masterStyle,		/* Style being layed out. */
+    struct Layout layouts[],		/* Layout info for every element. */
+    int iElem				/* The element to update. */
+    )
+{
+    struct Layout *layout = &layouts[iElem];
+    MElementLink *eLink1 = &masterStyle->elements[iElem];
+    int *ePadY, *iPadY, *uPadY;
+    int extraHeight, y;
+
+#ifdef TREECTRL_DEBUG
+    if (IS_HIDDEN(layout))
+	panic("Layout_ExpandUnionH: element is hidden");
+    if (!IS_UNION(eLink1))
+	panic("Layout_ExpandUnionH: element is !union");
+#endif
+
+    if (!(eLink1->flags & ELF_EXPAND_NS))
+	return;
+
+    if (drawArgs->height - layout->eHeight <= 0)
+	return;
+
+    ePadY = layout->ePadY;
+    iPadY = layout->iPadY;
+    uPadY = layout->uPadY;
+
+    y = layout->y + ePadY[PAD_TOP_LEFT] - MAX(ePadY[PAD_TOP_LEFT], uPadY[PAD_TOP_LEFT]);
+    extraHeight = y;
+    if ((extraHeight > 0) && (eLink1->flags & ELF_EXPAND_N)) {
+
+	/* External and internal expansion: N */
+	if ((eLink1->flags & ELF_EXPAND_N) == ELF_EXPAND_N) {
+	    int eExtra = extraHeight / 2;
+	    int iExtra = extraHeight - extraHeight / 2;
+
+	    /* External expansion */
+	    ePadY[PAD_TOP_LEFT] += eExtra;
+	    layout->y = uPadY[PAD_TOP_LEFT];
+	    layout->eHeight += extraHeight;
+
+	    /* Internal expansion */
+	    iPadY[PAD_TOP_LEFT] += iExtra;
+	    layout->iHeight += iExtra;
+	}
+
+	/* External expansion only: N */
+	else if (eLink1->flags & ELF_eEXPAND_N) {
+	    ePadY[PAD_TOP_LEFT] += extraHeight;
+	    layout->y = uPadY[PAD_TOP_LEFT];
+	    layout->eHeight += extraHeight;
+	}
+
+	/* Internal expansion only: N */
+	else {
+	    iPadY[PAD_TOP_LEFT] += extraHeight;
+	    layout->y = uPadY[PAD_TOP_LEFT];
+	    layout->iHeight += extraHeight;
+	    layout->eHeight += extraHeight;
+	}
+    }
+
+    y = layout->y + layout->eHeight - ePadY[PAD_BOTTOM_RIGHT] + MAX(ePadY[PAD_BOTTOM_RIGHT], uPadY[PAD_BOTTOM_RIGHT]);
+    extraHeight = drawArgs->height - y;
+    if ((extraHeight > 0) && (eLink1->flags & ELF_EXPAND_S)) {
+
+	/* External and internal expansion: S */
+	if ((eLink1->flags & ELF_EXPAND_S) == ELF_EXPAND_S) {
+	    int eExtra = extraHeight / 2;
+	    int iExtra = extraHeight - extraHeight / 2;
+
+	    /* External expansion */
+	    ePadY[PAD_BOTTOM_RIGHT] += eExtra;
+	    layout->eHeight += extraHeight; /* all the space */
+
+	    /* Internal expansion */
+	    iPadY[PAD_BOTTOM_RIGHT] += iExtra;
+	    layout->iHeight += iExtra;
+	}
+
+	/* External expansion only: S */
+	else if (eLink1->flags & ELF_eEXPAND_S) {
+	    ePadY[PAD_BOTTOM_RIGHT] += extraHeight;
+	    layout->eHeight += extraHeight;
+	}
+
+	/* Internal expansion only */
+	else {
+	    iPadY[PAD_BOTTOM_RIGHT] += extraHeight;
+	    layout->iHeight += extraHeight;
+	    layout->eHeight += extraHeight;
+	}
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Layout_CalcUnionLayoutH --
+ *
+ *	Recursively calculate the horizontal size and position of
+ *	a -union element.
+ *
+ * Results:
+ *	The Layout record for the element is updated by getting the
+ *	horizontal bounds of each element in its -union (after they
+ *	have their size and position calculated). Then expansion
+ *	is performed.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+Layout_CalcUnionLayoutH(
+    StyleDrawArgs *drawArgs,		/* Various args. */
+    MStyle *masterStyle,		/* Style being layed out. */
+    struct Layout layouts[],		/* Layout info for every element. */
+    int iElem				/* The element to update. */
+    )
+{
+    struct Layout *layout = &layouts[iElem];
+    MElementLink *eLink = &masterStyle->elements[iElem];
+    int *ePadX, *iPadX;
+    int i, w, e;
+
+#ifdef TREECTRL_DEBUG
+    if (IS_HIDDEN(layout))
+	panic("Layout_CalcUnionLayoutH: element is hidden");
+#endif
+
+    if (!IS_UNION(eLink))
+	return;
+
+    w = 1000000, e = -1000000;
+
+    for (i = 0; i < eLink->onionCount; i++) {
+	struct Layout *layout2 = &layouts[eLink->onion[i]];
+	if (IS_HIDDEN(layout2))
+	    continue;
+	Layout_CalcUnionLayoutH(drawArgs, masterStyle, layouts, eLink->onion[i]);
+	w = MIN(w, layout2->x + layout2->ePadX[PAD_TOP_LEFT]);
+	e = MAX(e, layout2->x + layout2->ePadX[PAD_TOP_LEFT] + layout2->iWidth);
+    }
+
+    ePadX = layout->ePadX;
+    iPadX = layout->iPadX;
+
+    layout->x = w - iPadX[PAD_TOP_LEFT] - ePadX[PAD_TOP_LEFT];
+    layout->useWidth = (e - w);
+    layout->iWidth = iPadX[PAD_TOP_LEFT] + layout->useWidth + iPadX[PAD_BOTTOM_RIGHT];
+    layout->eWidth = ePadX[PAD_TOP_LEFT] + layout->iWidth + ePadX[PAD_BOTTOM_RIGHT];
+
+    Layout_ExpandUnionH(drawArgs, masterStyle, layouts, iElem);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Layout_CalcUnionLayoutV --
+ *
+ *	Recursively calculate the vertical size and position of
+ *	a -union element.
+ *
+ * Results:
+ *	The Layout record for the element is updated by getting the
+ *	vertical bounds of each element in its -union (after they
+ *	have their size and position calculated). Then expansion
+ *	is performed.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+Layout_CalcUnionLayoutV(
+    StyleDrawArgs *drawArgs,		/* Various args. */
+    MStyle *masterStyle,
+    struct Layout layouts[],
+    int iElem
+    )
+{
+    struct Layout *layout = &layouts[iElem];
+    MElementLink *eLink = &masterStyle->elements[iElem];
+    int *ePadY, *iPadY;
+    int i, n, s;
+
+#ifdef TREECTRL_DEBUG
+    if (IS_HIDDEN(layout))
+	panic("Layout_CalcUnionLayoutV: element is hidden");
+#endif
+
+    if (!IS_UNION(eLink))
+	return;
+
+    n = 1000000, s = -1000000;
+
+    for (i = 0; i < eLink->onionCount; i++) {
+	struct Layout *layout2 = &layouts[eLink->onion[i]];
+	if (IS_HIDDEN(layout2))
+	    continue;
+	Layout_CalcUnionLayoutV(drawArgs, masterStyle, layouts, eLink->onion[i]);
+	n = MIN(n, layout2->y + layout2->ePadY[PAD_TOP_LEFT]);
+	s = MAX(s, layout2->y + layout2->ePadY[PAD_TOP_LEFT] + layout2->iHeight);
+    }
+
+    ePadY = layout->ePadY;
+    iPadY = layout->iPadY;
+
+    layout->y = n - iPadY[PAD_TOP_LEFT] - ePadY[PAD_TOP_LEFT];
+    layout->useHeight = (s - n);
+    layout->iHeight = iPadY[PAD_TOP_LEFT] + layout->useHeight + iPadY[PAD_BOTTOM_RIGHT];
+    layout->eHeight = ePadY[PAD_TOP_LEFT] + layout->iHeight + ePadY[PAD_BOTTOM_RIGHT];
+
+    Layout_ExpandUnionV(drawArgs, masterStyle, layouts, iElem);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Style_DoLayoutH --
  *
  *	Calculate the horizontal size and position of each element.
@@ -548,8 +1030,7 @@ Style_DoLayoutH(
     MElementLink *eLinks1, *eLink1;
     IElementLink *eLinks2, *eLink2;
     int x = drawArgs->indent;
-    int w, e;
-    int *ePadX, *iPadX, *uPadX, *ePadY, *iPadY, *uPadY;
+    int *ePadX, *iPadX, *uPadX, *ePadY, *iPadY;
     int numExpandWE = 0;
     int numSqueezeX = 0;
     int i, j, eLinkCount = 0;
@@ -561,20 +1042,38 @@ Style_DoLayoutH(
 
     for (i = 0; i < eLinkCount; i++) {
 	struct Layout *layout = &layouts[i];
+	layout->unionParent = 0;
+	layout->temp = 0; /* see Layout_CalcVisibility */
+    }
+
+    for (i = 0; i < eLinkCount; i++) {
+	Layout_CalcVisibility(drawArgs->tree, drawArgs->state, masterStyle,
+	    layouts, i);
+    }
+
+    for (i = 0; i < eLinkCount; i++) {
+	struct Layout *layout = &layouts[i];
+
+	if (IS_HIDDEN(layout))
+	    continue;
 
 	eLink1 = &eLinks1[i];
 	eLink2 = &eLinks2[i];
 
-	layout->visible = PerStateBoolean_ForState(drawArgs->tree,
-		&eLink1->visible, drawArgs->state, NULL) != 0;
-	if (IS_HIDDEN(layout))
-	    continue;
+	if (IS_UNION(eLink1)) {
+	    for (j = 0; j < eLink1->onionCount; j++) {
+		struct Layout *layout2 = &layouts[eLink1->onion[j]];
+		if (!IS_HIDDEN(layout2)) {
+		    layout2->unionParent = 1;
+		}
+	    }
+	}
 
 	layout->eLink = eLink2;
 	layout->master = eLink1;
 
 	/* Width before squeezing/expanding */
-	if (eLink1->onion != NULL) {
+	if (IS_UNION(eLink1)) {
 	    layout->useWidth = 0;
 	} else {
 #ifdef CACHE_ELEM_SIZE
@@ -605,68 +1104,47 @@ Style_DoLayoutH(
 	    numSqueezeX++;
     }
 
+    /*
+    e1 {
+	e2 <----------
+	e3 {
+	    e7
+	    e4 {
+		e2 <----------
+		e5
+	    }
+	}
+    }
+    */
     /* Calculate the padding around elements surrounded by -union elements */
     for (i = 0; i < eLinkCount; i++) {
 	struct Layout *layout = &layouts[i];
-	int first = -1, last = -1;
+	int padx[2], pady[2];
 
 	if (IS_HIDDEN(layout))
 	    continue;
 
 	eLink1 = &eLinks1[i];
 
-	if (eLink1->onion == NULL)
+	/* Start at the top level of each -union heirarchy. */
+	if (!IS_UNION(eLink1) || layout->unionParent)
 	    continue;
-
-	for (j = 0; j < eLink1->onionCount; j++) {
-	    struct Layout *layout = &layouts[eLink1->onion[j]];
-
-	    if (IS_HIDDEN(layout))
-		continue;
-
-	    /* Remember the first and last visible elements surrounded by
-	     * this -union element. */
-	    if (first == -1)
-		first = j;
-	    last = j;
-	}
-
-	/* If there are no visible elements surrounded by this -union
-	 * element, then hide it. */
-	if (first == -1) {
-	    layout->visible = 0;
-	    continue;
-	}
 
 	ePadX = eLink1->ePadX;
 	ePadY = eLink1->ePadY;
 	iPadX = eLink1->iPadX;
 	iPadY = eLink1->iPadY;
 
+	for (j = 0; j < 2; j++) {
+	    padx[j] = ePadX[j] + iPadX[j];
+	    pady[j] = ePadY[j] + iPadY[j];
+	}
 	for (j = 0; j < eLink1->onionCount; j++) {
-	    struct Layout *layout = &layouts[eLink1->onion[j]];
-
-	    if (IS_HIDDEN(layout))
+	    struct Layout *layout2 = &layouts[eLink1->onion[j]];
+	    if (IS_HIDDEN(layout2))
 		continue;
-
-	    uPadX = layout->uPadX;
-	    uPadY = layout->uPadY;
-
-	    if (masterStyle->vertical) {
-		uPadX[PAD_TOP_LEFT] = MAX(uPadX[PAD_TOP_LEFT], iPadX[PAD_TOP_LEFT] + ePadX[PAD_TOP_LEFT]);
-		uPadX[PAD_BOTTOM_RIGHT] = MAX(uPadX[PAD_BOTTOM_RIGHT], iPadX[PAD_BOTTOM_RIGHT] + ePadX[PAD_BOTTOM_RIGHT]);
-		if (j == first) /* topmost */
-		    uPadY[PAD_TOP_LEFT] = MAX(uPadY[PAD_TOP_LEFT], iPadY[PAD_TOP_LEFT] + ePadY[PAD_TOP_LEFT]);
-		if (j == last) /* bottommost */
-		    uPadY[PAD_BOTTOM_RIGHT] = MAX(uPadY[PAD_BOTTOM_RIGHT], iPadY[PAD_BOTTOM_RIGHT] + ePadY[PAD_BOTTOM_RIGHT]);
-	    } else {
-		if (j == first) /* leftmost */
-		    uPadX[PAD_TOP_LEFT] = MAX(uPadX[PAD_TOP_LEFT], iPadX[PAD_TOP_LEFT] + ePadX[PAD_TOP_LEFT]);
-		if (j == last) /* rightmost */
-		    uPadX[PAD_BOTTOM_RIGHT] = MAX(uPadX[PAD_BOTTOM_RIGHT], iPadX[PAD_BOTTOM_RIGHT] + ePadX[PAD_BOTTOM_RIGHT]);
-		uPadY[PAD_TOP_LEFT] = MAX(uPadY[PAD_TOP_LEFT], iPadY[PAD_TOP_LEFT] + ePadY[PAD_TOP_LEFT]);
-		uPadY[PAD_BOTTOM_RIGHT] = MAX(uPadY[PAD_BOTTOM_RIGHT], iPadY[PAD_BOTTOM_RIGHT] + ePadY[PAD_BOTTOM_RIGHT]);
-	    }
+	    Layout_AddUnionPadding(masterStyle, layouts, i, eLink1->onion[j],
+		padx, pady);
 	}
     }
 
@@ -722,7 +1200,7 @@ Style_DoLayoutH(
 
 	eLink1 = &eLinks1[i];
 
-	if (eLink1->onion != NULL)
+	if (IS_UNION(eLink1))
 	    continue;
 
 	if (!(eLink1->flags & ELF_SQUEEZE_X))
@@ -930,7 +1408,7 @@ Style_DoLayoutH(
 	eLink1 = &eLinks1[i];
 	eLink2 = &eLinks2[i];
 
-	if (!(eLink1->flags & ELF_DETACH) || (eLink1->onion != NULL))
+	if (!(eLink1->flags & ELF_DETACH) || IS_UNION(eLink1))
 	    continue;
 
 	ePadX = eLink1->ePadX;
@@ -947,42 +1425,26 @@ Style_DoLayoutH(
 	Style_DoExpandH(layout, drawArgs->width);
     }
 
-    /* Now calculate layout of -union elements. */
+    /* Position and expand -union elements. */
     for (i = 0; i < eLinkCount; i++) {
 	struct Layout *layout = &layouts[i];
-
-	eLink1 = &eLinks1[i];
-	eLink2 = &eLinks2[i];
 
 	if (IS_HIDDEN(layout))
 	    continue;
 
-	if (eLink1->onion == NULL)
+	eLink1 = &eLinks1[i];
+
+	/* Start at the top level of each -union heirarchy. */
+	if (!IS_UNION(eLink1) || layout->unionParent)
 	    continue;
 
-	ePadX = eLink1->ePadX;
-	iPadX = eLink1->iPadX;
-
-	w = 1000000, e = -1000000;
-
-	for (j = 0; j < eLink1->onionCount; j++) {
-	    struct Layout *layout2 = &layouts[eLink1->onion[j]];
-
-	    if (IS_HIDDEN(layout2))
-		continue;
-
-	    w = MIN(w, layout2->x + layout2->ePadX[PAD_TOP_LEFT]);
-	    e = MAX(e, layout2->x + layout2->ePadX[PAD_TOP_LEFT] + layout2->iWidth);
-	}
-
-	layout->x = w - iPadX[PAD_TOP_LEFT] - ePadX[PAD_TOP_LEFT];
-	layout->useWidth = (e - w);
-	layout->iWidth = iPadX[PAD_TOP_LEFT] + layout->useWidth + iPadX[PAD_BOTTOM_RIGHT];
-	layout->eWidth = ePadX[PAD_TOP_LEFT] + layout->iWidth + ePadX[PAD_BOTTOM_RIGHT];
+	Layout_CalcUnionLayoutH(drawArgs, masterStyle, layouts, i);
     }
-
-    /* Expand -union elements if needed: horizontal */
-    /* Expansion of "-union" elements is different than non-"-union" elements */
+#if 0
+    /* Expand -union elements if needed: horizontal. */
+    /* Expansion of "-union" elements is different than non-"-union" elements.
+     * Expanding a -union element never changes the size or position of any
+     * element other than the -union element itself. */
     for (i = 0; i < eLinkCount; i++) {
 	struct Layout *layout = &layouts[i];
 	int extraWidth;
@@ -992,15 +1454,16 @@ Style_DoLayoutH(
 
 	eLink1 = &eLinks1[i];
 
-	if ((eLink1->onion == NULL) || !(eLink1->flags & ELF_EXPAND_WE))
+	if (!IS_UNION(eLink1) || !(eLink1->flags & ELF_EXPAND_WE))
 	    continue;
 
 	if (drawArgs->width - (layout->eWidth + drawArgs->indent) <= 0)
 	    continue;
 
-	/* External and internal expansion: W */
 	extraWidth = layout->x - drawArgs->indent;
 	if ((extraWidth > 0) && (eLink1->flags & ELF_EXPAND_W)) {
+
+	    /* External and internal expansion: W */
 	    if ((eLink1->flags & ELF_EXPAND_W) == ELF_EXPAND_W) {
 		int eExtra = extraWidth / 2;
 		int iExtra = extraWidth - extraWidth / 2;
@@ -1032,9 +1495,10 @@ Style_DoLayoutH(
 	    }
 	}
 
-	/* External and internal expansion: E */
 	extraWidth = drawArgs->width - (layout->x + layout->eWidth);
 	if ((extraWidth > 0) && (eLink1->flags & ELF_EXPAND_E)) {
+
+	    /* External and internal expansion: E */
 	    if ((eLink1->flags & ELF_EXPAND_E) == ELF_EXPAND_E) {
 		int eExtra = extraWidth / 2;
 		int iExtra = extraWidth - extraWidth / 2;
@@ -1062,7 +1526,7 @@ Style_DoLayoutH(
 	    }
 	}
     }
-
+#endif
     /* Add internal padding to display area for -union elements */
     for (i = 0; i < eLinkCount; i++) {
 	struct Layout *layout = &layouts[i];
@@ -1072,7 +1536,7 @@ Style_DoLayoutH(
 
 	eLink1 = &eLinks1[i];
 
-	if (eLink1->onion == NULL)
+	if (!IS_UNION(eLink1))
 	    continue;
 
 	iPadX = layout->iPadX;
@@ -1113,7 +1577,6 @@ Style_DoLayoutV(
     MElementLink *eLinks1, *eLink1;
     IElementLink *eLinks2, *eLink2;
     int y = 0;
-    int n, s;
     int *ePadY, *iPadY, *uPadY;
     int numExpandNS = 0;
     int numSqueezeY = 0;
@@ -1190,7 +1653,7 @@ Style_DoLayoutV(
 
 	    eLink1 = &eLinks1[i];
 
-	    if (eLink1->onion != NULL)
+	    if (IS_UNION(eLink1))
 		continue;
 
 	    if (!(eLink1->flags & ELF_SQUEEZE_Y))
@@ -1355,7 +1818,7 @@ Style_DoLayoutV(
 	eLink1 = &eLinks1[i];
 	eLink2 = &eLinks2[i];
 
-	if (!(eLink1->flags & ELF_DETACH) || (eLink1->onion != NULL))
+	if (!(eLink1->flags & ELF_DETACH) || IS_UNION(eLink1))
 	    continue;
 
 	ePadY = eLink1->ePadY;
@@ -1378,32 +1841,15 @@ Style_DoLayoutV(
 	    continue;
 
 	eLink1 = &eLinks1[i];
-	eLink2 = &eLinks2[i];
 
-	if (eLink1->onion == NULL)
+	/* Start at the top level of each -union heirarchy. */
+	if (!IS_UNION(eLink1) || layout->unionParent)
 	    continue;
 
-	ePadY = eLink1->ePadY;
-	iPadY = eLink1->iPadY;
-
-	n = 1000000, s = -1000000;
-
-	for (j = 0; j < eLink1->onionCount; j++) {
-	    struct Layout *layout2 = &layouts[eLink1->onion[j]];
-
-	    if (IS_HIDDEN(layout2))
-		continue;
-
-	    n = MIN(n, layout2->y + layout2->ePadY[PAD_TOP_LEFT]);
-	    s = MAX(s, layout2->y + layout2->ePadY[PAD_TOP_LEFT] + layout2->iHeight);
-	}
-
-	layout->y = n - iPadY[PAD_TOP_LEFT] - ePadY[PAD_TOP_LEFT];
-	layout->useHeight = (s - n);
-	layout->iHeight = iPadY[PAD_TOP_LEFT] + layout->useHeight + iPadY[PAD_BOTTOM_RIGHT];
-	layout->eHeight = ePadY[PAD_TOP_LEFT] + layout->iHeight + ePadY[PAD_BOTTOM_RIGHT];
+	Layout_CalcUnionLayoutV(drawArgs, masterStyle, layouts, i);
     }
 
+#if 0
     /* Expand -union elements if needed: vertical */
     for (i = 0; i < eLinkCount; i++) {
 	struct Layout *layout = &layouts[i];
@@ -1414,7 +1860,7 @@ Style_DoLayoutV(
 
 	eLink1 = &eLinks1[i];
 
-	if ((eLink1->onion == NULL) || !(eLink1->flags & ELF_EXPAND_NS))
+	if (!IS_UNION(eLink1) || !(eLink1->flags & ELF_EXPAND_NS))
 	    continue;
 
 	if (drawArgs->height - layout->eHeight <= 0)
@@ -1483,7 +1929,7 @@ Style_DoLayoutV(
 	    }
 	}
     }
-
+#endif
     /* Add internal padding to display area for -union elements */
     for (i = 0; i < eLinkCount; i++) {
 	struct Layout *layout = &layouts[i];
@@ -1493,7 +1939,7 @@ Style_DoLayoutV(
 
 	eLink1 = &eLinks1[i];
 
-	if (eLink1->onion == NULL)
+	if (!IS_UNION(eLink1))
 	    continue;
 
 	iPadY = layout->iPadY;
@@ -1621,7 +2067,7 @@ Style_DoLayoutNeededV(
 
 	/* The size of a -union element is determined by the elements
 	 * it surrounds */
-	if (eLink1->onion != NULL) {
+	if (IS_UNION(eLink1)) {
 	    /* I don't need good values because I'm only calculating the
 	     * needed height */
 	    layout->y = layout->iHeight = layout->eHeight = 0;
@@ -1654,7 +2100,7 @@ Style_DoLayoutNeededV(
 	eLink1 = &eLinks1[i];
 	eLink2 = &eLinks2[i];
 
-	if (!(eLink1->flags & ELF_DETACH) || (eLink1->onion != NULL))
+	if (!(eLink1->flags & ELF_DETACH) || IS_UNION(eLink1))
 	    continue;
 
 	ePadY = eLink1->ePadY;
@@ -1720,7 +2166,7 @@ Style_DoLayout(
 
 	/* The size of a -union element is determined by the elements
 	 * it surrounds */
-	if (eLink1->onion != NULL) {
+	if (IS_UNION(eLink1)) {
 	    layout->useHeight = 0;
 	    continue;
 	}
@@ -1825,30 +2271,46 @@ Style_NeededSize(
     IElementLink *eLinks2, *eLink2;
     struct Layout staticLayouts[STATIC_SIZE], *layouts = staticLayouts;
     int *ePadX, *iPadX, *uPadX, *ePadY, *iPadY, *uPadY;
-    int i, j;
+    int i, j, eLinkCount = masterStyle->numElements;
     int x = 0, y = 0;
     int squeezeX = 0, squeezeY = 0;
 
-    STATIC_ALLOC(layouts, struct Layout, masterStyle->numElements);
+    STATIC_ALLOC(layouts, struct Layout, eLinkCount);
 
     eLinks1 = masterStyle->elements;
     eLinks2 = style->elements;
 
-    for (i = 0; i < masterStyle->numElements; i++) {
+    for (i = 0; i < eLinkCount; i++) {
+	struct Layout *layout = &layouts[i];
+	layout->unionParent = 0;
+	layout->temp = 0; /* see Layout_CalcVisibility */
+    }
+
+    for (i = 0; i < eLinkCount; i++) {
+	Layout_CalcVisibility(tree, state, masterStyle, layouts, i);
+    }
+
+    for (i = 0; i < eLinkCount; i++) {
 	struct Layout *layout = &layouts[i];
 
 	eLink1 = &eLinks1[i];
 	eLink2 = &eLinks2[i];
 
-	layout->visible = PerStateBoolean_ForState(tree,
-		&eLink1->visible, state, NULL) != 0;
 	if (IS_HIDDEN(layout))
 	    continue;
+
+	if (IS_UNION(eLink1)) {
+	    for (j = 0; j < eLink1->onionCount; j++) {
+		struct Layout *layout2 = &layouts[eLink1->onion[j]];
+		if (!IS_HIDDEN(layout2))
+		    layout2->unionParent = 1;
+	    }
+	}
 
 	layout->master = eLink1;
 	layout->eLink = eLink2;
 
-	if (eLink1->onion == NULL) {
+	if (!IS_UNION(eLink1)) {
 #ifdef CACHE_ELEM_SIZE
 	    if ((eLink2->neededWidth == -1) || (eLink2->neededHeight == -1)) {
 		Element_NeededSize(tree, eLink1, eLink2->elem, state,
@@ -1864,80 +2326,52 @@ Style_NeededSize(
 #endif
 	}
 
-	/* No -union padding yet */
-	layout->uPadX[PAD_TOP_LEFT]     = 0;
-	layout->uPadX[PAD_BOTTOM_RIGHT] = 0;
-	layout->uPadY[PAD_TOP_LEFT]     = 0;
-	layout->uPadY[PAD_BOTTOM_RIGHT] = 0;
+	for (j = 0; j < 2; j++) {
+	    layout->ePadX[j] = eLink1->ePadX[j];
+	    layout->ePadY[j] = eLink1->ePadY[j];
+	    layout->iPadX[j] = eLink1->iPadX[j];
+	    layout->iPadY[j] = eLink1->iPadY[j];
+
+	    /* No -union padding yet */
+	    layout->uPadX[j] = 0;
+	    layout->uPadY[j] = 0;
+	}
     }
 
-    /* Figure out the padding around elements surrounded by -union elements */
-    for (i = 0; i < masterStyle->numElements; i++) {
+    /* Calculate the padding around elements surrounded by -union elements */
+    for (i = 0; i < eLinkCount; i++) {
 	struct Layout *layout = &layouts[i];
-	int first = -1, last = -1;
+	int padx[2], pady[2];
 
 	if (IS_HIDDEN(layout))
 	    continue;
 
 	eLink1 = &eLinks1[i];
 
-	if (eLink1->onion == NULL)
+	/* Start at the top level of each -union heirarchy. */
+	if (!IS_UNION(eLink1) || layout->unionParent)
 	    continue;
-
-	for (j = 0; j < eLink1->onionCount; j++) {
-	    struct Layout *layout = &layouts[eLink1->onion[j]];
-
-	    if (IS_HIDDEN(layout))
-		continue;
-
-	    /* Remember the first and last visible elements surrounded by
-	     * this -union element. */
-	    if (first == -1)
-		first = j;
-	    last = j;
-	}
-
-	/* If there are no visible elements surrounded by this -union
-	 * element, then hide it. */
-	if (first == -1) {
-	    layout->visible = 0;
-	    continue;
-	}
 
 	ePadX = eLink1->ePadX;
 	ePadY = eLink1->ePadY;
 	iPadX = eLink1->iPadX;
 	iPadY = eLink1->iPadY;
 
+	for (j = 0; j < 2; j++) {
+	    padx[j] = ePadX[j] + iPadX[j];
+	    pady[j] = ePadY[j] + iPadY[j];
+	}
 	for (j = 0; j < eLink1->onionCount; j++) {
-	    struct Layout *layout = &layouts[eLink1->onion[j]];
-
-	    if (IS_HIDDEN(layout))
+	    struct Layout *layout2 = &layouts[eLink1->onion[j]];
+	    if (IS_HIDDEN(layout2))
 		continue;
-
-	    uPadX = layout->uPadX;
-	    uPadY = layout->uPadY;
-
-	    if (masterStyle->vertical) {
-		uPadX[PAD_TOP_LEFT] = MAX(uPadX[PAD_TOP_LEFT], iPadX[PAD_TOP_LEFT] + ePadX[PAD_TOP_LEFT]);
-		uPadX[PAD_BOTTOM_RIGHT] = MAX(uPadX[PAD_BOTTOM_RIGHT], iPadX[PAD_BOTTOM_RIGHT] + ePadX[PAD_BOTTOM_RIGHT]);
-		if (j == first) /* topmost */
-		    uPadY[PAD_TOP_LEFT] = MAX(uPadY[PAD_TOP_LEFT], iPadY[PAD_TOP_LEFT] + ePadY[PAD_TOP_LEFT]);
-		if (j == last) /* bottommost */
-		    uPadY[PAD_BOTTOM_RIGHT] = MAX(uPadY[PAD_BOTTOM_RIGHT], iPadY[PAD_BOTTOM_RIGHT] + ePadY[PAD_BOTTOM_RIGHT]);
-	    } else {
-		if (j == first) /* leftmost */
-		    uPadX[PAD_TOP_LEFT] = MAX(uPadX[PAD_TOP_LEFT], iPadX[PAD_TOP_LEFT] + ePadX[PAD_TOP_LEFT]);
-		if (j == last) /* rightmost */
-		    uPadX[PAD_BOTTOM_RIGHT] = MAX(uPadX[PAD_BOTTOM_RIGHT], iPadX[PAD_BOTTOM_RIGHT] + ePadX[PAD_BOTTOM_RIGHT]);
-		uPadY[PAD_TOP_LEFT] = MAX(uPadY[PAD_TOP_LEFT], iPadY[PAD_TOP_LEFT] + ePadY[PAD_TOP_LEFT]);
-		uPadY[PAD_BOTTOM_RIGHT] = MAX(uPadY[PAD_BOTTOM_RIGHT], iPadY[PAD_BOTTOM_RIGHT] + ePadY[PAD_BOTTOM_RIGHT]);
-	    }
+	    Layout_AddUnionPadding(masterStyle, layouts, i, eLink1->onion[j],
+		padx, pady);
 	}
     }
 
     /* Layout elements left-to-right, or top-to-bottom */
-    for (i = 0; i < masterStyle->numElements; i++) {
+    for (i = 0; i < eLinkCount; i++) {
 	struct Layout *layout = &layouts[i];
 
 	if (IS_HIDDEN(layout))
@@ -1946,25 +2380,18 @@ Style_NeededSize(
 	eLink1 = &eLinks1[i];
 	eLink2 = &eLinks2[i];
 
-	ePadX = eLink1->ePadX;
-	ePadY = eLink1->ePadY;
-	iPadX = eLink1->iPadX;
-	iPadY = eLink1->iPadY;
-	uPadX = layout->uPadX;
-	uPadY = layout->uPadY;
-
 	/* The size of a -union element is determined by the elements
 	 * it surrounds */
-	if (eLink1->onion != NULL) {
+	if (IS_UNION(eLink1)) {
 	    layout->x = layout->y = layout->eWidth = layout->eHeight = 0;
-	    layout->ePadX[PAD_TOP_LEFT]     = 0;
-	    layout->ePadX[PAD_BOTTOM_RIGHT] = 0;
-	    layout->ePadY[PAD_TOP_LEFT]     = 0;
-	    layout->ePadY[PAD_BOTTOM_RIGHT] = 0;
-	    layout->iPadX[PAD_TOP_LEFT]     = 0;
-	    layout->iPadX[PAD_BOTTOM_RIGHT] = 0;
-	    layout->iPadY[PAD_TOP_LEFT]     = 0;
-	    layout->iPadY[PAD_BOTTOM_RIGHT] = 0;
+	    for (j = 0; j < 2; j++) {
+		layout->ePadX[j] = 0;
+		layout->ePadY[j] = 0;
+		layout->iPadX[j] = 0;
+		layout->iPadY[j] = 0;
+		layout->uPadX[j] = 0;
+		layout->uPadY[j] = 0;
+	    }
 	    continue;
 	}
 
@@ -1989,21 +2416,30 @@ Style_NeededSize(
 	if (eLink1->flags & ELF_DETACH)
 	    continue;
 
+	ePadX = eLink1->ePadX;
+	ePadY = eLink1->ePadY;
+	iPadX = eLink1->iPadX;
+	iPadY = eLink1->iPadY;
+	uPadX = layout->uPadX;
+	uPadY = layout->uPadY;
+
+#if 0
 	layout->eLink = eLink2;
+#endif
 	layout->x = x + abs(ePadX[PAD_TOP_LEFT] - MAX(ePadX[PAD_TOP_LEFT], uPadX[PAD_TOP_LEFT]));
 	layout->y = y + abs(ePadY[PAD_TOP_LEFT] - MAX(ePadY[PAD_TOP_LEFT], uPadY[PAD_TOP_LEFT]));
 	layout->iWidth = iPadX[PAD_TOP_LEFT] + layout->useWidth + iPadX[PAD_BOTTOM_RIGHT];
 	layout->iHeight = iPadY[PAD_TOP_LEFT] + layout->useHeight + iPadY[PAD_BOTTOM_RIGHT];
 	layout->eWidth = ePadX[PAD_TOP_LEFT] + layout->iWidth + ePadX[PAD_BOTTOM_RIGHT];
 	layout->eHeight = ePadY[PAD_TOP_LEFT] + layout->iHeight + ePadY[PAD_BOTTOM_RIGHT];
-
+#if 0
 	for (j = 0; j < 2; j++) {
 	    layout->ePadX[j] = eLink1->ePadX[j];
 	    layout->ePadY[j] = eLink1->ePadY[j];
 	    layout->iPadX[j] = eLink1->iPadX[j];
 	    layout->iPadY[j] = eLink1->iPadY[j];
 	}
-
+#endif
 	if (masterStyle->vertical)
 	    y = layout->y + layout->eHeight;
 	else
@@ -2011,7 +2447,7 @@ Style_NeededSize(
     }
 
     /* -detach elements */
-    for (i = 0; i < masterStyle->numElements; i++) {
+    for (i = 0; i < eLinkCount; i++) {
 	struct Layout *layout = &layouts[i];
 
 	if (IS_HIDDEN(layout))
@@ -2020,7 +2456,7 @@ Style_NeededSize(
 	eLink1 = &eLinks1[i];
 	eLink2 = &eLinks2[i];
 
-	if (!(eLink1->flags & ELF_DETACH) || (eLink1->onion != NULL))
+	if (!(eLink1->flags & ELF_DETACH) || IS_UNION(eLink1))
 	    continue;
 
 	ePadX = eLink1->ePadX;
@@ -2030,8 +2466,10 @@ Style_NeededSize(
 	uPadX = layout->uPadX;
 	uPadY = layout->uPadY;
 
+#if 0
 	layout->eLink = eLink2;
 	layout->master = eLink1;
+#endif
 	layout->x = abs(ePadX[PAD_TOP_LEFT] - MAX(ePadX[PAD_TOP_LEFT], uPadX[PAD_TOP_LEFT]));
 	layout->y = abs(ePadY[PAD_TOP_LEFT] - MAX(ePadY[PAD_TOP_LEFT], uPadY[PAD_TOP_LEFT]));
 	layout->iWidth = iPadX[PAD_TOP_LEFT] + layout->useWidth + iPadX[PAD_BOTTOM_RIGHT];
@@ -2039,21 +2477,23 @@ Style_NeededSize(
 	layout->eWidth = ePadX[PAD_TOP_LEFT] + layout->iWidth + ePadX[PAD_BOTTOM_RIGHT];
 	layout->eHeight = ePadY[PAD_TOP_LEFT] + layout->iHeight + ePadY[PAD_BOTTOM_RIGHT];
 
+#if 0
 	for (j = 0; j < 2; j++) {
 	    layout->ePadX[j] = eLink1->ePadX[j];
 	    layout->ePadY[j] = eLink1->ePadY[j];
 	    layout->iPadX[j] = eLink1->iPadX[j];
 	    layout->iPadY[j] = eLink1->iPadY[j];
 	}
+#endif
     }
 
-    Layout_Size(masterStyle->vertical, masterStyle->numElements, layouts,
+    Layout_Size(masterStyle->vertical, eLinkCount, layouts,
 	widthPtr, heightPtr);
 
     *minWidthPtr = *widthPtr - squeezeX;
     *minHeightPtr = *heightPtr - squeezeY;
 
-    STATIC_FREE(layouts, struct Layout, masterStyle->numElements);
+    STATIC_FREE(layouts, struct Layout, eLinkCount);
 }
 
 /*
@@ -2117,7 +2557,7 @@ Style_MinSize(
 
     for (i = 0; i < style->master->numElements; i++) {
 	MElementLink *eLink1 = &style->master->elements[i];
-	if ((eLink1->onion == NULL) &&
+	if (!IS_UNION(eLink1) &&
 		(eLink1->flags & (ELF_SQUEEZE_X | ELF_SQUEEZE_Y))) {
 	    hasSqueeze = TRUE;
 	    break;
@@ -5300,6 +5740,25 @@ LayoutOptionToObj(
     return NULL;
 }
 
+static int
+UnionRecursiveCheck(
+    MStyle *mstyle,
+    int iElemUnion,
+    int iElemFind
+    )
+{
+    int i;
+
+    for (i = 0; i < mstyle->elements[iElemUnion].onionCount; i++) {
+	if (mstyle->elements[iElemUnion].onion[i] == iElemFind)
+	    return 1;
+	if (UnionRecursiveCheck(mstyle, mstyle->elements[iElemUnion].onion[i], iElemFind))
+	    return 1;
+    }
+
+    return 0;
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -5331,7 +5790,7 @@ StyleLayoutCmd(
     MStyle *style;
     TreeElement elem;
     MElementLink saved, *eLink;
-    int i, index;
+    int i, index, eIndex;
     static CONST char *optionNames[] = {
 	"-detach", "-draw", "-expand", "-height", "-iexpand",
 	"-indent", "-ipadx", "-ipady", "-maxheight", "-maxwidth", "-minheight",
@@ -5339,6 +5798,7 @@ StyleLayoutCmd(
 	"-width", "-visible",
 	(char *) NULL
     };
+
     if (objc < 5) {
 	Tcl_WrongNumArgs(interp, 3, objv, "name element ?option? ?value? ?option value ...?");
 	return TCL_ERROR;
@@ -5351,7 +5811,7 @@ StyleLayoutCmd(
     if (Element_FromObj(tree, objv[4], &elem) != TCL_OK)
 	return TCL_ERROR;
 
-    eLink = MStyle_FindElem(tree, style, elem, NULL);
+    eLink = MStyle_FindElem(tree, style, elem, &eIndex);
     if (eLink == NULL) {
 	FormatResult(interp, "style %s does not use element %s",
 	    style->name, elem->name);
@@ -5524,7 +5984,7 @@ StyleLayoutCmd(
 	    case OPTION_UNION: {
 		int objc1;
 		Tcl_Obj **objv1;
-		int j, k, n, *onion, count = 0;
+		int j, k, eIndex2, *onion, count = 0;
 
 		if (Tcl_ListObjGetElements(interp, objv[i + 1],
 		    &objc1, &objv1) != TCL_OK)
@@ -5548,7 +6008,7 @@ StyleLayoutCmd(
 			goto badConfig;
 		    }
 
-		    eLink2 = MStyle_FindElem(tree, style, elem2, &n);
+		    eLink2 = MStyle_FindElem(tree, style, elem2, &eIndex2);
 		    if (eLink2 == NULL) {
 			ckfree((char *) onion);
 			FormatResult(interp,
@@ -5563,14 +6023,21 @@ StyleLayoutCmd(
 			    elem2->name);
 			goto badConfig;
 		    }
+		    if (UnionRecursiveCheck(style, eIndex2, eIndex)) {
+			ckfree((char *) onion);
+			FormatResult(interp,
+			    "can't form a recursive union with element %s",
+			    elem2->name);
+			goto badConfig;
+		    }
 		    /* Silently ignore duplicates */
 		    for (k = 0; k < count; k++) {
-			if (onion[k] == n)
+			if (onion[k] == eIndex2)
 			    break;
 		    }
 		    if (k < count)
 			continue;
-		    onion[count++] = n;
+		    onion[count++] = eIndex2;
 		}
 		if ((eLink->onion != NULL) && (eLink->onion != saved.onion))
 		    WCFREE(eLink->onion, int, eLink->onionCount);
