@@ -23,9 +23,9 @@ proc StyleEditor::Init {Tdemo} {
 
     Info Tdemo $Tdemo
 
-    panedwindow $w.pwH -orient horizontal -borderwidth 0
+    panedwindow $w.pwH -orient horizontal -borderwidth 0 -sashwidth 6
 
-    panedwindow $w.pwH.pwV -orient vertical -borderwidth 0
+    panedwindow $w.pwH.pwV -orient vertical -borderwidth 0 -sashwidth 6
 
     TreePlusScrollbarsInAFrame $w.pwH.pwV.styleList 1 1
     set T $w.pwH.pwV.styleList.t
@@ -53,7 +53,7 @@ proc StyleEditor::Init {Tdemo} {
 
     $w.pwH.pwV add $w.pwH.pwV.styleList $w.pwH.pwV.elementList
 
-    set fRight [panedwindow $w.pwH.pwV2 -orient vertical]
+    set fRight [panedwindow $w.pwH.pwV2 -orient vertical -sashwidth 6]
 
     #
     # Property editor
@@ -62,10 +62,8 @@ proc StyleEditor::Init {Tdemo} {
     TreePlusScrollbarsInAFrame $fRight.propertyList 1 1
     set T $fRight.propertyList.t
     $T configure -showbuttons no -showlines no -showroot no
-    $T column create -text "Property" -expand yes -button no -tags {C0 property} \
-	-itembackground {#E8E8E8 ""}
-    $T column create -text "Value" -expand yes -button no -tags {C1 value} \
-	-itembackground {#E8E8E8 ""}
+    $T column create -text "Property" -expand yes -button no -tags {C0 property}
+    $T column create -text "Value" -expand yes -button no -tags {C1 value}
     $T configure -treecolumn property
 
     $T notify bind $T <Selection> {
@@ -78,7 +76,7 @@ proc StyleEditor::Init {Tdemo} {
     # Style canvas
     #
 
-    set fCanvas [frame $fRight.fCanvas -borderwidth 0]
+    set fCanvas [frame $fRight.fCanvas -borderwidth 1 -relief sunken]
     set canvas [canvas $fCanvas.canvas -background white \
 	-scrollregion {0 0 0 0} -borderwidth 0 -highlightthickness 0 \
 	-xscrollcommand [list sbset $fCanvas.xscroll] \
@@ -254,10 +252,18 @@ proc StyleEditor::SetPropertyList {} {
 	$T state define header
 
 	$T element create e1 text \
-	    -fill [list $::SystemHighlightText selected white header] \
+	    -fill [list white header $::SystemHighlightText selected] \
 	    -font [list DemoFontBold header]
+
+	set headerBG #ACA899
+	if {[winfo depth $T] >= 16} {
+	    $T gradient api 1.0
+	    $T gradient create G_header -steps 16 \
+		-stops {{0.0 #ACA899} {0.5 #ACA899} {1.0 #d5d2ca}}
+	    set headerBG G_header
+	}
 	$T element create e2 rect \
-	    -fill [list #ACA899 header $::SystemHighlight selected] \
+	    -fill [list $headerBG header $::SystemHighlight selected] \
 	    -outline black -outlinewidth 1 -open nw -showfocus no
 
 	$T element create eWindow window
@@ -283,10 +289,11 @@ proc StyleEditor::SetPropertyList {} {
 	Info editor,squeeze [MakeSqueezeEditor $T]
 	Info editor,boolean [MakeBooleanEditor $T]
 	Info editor,pixels [MakePixelsEditor $T]
+	Info editor,string [MakeStringEditor $T]
 
 	update idletasks
 	set height 0
-	foreach editor {pad expand iexpand squeeze boolean pixels} {
+	foreach editor {pad expand iexpand squeeze boolean pixels string} {
 	    set heightWin [winfo reqheight [Info editor,$editor]]
 	    incr heightWin
 	    if {$heightWin > $height} {
@@ -336,7 +343,7 @@ proc StyleEditor::SetPropertyList {} {
 	if {$header ne ""} {
 	    $T item style set $I C0 sHeader
 	    $T item span $I C0 2
-	    $T item element configure $I C0 e1 -text $header -fill White
+	    $T item element configure $I C0 e1 -text $header ; # -fill White
 	    $T item state set $I header
 	    $T item enabled $I false
 	    $T item tag add $I header
@@ -385,7 +392,10 @@ proc StyleEditor::SelectProperty {select deselect} {
     $T item style set $I value sWindow
     switch -- $option {
 	-draw -
-	-visible {
+	-visible -
+	-union {
+	    $T item element configure $I value eWindow -window [Info editor,string]
+	    Info -string [$Tdemo style layout $style $element $option]
 	}
 	-padx -
 	-pady -
@@ -537,6 +547,16 @@ proc StyleEditor::MakeSqueezeEditor {parent} {
     return $f
 }
 
+proc StyleEditor::MakeStringEditor {parent} {
+    set f [frame $parent.editString -borderwidth 0]
+    $::entryCmd $f.entry -textvariable ::StyleEditor::Info(-string)
+    bind $f.entry <Return> {
+	::StyleEditor::Sync_string
+    }
+    pack $f.entry -expand yes -fill both
+    return $f
+}
+
 proc StyleEditor::MakeBooleanEditor {parent} {
 
     set f [frame $parent.editBoolean -borderwidth 0]
@@ -643,6 +663,22 @@ proc StyleEditor::Sync_squeeze {} {
     return
 }
 
+proc StyleEditor::Sync_string {} {
+
+    set Tdemo [Info Tdemo]
+    set style [Info selectedStyle]
+    set element [Info selectedElement]
+    set option [Info selectedOption]
+    if {[catch {
+	$Tdemo style layout $style $element $option [Info -string]
+	StyleToCanvas
+    } msg]} {
+	tk_messageBox -parent .styleEditor -icon error -title "Style Editor" \
+	    -message $msg
+    }
+    return
+}
+
 proc StyleEditor::Sync_boolean {} {
 
     set Tdemo [Info Tdemo]
@@ -721,7 +757,7 @@ proc StyleEditor::StyleToCanvas {{scroll 0}} {
     $T style elements $style [$Tdemo style elements $style]
     foreach E [$T style elements $style] {
 	eval $T style layout $style $E [$Tdemo style layout $style $E]
-	$T style layout $style $E -visible {}
+	#$T style layout $style $E -visible {}
     }
 
     # Find a selected item using the style to copy element config info from
@@ -750,6 +786,11 @@ proc StyleEditor::StyleToCanvas {{scroll 0}} {
     if {$match ne ""} {
 	set I $match
 
+	if {[$Tdemo selection includes $I]} {
+	    $T selection add root
+	} else {
+	    $T selection clear
+	}
 	foreach state [$Tdemo item state get $I] {
 	    if {[lsearch -exact [$Tdemo state names] $state] != -1} {
 		$T item state set root $state
@@ -801,11 +842,12 @@ if 0 {
 	-outline gray90
 
     foreach E [$T style elements $style] {
-	scan [$T item bbox $I 0 $E] "%d %d %d %d" x1 y1 x2 y2
-	$canvas create rectangle \
-	    [expr {$dx + $x1 * $scale}] [expr {$dy + $y1 * $scale}] \
-	    [expr {$dx + $x2 * $scale}] [expr {$dy + $y2 * $scale}] \
-	    -tags $E
+	if {[scan [$T item bbox $I 0 $E] "%d %d %d %d" x1 y1 x2 y2] == 4} {
+	    $canvas create rectangle \
+		[expr {$dx + $x1 * $scale}] [expr {$dy + $y1 * $scale}] \
+		[expr {$dx + $x2 * $scale}] [expr {$dy + $y2 * $scale}] \
+		-tags [list $E element]
+	}
     }
 
     scan [$T item bbox $I 0] "%d %d %d %d" x1 y1 x2 y2
@@ -824,11 +866,12 @@ if 0 {
 	-outline gray90
 
     foreach E [$T style elements $style] {
-	scan [$T item bbox $I 0 $E] "%d %d %d %d" x1 y1 x2 y2
-	$canvas create rectangle \
-	    [expr {$dx + $x1 * $scale}] [expr {$dy + $y1 * $scale}] \
-	    [expr {$dx + $x2 * $scale}] [expr {$dy + $y2 * $scale}] \
-	    -tags $E
+	if {[scan [$T item bbox $I 0 $E] "%d %d %d %d" x1 y1 x2 y2] == 4} {
+	    $canvas create rectangle \
+		[expr {$dx + $x1 * $scale}] [expr {$dy + $y1 * $scale}] \
+		[expr {$dx + $x2 * $scale}] [expr {$dy + $y2 * $scale}] \
+		-tags [list $E element]
+	}
     }
 
     scan [$canvas bbox all] "%d %d %d %d" x1 y1 x2 y2
@@ -851,9 +894,9 @@ proc StyleEditor::CanvasSelectElement {} {
     set style [Info selectedStyle]
     set element [Info selectedElement]
 
-    $canvas itemconfigure all -fill ""
+    $canvas itemconfigure element -fill "" -outline black
     if {$element ne ""} {
-	$canvas itemconfigure $element -fill gray75
+	$canvas itemconfigure $element -fill gray75 -outline green
     }
 
     return
