@@ -7,6 +7,9 @@ proc DemoSpan {} {
 
     set T [DemoList]
 
+    set width [font measure DemoFont "Span 1"]
+    incr width 4
+
     #
     # Configure the treectrl widget
     #
@@ -15,7 +18,7 @@ proc DemoSpan {} {
 	-showbuttons no \
 	-showlines no \
 	-showroot no \
-	-xscrollincrement 40
+	-xscrollincrement $width
 
     #
     # Create columns
@@ -23,7 +26,7 @@ proc DemoSpan {} {
 
     for {set i 0} {$i < 100} {incr i} {
 	$T column create -itemjustify left -justify center -text "$i" \
-	    -width 40 -tags C$i
+	    -width $width -tags C$i
     }
 
     #
@@ -34,7 +37,7 @@ proc DemoSpan {} {
 
     for {set i 1} {$i <= 20} {incr i} {
 	set color gray[expr {50 + $i * 2}]
-	$T element create e$i rect -width [expr {$i * 40}] -height 20 \
+	$T element create e$i rect -width [expr {$i * $width}] -height 20 \
 	    -fill [list white mouseover $color {}] -outlinewidth 1 \
 	    -outline gray70
 	if {[winfo depth .] >= 16} {
