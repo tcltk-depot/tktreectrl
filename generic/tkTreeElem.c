@@ -1939,6 +1939,10 @@ struct ElementRect
     Tcl_Obj *outlineWidthObj;
     PerStateInfo open;
     int showFocus;
+    int rx;
+    Tcl_Obj *rxObj;
+    int ry;
+    Tcl_Obj *ryObj;
 };
 
 #define RECT_CONF_FILL 0x0001
@@ -1947,8 +1951,9 @@ struct ElementRect
 #define RECT_CONF_OPEN 0x0008
 #define RECT_CONF_SIZE 0x0010
 #define RECT_CONF_FOCUS 0x0020
+#define RECT_CONF_RADIUS 0x0040
 #ifdef DEPRECATED
-#define RECT_CONF_DRAW 0x0040
+#define RECT_CONF_DRAW 0x0080
 #endif
 
 static Tk_OptionSpec rectOptionSpecs[] = {
@@ -1977,6 +1982,14 @@ static Tk_OptionSpec rectOptionSpecs[] = {
      (char *) NULL, Tk_Offset(ElementRect, outlineWidthObj),
      Tk_Offset(ElementRect, outlineWidth),
      TK_OPTION_NULL_OK, (ClientData) NULL, RECT_CONF_OUTWIDTH},
+    {TK_OPTION_PIXELS, "-rx", (char *) NULL, (char *) NULL,
+     (char *) NULL, Tk_Offset(ElementRect, rxObj),
+     Tk_Offset(ElementRect, rx),
+     TK_OPTION_NULL_OK, (ClientData) NULL, RECT_CONF_RADIUS},
+    {TK_OPTION_PIXELS, "-ry", (char *) NULL, (char *) NULL,
+     (char *) NULL, Tk_Offset(ElementRect, ryObj),
+     Tk_Offset(ElementRect, ry),
+     TK_OPTION_NULL_OK, (ClientData) NULL, RECT_CONF_RADIUS},
     {TK_OPTION_CUSTOM, "-showfocus", (char *) NULL, (char *) NULL,
      (char *) NULL, -1, Tk_Offset(ElementRect, showFocus),
      TK_OPTION_NULL_OK, (ClientData) &booleanCO, RECT_CONF_FOCUS},
@@ -2008,7 +2021,7 @@ static int WorldChangedProcRect(TreeElementArgs *args)
 	    RECT_CONF_DRAW |
 #endif
 	    RECT_CONF_FILL | RECT_CONF_OUTLINE | RECT_CONF_OPEN |
-	    RECT_CONF_FOCUS))
+	    RECT_CONF_FOCUS | RECT_CONF_RADIUS))
 	mask |= CS_DISPLAY;
 
     return mask;
@@ -2115,11 +2128,13 @@ static void DisplayProcRect(TreeElementArgs *args)
 #endif
 #ifdef GRADIENT
     TreeColor *tc;
+    TreeRectangle tr;
 #endif
     XColor *color;
     int open = 0;
     int outlineWidth = 0;
     int showFocus = 0;
+    int rx = 0, ry = 0;
 
 #ifdef DEPRECATED
     BOOLEAN_FOR_STATE(draw, draw, state)
@@ -2151,21 +2166,49 @@ static void DisplayProcRect(TreeElementArgs *args)
     else if ((masterX != NULL) && (masterX->heightObj != NULL))
 	height = masterX->height;
 
+    if (elemX->rxObj != NULL)
+	rx = elemX->rx;
+    else if ((masterX != NULL) && (masterX->rxObj != NULL))
+	rx = masterX->rx;
+
+    if (elemX->ryObj != NULL)
+	ry = elemX->ry;
+    else if ((masterX != NULL) && (masterX->ryObj != NULL))
+	ry = masterX->ry;
+
     AdjustForSticky(args->display.sticky,
 	args->display.width, args->display.height,
 	TRUE, TRUE,
 	&x, &y, &width, &height);
 
+    if (rx < 1 && ry < 1)
+	rx = ry = 0;
+    else if (ry < 1)
+	ry = rx;
+    else if (rx < 1)
+	rx = ry;
+    rx = MIN(rx, width/2);
+    ry = MIN(ry, height/2);
+    if (rx >= 1 && ry >= 1) {
+	tr.x = x, tr.y = y, tr.width = width, tr.height = height;
+	TREECOLOR_FOR_STATE(tc, fill, state)
+	if (tc != NULL) {
+	    TreeColor_FillRoundRect(tree, args->display.td, tc, tr, rx, ry, open);
+	}
+	COLOR_FOR_STATE(color, outline, state)
+	if ((color != NULL) && (outlineWidth > 0) && (open != 0xF)) {
+	    Tree_DrawRoundRect(tree, args->display.td, color, tr,
+		outlineWidth, rx, ry, open);
+	}
+	/* TODO: active outline */
+	return;
+    }
+
 #ifdef GRADIENT
     TREECOLOR_FOR_STATE(tc, fill, state)
-    if (tc != NULL && tc->gradient != NULL) {
-	TreeRectangle tr;
+    if (tc != NULL) {
 	tr.x = x, tr.y = y, tr.width = width, tr.height = height;
-	TreeGradient_FillRect(tree, args->display.td, tc->gradient, tr);
-    } else if (tc != NULL && tc->color != NULL) {
-	GC gc = Tk_GCForColor(tc->color, Tk_WindowId(tree->tkwin));
-	XFillRectangle(tree->display, args->display.drawable, gc,
-		x, y, width, height);
+	TreeColor_FillRect(tree, args->display.td, tc, tr);
     }
 #else
     COLOR_FOR_STATE(color, fill, state)
@@ -2177,18 +2220,18 @@ static void DisplayProcRect(TreeElementArgs *args)
 #endif
 
     COLOR_FOR_STATE(color, outline, state)
-    if ((color != NULL) && (outlineWidth > 0) && (open != 0xFFFFFFFF)) {
+    if ((color != NULL) && (outlineWidth > 0) && (open != 0xF)) {
 	GC gc = Tk_GCForColor(color, Tk_WindowId(tree->tkwin));
-	if (!(open & 0x01))
+	if (!(open & RECT_OPEN_W))
 	    XFillRectangle(tree->display, args->display.drawable, gc,
 		    x, y, outlineWidth, height);
-	if (!(open & 0x02))
+	if (!(open & RECT_OPEN_N))
 	    XFillRectangle(tree->display, args->display.drawable, gc,
 		    x, y, width, outlineWidth);
-	if (!(open & 0x04))
+	if (!(open & RECT_OPEN_E))
 	    XFillRectangle(tree->display, args->display.drawable, gc,
 		    x + width - outlineWidth, y, outlineWidth, height);
-	if (!(open & 0x08))
+	if (!(open & RECT_OPEN_S))
 	    XFillRectangle(tree->display, args->display.drawable, gc,
 		    x, y + height - outlineWidth, width, outlineWidth);
     }

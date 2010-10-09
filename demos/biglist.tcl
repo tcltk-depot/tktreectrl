@@ -7,6 +7,8 @@ proc DemoBigList {} {
 
     global BigList
 
+    set BigList(noise) 0
+
     set T [DemoList]
 
     #
@@ -17,12 +19,13 @@ proc DemoBigList {} {
 	-showroot no -showbuttons no -showlines no \
 	-showrootlines no
 
-if {$::clip} {
-    $T configure -xscrollincrement 4 -yscrollincrement 4
-} else {
-    # Hide the borders because child windows appear on top of them
-    $T configure -borderwidth 0 -highlightthickness 0
-}
+    if {$::clip} {
+	$T configure -xscrollincrement 4 -yscrollincrement 4
+    } else {
+	# Hide the borders because child windows appear on top of them
+	$T configure -borderwidth 0 -highlightthickness 0
+    }
+
     #
     # Create columns
     #
@@ -41,34 +44,32 @@ if {$::clip} {
     set BigList(bg) $::SystemButtonFace
     set outline gray70
 
-    $T element create eRectTop.e rect -outline $outline -fill $BigList(bg) \
-	-outlinewidth 1 -open es
-    $T element create eRectTop.we rect -outline $outline -fill $BigList(bg) \
-	-outlinewidth 1 -open wes
-    $T element create eRectTop.w rect -outline $outline -fill $BigList(bg) \
-	-outlinewidth 1 -open ws
+    $T state define openW
+    $T state define openE
+    $T state define openWE
+
+    $T element create eRectTop rect -outline $outline -fill $BigList(bg) \
+	-outlinewidth 1 -open {wes openWE es openE ws openW} -rx 7
     $T element create eRectBottom rect -outline $outline -fill $BigList(bg) \
-	-outlinewidth 1 -open n
+	-outlinewidth 1 -open n -rx 7
 
     # Title
-    $T element create elemBorderTitle border -relief {sunken open raised {}} -thickness 1 \
-	-filled yes -background $::SystemButtonFace
+    $T element create elemBorderTitle border -relief {sunken open raised {}} \
+	-thickness 1 -filled yes -background $::SystemButtonFace
     $T element create elemTxtTitle text \
 	-font [list DemoFontBold]
 
     # Citizen
-    $T element create elemRectSel rect -showfocus no \
-	-fill [list $::SystemHighlight {selected focus} gray {selected !focus}]
-    $T element create elemTxtItem text \
-	-fill [list $::SystemHighlightText {selected focus}]
+    $T element create elemTxtItem text
     $T element create elemTxtName text \
-	-fill [list $::SystemHighlightText {selected focus} blue {}]
+	-fill [list blue {}]
 
     # Citizen info
     $T element create elemWindow window
-if {$::clip} {
-    $T element configure elemWindow -clip yes
-}
+    if {$::clip} {
+	$T element configure elemWindow -clip yes
+    }
+
     #
     # Create styles using the elements
     #
@@ -79,28 +80,28 @@ if {$::clip} {
     $T style layout $S elemBorderTitle -detach yes -indent no -iexpand xy
 
     set S [$T style create styItem]
-    $T style elements $S {eRectTop.e elemRectSel elemTxtItem elemTxtName}
-    $T style layout $S eRectTop.e -detach yes -indent no -iexpand xy -draw {yes open no {}}
+    $T style elements $S {eRectTop elemTxtItem elemTxtName}
+    $T style layout $S eRectTop -detach yes -indent no -iexpand xy \
+	-draw {yes open no {}} -padx {2 0}
     $T style layout $S elemTxtItem -expand ns
     $T style layout $S elemTxtName -expand ns -padx {20}
-    $T style layout $S elemRectSel -detach yes -indent no -iexpand xy
 
     set S [$T style create styID]
-    $T style elements $S {eRectTop.we elemRectSel elemTxtItem}
-    $T style layout $S eRectTop.we -detach yes -indent yes -iexpand xy -draw {yes open no {}}
+    $T style elements $S {eRectTop elemTxtItem}
+    $T style layout $S eRectTop -detach yes -indent yes -iexpand xy -draw {yes open no {}}
     $T style layout $S elemTxtItem -padx 6 -expand ns
-    $T style layout $S elemRectSel -detach yes -indent no -iexpand xy
 
     set S [$T style create styParent]
-    $T style elements $S {eRectTop.w elemRectSel elemTxtItem}
-    $T style layout $S eRectTop.w -detach yes -indent yes -iexpand xy -draw {yes open no {}}
+    $T style elements $S {eRectTop elemTxtItem}
+    $T style layout $S eRectTop -detach yes -indent yes -iexpand xy \
+	-draw {yes open no {}} -padx {0 2}
     $T style layout $S elemTxtItem -padx 6 -expand ns
-    $T style layout $S elemRectSel -detach yes -indent no -iexpand xy
 
     set S [$T style create styCitizen]
     $T style elements $S {eRectBottom elemWindow}
-    $T style layout $S eRectBottom -detach yes -indent no -iexpand xy
-    $T style layout $S elemWindow -pady {0 1}
+    $T style layout $S eRectBottom -detach yes -indent no -iexpand xy \
+	-padx 2 -pady {0 1}
+    $T style layout $S elemWindow -pady {0 2}
 
     #
     # Create 10000 items. Each of these items will hold 10 child items.
@@ -188,13 +189,13 @@ proc BigListGetWindowHeight {T} {
     # value of the item -height option for some items.
     set w [BigListNewWindow $T root]
     update idletasks
-if {$::clip} {
-    set height [winfo reqheight [lindex [winfo children $w] 0]]
-} else {
-    set height [winfo reqheight $w]
-}
-    # Add 1 pixel for the border
-    incr height
+    if {$::clip} {
+	set height [winfo reqheight [lindex [winfo children $w] 0]]
+    } else {
+	set height [winfo reqheight $w]
+    }
+    # Add 2 pixels for the border and gap
+    incr height 2
     set BigList(windowHeight) $height
     BigListFreeWindow $T $w
     return
@@ -292,11 +293,14 @@ proc BigListItemVisibility {T visible hidden} {
 	# Citizen
 	if {[$T item tag expr $I citizen]} {
 	    set index $BigList(itemIndex,$I)
-	    $T item style set $I colItem styItem  colID styID colParent styParent
+	    $T item style set $I colItem styItem colID styID colParent styParent
 	    $T item element configure $I \
 		colItem elemTxtItem -text "Citizen $index" + elemTxtName -textvariable ::BigList(name,$I) , \
 		colParent elemTxtItem -text $parent , \
 		colID elemTxtItem -text $I
+	    $T item state forcolumn $I colItem openE
+	    $T item state forcolumn $I colID openWE
+	    $T item state forcolumn $I colParent openW
 	    continue
 	}
 
@@ -331,21 +335,22 @@ proc BigListNewWindow {T I} {
     if {[llength $BigList(freeWindows)]} {
 	set w [lindex $BigList(freeWindows) 0]
 	set BigList(freeWindows) [lrange $BigList(freeWindows) 1 end]
-if {$::clip} {
-	set f $w
-	set w [lindex [winfo children $f] 0]
-}
-puts "reuse window $w"
+	if {$::clip} {
+	    set f $w
+	    set w [lindex [winfo children $f] 0]
+	}
+	
+	if {$BigList(noise)} { dbwin "reuse window $w" }
 
     # No unused windows exist. Create a new one.
     } else {
 	set id [incr BigList(nextWindowId)]
-if {$::clip} {
-	set f [frame $T.clip$id -background blue]
-	set w [frame $f.frame$id -background $BigList(bg)]
-} else {
-	set w [frame $T.frame$id -background $BigList(bg)]
-}
+	if {$::clip} {
+	    set f [frame $T.clip$id -background blue]
+	    set w [frame $f.frame$id -background $BigList(bg)]
+	} else {
+	    set w [frame $T.frame$id -background $BigList(bg)]
+	}
 	# Name: label + entry
 	label $w.label1 -text "Name:" -anchor w -background $BigList(bg)
 	$::entryCmd $w.entry1 -width 24
@@ -386,7 +391,7 @@ if {$::clip} {
 	AddBindTag $w DemoBigListChildWindow
 	AddBindTag $w TagIdentify
 
-puts "create window $w"
+	if {$BigList(noise)} { dbwin "create window $w" }
     }
 
     # Tie the widgets to the global variables for this citizen
@@ -397,7 +402,7 @@ puts "create window $w"
 	    $w.mb2.m entryconfigure $label -variable BigList(threat,$I)
 	}
     }
-if {$::clip} { return $f }
+    if {$::clip} { return $f }
     return $w
 }
 
@@ -407,7 +412,7 @@ proc BigListFreeWindow {T w} {
     # Add the window to our list of free windows. DemoClear will actually
     # delete the window when the demo changes.
     lappend BigList(freeWindows) $w
-puts "free window $w"
+    if {$BigList(noise)} { dbwin "free window $w" }
     return
 }
 

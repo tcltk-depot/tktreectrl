@@ -1252,12 +1252,12 @@ typedef struct TreeGradient_
     int deletePending;		/* Non-zero if gradient should be deleted when
 				 * last reference goes away. */
     Tk_Uid name;
-    Tcl_Obj *stopsObj;
-    GradientStopArray *stopArrPtr;
-    int vertical;
+    Tcl_Obj *stopsObj;		/* -stops */
+    GradientStopArray *stopArrPtr; /* -stops */
+    int vertical;		/* -orient */
 
-    int steps;
-    int nStepColors;
+    int steps;			/* -steps */
+    int nStepColors;		/* length of stepColors */
     XColor **stepColors;	/* calculated from color1,color2,steps */
 } TreeGradient_;
 MODULE_SCOPE void TreeGradient_Init(TreeCtrl *tree);
@@ -1271,5 +1271,16 @@ MODULE_SCOPE int TreeDraw_InitInterp(Tcl_Interp *interp);
 
 #endif /* GRADIENT */
 
-MODULE_SCOPE void TreeColor_FillRect(TreeCtrl *tree, TreeDrawable td, TreeColor *tc, TreeRectangle tr);
+MODULE_SCOPE void TreeColor_FillRect(TreeCtrl *tree, TreeDrawable td,
+    TreeColor *tc, TreeRectangle tr);
+#define RECT_OPEN_W 0x01
+#define RECT_OPEN_N 0x02
+#define RECT_OPEN_E 0x04
+#define RECT_OPEN_S 0x08
+MODULE_SCOPE void Tree_DrawRoundRect(TreeCtrl *tree, TreeDrawable td,
+    XColor *xcolor, TreeRectangle tr, int outlineWidth, int rx, int ry, int open);
+MODULE_SCOPE void TreeColor_DrawRoundRect(TreeCtrl *tree, TreeDrawable td,
+    TreeColor *tc, TreeRectangle tr, int outlineWidth, int rx, int ry, int open);
+MODULE_SCOPE void TreeColor_FillRoundRect(TreeCtrl *tree, TreeDrawable td,
+    TreeColor *tc, TreeRectangle tr, int rx, int ry, int open);
 

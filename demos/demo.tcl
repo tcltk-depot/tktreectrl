@@ -924,6 +924,9 @@ proc MakeMainWindow {} {
 proc DemoList {} {
     return .f2.f1.t
 }
+proc demolist args { # console-friendly version
+    uplevel .f2.f1.t $args
+}
 
 proc MakeListPopup {T} {
     set m [menu $T.mTree -tearoff no]
@@ -1263,7 +1266,8 @@ proc InitDemoList {} {
 	"Explorer (Details, WinXP)" DemoExplorerDetails explorer.tcl \
 	"Explorer (Details, Win7)" DemoExplorerDetailsWin7 explorer.tcl \
 	"Explorer (List)" DemoExplorerList explorer.tcl \
-	"Explorer (Large icons)" DemoExplorerLargeIcons explorer.tcl \
+	"Explorer (Large icons, WinXP)" DemoExplorerLargeIcons explorer.tcl \
+	"Explorer (Large icons, Win7)" DemoExplorerLargeIconsWin7 explorer.tcl \
 	"Explorer (Small icons)" DemoExplorerSmallIcons explorer.tcl \
 	"Internet Options" DemoInternetOptions www-options.tcl \
 	"Help Contents" DemoHelpContents help.tcl \
@@ -1512,6 +1516,14 @@ bind [DemoList] <ButtonRelease-1> {
     %T column move %C %b
 }
 
+if {$::thisPlatform eq "windows" && [info exists ::TreeCtrl::gdiplus]} {
+    bind [DemoList] <Control-g> {
+	set ::TreeCtrl::gdiplus [expr {!$::TreeCtrl::gdiplus}]
+	[DemoList] debug expose 0 0 10000 10000
+	dbwin "gdiplus is now $::TreeCtrl::gdiplus"
+    }
+}
+
 proc DemoClear {} {
 
     set T [DemoList]
@@ -1566,9 +1578,11 @@ proc DemoClear {} {
 	-itemwidth 0 -itemwidthequal no -itemwidthmultiple 0 \
 	-font [.f4.t cget -font]
 
-    # Undo "column configure all" in a demo
-    $T column configure tail -background \
-	[lindex [$T column configure tail -background] 3]
+    # Restore defaults to the tail column
+    foreach spec [$T column configure tail] {
+	lassign $spec name x y default current
+	$T column configure tail $name $default
+    }
 
     # Enable drag-and-drop column reordering. This also requires the
     # <ColumnDrag> event be installed.

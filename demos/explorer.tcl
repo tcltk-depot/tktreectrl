@@ -726,7 +726,7 @@ proc DemoExplorerDetailsWin7 {} {
     #
 
     if {$::shellicon} {
-	$T element create elemImg shellicon -size small
+	$T element create elemImg shellicon -size small -useselected never
     } else {
 	$T element create elemImg image -image small-folder
     }
@@ -747,7 +747,7 @@ proc DemoExplorerDetailsWin7 {} {
 			G_selected selected \
 			G_mouseover mouseover]
 
-    $T element create elemRectOutline rect \
+    $T element create elemRectOutline rect -rx 1 \
 	-open [list we openWE w openW e openE] \
 	-outline [list #7da2ce {selected mouseover} \
 		       #d9d9d9 {selected !focus} \
@@ -944,6 +944,181 @@ proc DemoExplorerDetailsWin7_FixItemStyles {T} {
 	$T style layout $style elemRectOutline -padx $padx
 	$T style layout $style $padelem -padx $padelemX
     }
+}
+
+proc DemoExplorerLargeIconsWin7 {} {
+
+    set T [DemoList]
+
+    # Item height is 2 + 32 for icon + 4 pad + 3 lines of text + 3
+    set fontHeight [font metrics [$T cget -font] -linespace]
+    set itemHeight [expr {2 + 32 + 4 + $fontHeight * 3 + 3}]
+
+    #
+    # Configure the treectrl widget
+    #
+
+    $T configure -showroot no -showbuttons no -showlines no \
+	-selectmode extended -wrap window -orient horizontal \
+	-itemheight $itemHeight -itemwidth 75 -showheader no \
+	-scrollmargin 16 -xscrolldelay "500 50" -yscrolldelay "500 50"
+
+    InitPics big-*
+
+    #
+    # Create columns
+    #
+
+    $T column create -tags C0
+
+    #
+    # Create gradients
+    #
+
+    set steps 8
+    $T gradient api 1.0
+    $T gradient create G_mouseover       -steps $steps -stops {{0.0 white} {1.0 #ebf3fd}} -orient vertical
+    $T gradient create G_selected_active -steps $steps -stops {{0.0 #dcebfc} {1.0 #c1dbfc}} -orient vertical
+    $T gradient create G_selected        -steps $steps -stops {{0.0 #ebf4fe} {1.0 #cfe4fe}} -orient vertical
+    $T gradient create G_focusout        -steps $steps -stops {{0.0 #f8f8f8} {1.0 #e5e5e5}} -orient vertical
+
+    #
+    # Create elements
+    #
+
+    $T state define mouseover
+    $T state define openW
+    $T state define openE
+    $T state define openWE
+
+    $T element create elemRectGradient rect \
+	-fill [list	G_selected_active {selected mouseover} \
+			G_focusout {selected !focus} \
+			G_selected_active {selected active} \
+			G_selected selected \
+			G_mouseover mouseover]
+
+    $T element create elemRectOutline rect -rx 3 \
+	-open [list we openWE w openW e openE] \
+	-outline [list #7da2ce {selected mouseover} \
+		       #d9d9d9 {selected !focus} \
+		       #7da2ce selected \
+		       #7da2ce {active focus} \
+		       #b8d6fb mouseover] -outlinewidth 1
+
+    if {$::shellicon} {
+	$T element create elemImg shellicon -size large -useselect never
+    } else {
+	$T element create elemImg image -image big-folder
+    }
+    $T element create elemTxt text \
+	-justify center -lines 3 -width 70 -wrap word
+
+    #
+    # Create styles using the elements
+    #
+
+    # image + text
+    set S [$T style create STYLE -orient vertical]
+    $T style elements $S {elemRectGradient elemRectOutline elemImg elemTxt}
+    $T style layout $S elemRectGradient -union {elemImg elemTxt} -iexpand we
+    $T style layout $S elemRectOutline -union elemRectGradient -padx {0 1} -pady {0 1} -ipadx 2 -ipady 2
+    $T style layout $S elemImg -expand we
+    $T style layout $S elemTxt -pady {4 0} -squeeze x -expand we
+
+    # List of lists: {column style element ...} specifying text elements
+    # the user can edit
+    TreeCtrl::SetEditable $T {
+	{C0 STYLE elemTxt}
+    }
+
+    # List of lists: {column style element ...} specifying elements
+    # the user can click on or select with the selection rectangle
+    TreeCtrl::SetSensitive $T {
+	{C0 STYLE elemImg elemTxt}
+    }
+
+    # List of lists: {column style element ...} specifying elements
+    # added to the drag image when dragging selected items
+    TreeCtrl::SetDragImage $T {
+	{C0 STYLE elemImg elemTxt}
+    }
+
+    # During editing, hide the text and selection-rectangle elements.
+    $T state define edit
+    $T style layout STYLE elemTxt -draw {no edit}
+    $T notify bind $T <Edit-begin> {
+	%T item state set %I ~edit
+    }
+    $T notify bind $T <Edit-accept> {
+	%T item element configure %I %C %E -text %t
+    }
+    $T notify bind $T <Edit-end> {
+	%T item state set %I ~edit
+    }
+
+    #
+    # Create items and assign styles
+    #
+
+    set scriptDir {
+	set item [$T item create -open no]
+	$T item style set $item C0 STYLE
+	$T item text $item C0 [file tail $file]
+	if {$::shellicon} {
+	    # The shellicon extension fails randomly (by putting GDB into the
+	    # background!?) if the filename is not valid. MSDN says "relative
+	    # paths are valid" but perhaps that is misinformation.
+	    if {$file eq ".."} { set file [file dirname $::Dir] }
+	    $T item element configure $item C0 \
+		elemImg -path $file
+	}
+	$T item lastchild root $item
+    }
+
+    set scriptFile {
+	set item [$T item create -open no]
+	$T item style set $item C0 STYLE
+	switch [file extension $file] {
+	    .dll { set img big-dll }
+	    .exe { set img big-exe }
+	    .txt { set img big-txt }
+	    default { set img big-file }
+	}
+	set type [string toupper [file extension $file]]
+	if {$type ne ""} {
+	    set type "[string range $type 1 end] "
+	}
+	append type "File"
+	if {$::shellicon} {
+	    $T item element configure $item C0 \
+		elemImg -path $file + \
+		elemTxt -text [file tail $file]
+	} else {
+	    $T item element configure $item C0 \
+		elemImg -image [list ${img}Sel {selected} $img {}] + \
+		elemTxt -text [file tail $file]
+	}
+	$T item lastchild root $item
+    }
+
+    DemoExplorerAux $scriptDir $scriptFile
+
+    $T activate [$T item id "root firstchild"]
+
+    $T notify bind $T <ActiveItem> {
+	if {[%T item compare %p != root]} {
+	    %T item element configure %p C0 elemTxt -lines {}
+	}
+	if {[%T item compare %c != root]} {
+	    %T item element configure %c C0 elemTxt -lines 3
+	}
+    }
+    $T item element configure active C0 elemTxt -lines 3
+
+    bindtags $T [list $T DemoExplorer TreeCtrlFileList TreeCtrl [winfo toplevel $T] all]
+
+    return
 }
 
 proc ExplorerMotion {w x y} {
