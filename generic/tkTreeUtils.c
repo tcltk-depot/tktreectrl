@@ -12,7 +12,9 @@
 
 #ifdef WIN32
 #include "tkWinInt.h"
-#include <gdiplus.h>
+#ifdef __MINGW32__
+#include <gdiplus.h> /* Works in C, MicroSoft's does not */
+#endif
 #endif
 
 #if defined(MAC_TK_CARBON)
@@ -7993,52 +7995,117 @@ TreeGradient_FillRectX11(
  * GDI+ flat api
  */
 
+#ifndef __MINGW32__
+#define WINGDIPAPI __stdcall
+#define GDIPCONST const
+#define VOID void
+typedef enum GpFillMode
+{
+    FillModeAlternate,
+    FillModeWinding
+} GpFillMode;
+typedef enum GpUnit {
+    UnitWorld = 0,
+    UnitDisplay = 1,
+    UnitPixel = 2,
+    UnitPoint = 3,
+    UnitInch = 4,
+    UnitDocument = 5,
+    UnitMillimeter = 6
+} GpUnit;
+typedef enum GpStatus {
+    Ok = 0
+} GpStatus;
+typedef enum GpWrapMode
+{
+    WrapModeTile
+} GpWrapMode;
+typedef enum LinearGradientMode
+{
+    LinearGradientModeHorizontal,
+    LinearGradientModeVertical
+} LinearGradientMode;
+typedef struct GdiplusStartupInput
+{
+    UINT32 GdiplusVersion;
+    /*DebugEventProc*/VOID* DebugEventCallback;
+    BOOL SuppressBackgroundThread;
+    BOOL SuppressExternalCodecs;
+} GdiplusStartupInput;
+typedef struct GdiplusStartupOutput
+{
+    /*NotificationHookProc*/VOID* NotificationHook;
+    /*NotificationUnhookProc*/VOID* NotificationUnhook;
+} GdiplusStartupOutput;
+typedef struct GpPoint {
+    INT X;
+    INT Y;
+} GpPoint;
+typedef struct GpRect {
+    INT X;
+    INT Y;
+    INT Width;
+    INT Height;
+} GpRect;
+typedef DWORD ARGB;
+typedef float REAL;
+typedef void GpBrush;
+typedef void GpGraphics;
+typedef void GpLineGradient;
+typedef void GpPath;
+typedef void GpPen;
+typedef void GpSolidFill;
+#endif /* not __MINGW32__ */
+
 /* After gdiplus.dll is dynamically loaded, this structure is
  * filled in with pointers to functions that are used below. */
 static struct
 {
     HMODULE handle; /* gdiplus.dll */
 
-    VOID* WINGDIPAPI (*_GdipAlloc)(size_t);
-    VOID WINGDIPAPI (*_GdipFree)(VOID*);
+    VOID* (WINGDIPAPI *_GdipAlloc)(size_t);
+    VOID (WINGDIPAPI *_GdipFree)(VOID*);
 
-    GpStatus WINGDIPAPI (*_GdiplusStartup)(ULONG_PTR*,GDIPCONST GdiplusStartupInput*,GdiplusStartupOutput*);
-    VOID WINGDIPAPI (*_GdiplusShutdown)(ULONG_PTR);
+    GpStatus (WINGDIPAPI *_GdiplusStartup)(ULONG_PTR*,GDIPCONST GdiplusStartupInput*,GdiplusStartupOutput*);
+    VOID (WINGDIPAPI *_GdiplusShutdown)(ULONG_PTR);
 
     /* Graphics */
-    GpStatus WINGDIPAPI (*_GdipCreateFromHDC)(HDC,GpGraphics**);
-    GpStatus WINGDIPAPI (*_GdipFillRectangleI)(GpGraphics*,GpBrush*,INT,INT,INT,INT);
-    GpStatus WINGDIPAPI (*_GdipDeleteGraphics)(GpGraphics*);
-    GpStatus WINGDIPAPI (*_GdipDrawPath)(GpGraphics*,GpPen*,GpPath*);
-    GpStatus WINGDIPAPI (*_GdipFillPath)(GpGraphics*,GpBrush*,GpPath*);
+    GpStatus (WINGDIPAPI *_GdipCreateFromHDC)(HDC,GpGraphics**);
+    GpStatus (WINGDIPAPI *_GdipFillRectangleI)(GpGraphics*,GpBrush*,INT,INT,INT,INT);
+    GpStatus (WINGDIPAPI *_GdipDeleteGraphics)(GpGraphics*);
+    GpStatus (WINGDIPAPI *_GdipDrawPath)(GpGraphics*,GpPen*,GpPath*);
+    GpStatus (WINGDIPAPI *_GdipFillPath)(GpGraphics*,GpBrush*,GpPath*);
 
     /* GraphicsPath */
-    GpStatus WINGDIPAPI (*_GdipCreatePath)(GpFillMode,GpPath**);
-    GpStatus WINGDIPAPI (*_GdipDeletePath)(GpPath*);
-    GpStatus WINGDIPAPI (*_GdipResetPath)(GpPath*);
-    GpStatus WINGDIPAPI (*_GdipAddPathArcI)(GpPath*,INT,INT,INT,INT,REAL,REAL);
-    GpStatus WINGDIPAPI (*_GdipAddPathLineI)(GpPath*,INT,INT,INT,INT);
-    GpStatus WINGDIPAPI (*_GdipStartPathFigure)(GpPath*);
-    GpStatus WINGDIPAPI (*_GdipClosePathFigure)(GpPath*);
+    GpStatus (WINGDIPAPI *_GdipCreatePath)(GpFillMode,GpPath**);
+    GpStatus (WINGDIPAPI *_GdipDeletePath)(GpPath*);
+    GpStatus (WINGDIPAPI *_GdipResetPath)(GpPath*);
+    GpStatus (WINGDIPAPI *_GdipAddPathArcI)(GpPath*,INT,INT,INT,INT,REAL,REAL);
+    GpStatus (WINGDIPAPI *_GdipAddPathLineI)(GpPath*,INT,INT,INT,INT);
+    GpStatus (WINGDIPAPI *_GdipStartPathFigure)(GpPath*);
+    GpStatus (WINGDIPAPI *_GdipClosePathFigure)(GpPath*);
 
     /* Linear Gradient brush */
-    GpStatus WINGDIPAPI (*_GdipCreateLineBrushFromRectI)(GDIPCONST GpRect*,ARGB,ARGB,LinearGradientMode,GpWrapMode,GpLineGradient**);
-    GpStatus WINGDIPAPI (*_GdipSetLinePresetBlend)(GpLineGradient*,GDIPCONST ARGB*,GDIPCONST REAL*,INT);
-    GpStatus WINGDIPAPI (*_GdipDeleteBrush)(GpBrush*);
+    GpStatus (WINGDIPAPI *_GdipCreateLineBrushFromRectI)(GDIPCONST GpRect*,ARGB,ARGB,LinearGradientMode,GpWrapMode,GpLineGradient**);
+    GpStatus (WINGDIPAPI *_GdipSetLinePresetBlend)(GpLineGradient*,GDIPCONST ARGB*,GDIPCONST REAL*,INT);
+    GpStatus (WINGDIPAPI *_GdipDeleteBrush)(GpBrush*);
 
     /* Pen */
-    GpStatus WINGDIPAPI (*_GdipCreatePen1)(ARGB,REAL,GpUnit,GpPen**);
-    GpStatus WINGDIPAPI (*_GdipDeletePen)(GpPen*);
+    GpStatus (WINGDIPAPI *_GdipCreatePen1)(ARGB,REAL,GpUnit,GpPen**);
+    GpStatus (WINGDIPAPI *_GdipDeletePen)(GpPen*);
 
     /* SolidFill brush */
-    GpStatus WINGDIPAPI (*_GdipCreateSolidFill)(ARGB,GpSolidFill**);
+    GpStatus (WINGDIPAPI *_GdipCreateSolidFill)(ARGB,GpSolidFill**);
+
 } DllExports = {0};
 
 /* Per-application global data */
 typedef struct
 {
     ULONG_PTR token;			/* Result of GdiplusStartup() */
+#if 0
     GdiplusStartupOutput output;	/* Result of GdiplusStartup() */
+#endif
 } TreeDrawAppData;
 
 static TreeDrawAppData *appDrawData = NULL;
@@ -8119,7 +8186,11 @@ TreeDraw_InitInterp(
 	    /* Not sure what happens when the main application or other
 	     * DLLs also call this, probably its okay. */
 	    status = DllExports._GdiplusStartup(&appDrawData->token, &input,
+#if 1
+		NULL);
+#else
 		&appDrawData->output);
+#endif
 	    if (status != Ok) {
 		DllExports.handle = NULL;
 	    }
@@ -8184,7 +8255,7 @@ TreeGradient_FillRect(
     GpGraphics *graphics;
     GpLineGradient *lineGradient = NULL;
     GpStatus status;
-    Rect rect;
+    GpRect rect;
     GradientStop *stop;
     int i, nstops;
     ARGB color1, color2;
@@ -8294,7 +8365,7 @@ GetRoundRectPath_Outline(
 
     /* Complicated case: some edges are "open" */
     } else {
-	Point start[4], end[4]; /* start and end points of line segments*/
+	GpPoint start[4], end[4]; /* start and end points of line segments*/
 	width -= 1, height -= 1;
 	start[0].X = x, start[0].Y = y;
 	end[3] = start[0];
@@ -8455,7 +8526,7 @@ GetRoundRectPath_Fill(
 
     /* Complicated case: some edges are "open" */
     } else {
-	Point start[4], end[4]; /* start and end points of line segments*/
+	GpPoint start[4], end[4]; /* start and end points of line segments*/
 	if (drawE)
 	    width -= 1;
 	if (drawS)
