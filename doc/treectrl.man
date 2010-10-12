@@ -950,6 +950,105 @@ such as [const rect] or [const text].
      [opt [arg {itemDesc ...}]]]
 Use [cmd {item expand}] instead.
 
+
+[call [arg pathName] [cmd gradient] [arg option] [opt [arg {arg ...}]]]
+This command is used to manipulate color gradients.
+See [sectref {GRADIENTS}] for more information about using gradients.
+The exact behavior of the command depends on the [arg option] argument
+that follows the [cmd gradient] argument.
+The following forms of the command are supported:
+
+[list_begin definitions]
+
+[call [arg pathName] [cmd {gradient api}] [opt [arg version]]]
+When [arg version] is specified this command sets the API that is used
+by the [cmd gradient] command.  You must call this command before any
+gradients can be created.  The purpose of this is to avoid breaking your
+application if the gradient API changes in the future.
+When [arg version] is not given this command returns a list of the form:
+[example_begin]
+{{available 1.0} {current 1.0}}
+[example_end]
+If this command has never been called for this treectrl widget the result is:
+[example_begin]
+{{available 1.0} {current unspecified}}
+[example_end]
+
+[call [arg pathName] [cmd {gradient cget}] [arg gradient] [arg option]]
+Returns the current value of the configuration option for the gradient specified by
+[arg gradient] whose name is [arg option]. [arg Option] may have any of the
+values accepted by the [cmd "gradient configure"] command.
+
+[call [arg pathName] [cmd {gradient configure}] [arg gradient] [opt [arg {option value ...}]]]
+If no [arg option] is specified, the command returns a list describing
+all of the available gradient options (see [fun Tk_ConfigureInfo]
+for information on the format of this list).
+If [arg option] is specified with no [arg value], then the command returns
+a list describing the one named gradient option (this list will be identical
+to the corresponding sublist of the value returned if no [arg option]
+is specified).
+If one or more [arg option]-[arg value] pairs are specified, then the command
+modifies the given gradient option(s) to have the given value(s);
+in this case the command returns an empty string.
+[para]
+The following options are supported (see [cmd "gradient create"] for the meaning of each option):
+[list_begin options]
+[opt_def [option -orient] [arg direction]]
+[opt_def [option -steps] [arg stepCount]]
+[opt_def [option -stops] [arg stopsList]]
+[list_end]
+
+
+[call [arg pathName] [cmd {gradient create}] [arg name] [opt [arg {option value ...}]]]
+Creates a new gradient with the name [arg name], which must be a unique name
+not used by another gradient created by this treectrl widget.
+[para]
+The following options are supported:
+[list_begin options]
+
+[opt_def [option -orient] [arg direction]]
+This option specifies the direction a linear gradient changes color in.
+Must be either [const horizontal] (the default)
+or [const vertical] or an abbreviation of one of these.
+
+[opt_def [option -steps] [arg stepCount]]
+Specifies the number of bands of color drawn for each color stop described by
+the [option -stops] option.  The default value is 1, the maximum is 25.
+This option has no effect if gradients are drawn using something better than
+Tk API calls.  See [sectref {GRADIENTS}] for more on this.
+
+[opt_def [option -stops] [arg stopsList]]
+Specifies the color stops along this gradient. The argument [arg stopsList]
+has the following form:
+[example_begin]
+{{offset color ?opacity?} {offset color ?opacity?} ...}
+[example_end]
+Each [arg offset] is a floating point number from 0.0 to 1.0 specifying the
+distance from the start of the gradient where the [arg color] begins.
+Each [arg color] is a Tk color name or description.
+Each optional [arg opacity] is a floating point number from 0.0 to 1.0
+specifying how transparent the gradient is.
+
+If [arg stopsList] is non-empty there must be at least two stops specified, and
+the first offset must be 0.0 and the last offset must be 1.0.  Any other
+stop offsets must be listed in increasing order.
+Specifying opacity has no effect if gradients are drawn using Tk API calls.
+See [sectref {GRADIENTS}] for more on this.
+
+[list_end]
+
+[call [arg pathName] [cmd {gradient delete}] [opt [arg {name ...}]]]
+Deletes each gradient specified by [arg name].  If the gradient is still being
+used then it is not actually deleted until all elements etc
+using the gradient have stopped using it.
+
+[call [arg pathName] [cmd {gradient names}]]
+Returns a list of names of all the gradients that have been created by this treectrl
+widget.
+
+[list_end]
+
+
 [call [arg pathName] [cmd identify] [arg x] [arg y]]
 Returns a list describing what
 is displayed at the given window coordinates [arg x] and [arg y].
@@ -2877,6 +2976,11 @@ Specifies the width of the outline to be drawn around the rectangle's region.
 If this option is specified as an empty string (the default), then no outline
 is drawn.
 
+[opt_def [option -rx] [arg radius]]
+[opt_def [option -ry] [arg radius]]
+Specifies the x and y radius of each corner of a rounded rectangle
+in any of the forms acceptable to [fun Tk_GetPixels].
+
 [opt_def [option -showfocus] [arg boolean]]
 Specifies a boolean value indicating whether
 a "focus ring" should be drawn around the rectangle,
@@ -3482,6 +3586,59 @@ The mousewheel scrolls the view of the widget four lines up or down
 depending on the direction, the wheel was turned.
 The active cursor or the selection is not affected.
 [list_end]
+
+[section GRADIENTS]
+
+Color gradients are an easy way to give your lists a more modern appearance.
+Since Tk provides no support for drawing gradients, the TkPath extension was
+used as a guide when implementing gradients in TkTreeCtrl.  The current
+implementation has some limitations, however:
+[list_begin enum]
+[enum]
+Only linear gradients are supported.
+[enum]
+Gradients can only be painted left-to-right or top-to-bottom, not at
+arbitrary angles.
+[enum]
+Gradients look bad on low-color displays. Before using gradients, you should
+check that the display's color depth is at least 15 or 16 by calling the
+[cmd "winfo depth"] command.
+[enum]
+Gradients are fully opaque when XFillRectangle() is used to draw them (see below).
+This means the [option opacity] value of each color stop is ignored.  Keep that
+in mind if your application is cross-platform.
+[list_end]
+
+Gradients may be used in the following places:
+[list_begin enum]
+[enum]
+The -fill option of rect elements.
+[enum]
+The -itembackground option of columns.
+[list_end]
+
+[para]
+On Microsoft Windows, GDI+ is used where it is available (gdiplus.dll is
+dynamically loaded at run-time).  When it is available, all the talk below
+about [option -steps] can safely be ignored.
+[para]
+When no native support for gradients is available, gradients
+are drawn simply by filling sub-rectangles using XFillRectangle().  The number
+of sub-rectangles drawn and number of colors that make up the displayed gradient
+are controlled by the gradient's [option -steps] and [option -stops] options.
+The number of sub-rectangles is equal to the length of the [option -stops]
+option multiplied by the value of the [option -steps] option. For example:
+[example_begin]
+$T gradient create myGradient -stops {{0 white} {1 gray}} -steps 8
+[example_end]
+This gradient will be drawn with 2x8=16 sub-rectangles of color.
+The higher the [option -steps] value, the smoother the color transitions
+will be, and the slower the gradient will be to draw.
+For the best appearance, make the number of sub-rectangles drawn less than or equal
+to the height or width of the gradient being drawn.  So if you have a rect element
+18 pixels tall, use a vertical gradient that has steps X stops=18.  Avoid using
+gradients with steps X stops greater than the height or width of the rectangle
+being drawn, because then colors will overlap.
 
 [section EXAMPLES]
 

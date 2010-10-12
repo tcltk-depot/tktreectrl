@@ -19,7 +19,6 @@
 
 #if defined(MAC_TK_CARBON)
 #include <Carbon/Carbon.h>
-#include "tkMacOSXInt.h"
 static PixPatHandle gPenPat = NULL;
 
 /* TkRegion changed from RgnHandle to HIShapeRef in 8.4.17/8.5.0 */
@@ -34,6 +33,7 @@ static PixPatHandle gPenPat = NULL;
 #if defined(MAC_TK_COCOA)
 #  define MAC_OSX_HISHAPE 1
 #import <Cocoa/Cocoa.h>
+#include "tkMacOSXInt.h"
 #endif /* MAC_TK_COCOA */
 
 struct dbwinterps {
@@ -1243,7 +1243,7 @@ Tree_ScrollWindow(
     int result = TkScrollWindow(tree->tkwin, gc, x, y, width, height, dx, dy,
 	damageRgn);
 #endif /* WIN32 */
-#if defined(MAC_TK_CARBON)
+#if defined(MAC_TK_CARBON) || defined(MAC_TK_COCOA)
     {
 	MacDrawable *macWin = (MacDrawable *) Tk_WindowId(tree->tkwin);
 	/* BUG IN TK? */
@@ -6856,8 +6856,6 @@ Tree_FillRoundRectX11(
     }
 }
 
-#ifdef GRADIENT
-
 /*****/
 
 typedef struct PerStateDataGradient PerStateDataGradient;
@@ -7204,7 +7202,7 @@ static Tk_OptionSpec gradientOptionSpecs[] = {
 	"horizontal", -1, Tk_Offset(TreeGradient_, vertical),
 	0, (ClientData) orientStringTable, 0},
     {TK_OPTION_INT, "-steps", (char *) NULL, (char *) NULL,
-     "2", -1, Tk_Offset(TreeGradient_, steps),
+     "1", -1, Tk_Offset(TreeGradient_, steps),
      0, (ClientData) NULL, GRAD_CONF_STEPS},
     {TK_OPTION_CUSTOM, "-stops", NULL, NULL,
 	NULL, Tk_Offset(TreeGradient_, stopsObj),
@@ -7995,7 +7993,7 @@ TreeGradient_FillRectX11(
  * GDI+ flat api
  */
 
-#ifndef __MINGW32__
+#ifndef __MINGW32__ /* With MingW32 we can just #include <gdiplus.h> */
 #define WINGDIPAPI __stdcall
 #define GDIPCONST const
 #define VOID void
@@ -8110,8 +8108,8 @@ typedef struct
 
 static TreeDrawAppData *appDrawData = NULL;
 
-/* Linked to ::TreeCtrl::gdiplus in each interpreter */
-static int gUseGdiPlus = 1;
+/* Linked to ::TreeCtrl::nativeGradients in each interpreter */
+static int gNativeGradients = 1;
 
 /* Tcl_CreateExitHandler() callback that shuts down GDI+ */
 static void
@@ -8201,8 +8199,8 @@ TreeDraw_InitInterp(
     if (Tcl_CreateNamespace(interp, "::TreeCtrl", NULL, NULL) == NULL) {
 	Tcl_ResetResult(interp);
     }
-    if (Tcl_LinkVar(interp, "::TreeCtrl::gdiplus",
-	(char *) &gUseGdiPlus, TCL_LINK_BOOLEAN) != TCL_OK) {
+    if (Tcl_LinkVar(interp, "::TreeCtrl::nativeGradients",
+	(char *) &gNativeGradients, TCL_LINK_BOOLEAN) != TCL_OK) {
 	Tcl_ResetResult(interp);
     }
 
@@ -8260,7 +8258,7 @@ TreeGradient_FillRect(
     int i, nstops;
     ARGB color1, color2;
 
-    if (!gUseGdiPlus || (DllExports.handle == NULL)) {
+    if (!gNativeGradients || (DllExports.handle == NULL)) {
 	TreeGradient_FillRectX11(tree,td,gradient,tr);
 	return;
     }
@@ -8334,10 +8332,11 @@ error2:
 error1:
     TkWinReleaseDrawableDC(td.drawable, hDC, &dcState);
 
+#ifdef TREECTRL_DEBUG
     if (status != Ok) dbwin("TreeGradient_FillRect gdiplus status != Ok");
+#endif
 }
 
-/* http://www.codeproject.com/KB/GDI-plus/RoundRect.aspx */
 static void
 GetRoundRectPath_Outline(
     GpPath *path,
@@ -8447,7 +8446,7 @@ Tree_DrawRoundRect(
     GpStatus status;
     int i;
 
-    if (!gUseGdiPlus || (DllExports.handle == NULL)) {
+    if (!gNativeGradients || (DllExports.handle == NULL)) {
 	GC gc = Tk_GCForColor(xcolor, td.drawable);
 	Tree_DrawRoundRectX11(tree, td, gc, tr, outlineWidth, rx, ry, open);
 	return;
@@ -8471,6 +8470,7 @@ Tree_DrawRoundRect(
     GetRoundRectPath_Outline(path, tr, rx, ry, open, 0, 0);
     DllExports._GdipDrawPath(graphics, pen, path);
 
+    /* http://www.codeproject.com/KB/GDI-plus/RoundRect.aspx */
     for (i = 1; i < outlineWidth; i++) {
 	tr.x += 1, tr.width -= 2;
 	DllExports._GdipResetPath(path);
@@ -8501,6 +8501,7 @@ error1:
  * than GdipDrawPath.  So after filling the round rectangle with this path
  * GetRoundRectPath_Outline should be called to paint the right and bottom
  * edges. */
+/* http://www.codeproject.com/KB/GDI-plus/RoundRect.aspx */
 static void
 GetRoundRectPath_Fill(
     GpPath *path,
@@ -8589,7 +8590,7 @@ Tree_FillRoundRect(
     GpPen *pen;
     GpStatus status;
 
-    if (!gUseGdiPlus || (DllExports.handle == NULL)) {
+    if (!gNativeGradients || (DllExports.handle == NULL)) {
 	GC gc = Tk_GCForColor(xcolor, td.drawable);
 	Tree_FillRoundRectX11(tree, td, gc, tr, rx, ry, open);
 	return;
@@ -8637,7 +8638,231 @@ error1:
     TkWinReleaseDrawableDC(td.drawable, hDC, &dcState);
 }
 
-#else /* WIN32 */
+#endif /* WIN32 */
+
+#ifdef MAC_TK_COCOA
+
+typedef struct {
+    CGrafPtr port, savePort;
+    Boolean portChanged;
+    CGContextRef context;
+} MacContextSetup;
+
+/*
+ * THIS WON'T WORK FOR DRAWING IN A WINDOW.
+ */
+static CGContextRef
+GetCGContextForDrawable(
+    TreeCtrl *tree,
+    Drawable d,
+    MacContextSetup *dc)
+{
+    MacDrawable *macDraw = (MacDrawable *) d;
+    CGAffineTransform t = { .a = 1, .b = 0, .c = 0, .d = -1, .tx = 0,
+	.ty = macDraw->size.height};
+
+    dc->port = TkMacOSXGetDrawablePort(d);
+    dc->context = NULL;
+    dc->portChanged = False;
+    if (dc->port) {
+	dc->portChanged = QDSwapPort(dc->port, &dc->savePort);
+	if (QDBeginCGContext(dc->port, &dc->context) == noErr) {
+	    SyncCGContextOriginWithPort(dc->context, dc->port);
+	    CGContextSaveGState(dc->context);
+	    CGContextConcatCTM(dc->context, t);
+	}
+    }
+    
+    return dc->context;
+}
+
+static void
+ReleaseContextForDrawable(
+    MacContextSetup *dc)
+{
+    if (dc->context != NULL) {
+	CGContextSynchronize(dc->context);
+	CGContextRestoreGState(dc->context);
+	if (dc->port) {
+	    QDEndCGContext(dc->port, &dc->context);
+	}
+    }
+    if (dc->portChanged) {
+	QDSwapPort(dc->savePort, NULL);
+    }
+}
+
+/* Copy-and-paste from TkPath */
+
+const float kValidDomain[2] = {0, 1};
+const float kValidRange[8] = {0, 1, 0, 1, 0, 1, 0, 1};
+
+/* Seems to work for both Endians. */
+#define BlueFloatFromXColorPtr(xc)   (float) ((((xc)->pixel >> 0)  & 0xFF)) / 255.0
+#define GreenFloatFromXColorPtr(xc)  (float) ((((xc)->pixel >> 8)  & 0xFF)) / 255.0
+#define RedFloatFromXColorPtr(xc)    (float) ((((xc)->pixel >> 16) & 0xFF)) / 255.0
+
+static void
+ShadeEvaluate(
+    void *info,
+    const float *in,
+    float *out)
+{
+    TreeGradient gradient = info;
+    GradientStopArray *stopArrPtr = gradient->stopArrPtr;
+    GradientStop **stopPtrPtr = stopArrPtr->stops;
+    GradientStop *stop1 = NULL, *stop2 = NULL;
+    int nstops = stopArrPtr->nstops;
+    int i = 0;
+    float par = *in;
+    float f1, f2;
+
+    /* Find the two stops for this point. Tricky! */
+    while ((i < nstops) && ((*stopPtrPtr)->offset < par)) {
+        stopPtrPtr++, i++;
+    }
+    if (i == 0) {
+        /* First stop > 0. */
+        stop1 = *stopPtrPtr;
+        stop2 = stop1;
+    } else if (i == nstops) {
+        /* We have stepped beyond the last stop; step back! */
+        stop1 = *(stopPtrPtr - 1);
+        stop2 = stop1;
+    } else {
+        stop1 = *(stopPtrPtr - 1);
+        stop2 = *stopPtrPtr;
+    }
+    /* Interpolate between the two stops. 
+     * "If two gradient stops have the same offset value, 
+     * then the latter gradient stop controls the color value at the 
+     * overlap point."
+     */
+    if (fabs(stop2->offset - stop1->offset) < 1e-6) {
+        *out++ = RedFloatFromXColorPtr(stop2->color);
+        *out++ = GreenFloatFromXColorPtr(stop2->color);
+        *out++ = BlueFloatFromXColorPtr(stop2->color); 
+        *out++ = stop2->opacity;
+    } else {
+        f1 = (stop2->offset - par)/(stop2->offset - stop1->offset);
+        f2 = (par - stop1->offset)/(stop2->offset - stop1->offset);
+        *out++ = f1 * RedFloatFromXColorPtr(stop1->color) + 
+                f2 * RedFloatFromXColorPtr(stop2->color);
+        *out++ = f1 * GreenFloatFromXColorPtr(stop1->color) + 
+                f2 * GreenFloatFromXColorPtr(stop2->color);
+        *out++ = f1 * BlueFloatFromXColorPtr(stop1->color) + 
+                f2 * BlueFloatFromXColorPtr(stop2->color);
+        *out++ = f1 * stop1->opacity + f2 * stop2->opacity;
+    }
+}
+
+static void
+ShadeRelease(void *info)
+{
+    /* Not sure if anything to do here. */
+}
+
+static int gNativeGradients = 1;
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeGradient_FillRect --
+ *
+ *	Paint a rectangle with a gradient.
+ *
+ * Results:
+ *	If the gradient has <2 stops then nothing is drawn.
+ *
+ * Side effects:
+ *	Drawing.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TreeGradient_FillRect(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeDrawable td,		/* Where to draw. */
+    TreeGradient gradient,	/* Gradient token. */
+    TreeRectangle tr		/* Where to draw. */
+    )
+{
+    MacDrawable *macDraw = (MacDrawable *) td.drawable;
+    MacContextSetup dc;
+    CGContextRef context;
+    CGFunctionCallbacks callbacks;
+    CGFunctionRef function;
+    CGColorSpaceRef colorSpaceRef;
+    CGPoint start, end;
+    CGShadingRef shading;
+    CGRect r;
+
+    if (!(macDraw->flags & TK_IS_PIXMAP) || !gNativeGradients) {
+	TreeGradient_FillRectX11(tree, td, gradient, tr);
+	return;
+    }
+
+    context = GetCGContextForDrawable(tree, td.drawable, &dc);
+    if (context == NULL) {
+	TreeGradient_FillRectX11(tree, td, gradient, tr);
+	return;
+    }
+
+    colorSpaceRef = CGColorSpaceCreateDeviceRGB();
+
+    callbacks.version = 0;
+    callbacks.evaluate = ShadeEvaluate;
+    callbacks.releaseInfo = ShadeRelease;
+    function = CGFunctionCreate((void *) gradient,
+	1, kValidDomain,
+	4, kValidRange,
+	&callbacks);
+
+    if (gradient->vertical) {
+	start = CGPointMake(tr.x, tr.y);
+	end = CGPointMake(tr.x, tr.y + tr.height);
+    } else {
+	start = CGPointMake(tr.x, tr.y);
+	end = CGPointMake(tr.x+tr.width, tr.y);
+    }
+    shading = CGShadingCreateAxial(colorSpaceRef, start, end, function, 1, 1);
+
+    CGContextBeginPath(context);
+    r = CGRectMake(tr.x, tr.y, tr.width, tr.height);
+    CGContextAddRect(context, r);
+    CGContextClip(context);
+    CGContextDrawShading(context, shading);
+
+    CGShadingRelease(shading);
+    CGFunctionRelease(function);
+    CGColorSpaceRelease(colorSpaceRef);
+
+    ReleaseContextForDrawable(&dc);
+}
+
+int
+TreeDraw_InitInterp(
+    Tcl_Interp *interp
+    )
+{
+    if (Tcl_CreateNamespace(interp, "::TreeCtrl", NULL, NULL) == NULL) {
+	Tcl_ResetResult(interp);
+    }
+    if (Tcl_LinkVar(interp, "::TreeCtrl::nativeGradients",
+	(char *) &gNativeGradients, TCL_LINK_BOOLEAN) != TCL_OK) {
+	Tcl_ResetResult(interp);
+    }
+
+
+    return TCL_OK;
+}
+
+#endif /* MAC_TK_COCOA */
+
+#ifndef WIN32
+
+#if !defined(MAC_TK_COCOA) && !defined(WIN32)
 
 int
 TreeDraw_InitInterp(
@@ -8673,14 +8898,89 @@ TreeGradient_FillRect(
 {
     TreeGradient_FillRectX11(tree, td, gradient, tr);
 
-    /* FIXME: MacOSX can handle gradient rects no problem (see TkPath) */
-
     /* FIXME: Can use 'cairo' on Unix, but need to add it to configure + Make */
+}
+#endif /* not MAC_TK_COCOA or WIN32 */
+
+void
+Tree_DrawRoundRect(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeDrawable td,		/* Where to draw. */
+    XColor *xcolor,		/* Color. */
+    TreeRectangle tr,		/* Where to draw. */
+    int outlineWidth,
+    int rx, int ry,		/* Corner radius */
+    int open			/* RECT_OPEN_x flags */
+    )
+{
+    /* FIXME: MacOSX + Cocoa, Unix + cairo */
+    GC gc = Tk_GCForColor(xcolor, Tk_WindowId(tree->tkwin));
+    Tree_DrawRoundRectX11(tree, td, gc, tr, outlineWidth, rx, ry, open);
+}
+
+void
+Tree_FillRoundRect(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeDrawable td,		/* Where to draw. */
+    XColor *xcolor,		/* Color. */
+    TreeRectangle tr,		/* Where to draw. */
+    int rx, int ry,		/* Corner radius */
+    int open			/* RECT_OPEN_x flags */
+    )
+{
+    /* FIXME: MacOSX + Cocoa, Unix + cairo */
+    GC gc = Tk_GCForColor(xcolor, Tk_WindowId(tree->tkwin));
+    Tree_FillRoundRectX11(tree, td, gc, tr, rx, ry, open);
 }
 
 #endif /* not WIN32 */
 
-#endif /* GRADIENT */
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeColor_DrawRect --
+ *
+ *	Draw a rectangle with a gradient or solid color.
+ *
+ * Results:
+ *	If the gradient has <2 stops then nothing is drawn.
+ *
+ * Side effects:
+ *	Drawing.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TreeColor_DrawRect(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeDrawable td,		/* Where to draw. */
+    TreeColor *tc,		/* Color info. */
+    TreeRectangle tr,		/* Where to draw. */
+    int outlineWidth,
+    int open			/* RECT_OPEN_x flags */
+    )
+{
+    if (tc == NULL || outlineWidth < 1 || open == RECT_OPEN_WNES)
+	return;
+/*    if (tc->gradient != NULL)
+	TreeGradient_DrawRect(tree, td, tc->gradient, tr);*/
+    if (tc->color != NULL) {
+	GC gc = Tk_GCForColor(tc->color, td.drawable);
+	if (!(open & RECT_OPEN_W))
+	    XFillRectangle(tree->display, td.drawable, gc,
+		    tr.x, tr.y, outlineWidth, tr.height);
+	if (!(open & RECT_OPEN_N))
+	    XFillRectangle(tree->display, td.drawable, gc,
+		    tr.x, tr.y, tr.width, outlineWidth);
+	if (!(open & RECT_OPEN_E))
+	    XFillRectangle(tree->display, td.drawable, gc,
+		    tr.x + tr.width - outlineWidth, tr.y, outlineWidth, tr.height);
+	if (!(open & RECT_OPEN_S))
+	    XFillRectangle(tree->display, td.drawable, gc,
+		    tr.x, tr.y + tr.height - outlineWidth, tr.width, outlineWidth);
+    }
+}
 
 /*
  *----------------------------------------------------------------------
@@ -8717,38 +9017,21 @@ TreeColor_FillRect(
     }
 }
 
-#ifndef WIN32
-void
-Tree_DrawRoundRect(
-    TreeCtrl *tree,		/* Widget info. */
-    TreeDrawable td,		/* Where to draw. */
-    XColor *xcolor,		/* Color. */
-    TreeRectangle tr,		/* Where to draw. */
-    int outlineWidth,
-    int rx, int ry,		/* Corner radius */
-    int open			/* RECT_OPEN_x flags */
-    )
-{
-    /* FIXME: MacOSX + Cocoa, Unix + cairo */
-    GC gc = Tk_GCForColor(xcolor, Tk_WindowId(tree->tkwin));
-    Tree_DrawRoundRectX11(tree, td, gc, tr, outlineWidth, rx, ry, open);
-}
-
-void
-Tree_FillRoundRect(
-    TreeCtrl *tree,		/* Widget info. */
-    TreeDrawable td,		/* Where to draw. */
-    XColor *xcolor,		/* Color. */
-    TreeRectangle tr,		/* Where to draw. */
-    int rx, int ry,		/* Corner radius */
-    int open			/* RECT_OPEN_x flags */
-    )
-{
-    /* FIXME: MacOSX + Cocoa, Unix + cairo */
-    GC gc = Tk_GCForColor(xcolor, Tk_WindowId(tree->tkwin));
-    Tree_FillRoundRectX11(tree, td, gc, tr, rx, ry, open);
-}
-#endif
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeColor_DrawRoundRect --
+ *
+ *	Draw a rounded rectangle with a gradient or solid color.
+ *
+ * Results:
+ *	If the gradient has <2 stops then nothing is drawn.
+ *
+ * Side effects:
+ *	Drawing.
+ *
+ *----------------------------------------------------------------------
+ */
 
 void
 TreeColor_DrawRoundRect(

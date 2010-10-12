@@ -417,9 +417,7 @@ TreeObjCmd(
     Tcl_InitHashTable(&tree->styleHash, TCL_STRING_KEYS);
     Tcl_InitHashTable(&tree->imageNameHash, TCL_STRING_KEYS);
     Tcl_InitHashTable(&tree->imageTokenHash, TCL_ONE_WORD_KEYS);
-#ifdef GRADIENT
     Tcl_InitHashTable(&tree->gradientHash, TCL_STRING_KEYS);
-#endif
 
     TreeItemList_Init(tree, &tree->preserveItemList, 0);
 
@@ -434,9 +432,7 @@ TreeObjCmd(
     TreeMarquee_Init(tree);
     TreeDragImage_Init(tree);
     TreeDInfo_Init(tree);
-#ifdef GRADIENT
     TreeGradient_Init(tree);
-#endif
 
     Tk_CreateEventHandler(tree->tkwin,
 #ifdef USE_TTK
@@ -521,9 +517,7 @@ static int TreeWidgetCmd(
 #ifdef DEPRECATED
 	"expand",
 #endif
-#ifdef GRADIENT
 	"gradient",
-#endif
 	"identify", "index", "item", "marquee", "notify",
 #ifdef DEPRECATED
 	"numcolumns", "numitems",
@@ -553,9 +547,7 @@ static int TreeWidgetCmd(
 #ifdef DEPRECATED
 	COMMAND_EXPAND,
 #endif
-#ifdef GRADIENT
 	COMMAND_GRADIENT,
-#endif
 	COMMAND_IDENTIFY, COMMAND_INDEX, COMMAND_ITEM, COMMAND_MARQUEE,
 	COMMAND_NOTIFY,
 #ifdef DEPRECATED
@@ -865,12 +857,10 @@ static int TreeWidgetCmd(
 	    break;
 	}
 
-#ifdef GRADIENT
 	case COMMAND_GRADIENT: {
 	    result = TreeGradientCmd(clientData, interp, objc, objv);
 	    break;
 	}
-#endif
 
 	case COMMAND_IDENTIFY: {
 	    int x, y, width, height, depth;
@@ -1773,9 +1763,8 @@ TreeDestroy(
 
     Tcl_DeleteHashTable(&tree->selection);
 
-#ifdef GRADIENT
+    /* Must be done after all gradient users are freed */ 
     TreeGradient_Free(tree);
-#endif
 
 #ifdef DEPRECATED
     if (tree->defaultStyle.styles != NULL)

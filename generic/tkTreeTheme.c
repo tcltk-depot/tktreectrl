@@ -994,25 +994,49 @@ int TreeTheme_InitInterp(Tcl_Interp *interp)
 #import <Carbon/Carbon.h>
 #include "tkMacOSXInt.h"
 
+typedef struct {
+    CGrafPtr port, savePort;
+    Boolean portChanged;
+    CGContextRef context;
+} MacContextSetup;
+
 /*
- * Since TkMacOSXSetupDrawingContext() isn't in the stubs table I call
- * XFillRectangle which will create the Pixmap context if it doesn't
- * exist.  THIS WON'T WORK FOR DRAWING IN A WINDOW.
+ * THIS WON'T WORK FOR DRAWING IN A WINDOW.
  */
 static CGContextRef
 GetCGContextForDrawable(
     TreeCtrl *tree,
     Drawable d,
-    int x, int y, int width, int height)
+    MacContextSetup *dc)
 {
-    MacDrawable *macDraw = (MacDrawable *) d;
+/*    MacDrawable *macDraw = (MacDrawable *) d;*/
 
-    if (macDraw->context == NULL) {
-	GC gc = Tk_3DBorderGC(tree->tkwin, tree->border, TK_3D_FLAT_GC);
-	XFillRectangle(tree->display, d, gc, x, y, width, height);
+    dc->port = TkMacOSXGetDrawablePort(d);
+    dc->context = NULL;
+    dc->portChanged = False;
+    if (dc->port) {
+	dc->portChanged = QDSwapPort(dc->port, &dc->savePort);
+	if (QDBeginCGContext(dc->port, &dc->context) == noErr) {
+	    SyncCGContextOriginWithPort(dc->context, dc->port);
+	}
     }
     
-    return macDraw->context;
+    return dc->context;
+}
+
+static void
+ReleaseContextForDrawable(
+    MacContextSetup *dc)
+{
+    if (dc->context != NULL) {
+	CGContextSynchronize(dc->context);
+	if (dc->port) {
+	    QDEndCGContext(dc->port, &dc->context);
+	}
+    }
+    if (dc->portChanged) {
+	QDSwapPort(dc->savePort, NULL);
+    }
 }
 
 static HIThemeButtonDrawInfo
@@ -1049,6 +1073,7 @@ int TreeTheme_DrawHeaderItem(TreeCtrl *tree, Drawable drawable, int state,
     MacDrawable *macDraw = (MacDrawable *) drawable;
     CGRect bounds;
     HIThemeButtonDrawInfo info;
+    MacContextSetup dc;
     CGContextRef context;
     HIShapeRef boundsRgn;
     CGAffineTransform t = { .a = 1, .b = 0, .c = 0, .d = -1, .tx = 0,
@@ -1061,7 +1086,7 @@ int TreeTheme_DrawHeaderItem(TreeCtrl *tree, Drawable drawable, int state,
     info = GetThemeButtonDrawInfo(tree, state, arrow);
 
     /* Really want TkMacOSXSetupDrawingContext here. */
-    context = GetCGContextForDrawable(tree, drawable, x, y, width, height);
+    context = GetCGContextForDrawable(tree, drawable, &dc);
     if (context == NULL)
 	return TCL_ERROR;
     CGContextSaveGState(context);
@@ -1100,6 +1125,8 @@ int TreeTheme_DrawHeaderItem(TreeCtrl *tree, Drawable drawable, int state,
 
     CGContextRestoreGState(context);
     CFRelease(boundsRgn);
+
+    ReleaseContextForDrawable(&dc);
 
     return TCL_OK;
 }
@@ -1153,6 +1180,7 @@ int TreeTheme_DrawButton(TreeCtrl *tree, Drawable drawable, int open,
     MacDrawable *macDraw = (MacDrawable *) drawable;
     CGRect bounds;
     HIThemeButtonDrawInfo info;
+    MacContextSetup dc;
     CGContextRef context;
     CGAffineTransform t = { .a = 1, .b = 0, .c = 0, .d = -1, .tx = 0,
 	.ty = macDraw->size.height};
@@ -1172,11 +1200,7 @@ int TreeTheme_DrawButton(TreeCtrl *tree, Drawable drawable, int open,
     info.value = open ? kThemeDisclosureDown : kThemeDisclosureRight;
     info.adornment = kThemeAdornmentDrawIndicatorOnly;
 
-    /* Really want TkMacOSXSetupDrawingContext here. */
-    /* FIXME: If the context doesn't exist, this will draw a box under
-     * the button. But the item background will already have been drawn
-     * into the Pixmap, creating the context, so this should work. */
-    context = GetCGContextForDrawable(tree, drawable, x, y, width, height);
+    context = GetCGContextForDrawable(tree, drawable, &dc);
     if (context == NULL)
 	return TCL_ERROR;
     CGContextSaveGState(context);
@@ -1192,6 +1216,8 @@ int TreeTheme_DrawButton(TreeCtrl *tree, Drawable drawable, int open,
 
     CGContextRestoreGState(context);
     CFRelease(clipRgn);
+
+    ReleaseContextForDrawable(&dc);
 
     return TCL_OK;
 }

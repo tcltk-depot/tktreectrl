@@ -29,7 +29,7 @@ proc StyleEditor::Init {Tdemo} {
 
     TreePlusScrollbarsInAFrame $w.pwH.pwV.styleList 1 1
     set T $w.pwH.pwV.styleList.t
-    $T configure -showbuttons no -showlines no -showroot no -width 100 -height 200
+    $T configure -showbuttons no -showlines no -showroot no -width 150 -height 200
     $T column create -text "Styles" -expand yes -button no -tags C0
     $T configure -treecolumn C0
 
@@ -41,7 +41,7 @@ proc StyleEditor::Init {Tdemo} {
 
     TreePlusScrollbarsInAFrame $w.pwH.pwV.elementList 1 1
     set T $w.pwH.pwV.elementList.t
-    $T configure -showbuttons no -showlines no -showroot no -width 100 -height 200
+    $T configure -showbuttons no -showlines no -showroot no -width 150 -height 200
     $T column create -text "Elements" -expand yes -button no -tags C0
     $T configure -treecolumn C0
 
@@ -54,6 +54,9 @@ proc StyleEditor::Init {Tdemo} {
     $w.pwH.pwV add $w.pwH.pwV.styleList $w.pwH.pwV.elementList
 
     set fRight [panedwindow $w.pwH.pwV2 -orient vertical -sashwidth 6]
+    if {[Platform macosx]} {
+	$fRight configure -width 500
+    }
 
     #
     # Property editor
@@ -62,6 +65,9 @@ proc StyleEditor::Init {Tdemo} {
     TreePlusScrollbarsInAFrame $fRight.propertyList 1 1
     set T $fRight.propertyList.t
     $T configure -showbuttons no -showlines no -showroot no
+    if {[Platform macosx]} {
+	$T configure -height 300
+    }
     $T column create -text "Property" -expand yes -button no -tags {C0 property}
     $T column create -text "Value" -expand yes -button no -tags {C1 value}
     $T configure -treecolumn property
@@ -120,7 +126,11 @@ proc StyleEditor::Init {Tdemo} {
     Info selectedElement ""
 
     wm protocol $w WM_DELETE_WINDOW "ToggleStyleEditorWindow"
-    wm geometry $w -0+0
+    if {[Platform macosx macintosh]} {
+	wm geometry $w +6+30
+    } else {
+	wm geometry $w -0+0
+    }
 
     return
 }
@@ -464,7 +474,7 @@ proc StyleEditor::SelectProperty {select deselect} {
 
 proc StyleEditor::MakePadEditor {parent} {
 
-    set f [frame $parent.editPad -borderwidth 0]
+    set f [frame $parent.editPad -borderwidth 0 -background $::SystemHighlight]
     spinbox $f.v1 -from 0 -to 100 -width 3 \
 	-command {StyleEditor::Sync_pad 1} \
 	-textvariable ::StyleEditor::Info(-pad,1)
@@ -490,7 +500,7 @@ proc StyleEditor::MakePadEditor {parent} {
 
 proc StyleEditor::MakeExpandEditor {parent} {
 
-    set f [frame $parent.editExpand -borderwidth 0]
+    set f [frame $parent.editExpand -borderwidth 0 -background $::SystemHighlight]
     foreach flag {w n e s} {
 	$::checkbuttonCmd $f.$flag -text $flag -width 1 \
 	    -variable ::StyleEditor::Info(-expand,$flag) \
@@ -503,7 +513,7 @@ proc StyleEditor::MakeExpandEditor {parent} {
 
 proc StyleEditor::MakeIExpandEditor {parent} {
 
-    set f [frame $parent.editIExpand -borderwidth 0]
+    set f [frame $parent.editIExpand -borderwidth 0 -background $::SystemHighlight]
     foreach flag {x y w n e s} {
 	$::checkbuttonCmd $f.$flag -text $flag -width 1 \
 	    -variable ::StyleEditor::Info(-iexpand,$flag) \
@@ -536,7 +546,7 @@ proc StyleEditor::MakePixelsEditor {parent} {
 
 proc StyleEditor::MakeSqueezeEditor {parent} {
 
-    set f [frame $parent.editSqueeze -borderwidth 0]
+    set f [frame $parent.editSqueeze -borderwidth 0 -background $::SystemHighlight]
     foreach flag {x y} {
 	$::checkbuttonCmd $f.$flag -text $flag -width 1 \
 	    -variable ::StyleEditor::Info(-squeeze,$flag) \
@@ -559,7 +569,7 @@ proc StyleEditor::MakeStringEditor {parent} {
 
 proc StyleEditor::MakeBooleanEditor {parent} {
 
-    set f [frame $parent.editBoolean -borderwidth 0]
+    set f [frame $parent.editBoolean -borderwidth 0 -background $::SystemHighlight]
     foreach value {yes no} {
 	$::radiobuttonCmd $f.$value -text $value \
 	    -variable ::StyleEditor::Info(-boolean) \

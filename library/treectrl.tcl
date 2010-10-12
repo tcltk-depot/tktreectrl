@@ -172,6 +172,15 @@ if {$tcl_platform(platform) eq "windows"} {
 	TreeCtrl::ScanDrag %W %x %y
     }
 }
+if {[string equal [tk windowingsystem] "aqua"]} {
+    # Middle mouse on Mac OSX
+    bind TreeCtrl <ButtonPress-3> {
+	TreeCtrl::ScanMark %W %x %y
+    }
+    bind TreeCtrl <Button3-Motion> {
+	TreeCtrl::ScanDrag %W %x %y
+    }
+}
 
 # MouseWheel
 if {[string equal "x11" [tk windowingsystem]]} {

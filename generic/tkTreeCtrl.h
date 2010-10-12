@@ -59,7 +59,6 @@ MODULE_SCOPE void dbwin_add_interp(Tcl_Interp *interp);
 #define DEPRECATED
 /* #define DRAG_PIXMAP */
 /* #define DRAGIMAGE_STYLE */ /* Use an item style as the dragimage instead of XOR rectangles. */
-#define GRADIENT
 
 typedef struct TreeCtrl TreeCtrl;
 typedef struct TreeColumn_ *TreeColumn;
@@ -74,9 +73,7 @@ typedef struct TreeItemRInfo_ *TreeItemRInfo;
 typedef struct TreeStyle_ *TreeStyle;
 typedef struct TreeElement_ *TreeElement;
 typedef struct TreeThemeData_ *TreeThemeData;
-#ifdef GRADIENT
 typedef struct TreeGradient_ *TreeGradient;
-#endif
 
 /*****/
 
@@ -445,11 +442,9 @@ struct TreeCtrl
     int itemTagExpr;		/* Enable/disable operators in item tags */
     int columnTagExpr;		/* Enable/disable operators in column tags */
 
-#ifdef GRADIENT
     Tk_OptionTable gradientOptionTable;
     Tcl_HashTable gradientHash;	/* TreeGradient.name -> TreeGradient */
     int gradientAPI[2];		/* major.minor version */
-#endif
 };
 
 #define TREE_CONF_FONT 0x0001
@@ -1218,8 +1213,6 @@ MODULE_SCOPE Tk_ObjCustomOption TreeCtrlCO_style;
 MODULE_SCOPE TreeColor *Tree_AllocColorFromObj(TreeCtrl *tree, Tcl_Obj *obj);
 MODULE_SCOPE void Tree_FreeColor(TreeCtrl *tree, TreeColor *tc);
 
-#ifdef GRADIENT
-
 #define pstGradient TreeCtrl_pstGradient
 MODULE_SCOPE PerStateType pstGradient;
 MODULE_SCOPE TreeGradient PerStateGradient_ForState(TreeCtrl *tree, PerStateInfo *pInfo,
@@ -1228,7 +1221,7 @@ MODULE_SCOPE TreeGradient PerStateGradient_ForState(TreeCtrl *tree, PerStateInfo
 #define TREECTRL_GRADIENT_API_MAJOR 1
 #define TREECTRL_GRADIENT_API_MINOR 0
 
-/* *** Borrowed some gradient code from TkPath *** */
+/*****/
 
 /*
  * Records for gradient fills.
@@ -1260,6 +1253,7 @@ typedef struct TreeGradient_
     int nStepColors;		/* length of stepColors */
     XColor **stepColors;	/* calculated from color1,color2,steps */
 } TreeGradient_;
+
 MODULE_SCOPE void TreeGradient_Init(TreeCtrl *tree);
 MODULE_SCOPE void TreeGradient_Free(TreeCtrl *tree);
 MODULE_SCOPE int TreeGradientCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]);
@@ -1269,14 +1263,17 @@ MODULE_SCOPE void TreeGradient_FillRect(TreeCtrl *tree, TreeDrawable td, TreeGra
 
 MODULE_SCOPE int TreeDraw_InitInterp(Tcl_Interp *interp);
 
-#endif /* GRADIENT */
+/*****/
 
+MODULE_SCOPE void TreeColor_DrawRect(TreeCtrl *tree, TreeDrawable td,
+    TreeColor *tc, TreeRectangle tr, int outlineWidth, int open);
 MODULE_SCOPE void TreeColor_FillRect(TreeCtrl *tree, TreeDrawable td,
     TreeColor *tc, TreeRectangle tr);
 #define RECT_OPEN_W 0x01
 #define RECT_OPEN_N 0x02
 #define RECT_OPEN_E 0x04
 #define RECT_OPEN_S 0x08
+#define RECT_OPEN_WNES (RECT_OPEN_W|RECT_OPEN_N|RECT_OPEN_E|RECT_OPEN_S)
 MODULE_SCOPE void Tree_DrawRoundRect(TreeCtrl *tree, TreeDrawable td,
     XColor *xcolor, TreeRectangle tr, int outlineWidth, int rx, int ry, int open);
 MODULE_SCOPE void TreeColor_DrawRoundRect(TreeCtrl *tree, TreeDrawable td,

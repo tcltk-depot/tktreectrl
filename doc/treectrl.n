@@ -354,6 +354,20 @@ package require \fBtreectrl  2.2.10\fR
 .sp
 \fIpathName\fR \fBexpand\fR ?\fB-recurse\fR? ?\fIitemDesc ...\fR?
 .sp
+\fIpathName\fR \fBgradient\fR \fIoption\fR ?\fIarg ...\fR?
+.sp
+\fIpathName\fR \fBgradient api\fR ?\fIversion\fR?
+.sp
+\fIpathName\fR \fBgradient cget\fR \fIgradient\fR \fIoption\fR
+.sp
+\fIpathName\fR \fBgradient configure\fR \fIgradient\fR ?\fIoption value ...\fR?
+.sp
+\fIpathName\fR \fBgradient create\fR \fIname\fR ?\fIoption value ...\fR?
+.sp
+\fIpathName\fR \fBgradient delete\fR ?\fIname ...\fR?
+.sp
+\fIpathName\fR \fBgradient names\fR
+.sp
 \fIpathName\fR \fBidentify\fR \fIx\fR \fIy\fR
 .sp
 \fIpathName\fR \fBindex\fR \fIitemDesc\fR
@@ -1811,6 +1825,107 @@ such as \fBrect\fR or \fBtext\fR.
 .TP
 \fIpathName\fR \fBexpand\fR ?\fB-recurse\fR? ?\fIitemDesc ...\fR?
 Use \fBitem expand\fR instead.
+.TP
+\fIpathName\fR \fBgradient\fR \fIoption\fR ?\fIarg ...\fR?
+This command is used to manipulate color gradients.
+See \fBGRADIENTS\fR for more information about using gradients.
+The exact behavior of the command depends on the \fIoption\fR argument
+that follows the \fBgradient\fR argument.
+The following forms of the command are supported:
+.RS
+.TP
+\fIpathName\fR \fBgradient api\fR ?\fIversion\fR?
+When \fIversion\fR is specified this command sets the API that is used
+by the \fBgradient\fR command.  You must call this command before any
+gradients can be created.  The purpose of this is to avoid breaking your
+application if the gradient API changes in the future.
+When \fIversion\fR is not given this command returns a list of the form:
+.nf
+
+{{available 1.0} {current 1.0}}
+
+.fi
+If this command has never been called for this treectrl widget the result is:
+.nf
+
+{{available 1.0} {current unspecified}}
+
+.fi
+.TP
+\fIpathName\fR \fBgradient cget\fR \fIgradient\fR \fIoption\fR
+Returns the current value of the configuration option for the gradient specified by
+\fIgradient\fR whose name is \fIoption\fR. \fIOption\fR may have any of the
+values accepted by the \fBgradient configure\fR command.
+.TP
+\fIpathName\fR \fBgradient configure\fR \fIgradient\fR ?\fIoption value ...\fR?
+If no \fIoption\fR is specified, the command returns a list describing
+all of the available gradient options (see \fBTk_ConfigureInfo\fR
+for information on the format of this list).
+If \fIoption\fR is specified with no \fIvalue\fR, then the command returns
+a list describing the one named gradient option (this list will be identical
+to the corresponding sublist of the value returned if no \fIoption\fR
+is specified).
+If one or more \fIoption\fR-\fIvalue\fR pairs are specified, then the command
+modifies the given gradient option(s) to have the given value(s);
+in this case the command returns an empty string.
+.sp
+The following options are supported (see \fBgradient create\fR for the meaning of each option):
+.RS
+.TP
+\fB\fB-orient\fR\fR \fIdirection\fR
+.TP
+\fB\fB-steps\fR\fR \fIstepCount\fR
+.TP
+\fB\fB-stops\fR\fR \fIstopsList\fR
+.RE
+.TP
+\fIpathName\fR \fBgradient create\fR \fIname\fR ?\fIoption value ...\fR?
+Creates a new gradient with the name \fIname\fR, which must be a unique name
+not used by another gradient created by this treectrl widget.
+.sp
+The following options are supported:
+.RS
+.TP
+\fB\fB-orient\fR\fR \fIdirection\fR
+This option specifies the direction a linear gradient changes color in.
+Must be either \fBhorizontal\fR (the default)
+or \fBvertical\fR or an abbreviation of one of these.
+.TP
+\fB\fB-steps\fR\fR \fIstepCount\fR
+Specifies the number of bands of color drawn for each color stop described by
+the \fB-stops\fR option.  The default value is 1, the maximum is 25.
+This option has no effect if gradients are drawn using something better than
+Tk API calls.  See \fBGRADIENTS\fR for more on this.
+.TP
+\fB\fB-stops\fR\fR \fIstopsList\fR
+Specifies the color stops along this gradient. The argument \fIstopsList\fR
+has the following form:
+.nf
+
+{{offset color ?opacity?} {offset color ?opacity?} ...}
+
+.fi
+Each \fIoffset\fR is a floating point number from 0.0 to 1.0 specifying the
+distance from the start of the gradient where the \fIcolor\fR begins.
+Each \fIcolor\fR is a Tk color name or description.
+Each optional \fIopacity\fR is a floating point number from 0.0 to 1.0
+specifying how transparent the gradient is.
+If \fIstopsList\fR is non-empty there must be at least two stops specified, and
+the first offset must be 0.0 and the last offset must be 1.0.  Any other
+stop offsets must be listed in increasing order.
+Specifying opacity has no effect if gradients are drawn using Tk API calls.
+See \fBGRADIENTS\fR for more on this.
+.RE
+.TP
+\fIpathName\fR \fBgradient delete\fR ?\fIname ...\fR?
+Deletes each gradient specified by \fIname\fR.  If the gradient is still being
+used then it is not actually deleted until all elements etc
+using the gradient have stopped using it.
+.TP
+\fIpathName\fR \fBgradient names\fR
+Returns a list of names of all the gradients that have been created by this treectrl
+widget.
+.RE
 .TP
 \fIpathName\fR \fBidentify\fR \fIx\fR \fIy\fR
 Returns a list describing what
@@ -3666,6 +3781,12 @@ Specifies the width of the outline to be drawn around the rectangle's region.
 If this option is specified as an empty string (the default), then no outline
 is drawn.
 .TP
+\fB\fB-rx\fR\fR \fIradius\fR
+.TP
+\fB\fB-ry\fR\fR \fIradius\fR
+Specifies the x and y radius of each corner of a rounded rectangle
+in any of the forms acceptable to \fBTk_GetPixels\fR.
+.TP
 \fB\fB-showfocus\fR\fR \fIboolean\fR
 Specifies a boolean value indicating whether
 a "focus ring" should be drawn around the rectangle,
@@ -4321,6 +4442,55 @@ The mousewheel scrolls the view of the widget four lines up or down
 depending on the direction, the wheel was turned.
 The active cursor or the selection is not affected.
 .PP
+.SH GRADIENTS
+Color gradients are an easy way to give your lists a more modern appearance.
+Since Tk provides no support for drawing gradients, the TkPath extension was
+used as a guide when implementing gradients in TkTreeCtrl.  The current
+implementation has some limitations, however:
+.IP [1]
+Only linear gradients are supported.
+.IP [2]
+Gradients can only be painted left-to-right or top-to-bottom, not at
+arbitrary angles.
+.IP [3]
+Gradients look bad on low-color displays. Before using gradients, you should
+check that the display's color depth is at least 15 or 16 by calling the
+\fBwinfo depth\fR command.
+.IP [4]
+Gradients are fully opaque when XFillRectangle() is used to draw them (see below).
+This means the \fBopacity\fR value of each color stop is ignored.  Keep that
+in mind if your application is cross-platform.
+.PP
+Gradients may be used in the following places:
+.IP [1]
+The -fill option of rect elements.
+.IP [2]
+The -itembackground option of columns.
+.PP
+.PP
+On Microsoft Windows, GDI+ is used where it is available (gdiplus.dll is
+dynamically loaded at run-time).  When it is available, all the talk below
+about \fB-steps\fR can safely be ignored.
+.PP
+When no native support for gradients is available, gradients
+are drawn simply by filling sub-rectangles using XFillRectangle().  The number
+of sub-rectangles drawn and number of colors that make up the displayed gradient
+are controlled by the gradient's \fB-steps\fR and \fB-stops\fR options.
+The number of sub-rectangles is equal to the length of the \fB-stops\fR
+option multiplied by the value of the \fB-steps\fR option. For example:
+.nf
+
+$T gradient create myGradient -stops {{0 white} {1 gray}} -steps 8
+
+.fi
+This gradient will be drawn with 2x8=16 sub-rectangles of color.
+The higher the \fB-steps\fR value, the smoother the color transitions
+will be, and the slower the gradient will be to draw.
+For the best appearance, make the number of sub-rectangles drawn less than or equal
+to the height or width of the gradient being drawn.  So if you have a rect element
+18 pixels tall, use a vertical gradient that has steps X stops=18.  Avoid using
+gradients with steps X stops greater than the height or width of the rectangle
+being drawn, because then colors will overlap.
 .SH EXAMPLES
 Get the unique identifier for the leftmost visible column:
 .nf

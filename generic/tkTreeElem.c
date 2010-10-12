@@ -596,10 +596,8 @@ static void AdjustForSticky(int sticky, int cavityWidth, int cavityHeight,
     OPTION_FOR_STATE(PerStateFlags_ForState,int,xVAR,xFIELD,xSTATE)
 #define FONT_FOR_STATE(xVAR,xFIELD,xSTATE) \
     OPTION_FOR_STATE(PerStateFont_ForState,Tk_Font,xVAR,xFIELD,xSTATE)
-#ifdef GRADIENT
 #define GRADIENT_FOR_STATE(xVAR,xFIELD,xSTATE) \
     OPTION_FOR_STATE(PerStateGradient_ForState,TreeGradient,xVAR,xFIELD,xSTATE)
-#endif
 #define IMAGE_FOR_STATE(xVAR,xFIELD,xSTATE) \
     OPTION_FOR_STATE(PerStateImage_ForState,Tk_Image,xVAR,xFIELD,xSTATE)
 #define RELIEF_FOR_STATE(xVAR,xFIELD,xSTATE) \
@@ -2126,10 +2124,8 @@ static void DisplayProcRect(TreeElementArgs *args)
 #ifdef DEPRECATED
     int draw;
 #endif
-#ifdef GRADIENT
     TreeColor *tc;
     TreeRectangle tr;
-#endif
     XColor *color;
     int open = 0;
     int outlineWidth = 0;
@@ -2196,7 +2192,7 @@ static void DisplayProcRect(TreeElementArgs *args)
 	    TreeColor_FillRoundRect(tree, args->display.td, tc, tr, rx, ry, open);
 	}
 	COLOR_FOR_STATE(color, outline, state)
-	if ((color != NULL) && (outlineWidth > 0) && (open != 0xF)) {
+	if ((color != NULL) && (outlineWidth > 0) && (open != RECT_OPEN_WNES)) {
 	    Tree_DrawRoundRect(tree, args->display.td, color, tr,
 		outlineWidth, rx, ry, open);
 	}
@@ -2204,23 +2200,21 @@ static void DisplayProcRect(TreeElementArgs *args)
 	return;
     }
 
-#ifdef GRADIENT
     TREECOLOR_FOR_STATE(tc, fill, state)
     if (tc != NULL) {
 	tr.x = x, tr.y = y, tr.width = width, tr.height = height;
 	TreeColor_FillRect(tree, args->display.td, tc, tr);
     }
-#else
-    COLOR_FOR_STATE(color, fill, state)
-    if (color != NULL) {
-	GC gc = Tk_GCForColor(color, Tk_WindowId(tree->tkwin));
-	XFillRectangle(tree->display, args->display.drawable, gc,
-		x, y, width, height);
-    }
-#endif
 
+#if 1
+    TREECOLOR_FOR_STATE(tc, outline, state)
+    if ((tc != NULL) && (outlineWidth > 0) && (open != RECT_OPEN_WNES)) {
+	tr.x = x, tr.y = y, tr.width = width, tr.height = height;
+	TreeColor_DrawRect(tree, args->display.td, tc, tr, outlineWidth, open);
+    }
+#else
     COLOR_FOR_STATE(color, outline, state)
-    if ((color != NULL) && (outlineWidth > 0) && (open != 0xF)) {
+    if ((color != NULL) && (outlineWidth > 0) && (open != RECT_OPEN_WNES)) {
 	GC gc = Tk_GCForColor(color, Tk_WindowId(tree->tkwin));
 	if (!(open & RECT_OPEN_W))
 	    XFillRectangle(tree->display, args->display.drawable, gc,
@@ -2235,6 +2229,7 @@ static void DisplayProcRect(TreeElementArgs *args)
 	    XFillRectangle(tree->display, args->display.drawable, gc,
 		    x, y + height - outlineWidth, width, outlineWidth);
     }
+#endif
 
     if (showFocus && (state & STATE_FOCUS) && (state & STATE_ACTIVE)) {
 	Tree_DrawActiveOutline(tree, args->display.drawable,
@@ -2283,9 +2278,7 @@ static int StateProcRect(TreeElementArgs *args)
 #endif
     int open1, open2;
     XColor *c1, *c2;
-#ifdef GRADIENT
     TreeColor *tc1, *tc2;
-#endif
     int s1, s2;
     int showFocus = 0;
 
@@ -2319,17 +2312,10 @@ static int StateProcRect(TreeElementArgs *args)
     if (s1 != s2)
 	return CS_DISPLAY;
 
-#ifdef GRADIENT
     TREECOLOR_FOR_STATE(tc1, fill, args->states.state1)
     TREECOLOR_FOR_STATE(tc2, fill, args->states.state2)
     if (TREECOLOR_CMP(tc1, tc2))
 	return CS_DISPLAY;
-#else
-    COLOR_FOR_STATE(c1, fill, args->states.state1)
-    COLOR_FOR_STATE(c2, fill, args->states.state2)
-    if (c1 != c2)
-	return CS_DISPLAY;
-#endif
 
     FLAGS_FOR_STATE(open1, open, args->states.state1)
     FLAGS_FOR_STATE(open2, open, args->states.state2)

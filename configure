@@ -6197,7 +6197,7 @@ $as_echo "yes" >&6; }
 
     vars="treectrl.dll.manifest"
     for i in $vars; do
-	# check for existence of .manifest.in as well
+	# Check for existence of .manifest.in as well
 	if test ! -f "${srcdir}/$i" -a ! -f "${srcdir}/$i.in"; then
 	    as_fn_error $? "could not find manifest file '${srcdir}/$i'" "$LINENO" 5
 	fi
@@ -6268,6 +6268,8 @@ else
 fi
 
         if test "$tcl_ok" = "yes"; then
+        	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: Cocoa" >&5
+$as_echo "Cocoa" >&6; }
 
     PKG_CFLAGS="$PKG_CFLAGS -DMAC_TK_COCOA -std=gnu99 -x objective-c -fobjc-gc"
 
@@ -6284,6 +6286,8 @@ fi
 
 
         else
+        	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: Carbon" >&5
+$as_echo "Carbon" >&6; }
 
     PKG_CFLAGS="$PKG_CFLAGS -DMAC_TK_CARBON"
 
@@ -6312,6 +6316,8 @@ else
 fi
 
         if test "$tcl_ok" = "yes"; then
+        	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: Cocoa" >&5
+$as_echo "Cocoa" >&6; }
 
     PKG_CFLAGS="$PKG_CFLAGS -DMAC_TK_COCOA -std=gnu99 -x objective-c -fobjc-gc"
 
@@ -6328,6 +6334,8 @@ fi
 
 
         else
+        	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: Carbon" >&5
+$as_echo "Carbon" >&6; }
 
     PKG_CFLAGS="$PKG_CFLAGS -DMAC_TK_CARBON"
 

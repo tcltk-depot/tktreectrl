@@ -160,9 +160,11 @@ if test "${TEA_WINDOWINGSYSTEM}" = "aqua"; then
                 [use Cocoa on Mac OS X (default: yes)]),
             [tcl_ok=$enableval], [tcl_ok=yes])
         if test "$tcl_ok" = "yes"; then
-            TEA_ADD_CFLAGS([-DMAC_TK_COCOA -std=gnu99 -x objective-c -fobjc-gc])
+        	AC_MSG_RESULT([Cocoa])
+        	TEA_ADD_CFLAGS([-DMAC_TK_COCOA -std=gnu99 -x objective-c -fobjc-gc])
             TEA_ADD_LIBS([-framework Cocoa -framework Carbon])
         else
+        	AC_MSG_RESULT([Carbon])
             TEA_ADD_CFLAGS([-DMAC_TK_CARBON])
             TEA_ADD_LIBS([-framework Carbon])
         fi
@@ -174,9 +176,11 @@ if test "${TEA_WINDOWINGSYSTEM}" = "aqua"; then
                 [use Cocoa on Mac OS X (default: no)]),
             [tcl_ok=$enableval], [tcl_ok=no])
         if test "$tcl_ok" = "yes"; then
+        	AC_MSG_RESULT([Cocoa])
             TEA_ADD_CFLAGS([-DMAC_TK_COCOA -std=gnu99 -x objective-c -fobjc-gc])
             TEA_ADD_LIBS([-framework Cocoa -framework Carbon])
         else
+        	AC_MSG_RESULT([Carbon])
             TEA_ADD_CFLAGS([-DMAC_TK_CARBON])
             TEA_ADD_LIBS([-framework Carbon])
         fi

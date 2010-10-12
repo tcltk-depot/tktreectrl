@@ -18,6 +18,11 @@ switch -- [tk windowingsystem] {
     x11 { set thisPlatform "unix" }
 }
 
+proc Platform {args} {
+    if {![llength $args]} { return $::thisPlatform }
+    return [expr {[lsearch -exact $args $::thisPlatform] != -1}]
+}
+
 # Get full pathname to this file
 set ScriptDir [file normalize [file dirname [info script]]]
 
@@ -316,6 +321,8 @@ proc MakeMenuBar {} {
 		console show
 	    }
 	}
+    } else {
+    	uplevel #0 source ~/Programming/TclTk-8.5.9/tktreectrl-build/console.tcl
     }
     $m2 add command -label "Event Browser" -command ToggleEventsWindow
     $m2 add command -label "Identify" -command ToggleIdentifyWindow
@@ -325,9 +332,18 @@ proc MakeMenuBar {} {
     $m2 add separator
     $m2 add command -label "Increase Font Size" -command IncreaseFontSize
     $m2 add command -label "Decrease Font Size" -command DecreaseFontSize
-    $m2 add separator
-    $m2 add command -label "Quit" -command exit
-    $m add cascade -label "File" -menu $m2
+    switch -- [Platform] {
+	macintosh -
+	macosx {
+	    $m add cascade -label "TkTreeCtrl" -menu $m2
+	}
+	unix -
+	windows {
+	    $m2 add separator
+	    $m2 add command -label "Quit" -command exit
+	    $m add cascade -label "File" -menu $m2
+	}
+    }
 
     if {$::tile} {
 	set m2 [menu $m.mTheme -tearoff no]
@@ -500,6 +516,7 @@ proc ToggleEventsWindow {} {
 	wm withdraw $w
     } else {
 	wm deiconify $w
+	raise $w
     }
     return
 }
@@ -549,6 +566,7 @@ proc ToggleIdentifyWindow {} {
 	wm withdraw $w
     } else {
 	wm deiconify $w
+	raise $w
     }
     return
 }
@@ -558,16 +576,20 @@ proc MakeSourceWindow {} {
     wm withdraw $w
 #    wm transient $w .
     set f [frame $w.f -borderwidth 0]
-    switch -- $::thisPlatform {
-	macintosh -
-	macosx {
-	    set font {Geneva 9}
-	}
-	unix {
-	    set font {Courier -12}
-	}
-	default {
-	    set font {Courier 9}
+    if {[lsearch -exact [font names] TkFixedFont] != -1} {
+	set font TkFixedFont
+    } else {
+	switch -- $::thisPlatform {
+	    macintosh -
+	    macosx {
+		set font {Geneva 9}
+	    }
+	    unix {
+		set font {Courier -12}
+	    }
+	    default {
+		set font {Courier 9}
+	    }
 	}
     }
     text $f.t -font $font -tabs [font measure $font 12345678] -wrap none \
@@ -585,7 +607,7 @@ proc MakeSourceWindow {} {
     switch -- $::thisPlatform {
 	macintosh -
 	macosx {
-	    wm geometry $w -40+40
+	    wm geometry $w +0+30
 	}
 	default {
 	    wm geometry $w -0+0
@@ -611,6 +633,7 @@ proc ToggleSourceWindow {} {
 	wm withdraw $w
     } else {
 	wm deiconify $w
+	raise $w
     }
     return
 }
@@ -625,6 +648,7 @@ proc ToggleStyleEditorWindow {} {
 	wm withdraw $w
     } else {
 	wm deiconify $w
+	raise $w
 	StyleEditor::SetListOfStyles
     }
     return
@@ -676,6 +700,7 @@ proc ToggleThemeWindow {} {
 	wm withdraw $w
     } else {
 	wm deiconify $w
+	raise $w
     }
     return
 }
@@ -801,12 +826,22 @@ proc TreePlusScrollbarsInAFrame {f h v} {
 
     MakeListPopup $f.t
     MakeHeaderPopup $f.t
-    bind $f.t <ButtonPress-3> {
-	ShowPopup %W %x %y %X %Y
-    }
-    if {[tk windowingsystem] eq "aqua"} {
-	bind $f.t <Control-ButtonPress-1> {
-	    ShowPopup %W %x %y %X %Y
+    
+    switch -- $::thisPlatform {
+	macintosh -
+	macosx {
+	    bind $f.t <Control-ButtonPress-1> {
+		ShowPopup %W %x %y %X %Y
+	    }
+	    bind $f.t <ButtonPress-2> {
+		ShowPopup %W %x %y %X %Y
+	    }
+	}
+	unix -
+	windows {
+	    bind $f.t <ButtonPress-3> {
+		ShowPopup %W %x %y %X %Y
+	    }
 	}
     }
     return
@@ -819,7 +854,7 @@ proc MakeMainWindow {} {
     switch -- $::thisPlatform {
 	macintosh -
 	macosx {
-	    wm geometry . +40+40
+	    wm geometry . +6+30
 	    set ::ShowLines 0
 	}
 	default {
@@ -1516,11 +1551,11 @@ bind [DemoList] <ButtonRelease-1> {
     %T column move %C %b
 }
 
-if {$::thisPlatform eq "windows" && [info exists ::TreeCtrl::gdiplus]} {
+if {[info exists ::TreeCtrl::nativeGradients]} {
     bind [DemoList] <Control-g> {
-	set ::TreeCtrl::gdiplus [expr {!$::TreeCtrl::gdiplus}]
+	set ::TreeCtrl::nativeGradients [expr {!$::TreeCtrl::nativeGradients}]
 	[DemoList] debug expose 0 0 10000 10000
-	dbwin "gdiplus is now $::TreeCtrl::gdiplus"
+	dbwin "nativeGradients is now $::TreeCtrl::nativeGradients"
     }
 }
 
@@ -1824,7 +1859,11 @@ if {[llength [info commands loupe]]} {
 	set w [toplevel .loupe]
 	wm title $w "TreeCtrl Magnifier"
 	wm withdraw $w
-	wm geometry $w -0+0
+	if {[Platform macintosh macosx]} {
+	    wm geometry $w +6+30
+	} else {
+	    wm geometry $w -0+0
+	}
 	image create photo ImageLoupe -width 280 -height 150
 	pack [label $w.label -image ImageLoupe -borderwidth 1 -relief sunken] \
 	    -expand yes -fill both
@@ -1870,6 +1909,7 @@ if {[llength [info commands loupe]]} {
 	} else {
 	    LoupeAfter
 	    wm deiconify $w
+	    raise $w
 	}
 	return
     }
