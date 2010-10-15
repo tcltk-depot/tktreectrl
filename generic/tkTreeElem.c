@@ -2923,6 +2923,9 @@ TextUpdateLayout(
 	if (width == 0)
 	    return etl2;
 	textWidth = Tk_TextWidth(tkfont, text, textLen);
+#if defined(MAC_TK_COCOA) && TK_MAJOR_VERSION==8 && TK_MINOR_VERSION >= 6
+	textWidth += 1;
+#endif
 if (tree->debug.enable && tree->debug.textLayout) dbwin("    available width %d textWidth %d\n", width, textWidth);
 	if (width >= textWidth)
 	    return etl2;
@@ -3461,6 +3464,9 @@ static void NeededProcText(TreeElementArgs *args)
 		tkfont = tree->tkfont;
 
 	    width = Tk_TextWidth(tkfont, text, textLen);
+#if defined(MAC_TK_COCOA) && TK_MAJOR_VERSION==8 && TK_MINOR_VERSION >= 6
+	    width += 1;
+#endif
 	    if (etl != NULL && etl->widthObj != NULL)
 		maxWidth = etl->width;
 	    else if ((etlM != NULL) && (etlM->widthObj != NULL))

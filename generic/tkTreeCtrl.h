@@ -16,6 +16,13 @@
 #include "tkInt.h"
 #include "qebind.h"
 
+#ifdef MAC_TK_COCOA
+#include <Cocoa/Cocoa.h>
+#endif
+#ifdef MAC_TK_CARBON
+#include <Carbon/Carbon.h>
+#endif
+
 /*
  * Used to tag functions that are only to be visible within the module being
  * built and not outside it (where this is supported by the linker).
@@ -1218,10 +1225,32 @@ MODULE_SCOPE PerStateType pstGradient;
 MODULE_SCOPE TreeGradient PerStateGradient_ForState(TreeCtrl *tree, PerStateInfo *pInfo,
     int state, int *match);
 
-#define TREECTRL_GRADIENT_API_MAJOR 1
-#define TREECTRL_GRADIENT_API_MINOR 0
+/*****/
+
+#ifdef MAC_TK_COCOA
+#if (TK_MAJOR_VERSION == 8) && (TK_MINOR_VERSION >= 6)
+typedef struct {
+    CGContextRef context;
+} MacContextSetup;
+#endif /* Tk 8.6 */
+#if (TK_MAJOR_VERSION == 8) && (TK_MINOR_VERSION < 6)
+typedef struct {
+    CGrafPtr port, savePort;
+    Boolean portChanged;
+    CGContextRef context;
+} MacContextSetup;
+#endif /* Tk 8.4 + 8.5 */
+
+MODULE_SCOPE CGContextRef TreeMacOSX_GetContext(TreeCtrl *tree,
+    Drawable pixmap, TreeRectangle tr, MacContextSetup *dc);
+MODULE_SCOPE void TreeMacOSX_ReleaseContext(TreeCtrl *tree,
+    MacContextSetup *dc);
+#endif /* MAC_TK_COCOA */
 
 /*****/
+
+#define TREECTRL_GRADIENT_API_MAJOR 1
+#define TREECTRL_GRADIENT_API_MINOR 0
 
 /*
  * Records for gradient fills.

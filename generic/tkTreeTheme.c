@@ -994,51 +994,6 @@ int TreeTheme_InitInterp(Tcl_Interp *interp)
 #import <Carbon/Carbon.h>
 #include "tkMacOSXInt.h"
 
-typedef struct {
-    CGrafPtr port, savePort;
-    Boolean portChanged;
-    CGContextRef context;
-} MacContextSetup;
-
-/*
- * THIS WON'T WORK FOR DRAWING IN A WINDOW.
- */
-static CGContextRef
-GetCGContextForDrawable(
-    TreeCtrl *tree,
-    Drawable d,
-    MacContextSetup *dc)
-{
-/*    MacDrawable *macDraw = (MacDrawable *) d;*/
-
-    dc->port = TkMacOSXGetDrawablePort(d);
-    dc->context = NULL;
-    dc->portChanged = False;
-    if (dc->port) {
-	dc->portChanged = QDSwapPort(dc->port, &dc->savePort);
-	if (QDBeginCGContext(dc->port, &dc->context) == noErr) {
-	    SyncCGContextOriginWithPort(dc->context, dc->port);
-	}
-    }
-    
-    return dc->context;
-}
-
-static void
-ReleaseContextForDrawable(
-    MacContextSetup *dc)
-{
-    if (dc->context != NULL) {
-	CGContextSynchronize(dc->context);
-	if (dc->port) {
-	    QDEndCGContext(dc->port, &dc->context);
-	}
-    }
-    if (dc->portChanged) {
-	QDSwapPort(dc->savePort, NULL);
-    }
-}
-
 static HIThemeButtonDrawInfo
 GetThemeButtonDrawInfo(
     TreeCtrl *tree,
@@ -1061,7 +1016,9 @@ GetThemeButtonDrawInfo(
     switch (arrow) {
 	case ARROW_NONE: info.adornment = kThemeAdornmentHeaderButtonNoSortArrow; break;
 	case ARROW_UP: info.adornment = kThemeAdornmentHeaderButtonSortUp; break;
-	case ARROW_DOWN: info.adornment = kThemeAdornmentDefault; break;
+	case ARROW_DOWN:
+	default:
+	    info.adornment = kThemeAdornmentDefault; break;
     }
 
     return info;
@@ -1076,21 +1033,18 @@ int TreeTheme_DrawHeaderItem(TreeCtrl *tree, Drawable drawable, int state,
     MacContextSetup dc;
     CGContextRef context;
     HIShapeRef boundsRgn;
-    CGAffineTransform t = { .a = 1, .b = 0, .c = 0, .d = -1, .tx = 0,
-	.ty = macDraw->size.height};
     int leftEdgeOffset;
+    TreeRectangle tr;
 
     if (!(macDraw->flags & TK_IS_PIXMAP))
 	return TCL_ERROR;
 
     info = GetThemeButtonDrawInfo(tree, state, arrow);
 
-    /* Really want TkMacOSXSetupDrawingContext here. */
-    context = GetCGContextForDrawable(tree, drawable, &dc);
+    tr.x = x, tr.y = y, tr.width = width, tr.height = height;
+    context = TreeMacOSX_GetContext(tree, drawable, tr, &dc);
     if (context == NULL)
 	return TCL_ERROR;
-    CGContextSaveGState(context);
-    CGContextConcatCTM(context, t);
 
     /* See SF patch 'aqua header drawing - ID: 1356447' */
     /* The left edge overlaps the right edge of the previous column. */
@@ -1123,10 +1077,8 @@ int TreeTheme_DrawHeaderItem(TreeCtrl *tree, Drawable drawable, int state,
     (void) HIThemeDrawButton(&bounds, &info, context,
 	kHIThemeOrientationNormal, NULL);
 
-    CGContextRestoreGState(context);
+    TreeMacOSX_ReleaseContext(tree, &dc);
     CFRelease(boundsRgn);
-
-    ReleaseContextForDrawable(&dc);
 
     return TCL_OK;
 }
@@ -1182,9 +1134,8 @@ int TreeTheme_DrawButton(TreeCtrl *tree, Drawable drawable, int open,
     HIThemeButtonDrawInfo info;
     MacContextSetup dc;
     CGContextRef context;
-    CGAffineTransform t = { .a = 1, .b = 0, .c = 0, .d = -1, .tx = 0,
-	.ty = macDraw->size.height};
     HIShapeRef clipRgn;
+    TreeRectangle tr;
 
     if (!(macDraw->flags & TK_IS_PIXMAP))
 	return TCL_ERROR;
@@ -1200,11 +1151,10 @@ int TreeTheme_DrawButton(TreeCtrl *tree, Drawable drawable, int open,
     info.value = open ? kThemeDisclosureDown : kThemeDisclosureRight;
     info.adornment = kThemeAdornmentDrawIndicatorOnly;
 
-    context = GetCGContextForDrawable(tree, drawable, &dc);
+    tr.x = x, tr.y = y, tr.width = width, tr.height = height;
+    context = TreeMacOSX_GetContext(tree, drawable, tr, &dc);
     if (context == NULL)
 	return TCL_ERROR;
-    CGContextSaveGState(context);
-    CGContextConcatCTM(context, t);
 
     /* Set the clipping region */
     clipRgn = HIShapeCreateWithRect(&bounds);
@@ -1214,10 +1164,8 @@ int TreeTheme_DrawButton(TreeCtrl *tree, Drawable drawable, int open,
     (void) HIThemeDrawButton(&bounds, &info, context,
 	kHIThemeOrientationNormal, NULL);
 
-    CGContextRestoreGState(context);
+    TreeMacOSX_ReleaseContext(tree, &dc);
     CFRelease(clipRgn);
-
-    ReleaseContextForDrawable(&dc);
 
     return TCL_OK;
 }
@@ -1270,7 +1218,11 @@ TreeTheme_IsDesktopComposited(
     TreeCtrl *tree
     )
 {
+#if 0
+    return FALSE;
+#else
     return TRUE;
+#endif
 }
 
 void TreeTheme_ThemeChanged(TreeCtrl *tree)

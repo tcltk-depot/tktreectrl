@@ -19,6 +19,7 @@
 
 #if defined(MAC_TK_CARBON)
 #include <Carbon/Carbon.h>
+#include "tkMacOSXInt.h"
 static PixPatHandle gPenPat = NULL;
 
 /* TkRegion changed from RgnHandle to HIShapeRef in 8.4.17/8.5.0 */
@@ -675,11 +676,16 @@ TreeDotRect_Setup(
     gcValues.dash_offset = 0;
     gcValues.dashes = 1;
 #if defined(MAC_TK_COCOA)
+    /* Can't get a 1-pixel dash pattern when antialiasing is used. */
+    /* See ::tk::mac::CGAntialiasLimit".*/
+    gcValues.dashes = 2;
     gcValues.function = GXcopy;
+    gcValues.cap_style = CapButt; /* doesn't affect display */
+    mask = GCLineWidth | GCLineStyle | GCDashList | GCDashOffset | GCFunction | GCCapStyle;
 #else
     gcValues.function = GXinvert;
-#endif
     mask = GCLineWidth | GCLineStyle | GCDashList | GCDashOffset | GCFunction;
+#endif
     dotState->gc = Tk_GetGC(tree->tkwin, mask, &gcValues);
 
     /* Keep drawing inside the contentbox. */
@@ -1243,7 +1249,7 @@ Tree_ScrollWindow(
     int result = TkScrollWindow(tree->tkwin, gc, x, y, width, height, dx, dy,
 	damageRgn);
 #endif /* WIN32 */
-#if defined(MAC_TK_CARBON) || defined(MAC_TK_COCOA)
+#if defined(MAC_TK_CARBON) || (defined(MAC_TK_COCOA) && (TK_MAJOR_VERSION == 8) && (TK_MINOR_VERSION < 6))
     {
 	MacDrawable *macWin = (MacDrawable *) Tk_WindowId(tree->tkwin);
 	/* BUG IN TK? */
@@ -8642,20 +8648,63 @@ error1:
 
 #ifdef MAC_TK_COCOA
 
-typedef struct {
-    CGrafPtr port, savePort;
-    Boolean portChanged;
-    CGContextRef context;
-} MacContextSetup;
+#if (TK_MAJOR_VERSION == 8) && (TK_MINOR_VERSION >= 6)
 
 /*
  * THIS WON'T WORK FOR DRAWING IN A WINDOW.
  */
-static CGContextRef
-GetCGContextForDrawable(
+CGContextRef
+TreeMacOSX_GetContext(
     TreeCtrl *tree,
     Drawable d,
-    MacContextSetup *dc)
+    TreeRectangle tr,
+    MacContextSetup *dc
+    )
+{
+    MacDrawable *macDraw = (MacDrawable *) d;
+    CGAffineTransform t = { .a = 1, .b = 0, .c = 0, .d = -1, .tx = 0,
+	.ty = macDraw->size.height};
+
+    if ((macDraw->flags & TK_IS_PIXMAP) && !macDraw->context) {
+	GC gc = Tk_3DBorderGC(tree->tkwin, tree->border, TK_3D_FLAT_GC);
+	XFillRectangle(tree->display, d, gc, tr.x, tr.y, tr.width, tr.height);
+    }
+
+    dc->context = macDraw->context;
+    if (dc->context) {
+	CGContextSaveGState(dc->context);
+	CGContextConcatCTM(dc->context, t);
+    }
+    
+    return dc->context;
+}
+
+void
+TreeMacOSX_ReleaseContext(
+    TreeCtrl *tree,
+    MacContextSetup *dc
+    )
+{
+    if (dc->context != NULL) {
+	CGContextSynchronize(dc->context);
+	CGContextRestoreGState(dc->context);
+    }
+}
+
+#endif /* Tk 8.6 */
+
+#if (TK_MAJOR_VERSION == 8) && (TK_MINOR_VERSION < 6)
+
+/*
+ * THIS WON'T WORK FOR DRAWING IN A WINDOW.
+ */
+CGContextRef
+TreeMacOSX_GetContext(
+    TreeCtrl *tree,
+    Drawable d,
+    TreeRectangle tr,
+    MacContextSetup *dc
+    )
 {
     MacDrawable *macDraw = (MacDrawable *) d;
     CGAffineTransform t = { .a = 1, .b = 0, .c = 0, .d = -1, .tx = 0,
@@ -8676,9 +8725,11 @@ GetCGContextForDrawable(
     return dc->context;
 }
 
-static void
-ReleaseContextForDrawable(
-    MacContextSetup *dc)
+void
+TreeMacOSX_ReleaseContext(
+    TreeCtrl *tree,
+    MacContextSetup *dc
+    )
 {
     if (dc->context != NULL) {
 	CGContextSynchronize(dc->context);
@@ -8692,6 +8743,8 @@ ReleaseContextForDrawable(
     }
 }
 
+#endif /* Tk 8.4 and 8.5 */
+
 /* Copy-and-paste from TkPath */
 
 const float kValidDomain[2] = {0, 1};
@@ -8702,6 +8755,66 @@ const float kValidRange[8] = {0, 1, 0, 1, 0, 1, 0, 1};
 #define GreenFloatFromXColorPtr(xc)  (float) ((((xc)->pixel >> 8)  & 0xFF)) / 255.0
 #define RedFloatFromXColorPtr(xc)    (float) ((((xc)->pixel >> 16) & 0xFF)) / 255.0
 
+#if 1
+typedef struct ShadeData {
+    int nstops;
+    float red[50], green[50], blue[50];
+    float offset[50];
+    float opacity[50];
+} ShadeData;
+
+static void
+ShadeEvaluate(
+    void *info,
+    const float *in,
+    float *out)
+{
+    ShadeData *data = info;
+    int nstops = data->nstops;
+    int iStop1, iStop2;
+    float offset1, offset2;
+    float opacity1, opacity2;
+    int i = 0;
+    float par = *in;
+    float f1, f2;
+
+    /* Find the two stops for this point. Tricky! */
+    while ((i < nstops) && (data->offset[i] < par)) {
+        i++;
+    }
+    if (i == 0) {
+        /* First stop > 0. */
+        iStop1 = iStop2 = 0;
+    } else if (i == nstops) {
+        /* We have stepped beyond the last stop; step back! */
+        iStop1 = iStop2 = nstops - 1;
+    } else {
+        iStop1 = i-1, iStop2 = i;
+    }
+    opacity1 = data->opacity[iStop1];
+    opacity2 = data->opacity[iStop2];
+    offset1 = data->offset[iStop1];
+    offset2 = data->offset[iStop2];
+    /* Interpolate between the two stops. 
+     * "If two gradient stops have the same offset value, 
+     * then the latter gradient stop controls the color value at the 
+     * overlap point."
+     */
+    if (fabs(offset2 - offset1) < 1e-6) {
+        *out++ = data->red[iStop2];
+        *out++ = data->green[iStop2];
+        *out++ = data->blue[iStop2]; 
+        *out++ = opacity2;
+    } else {
+        f1 = (offset2 - par)/(offset2 - offset1);
+        f2 = (par - offset1)/(offset2 - offset1);
+        *out++ = f1 * data->red[iStop1] + f2 * data->red[iStop2];
+        *out++ = f1 * data->green[iStop1] + f2 * data->green[iStop2];
+        *out++ = f1 * data->blue[iStop1] + f2 * data->blue[iStop2];
+        *out++ = f1 * opacity1 + f2 * opacity2;
+    }
+}
+#else
 static void
 ShadeEvaluate(
     void *info,
@@ -8755,7 +8868,7 @@ ShadeEvaluate(
         *out++ = f1 * stop1->opacity + f2 * stop2->opacity;
     }
 }
-
+#endif
 static void
 ShadeRelease(void *info)
 {
@@ -8797,16 +8910,28 @@ TreeGradient_FillRect(
     CGPoint start, end;
     CGShadingRef shading;
     CGRect r;
+    ShadeData data;
+    int i;
 
     if (!(macDraw->flags & TK_IS_PIXMAP) || !gNativeGradients) {
 	TreeGradient_FillRectX11(tree, td, gradient, tr);
 	return;
     }
 
-    context = GetCGContextForDrawable(tree, td.drawable, &dc);
+    context = TreeMacOSX_GetContext(tree, td.drawable, tr, &dc);
     if (context == NULL) {
 	TreeGradient_FillRectX11(tree, td, gradient, tr);
 	return;
+    }
+
+    data.nstops = gradient->stopArrPtr->nstops;
+    for (i = 0; i < gradient->stopArrPtr->nstops; i++) {
+	GradientStop *stop = gradient->stopArrPtr->stops[i];
+        data.red[i] = RedFloatFromXColorPtr(stop->color);
+        data.green[i] = GreenFloatFromXColorPtr(stop->color);
+        data.blue[i] = BlueFloatFromXColorPtr(stop->color);
+        data.offset[i] = stop->offset;
+        data.opacity[i] = stop->opacity;
     }
 
     colorSpaceRef = CGColorSpaceCreateDeviceRGB();
@@ -8814,7 +8939,7 @@ TreeGradient_FillRect(
     callbacks.version = 0;
     callbacks.evaluate = ShadeEvaluate;
     callbacks.releaseInfo = ShadeRelease;
-    function = CGFunctionCreate((void *) gradient,
+    function = CGFunctionCreate((void *) &data,
 	1, kValidDomain,
 	4, kValidRange,
 	&callbacks);
@@ -8838,7 +8963,7 @@ TreeGradient_FillRect(
     CGFunctionRelease(function);
     CGColorSpaceRelease(colorSpaceRef);
 
-    ReleaseContextForDrawable(&dc);
+    TreeMacOSX_ReleaseContext(tree, &dc);
 }
 
 int
