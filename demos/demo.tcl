@@ -322,7 +322,7 @@ proc MakeMenuBar {} {
 	    }
 	}
     } else {
-    	uplevel #0 source ~/Programming/TclTk-8.5.9/tktreectrl-build/console.tcl
+#    	uplevel #0 source ~/Programming/TclTk-8.5.9/tktreectrl-build/console.tcl
     }
     $m2 add command -label "Event Browser" -command ToggleEventsWindow
     $m2 add command -label "Identify" -command ToggleIdentifyWindow
@@ -863,8 +863,8 @@ proc MakeMainWindow {} {
 	}
     }
 
-    panedwindow .pw2 -orient horizontal -borderwidth 0
-    panedwindow .pw1 -orient vertical -borderwidth 0
+    panedwindow .pw2 -orient horizontal -borderwidth 0 -sashwidth 6
+    panedwindow .pw1 -orient vertical -borderwidth 0 -sashwidth 6
 
     # Tree + scrollbar: demos
     TreePlusScrollbarsInAFrame .f1 1 1
