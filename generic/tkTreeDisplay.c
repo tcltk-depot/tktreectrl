@@ -5610,11 +5610,17 @@ SetBuffering(
 	overlays = TRUE;
     }
 
+#if defined(MAC_TK_COCOA)
+    /* Do NOT call TkScrollWindow(), it generates an <Expose> event which redraws *all*
+     * child windows of children of the toplevel this treectrl is in. See Tk bug 3086887. */
+    tree->doubleBuffer = DOUBLEBUFFER_WINDOW;
+#else
     if (overlays) {
 	tree->doubleBuffer = DOUBLEBUFFER_WINDOW;
     } else {
 	tree->doubleBuffer = DOUBLEBUFFER_ITEM;
     }
+#endif
 
     if (overlays != dInfo->overlays) {
 	dInfo->flags |=
@@ -7784,6 +7790,11 @@ Tree_ExposeArea(
 	if (y2 > Tree_BorderBottom(tree))
 	    y2 = Tree_BorderBottom(tree);
 	DblBufWinDirty(tree, x1, y1, x2, y2);
+        if (tree->debug.enable && tree->debug.display && tree->debug.drawColor) {
+            XFillRectangle(tree->display, Tk_WindowId(tree->tkwin),
+                    tree->debug.gcErase, x1, y1, x2 - x1, y2 - y1);
+	DisplayDelay(tree);
+        }
     } else {
 	Tree_InvalidateArea(tree, x1, y1, x2, y2);
     }
