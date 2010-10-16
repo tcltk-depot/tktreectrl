@@ -14,6 +14,11 @@ if {$tcl_platform(os) eq "Windows NT" &&
     }
 }
 
+set macBitmap 0
+if {[info commands ::tk::mac::iconBitmap] ne {}} {
+    set macBitmap 1
+}
+
 proc DemoExplorerAux {scriptDir scriptFile {scriptFollowup ""}} {
     global Explorer
     global Dir
@@ -125,6 +130,8 @@ proc DemoExplorerDetails {} {
     #
     if {$::shellicon} {
 	$T element create elemImg shellicon -size small
+    } elseif {$::macBitmap} {
+        $T element create elemImg bitmap
     } else {
 	$T element create elemImg image -image {small-folderSel {selected} small-folder {}}
     }
@@ -212,6 +219,12 @@ proc DemoExplorerDetails {} {
 	    $T item element configure $item \
 		name elemImg -path $file
 	}
+	if {$::macBitmap} {
+	    if {$file eq ".."} { set file [file dirname $::Dir] }
+	    ::tk::mac::iconBitmap $file 16 16 -file $file
+	    $T item element configure $item \
+		name elemImg -bitmap [list $file]
+	}
 	$T item lastchild root $item
     }
 
@@ -232,6 +245,14 @@ proc DemoExplorerDetails {} {
 	if {$::shellicon} {
 	    $T item element configure $item \
 		name elemImg -path $file + txtName -text [file tail $file] , \
+		size txtSize -data [expr {[file size $file] / 1024 + 1}] , \
+		type txtType -text $type , \
+		modified txtDate -data [file mtime $file]
+	} elseif {$::macBitmap} {
+	    if {$file eq ".."} { set file [file dirname $::Dir] }
+	    ::tk::mac::iconBitmap $file 16 16 -file $file
+	    $T item element configure $item \
+		name elemImg -bitmap [list $file] + txtName -text [file tail $file] , \
 		size txtSize -data [expr {[file size $file] / 1024 + 1}] , \
 		type txtType -text $type , \
 		modified txtDate -data [file mtime $file]
@@ -342,6 +363,8 @@ proc DemoExplorerLargeIcons {} {
 
     if {$::shellicon} {
 	$T element create elemImg shellicon -size large
+    } elseif {$::macBitmap} {
+        $T element create elemImg bitmap
     } else {
 	$T element create elemImg image -image {big-folderSel {selected} big-folder {}}
     }
@@ -408,6 +431,12 @@ proc DemoExplorerLargeIcons {} {
 	    $T item element configure $item C0 \
 		elemImg -path $file
 	}
+	if {$::macBitmap} {
+	    if {$file eq ".."} { set file [file dirname $::Dir] }
+	    ::tk::mac::iconBitmap $file 32 32 -file $file
+	    $T item element configure $item C0 \
+		elemImg -bitmap [list $file]
+	}
 	$T item lastchild root $item
     }
 
@@ -428,6 +457,11 @@ proc DemoExplorerLargeIcons {} {
 	if {$::shellicon} {
 	    $T item element configure $item C0 \
 		elemImg -path $file + \
+		elemTxt -text [file tail $file]
+	} elseif {$::macBitmap} {
+	    ::tk::mac::iconBitmap $file 32 32 -file $file
+	    $T item element configure $item C0 \
+		elemImg -bitmap [list $file] + \
 		elemTxt -text [file tail $file]
 	} else {
 	    $T item element configure $item C0 \
@@ -500,6 +534,8 @@ proc DemoExplorerList {} {
 
     if {$::shellicon} {
 	$T element create elemImg shellicon -size small
+    } elseif {$::macBitmap} {
+        $T element create elemImg bitmap
     } else {
 	$T element create elemImg image -image {small-folderSel {selected} small-folder {}}
     }
@@ -566,6 +602,12 @@ proc DemoExplorerList {} {
 	    $T item element configure $item C0 \
 		elemImg -path $file
 	}
+	if {$::macBitmap} {
+	    if {$file eq ".."} { set file [file dirname $::Dir] }
+	    ::tk::mac::iconBitmap $file 16 16 -file $file
+	    $T item element configure $item C0 \
+		elemImg -bitmap [list $file]
+	}
 	$T item lastchild root $item
     }
 
@@ -586,6 +628,11 @@ proc DemoExplorerList {} {
 	if {$::shellicon} {
 	    $T item element configure $item C0 \
 		elemImg -path $file + \
+		elemTxt -text [file tail $file]
+	} elseif {$::macBitmap} {
+	    ::tk::mac::iconBitmap $file 16 16 -file $file
+	    $T item element configure $item C0 \
+		elemImg -bitmap [list $file] + \
 		elemTxt -text [file tail $file]
 	} else {
 	    $T item element configure $item C0 \
@@ -727,6 +774,8 @@ proc DemoExplorerDetailsWin7 {} {
 
     if {$::shellicon} {
 	$T element create elemImg shellicon -size small -useselected never
+    } elseif {$::macBitmap} {
+        $T element create elemImg bitmap
     } else {
 	$T element create elemImg image -image small-folder
     }
@@ -838,6 +887,12 @@ proc DemoExplorerDetailsWin7 {} {
 	    $T item element configure $item \
 		name elemImg -path $file
 	}
+	if {$::macBitmap} {
+	    if {$file eq ".."} { set file [file dirname $::Dir] }
+	    ::tk::mac::iconBitmap $file 16 16 -file $file
+	    $T item element configure $item \
+		name elemImg -bitmap [list $file]
+	}
 	$T item lastchild root $item
     }
 
@@ -858,6 +913,13 @@ proc DemoExplorerDetailsWin7 {} {
 	if {$::shellicon} {
 	    $T item element configure $item \
 		name elemImg -path $file + txtName -text [file tail $file] , \
+		size txtSize -data [expr {[file size $file] / 1024 + 1}] , \
+		type txtType -text $type , \
+		modified txtDate -data [file mtime $file]
+	} elseif {$::macBitmap} {
+	    ::tk::mac::iconBitmap $file 16 16 -file $file
+	    $T item element configure $item \
+		name elemImg -bitmap [list $file] + txtName -text [file tail $file] , \
 		size txtSize -data [expr {[file size $file] / 1024 + 1}] , \
 		type txtType -text $type , \
 		modified txtDate -data [file mtime $file]
@@ -1008,6 +1070,8 @@ proc DemoExplorerLargeIconsWin7 {} {
 
     if {$::shellicon} {
 	$T element create elemImg shellicon -size large -useselect never
+    } elseif {$::macBitmap} {
+        $T element create elemImg bitmap
     } else {
 	$T element create elemImg image -image big-folder
     }
@@ -1073,6 +1137,12 @@ proc DemoExplorerLargeIconsWin7 {} {
 	    $T item element configure $item C0 \
 		elemImg -path $file
 	}
+	if {$::macBitmap} {
+	    if {$file eq ".."} { set file [file dirname $::Dir] }
+	    ::tk::mac::iconBitmap $file 32 32 -file $file
+	    $T item element configure $item C0 \
+		elemImg -bitmap [list $file]
+	}
 	$T item lastchild root $item
     }
 
@@ -1093,6 +1163,11 @@ proc DemoExplorerLargeIconsWin7 {} {
 	if {$::shellicon} {
 	    $T item element configure $item C0 \
 		elemImg -path $file + \
+		elemTxt -text [file tail $file]
+	} elseif {$::macBitmap} {
+	    ::tk::mac::iconBitmap $file 32 32 -file $file
+	    $T item element configure $item C0 \
+		elemImg -bitmap [list $file] + \
 		elemTxt -text [file tail $file]
 	} else {
 	    $T item element configure $item C0 \
