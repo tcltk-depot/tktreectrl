@@ -8755,7 +8755,76 @@ const float kValidRange[8] = {0, 1, 0, 1, 0, 1, 0, 1};
 #define GreenFloatFromXColorPtr(xc)  (float) ((((xc)->pixel >> 8)  & 0xFF)) / 255.0
 #define RedFloatFromXColorPtr(xc)    (float) ((((xc)->pixel >> 16) & 0xFF)) / 255.0
 
-#if 1
+#if 0
+typedef struct ShadeData {
+    int nstops;
+    unsigned short red[50], green[50], blue[50];
+    float offset[50];
+    float opacity[50];
+} ShadeData;
+
+static void
+ShadeEvaluate(
+    void *info,
+    const float *in,
+    float *out)
+{
+    ShadeData *data = info;
+    int nstops = data->nstops;
+    int iStop1, iStop2;
+    float offset1, offset2;
+    float opacity1, opacity2;
+    int i = 0;
+    float par = *in;
+    float f1, f2;
+
+    /* Find the two stops for this point. Tricky! */
+    while ((i < nstops) && (data->offset[i] < par)) {
+        i++;
+    }
+    if (i == 0) {
+        /* First stop > 0. */
+        iStop1 = iStop2 = 0;
+    } else if (i == nstops) {
+        /* We have stepped beyond the last stop; step back! */
+        iStop1 = iStop2 = nstops - 1;
+    } else {
+        iStop1 = i-1, iStop2 = i;
+    }
+    opacity1 = data->opacity[iStop1];
+    opacity2 = data->opacity[iStop2];
+    offset1 = data->offset[iStop1];
+    offset2 = data->offset[iStop2];
+    /* Interpolate between the two stops. 
+     * "If two gradient stops have the same offset value, 
+     * then the latter gradient stop controls the color value at the 
+     * overlap point."
+     */
+    if (fabs(offset2 - offset1) < 1e-6) {
+        *out++ = data->red[iStop2];
+        *out++ = data->green[iStop2];
+        *out++ = data->blue[iStop2]; 
+        *out++ = opacity2;
+    } else {
+    	int range, increment;
+    	float factor = (par - offset1)/(offset2 - offset1);
+   
+	range = (data->red[iStop2] - data->red[iStop1]);
+	increment = (int)(range * factor);
+	*out++ = CLAMP(data->red[iStop1] + increment,0,USHRT_MAX)/((float)USHRT_MAX);
+
+	range = (data->green[iStop2] - data->green[iStop1]);
+	increment = (int)(range * factor);
+	*out++ = CLAMP(data->green[iStop1] + increment,0,USHRT_MAX)/((float)USHRT_MAX);
+
+	range = (data->blue[iStop2] - data->blue[iStop1]);
+	increment = (int)(range * factor);
+	*out++ = CLAMP(data->blue[iStop1] + increment,0,USHRT_MAX)/((float)USHRT_MAX);
+
+        *out++ = 1.0f /*f1 * opacity1 + f2 * opacity2*/;
+    }
+}
+#elif 1
 typedef struct ShadeData {
     int nstops;
     float red[50], green[50], blue[50];
@@ -8877,6 +8946,19 @@ ShadeRelease(void *info)
 
 static int gNativeGradients = 1;
 
+#if 0
+/* FIXME: 8.4+ only */
+CGColorSpaceRef CreateSystemColorSpace() {
+	CMProfileRef sysprof = NULL;
+	CGColorSpaceRef dispColorSpace = NULL;
+	if (CMGetSystemProfile(&sysprof) == noErr) {
+		dispColorSpace = CGColorSpaceCreateWithPlatformColorSpace(sysprof);
+		CMCloseProfile(sysprof);
+	}
+	return dispColorSpace;
+}
+#endif
+
 /*
  *----------------------------------------------------------------------
  *
@@ -8927,14 +9009,25 @@ TreeGradient_FillRect(
     data.nstops = gradient->stopArrPtr->nstops;
     for (i = 0; i < gradient->stopArrPtr->nstops; i++) {
 	GradientStop *stop = gradient->stopArrPtr->stops[i];
+#if 0
+        data.red[i] = stop->color->red;
+        data.green[i] = stop->color->green;
+        data.blue[i] = stop->color->blue;
+#else
         data.red[i] = RedFloatFromXColorPtr(stop->color);
         data.green[i] = GreenFloatFromXColorPtr(stop->color);
         data.blue[i] = BlueFloatFromXColorPtr(stop->color);
+#endif
         data.offset[i] = stop->offset;
         data.opacity[i] = stop->opacity;
     }
 
-    colorSpaceRef = CGColorSpaceCreateDeviceRGB();
+/*    colorSpaceRef = CGColorSpaceCreateDeviceRGB();*/
+/*    colorSpaceRef = CreateSystemColorSpace();*/
+    /* This matches the Pixmap colorspace */
+/*    colorSpaceRef = CGColorSpaceCreateWithName(kCGColorSpaceGenericRGB);*/
+    colorSpaceRef = CGBitmapContextGetColorSpace(context);
+    CGColorSpaceRetain(colorSpaceRef);
 
     callbacks.version = 0;
     callbacks.evaluate = ShadeEvaluate;
