@@ -1171,7 +1171,7 @@ proc DemoExplorerLargeIconsWin7 {} {
 		elemTxt -text [file tail $file]
 	} else {
 	    $T item element configure $item C0 \
-		elemImg -image [list ${img}Sel {selected} $img {}] + \
+		elemImg -image [list $img] + \
 		elemTxt -text [file tail $file]
 	}
 	$T item lastchild root $item

@@ -191,6 +191,12 @@ TreeDotRect_Setup(
     )
 {
     struct DotStatePriv *dotState = (struct DotStatePriv *) p;
+    XGCValues gcValues;
+    unsigned long mask;
+    XRectangle xrect;
+
+    dotState->tree = tree;
+    dotState->drawable = drawable;
 
     gcValues.line_style = LineOnOffDash;
     gcValues.line_width = 1;

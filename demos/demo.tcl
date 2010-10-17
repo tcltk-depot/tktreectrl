@@ -324,7 +324,7 @@ proc MakeMenuBar {} {
 	    }
 	}
     } else {
-#    	uplevel #0 source ~/Programming/TclTk-8.5.9/tktreectrl-build/console.tcl
+#	uplevel #0 source ~/Programming/console.tcl
     }
     $m2 add command -label "Event Browser" -command ToggleEventsWindow
     $m2 add command -label "Identify" -command ToggleIdentifyWindow
