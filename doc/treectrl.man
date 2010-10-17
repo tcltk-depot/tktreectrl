@@ -1694,14 +1694,22 @@ the items described by [arg itemDesc] will also be toggled.
 
 [call [arg pathName] [cmd marquee] [arg option] [opt [arg {arg ...}]]]
 This command is used to manipulate the marquee,
-a rectangular region of the treectrl widget
-optionally marked with a surrounding dotted line.
+which can be used to implement a resizable selection rectangle, in a
+file browser for example.
 One corner point of the marquee is fixed as long as the marquee is visible
 and called the anchor; the diagonally opposite corner is dragged with the
 mouse while resizing the marquee and simply called the corner.
+[para]
 All coordinates handled by this widget command are treectrl coordinates,
 i.e. the [cmd canvasx] or [cmd canvasy] widget command should be
-used before any window coordinates can be used.
+used to translate any window coordinates to marquee coordinates.
+[para]
+By default, the marquee is displayed as a 1-pixel thick dotted rectangle.
+If either of the [option -fill] or [option -outline] options is specified, then
+the marquee is drawn as a filled and/or outlined rectangle of the specified
+color(s).  The  [option -fill] option should specify a transparent gradient to
+avoid hiding what is inside the marquee.  See [sectref GRADIENTS] for more info.
+[para]
 The exact behavior of the command depends on the [arg option] argument
 that follows the [cmd marquee] argument.
 The following forms of the command are supported:
@@ -1739,10 +1747,24 @@ in this case the command returns an empty string.
 The following marquee options are supported:
 
 [list_begin options]
+[opt_def [option -fill] [arg color]]
+Specifies the color to fill the marquee rectangle with.  See the comments above
+about using a transparent gradient here.
+
+[opt_def [option -outline] [arg color]]
+Specifies the color to outline the marquee rectangle with.
+
+[opt_def [option -outlinewidth] [arg color]]
+Specifies the width of the outline drawn inside the marquee's rectangle.
+The outline is not drawn if this value is less than 1.
+This option has no effect if the [option -outline] option is unspecified,
+i.e., the default dotted rectangle is unaffected by this option.
+[arg outlineWidth] may be in any of the forms acceptable to [fun Tk_GetPixels].
+Defaults to 1.
+
 [opt_def [option -visible] [arg boolean]]
 Specifies a boolean value which determines
-whether the dotted line surrounding the region of the marquee
-should currently be visible.
+whether the marquee is displayed.
 [list_end]
 
 [call [arg pathName] [cmd {marquee coords}] [opt [arg {x1 y1 x2 y2}]]]
@@ -3614,12 +3636,16 @@ Gradients may be used in the following places:
 [enum]
 The -fill option of rect elements.
 [enum]
+The -fill option of the [cmd "marquee configure"] command.
+[enum]
 The -itembackground option of columns.
 [list_end]
 
 [para]
 On Microsoft Windows, GDI+ is used where it is available (gdiplus.dll is
-dynamically loaded at run-time).  When it is available, all the talk below
+dynamically loaded at run-time).
+On Mac OS X, CoreGraphics is used to draw gradients.
+When native gradient support is available, all the talk below
 about [option -steps] can safely be ignored.
 [para]
 When no native support for gradients is available, gradients

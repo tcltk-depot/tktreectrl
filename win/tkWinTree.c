@@ -1882,6 +1882,30 @@ TreeDraw_InitInterp(
     return TCL_OK;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tree_HasNativeGradients --
+ *
+ *	Determine if this platform supports gradients natively.
+ *
+ * Results:
+ *	1 if GDI+ is available and the global gNativeGradients==1,
+ *	0 otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tree_HasNativeGradients(
+    TreeCtrl *tree)
+{
+    return gNativeGradients && (DllExports.handle != NULL);
+}
+
 /* ARGB is a DWORD color used by GDI+ */
 static ARGB MakeARGB(BYTE a, BYTE r, BYTE g, BYTE b)
 {
@@ -1920,6 +1944,7 @@ TreeGradient_FillRect(
     TreeCtrl *tree,		/* Widget info. */
     TreeDrawable td,		/* Where to draw. */
     TreeGradient gradient,	/* Gradient token. */
+    TreeRectangle trBrush,	/* Brush bounds. */
     TreeRectangle tr		/* Where to draw. */
     )
 {
@@ -1934,7 +1959,7 @@ TreeGradient_FillRect(
     ARGB color1, color2;
 
     if (!gNativeGradients || (DllExports.handle == NULL)) {
-	TreeGradient_FillRectX11(tree,td,gradient,tr);
+	TreeGradient_FillRectX11(tree, td, gradient, trBrush, tr);
 	return;
     }
 
@@ -1948,7 +1973,8 @@ TreeGradient_FillRect(
     if (status != Ok)
 	goto error1;
 
-    rect.X = tr.x, rect.Y = tr.y, rect.Width = tr.width, rect.Height = tr.height;
+    rect.X = trBrush.x, rect.Y = trBrush.y,
+	rect.Width = trBrush.width, rect.Height = trBrush.height;
 
     /* BUG BUG BUG: A linear gradient brush will *sometimes* wrap when it
      * shouldn't due to rounding errors or something, resulting in a line
@@ -1990,11 +2016,7 @@ TreeGradient_FillRect(
 	}
     }
 
-    /* BUG BUG BUG: Undo correction from above */
-    if (gradient->vertical)
-	rect.Y += 1, rect.Height -= 1;
-    else
-	rect.X += 1, rect.Width -= 1;
+    rect.X = tr.x, rect.Y = tr.y, rect.Width = tr.width, rect.Height = tr.height;
 
     DllExports._GdipFillRectangleI(graphics, lineGradient,
 	rect.X, rect.Y, rect.Width, rect.Height);

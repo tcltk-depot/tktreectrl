@@ -674,6 +674,29 @@ int TreeTheme_InitInterp(Tcl_Interp *interp)
 /*
  *----------------------------------------------------------------------
  *
+ * Tree_HasNativeGradients --
+ *
+ *	Determine if this platform supports gradients natively.
+ *
+ * Results:
+ *	0.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tree_HasNativeGradients(
+    TreeCtrl *tree)
+{
+    return 0; /* TODO: cairo */
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TreeGradient_FillRect --
  *
  *	Paint a rectangle with a gradient.
@@ -692,10 +715,11 @@ TreeGradient_FillRect(
     TreeCtrl *tree,		/* Widget info. */
     TreeDrawable td,		/* Where to draw. */
     TreeGradient gradient,	/* Gradient token. */
-    TreeRectangle tr		/* Where to draw. */
+    TreeRectangle trBrush,	/* Brush bounds. */
+    TreeRectangle tr		/* Rectangle to paint. */
     )
 {
-    TreeGradient_FillRectX11(tree, td, gradient, tr);
+    TreeGradient_FillRectX11(tree, td, gradient, trBrush, tr);
 
     /* FIXME: Can use 'cairo' on Unix, but need to add it to configure + Make */
 }

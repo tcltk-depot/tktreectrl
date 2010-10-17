@@ -2203,7 +2203,7 @@ static void DisplayProcRect(TreeElementArgs *args)
     TREECOLOR_FOR_STATE(tc, fill, state)
     if (tc != NULL) {
 	tr.x = x, tr.y = y, tr.width = width, tr.height = height;
-	TreeColor_FillRect(tree, args->display.td, tc, tr);
+	TreeColor_FillRect(tree, args->display.td, tc, tr, tr);
     }
 
 #if 1

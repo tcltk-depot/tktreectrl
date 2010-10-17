@@ -5842,6 +5842,35 @@ TreeColor_ToObj(
 /*
  *----------------------------------------------------------------------
  *
+ * TreeColor_IsOpaque --
+ *
+ *	Test whether a tree color would be drawn fully opaque or not.
+ *
+ * Results:
+ *	1 if opaque, 0 otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TreeColor_IsOpaque(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeColor *tc		/* Color info. */
+    )
+{
+    if (tc == NULL)
+	return 0;
+    if (tc->gradient != NULL)
+	return TreeGradient_IsOpaque(tree, tc->gradient);
+    return tc->color != NULL;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TreeColorCO_Set --
  * TreeColorCO_Get --
  * TreeColorCO_Restore --
@@ -6439,7 +6468,7 @@ Gradient_Config(
  *
  * Gradient_FreeResources --
  *
- *	Free memory etc associated with an Element.
+ *	Free memory etc associated with a TreeGradient.
  *
  * Results:
  *	None.
@@ -6561,7 +6590,6 @@ Gradient_Changed(
     TreeGradient gradient	/* Gradient token. */
     )
 {
-    /* FIXME: could redraw only items that are using this gradient */
     Tree_DInfoChanged(tree, DINFO_INVALIDATE | DINFO_OUT_OF_DATE);
 }
 
@@ -6801,6 +6829,46 @@ TreeGradientCmd(
 /*
  *----------------------------------------------------------------------
  *
+ * TreeGradient_IsOpaque --
+ *
+ *	Test whether a gradient would be drawn fully opaque or not.
+ *
+ * Results:
+ *	1 if opaque, 0 otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TreeGradient_IsOpaque(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeGradient gradient	/* Gradient token. */
+    )
+{
+    GradientStopArray *stopArrPtr = gradient->stopArrPtr;
+    int i;
+
+    if (stopArrPtr->nstops < 2)
+	return 0; /* no colors == fully transparent */
+
+    if (!Tree_HasNativeGradients(tree))
+	return 1;
+
+    for (i = 0; i < stopArrPtr->nstops; i++) {
+	GradientStop *stop = stopArrPtr->stops[i];
+	if (stop->opacity < 1.0f)
+	    return 0;
+    }
+
+    return 1;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TreeGradient_Init --
  *
  *	Gradient-related package initialization.
@@ -6882,13 +6950,13 @@ TreeGradient_Free(
 void
 TreeGradient_FillRectX11(
     TreeCtrl *tree,		/* Widget info. */
-    TreeDrawable td,
+    TreeDrawable td,		/* Where to draw. */
     TreeGradient gradient,	/* Gradient token. */
-    TreeRectangle tr
+    TreeRectangle trBrush,	/* Brush bounds. */
+    TreeRectangle tr		/* Rectangle to paint. */
     )
 {
-    int x = tr.x, y = tr.y;
-    int width = tr.width, height = tr.height;
+    TreeRectangle trSub, trPaint;
     int i;
     float delta;
     GC gc;
@@ -6896,25 +6964,33 @@ TreeGradient_FillRectX11(
     if (tr.height <= 0 || tr.width <= 0 || gradient->nStepColors <= 0)
 	return;
 
+    trSub = trBrush;
+
     if (gradient->vertical) {
-	delta = ((float)tr.height) / gradient->nStepColors;
+	delta = ((float)trBrush.height) / gradient->nStepColors;
 	for (i = 0; i < gradient->nStepColors; i++) {
-	    float y1 = tr.y + i * delta;
-	    float y2 = tr.y + (i+1) * delta;
-	    height = (int)(ceil(y2) - floor(y1));
-	    gc = Tk_GCForColor(gradient->stepColors[i], Tk_WindowId(tree->tkwin));
-	    XFillRectangle(tree->display, td.drawable, gc,
-		    x, (int)y1, width, height);
+	    float y1 = trBrush.y + i * delta;
+	    float y2 = trBrush.y + (i+1) * delta;
+	    trSub.y = (int)y1;
+	    trSub.height = (int)(ceil(y2) - floor(y1));
+	    if (Tree_IntersectRect(&trPaint, &trSub, &tr)) {
+		gc = Tk_GCForColor(gradient->stepColors[i], Tk_WindowId(tree->tkwin));
+		XFillRectangle(tree->display, td.drawable, gc,
+		    trPaint.x, trPaint.y, trPaint.width, trPaint.height);
+	    }
 	}
     } else {
-	delta = ((float)tr.width) / gradient->nStepColors;
+	delta = ((float)trBrush.width) / gradient->nStepColors;
 	for (i = 0; i < gradient->nStepColors; i++) {
-	    float x1 = tr.x + i * delta;
-	    float x2 = tr.x + (i+1) * delta;
-	    width = (int)(ceil(x2) - floor(x1));
-	    gc = Tk_GCForColor(gradient->stepColors[i], Tk_WindowId(tree->tkwin));
-	    XFillRectangle(tree->display, td.drawable, gc,
-		    (int)x1, y, width, height);
+	    float x1 = trBrush.x + i * delta;
+	    float x2 = trBrush.x + (i+1) * delta;
+	    trSub.x = (int)x1;
+	    trSub.width = (int)(ceil(x2) - floor(x1));
+	    if (Tree_IntersectRect(&trPaint, &trSub, &tr)) {
+		gc = Tk_GCForColor(gradient->stepColors[i], Tk_WindowId(tree->tkwin));
+		XFillRectangle(tree->display, td.drawable, gc,
+		    trPaint.x, trPaint.y, trPaint.width, trPaint.height);
+	    }
 	}
     }
 }
@@ -6987,13 +7063,14 @@ TreeColor_FillRect(
     TreeCtrl *tree,		/* Widget info. */
     TreeDrawable td,		/* Where to draw. */
     TreeColor *tc,		/* Color info. */
+    TreeRectangle trBrush,	/* Brush bounds. */
     TreeRectangle tr		/* Where to draw. */
     )
 {
     if (tc == NULL)
 	return;
     if (tc->gradient != NULL)
-	TreeGradient_FillRect(tree, td, tc->gradient, tr);
+	TreeGradient_FillRect(tree, td, tc->gradient, trBrush, tr);
     if (tc->color != NULL) {
 	GC gc = Tk_GCForColor(tc->color, td.drawable);
 	XFillRectangle(tree->display, td.drawable, gc,

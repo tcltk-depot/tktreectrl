@@ -1324,6 +1324,29 @@ CGColorSpaceRef CreateSystemColorSpace() {
 /*
  *----------------------------------------------------------------------
  *
+ * Tree_HasNativeGradients --
+ *
+ *	Determine if this platform supports gradients natively.
+ *
+ * Results:
+ *	1 the global gNativeGradients==1, 0 otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tree_HasNativeGradients(
+    TreeCtrl *tree)
+{
+    return gNativeGradients;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TreeGradient_FillRect --
  *
  *	Paint a rectangle with a gradient.
@@ -1342,7 +1365,8 @@ TreeGradient_FillRect(
     TreeCtrl *tree,		/* Widget info. */
     TreeDrawable td,		/* Where to draw. */
     TreeGradient gradient,	/* Gradient token. */
-    TreeRectangle tr		/* Where to draw. */
+    TreeRectangle trBrush,	/* Brush bounds. */
+    TreeRectangle tr		/* Rectangle to paint. */
     )
 {
     MacDrawable *macDraw = (MacDrawable *) td.drawable;
@@ -1358,13 +1382,13 @@ TreeGradient_FillRect(
     int i;
 
     if (!(macDraw->flags & TK_IS_PIXMAP) || !gNativeGradients) {
-	TreeGradient_FillRectX11(tree, td, gradient, tr);
+	TreeGradient_FillRectX11(tree, td, gradient, trBrush, tr);
 	return;
     }
 
     context = TreeMacOSX_GetContext(tree, td.drawable, tr, &dc);
     if (context == NULL) {
-	TreeGradient_FillRectX11(tree, td, gradient, tr);
+	TreeGradient_FillRectX11(tree, td, gradient, trBrush, tr);
 	return;
     }
 
@@ -1400,11 +1424,11 @@ TreeGradient_FillRect(
 	&callbacks);
 
     if (gradient->vertical) {
-	start = CGPointMake(tr.x, tr.y);
-	end = CGPointMake(tr.x, tr.y + tr.height);
+	start = CGPointMake(trBrush.x, trBrush.y);
+	end = CGPointMake(trBrush.x, trBrush.y + trBrush.height);
     } else {
-	start = CGPointMake(tr.x, tr.y);
-	end = CGPointMake(tr.x+tr.width, tr.y);
+	start = CGPointMake(trBrush.x, trBrush.y);
+	end = CGPointMake(trBrush.x + trBrush.width, trBrush.y);
     }
     shading = CGShadingCreateAxial(colorSpaceRef, start, end, function, 1, 1);
 

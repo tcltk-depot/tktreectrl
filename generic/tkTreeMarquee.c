@@ -31,7 +31,9 @@ struct TreeMarquee_
     int sw, sh;				/* Width & height when drawn. */
 #ifdef MARQUEE_COLORS
     TreeColor *fillColorPtr;
+    Tcl_Obj *fillObj;
     TreeColor *outlineColorPtr;
+    Tcl_Obj *outlineObj;
     int outlineWidth;
     Tcl_Obj *outlineWidthObj;
 #endif
@@ -43,16 +45,16 @@ struct TreeMarquee_
 static Tk_OptionSpec optionSpecs[] = {
 #ifdef MARQUEE_COLORS
     {TK_OPTION_CUSTOM, "-fill", (char *) NULL, (char *) NULL,
-	(char *) NULL, -1, Tk_Offset(TreeMarquee_, fillColorPtr),
-	TK_OPTION_NULL_OK, (ClientData) &TreeCtrlCO_treecolor,
-	MARQ_CONF_COLORS},
+	(char *) NULL, Tk_Offset(TreeMarquee_, fillObj),
+	Tk_Offset(TreeMarquee_, fillColorPtr), TK_OPTION_NULL_OK,
+	(ClientData) &TreeCtrlCO_treecolor, MARQ_CONF_COLORS},
     {TK_OPTION_CUSTOM, "-outline", (char *) NULL, (char *) NULL,
-	(char *) NULL, -1, Tk_Offset(TreeMarquee_, outlineColorPtr),
-	TK_OPTION_NULL_OK, (ClientData) &TreeCtrlCO_treecolor,
-	MARQ_CONF_COLORS},
+	(char *) NULL, Tk_Offset(TreeMarquee_, outlineObj),
+	Tk_Offset(TreeMarquee_, outlineColorPtr), TK_OPTION_NULL_OK,
+	(ClientData) &TreeCtrlCO_treecolor, MARQ_CONF_COLORS},
     {TK_OPTION_PIXELS, "-outlinewidth", (char *) NULL, (char *) NULL,
-	(char *) NULL, Tk_Offset(TreeMarquee_, outlineWidthObj),
-	Tk_Offset(TreeMarquee_, outlineWidth), TK_OPTION_NULL_OK,
+	"1", Tk_Offset(TreeMarquee_, outlineWidthObj),
+	Tk_Offset(TreeMarquee_, outlineWidth), 0,
 	(ClientData) NULL, MARQ_CONF_COLORS},
 #endif
     {TK_OPTION_BOOLEAN, "-visible", (char *) NULL, (char *) NULL,
@@ -329,7 +331,7 @@ TreeMarquee_Draw(
 	tr.y = 0 - tree->yOrigin + MIN(marquee->y1, marquee->y2);
 	tr.height = abs(marquee->y1 - marquee->y2) + 1;
 	if (marquee->fillColorPtr)
-	    TreeColor_FillRect(tree, td, marquee->fillColorPtr, tr);
+	    TreeColor_FillRect(tree, td, marquee->fillColorPtr, tr, tr);
 	if (marquee->outlineColorPtr && marquee->outlineWidth > 0)
 	    TreeColor_DrawRect(tree, td, marquee->outlineColorPtr, tr,
 		marquee->outlineWidth, 0);

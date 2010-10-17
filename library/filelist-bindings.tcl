@@ -250,6 +250,7 @@ proc ::TreeCtrl::FileListMotion {T x y} {
 	    MarqueeUpdate $T $x $y
 	    set select $Priv(selection)
 	    set deselect {}
+	    set items {}
 
 	    # Check items covered by the marquee
 	    foreach list [$T marque identify] {
@@ -274,20 +275,22 @@ proc ::TreeCtrl::FileListMotion {T x y} {
 		    }
 		    # Some sensitive elements in this column are covered
 		    if {$ok} {
-
-			# Toggle selected status
-			if {$Priv(selectMode) eq "toggle"} {
-			    set i [lsearch -exact $Priv(selection) $item]
-			    if {$i == -1} {
-				lappend select $item
-			    } else {
-				set i [lsearch -exact $select $item]
-				set select [lreplace $select $i $i]
-			    }
-			} else {
-			    lappend select $item
-			}
+			lappend items $item
 		    }
+		}
+	    }
+	    foreach item $items {
+		# Toggle selected status
+		if {$Priv(selectMode) eq "toggle"} {
+		    set i [lsearch -exact $Priv(selection) $item]
+		    if {$i == -1} {
+			lappend select $item
+		    } else {
+			set i [lsearch -exact $select $item]
+			set select [lreplace $select $i $i]
+		    }
+		} else {
+		    lappend select $item
 		}
 	    }
 	    $T selection modify $select all

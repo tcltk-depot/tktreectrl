@@ -4843,7 +4843,7 @@ CalcWhiteSpaceRegion(
  *--------------------------------------------------------------
  */
 
-static int
+int
 Tree_IntersectRect(
     TreeRectangle *resultPtr,	/* Out: area of overlap. May be the same
 				 * as r1 or r2. */
@@ -4974,6 +4974,17 @@ DrawColumnBackground(
 	return;
     }
 #endif
+
+#if 0
+/* If -itembackground colors are transparent, we must draw the tree background
+ * color first then the -itembackground colors.  This results in flickering
+ * when drawing directly to the toplevel. */
+if (tree->doubleBuffer == DOUBLE_BUFFER_ITEM) {
+    tpixmap.width = drawBox.width
+    tpixmap.drawable = DisplayGetPixmap(tree, &dInfo->pixmapI,
+	tpixmap.width, tpixmap.height);
+}
+#endif
     top = bounds->y;
     bottom = dirtyBox.y + dirtyBox.height;
     while (top < bottom) {
@@ -4993,7 +5004,10 @@ DrawColumnBackground(
 		XFillRectangle(tree->display, td.drawable, gc,
 		    drawBox.x, drawBox.y, drawBox.width, drawBox.height);
 	    } else {
-		TreeColor_FillRect(tree, td, tc, drawBox);
+		if (!TreeColor_IsOpaque(tree ,tc))
+		    XFillRectangle(tree->display, td.drawable, backgroundGC,
+			drawBox.x, drawBox.y, drawBox.width, drawBox.height);
+		TreeColor_FillRect(tree, td, tc, rowBox, drawBox);
 	    }
 	}
 	if (rItem != NULL && rItem == rItem->range->last) {
@@ -5041,7 +5055,7 @@ DrawWhitespaceBelowItem(
 {
     int i = 0, width;
     TreeColumn treeColumn = NULL;
-    TreeRectangle boundsBox, columnBox;
+    TreeRectangle boundsBox, columnBox, visBox;
 
     switch (lock) {
 	case COLUMN_LOCK_LEFT:
@@ -5070,8 +5084,8 @@ DrawWhitespaceBelowItem(
 	columnBox.y = top;
 	columnBox.width = width;
 	columnBox.height = bounds[3] - top;
-	if (Tree_IntersectRect(&columnBox, &boundsBox, &columnBox)) {
-	    Tree_SetRectRegion(columnRgn, &columnBox);
+	if (Tree_IntersectRect(&visBox, &boundsBox, &columnBox)) {
+	    Tree_SetRectRegion(columnRgn, &visBox);
 	    TkIntersectRegion(dirtyRgn, columnRgn, columnRgn);
 	    DrawColumnBackground(tree, td, treeColumn,
 		    columnRgn, &columnBox, (RItem *) NULL, height, index);
@@ -5603,7 +5617,10 @@ SetBuffering(
 	overlays = TRUE;
     }
 
-#if (TK_MAJOR_VERSION==8) && (TK_MINOR_VERSION>=6)
+#if 1
+    tree->doubleBuffer = DOUBLEBUFFER_WINDOW;
+#else
+#if defined(MAC_OSX_TK) && (TK_MAJOR_VERSION==8) && (TK_MINOR_VERSION>=6)
     /* Do NOT call TkScrollWindow(), it generates an <Expose> event which redraws *all*
      * child windows of children of the toplevel this treectrl is in. See Tk bug 3086887. */
     tree->doubleBuffer = DOUBLEBUFFER_WINDOW;
@@ -5613,6 +5630,7 @@ SetBuffering(
     } else {
 	tree->doubleBuffer = DOUBLEBUFFER_ITEM;
     }
+#endif
 #endif
 
     if (overlays != dInfo->overlays) {

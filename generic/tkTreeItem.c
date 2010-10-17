@@ -3719,7 +3719,11 @@ ItemDrawBackground(
     if (tc != NULL) {
 	TreeRectangle tr;
 	tr.x = x, tr.y = y, tr.width = width, tr.height = height;
-	TreeColor_FillRect(tree, td, tc, tr);
+	if (!TreeColor_IsOpaque(tree, tc)) {
+	    GC gc = Tk_3DBorderGC(tree->tkwin, tree->border, TK_3D_FLAT_GC);
+	    XFillRectangle(tree->display, td.drawable, gc, x, y, width, height);
+	}
+	TreeColor_FillRect(tree, td, tc, tr, tr);
     } else {
 	GC gc = Tk_3DBorderGC(tree->tkwin, tree->border, TK_3D_FLAT_GC);
 	XFillRectangle(tree->display, td.drawable, gc, x, y, width, height);
