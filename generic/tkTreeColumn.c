@@ -73,9 +73,6 @@ struct TreeColumn_
     Tcl_Obj *arrowPadYObj;	/* -arrowpady */
     int *arrowPadY;		/* -arrowpady */
 
-#define ARROW_NONE 0
-#define ARROW_UP 1
-#define ARROW_DOWN 2
     int arrow;			/* -arrow */
 
 #define SIDE_LEFT 0
@@ -83,9 +80,6 @@ struct TreeColumn_
     int arrowSide;		/* -arrowside */
     int arrowGravity;		/* -arrowgravity */
 
-#define COLUMN_STATE_NORMAL 0
-#define COLUMN_STATE_ACTIVE 1
-#define COLUMN_STATE_PRESSED 2
     int state;			/* -state */
 
     int lock;			/* -lock */
@@ -771,7 +765,7 @@ Column_MakeState(
 	state |= 1L << 1;
     else if (column->state == COLUMN_STATE_PRESSED)
 	state |= 1L << 2;
-    if (column->arrow == ARROW_UP)
+    if (column->arrow == COLUMN_ARROW_UP)
 	state |= 1L << 3;
     return state;
 }
@@ -2677,7 +2671,7 @@ Column_GetArrowSize(
     }
     if ((arrowWidth == -1) && tree->useTheme &&
 	TreeTheme_GetArrowSize(tree, Tk_WindowId(tree->tkwin),
-	column->arrow == ARROW_UP, &arrowWidth, &arrowHeight) == TCL_OK) {
+	column->arrow == COLUMN_ARROW_UP, &arrowWidth, &arrowHeight) == TCL_OK) {
     }
     if (arrowWidth == -1) {
 	Tk_Font tkfont = column->tkfont ? column->tkfont : tree->tkfont;
@@ -2771,7 +2765,7 @@ Column_DoLayout(
 #if defined(MAC_OSX_TK)
     /* Under Aqua, we let the Appearance Manager draw the sort arrow */
     if (tree->useTheme) {
-	column->arrow = ARROW_NONE;
+	column->arrow = COLUMN_ARROW_NONE;
 	column->arrowSide = SIDE_RIGHT;
 	column->arrowGravity = SIDE_RIGHT;
     }
@@ -2779,14 +2773,14 @@ Column_DoLayout(
 
     padList[0] = 0;
 
-    if (column->arrow != ARROW_NONE) {
+    if (column->arrow != COLUMN_ARROW_NONE) {
 	Column_GetArrowSize(column, &partArrow.width, &partArrow.height);
 	partArrow.padX[PAD_TOP_LEFT] = column->arrowPadX[PAD_TOP_LEFT];
 	partArrow.padX[PAD_BOTTOM_RIGHT] = column->arrowPadX[PAD_BOTTOM_RIGHT];
 	partArrow.padY[PAD_TOP_LEFT] = column->arrowPadY[PAD_TOP_LEFT];
 	partArrow.padY[PAD_BOTTOM_RIGHT] = column->arrowPadY[PAD_BOTTOM_RIGHT];
     }
-    if ((column->arrow != ARROW_NONE) && (column->arrowSide == SIDE_LEFT)) {
+    if ((column->arrow != COLUMN_ARROW_NONE) && (column->arrowSide == SIDE_LEFT)) {
 	parts[n] = &partArrow;
 	padList[n] = partArrow.padX[PAD_TOP_LEFT];
 	padList[n + 1] = partArrow.padX[PAD_BOTTOM_RIGHT];
@@ -2821,7 +2815,7 @@ Column_DoLayout(
 	if (iImage != -1)
 	    parts2[n2++] = &partImage;
 	parts2[n2++] = &partText;
-	if ((column->arrow != ARROW_NONE) && (column->arrowSide == SIDE_RIGHT))
+	if ((column->arrow != COLUMN_ARROW_NONE) && (column->arrowSide == SIDE_RIGHT))
 	    parts2[n2++] = &partArrow;
 	widthForText = layout->width;
 	for (i = 0; i < n2; i++) {
@@ -2867,7 +2861,7 @@ Column_DoLayout(
 	    iText = n++;
 	}
     }
-    if ((column->arrow != ARROW_NONE) && (column->arrowSide == SIDE_RIGHT)) {
+    if ((column->arrow != COLUMN_ARROW_NONE) && (column->arrowSide == SIDE_RIGHT)) {
 	parts[n] = &partArrow;
 	padList[n] = MAX(partArrow.padX[PAD_TOP_LEFT], padList[n]);
 	padList[n + 1] = partArrow.padX[PAD_BOTTOM_RIGHT];
@@ -2877,7 +2871,7 @@ Column_DoLayout(
 #if defined(MAC_OSX_TK)
     /* Under Aqua, we let the Appearance Manager draw the sort arrow */
     /* This code assumes the arrow is on the right */
-    if (tree->useTheme && (arrow != ARROW_NONE)) {
+    if (tree->useTheme && (arrow != COLUMN_ARROW_NONE)) {
 	if (TreeTheme_GetHeaderContentMargins(tree, column->state,
 		arrow, margins) == TCL_OK) {
 	    parts[n] = &partArrow;
@@ -3104,12 +3098,12 @@ TreeColumn_NeededWidth(
 #if defined(MAC_OSX_TK)
     /* Under OSX we let the Appearance Manager draw the sort arrow. */
     if (tree->useTheme)
-	column->arrow = ARROW_NONE;
+	column->arrow = COLUMN_ARROW_NONE;
 #endif
 
-    if (column->arrow != ARROW_NONE)
+    if (column->arrow != COLUMN_ARROW_NONE)
 	Column_GetArrowSize(column, &arrowWidth, &arrowHeight);
-    if ((column->arrow != ARROW_NONE) && (column->arrowSide == SIDE_LEFT)) {
+    if ((column->arrow != COLUMN_ARROW_NONE) && (column->arrowSide == SIDE_LEFT)) {
 	widthList[n] = arrowWidth;
 	padList[n] = column->arrowPadX[PAD_TOP_LEFT];
 	padList[n + 1] = column->arrowPadX[PAD_BOTTOM_RIGHT];
@@ -3140,7 +3134,7 @@ TreeColumn_NeededWidth(
 	    widthList[n] = column->textWidth;
 	n++;
     }
-    if ((column->arrow != ARROW_NONE) && (column->arrowSide == SIDE_RIGHT)) {
+    if ((column->arrow != COLUMN_ARROW_NONE) && (column->arrowSide == SIDE_RIGHT)) {
 	widthList[n] = arrowWidth;
 	padList[n] = MAX(column->arrowPadX[PAD_TOP_LEFT], padList[n]);
 	padList[n + 1] = column->arrowPadX[PAD_BOTTOM_RIGHT];
@@ -3209,7 +3203,7 @@ TreeColumn_NeededHeight(
 #endif
 
     column->neededHeight = 0;
-    if (column->arrow != ARROW_NONE) {
+    if (column->arrow != COLUMN_ARROW_NONE) {
 	int arrowWidth, arrowHeight;
 	Column_GetArrowSize(column, &arrowWidth, &arrowHeight);
 	arrowHeight += column->arrowPadY[PAD_TOP_LEFT]
@@ -4402,7 +4396,7 @@ Column_DrawArrow(
     int arrowPadY = column->arrowPadY[PAD_TOP_LEFT] +
 	column->arrowPadY[PAD_BOTTOM_RIGHT];
 
-    if (column->arrow == ARROW_NONE)
+    if (column->arrow == COLUMN_ARROW_NONE)
 	return;
 
     image = PerStateImage_ForState(tree, &column->arrowImage, state, NULL);
@@ -4428,7 +4422,7 @@ Column_DrawArrow(
 
     if (tree->useTheme) {
 	if (TreeTheme_DrawHeaderArrow(tree, td.drawable,
-	    column->arrow == ARROW_UP, x + layout.arrowLeft + sunken,
+	    column->arrow == COLUMN_ARROW_UP, x + layout.arrowLeft + sunken,
 	    y + (height - (layout.arrowHeight + arrowPadY)) / 2 + sunken,
 	    layout.arrowWidth, layout.arrowHeight) == TCL_OK)
 	    return;
@@ -4444,7 +4438,7 @@ Column_DrawArrow(
 	int i;
 
 	switch (column->arrow) {
-	    case ARROW_UP:
+	    case COLUMN_ARROW_UP:
 		points[0].x = x + layout.arrowLeft;
 		points[0].y = arrowBottom - 1;
 		points[1].x = x + layout.arrowLeft + arrowWidth / 2;
@@ -4458,7 +4452,7 @@ Column_DrawArrow(
 		points[2].y = arrowBottom - 1;
 		color2 = TK_3D_LIGHT_GC;
 		break;
-	    case ARROW_DOWN:
+	    case COLUMN_ARROW_DOWN:
 		points[0].x = x + layout.arrowLeft + arrowWidth - 1;
 		points[0].y = arrowTop;
 		points[1].x = x + layout.arrowLeft + arrowWidth / 2;

@@ -589,9 +589,7 @@ int TreeDragImage_IsXOR(TreeDragImage dragImage)
 {
 #if defined(WIN32)
     return FALSE; /* TRUE on XP, FALSE on Win7 (lots of flickering) */
-#elif defined(MAC_TK_CARBON)
-    return TRUE;
-#elif defined(MAC_TK_COCOA)
+#elif defined(MAC_OSX_TK)
     return FALSE; /* Cocoa doesn't have XOR */
 #else /* X11 */
     /* With VirtualBox+Ubuntu get extreme lag if TRUE with Compiz. */

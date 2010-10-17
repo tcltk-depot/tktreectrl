@@ -737,7 +737,6 @@ with_tclinclude
 with_tkinclude
 with_x
 enable_shellicon
-enable_cocoa
 enable_threads
 enable_shared
 enable_64bit
@@ -1373,8 +1372,6 @@ Optional Features:
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
   --enable-shellicon      build the shellicon extension (default: no)
-  --enable-cocoa=yes|no   use Cocoa on Mac OS X (default: yes)
-  --enable-cocoa=yes|no   use Cocoa on Mac OS X (default: no)
   --enable-threads        build with threads
   --enable-shared         build and link with shared libraries (default: on)
   --enable-64bit          enable 64bit support (default: off)
@@ -5110,7 +5107,13 @@ done
     done
 
 
-#TEA_ADD_INCLUDES([-I. -I\"`${CYGPATH} ${srcdir}/generic`\"])
+
+    vars="-I. -I\"`${CYGPATH} ${srcdir}/generic`\""
+    for i in $vars; do
+	PKG_INCLUDES="$PKG_INCLUDES $i"
+    done
+
+
 
     PKG_CFLAGS="$PKG_CFLAGS "
 
@@ -6055,6 +6058,41 @@ OUTPUTFILES=Makefile
 
 if test "${TEA_PLATFORM}" = "windows" ; then
 
+    vars="tkWinTree.c"
+    for i in $vars; do
+	case $i in
+	    \$*)
+		# allow $-var names
+		PKG_SOURCES="$PKG_SOURCES $i"
+		PKG_OBJECTS="$PKG_OBJECTS $i"
+		;;
+	    *)
+		# check for existence - allows for generic/win/unix VPATH
+		# To add more dirs here (like 'src'), you have to update VPATH
+		# in Makefile.in as well
+		if test ! -f "${srcdir}/$i" -a ! -f "${srcdir}/generic/$i" \
+		    -a ! -f "${srcdir}/win/$i" -a ! -f "${srcdir}/unix/$i" \
+		    -a ! -f "${srcdir}/macosx/$i" \
+		    ; then
+		    as_fn_error $? "could not find source file '$i'" "$LINENO" 5
+		fi
+		PKG_SOURCES="$PKG_SOURCES $i"
+		# this assumes it is in a VPATH dir
+		i=`basename $i`
+		# handle user calling this before or after TEA_SETUP_COMPILER
+		if test x"${OBJEXT}" != x ; then
+		    j="`echo $i | sed -e 's/\.[^.]*$//'`.${OBJEXT}"
+		else
+		    j="`echo $i | sed -e 's/\.[^.]*$//'`.\${OBJEXT}"
+		fi
+		PKG_OBJECTS="$PKG_OBJECTS $j"
+		;;
+	esac
+    done
+
+
+
+
     vars="gdi32.lib user32.lib"
     for i in $vars; do
 	if test "${TEA_PLATFORM}" = "windows" -a "$GCC" = "yes" ; then
@@ -6256,22 +6294,50 @@ $as_echo "yes" >&6; }
 fi
 
 if test "${TEA_WINDOWINGSYSTEM}" = "aqua"; then
-    # Tk 8.6 supports Cocoa and Carbon builds, Cocoa by default
-    if test "${TCL_MAJOR_VERSION}.${TCL_MINOR_VERSION}" = "8.6"; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to use Cocoa or Carbon" >&5
-$as_echo_n "checking whether to use Cocoa or Carbon... " >&6; }
-        # Check whether --enable-cocoa was given.
-if test "${enable_cocoa+set}" = set; then :
-  enableval=$enable_cocoa; tcl_ok=$enableval
-else
-  tcl_ok=yes
-fi
 
-        if test "$tcl_ok" = "yes"; then
-        	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: Cocoa" >&5
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to use Cocoa or Carbon" >&5
+$as_echo_n "checking whether to use Cocoa or Carbon... " >&6; }
+	case ${TK_LIBS} in
+		*Cocoa*)
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: Cocoa" >&5
 $as_echo "Cocoa" >&6; }
 
     PKG_CFLAGS="$PKG_CFLAGS -DMAC_TK_COCOA -std=gnu99 -x objective-c -fobjc-gc"
+
+
+
+    vars="tkMacOSXTree.c"
+    for i in $vars; do
+	case $i in
+	    \$*)
+		# allow $-var names
+		PKG_SOURCES="$PKG_SOURCES $i"
+		PKG_OBJECTS="$PKG_OBJECTS $i"
+		;;
+	    *)
+		# check for existence - allows for generic/win/unix VPATH
+		# To add more dirs here (like 'src'), you have to update VPATH
+		# in Makefile.in as well
+		if test ! -f "${srcdir}/$i" -a ! -f "${srcdir}/generic/$i" \
+		    -a ! -f "${srcdir}/win/$i" -a ! -f "${srcdir}/unix/$i" \
+		    -a ! -f "${srcdir}/macosx/$i" \
+		    ; then
+		    as_fn_error $? "could not find source file '$i'" "$LINENO" 5
+		fi
+		PKG_SOURCES="$PKG_SOURCES $i"
+		# this assumes it is in a VPATH dir
+		i=`basename $i`
+		# handle user calling this before or after TEA_SETUP_COMPILER
+		if test x"${OBJEXT}" != x ; then
+		    j="`echo $i | sed -e 's/\.[^.]*$//'`.${OBJEXT}"
+		else
+		    j="`echo $i | sed -e 's/\.[^.]*$//'`.\${OBJEXT}"
+		fi
+		PKG_OBJECTS="$PKG_OBJECTS $j"
+		;;
+	esac
+    done
+
 
 
 
@@ -6285,11 +6351,47 @@ $as_echo "Cocoa" >&6; }
     done
 
 
-        else
-        	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: Carbon" >&5
+            ;;
+		*)
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: Carbon" >&5
 $as_echo "Carbon" >&6; }
 
     PKG_CFLAGS="$PKG_CFLAGS -DMAC_TK_CARBON"
+
+
+
+    vars="tkMacOSXTree.c"
+    for i in $vars; do
+	case $i in
+	    \$*)
+		# allow $-var names
+		PKG_SOURCES="$PKG_SOURCES $i"
+		PKG_OBJECTS="$PKG_OBJECTS $i"
+		;;
+	    *)
+		# check for existence - allows for generic/win/unix VPATH
+		# To add more dirs here (like 'src'), you have to update VPATH
+		# in Makefile.in as well
+		if test ! -f "${srcdir}/$i" -a ! -f "${srcdir}/generic/$i" \
+		    -a ! -f "${srcdir}/win/$i" -a ! -f "${srcdir}/unix/$i" \
+		    -a ! -f "${srcdir}/macosx/$i" \
+		    ; then
+		    as_fn_error $? "could not find source file '$i'" "$LINENO" 5
+		fi
+		PKG_SOURCES="$PKG_SOURCES $i"
+		# this assumes it is in a VPATH dir
+		i=`basename $i`
+		# handle user calling this before or after TEA_SETUP_COMPILER
+		if test x"${OBJEXT}" != x ; then
+		    j="`echo $i | sed -e 's/\.[^.]*$//'`.${OBJEXT}"
+		else
+		    j="`echo $i | sed -e 's/\.[^.]*$//'`.\${OBJEXT}"
+		fi
+		PKG_OBJECTS="$PKG_OBJECTS $j"
+		;;
+	esac
+    done
+
 
 
 
@@ -6303,72 +6405,46 @@ $as_echo "Carbon" >&6; }
     done
 
 
-        fi
-    # Tk 8.5 supports Cocoa (back-port) and Carbon builds, Carbon by default
-    elif test "${TCL_MAJOR_VERSION}.${TCL_MINOR_VERSION}" = "8.5"; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to use Cocoa or Carbon" >&5
-$as_echo_n "checking whether to use Cocoa or Carbon... " >&6; }
-        # Check whether --enable-cocoa was given.
-if test "${enable_cocoa+set}" = set; then :
-  enableval=$enable_cocoa; tcl_ok=$enableval
-else
-  tcl_ok=no
+            ;;
+	esac
 fi
 
-        if test "$tcl_ok" = "yes"; then
-        	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: Cocoa" >&5
-$as_echo "Cocoa" >&6; }
+if test "${TEA_WINDOWINGSYSTEM}" = "x11"; then
 
-    PKG_CFLAGS="$PKG_CFLAGS -DMAC_TK_COCOA -std=gnu99 -x objective-c -fobjc-gc"
-
-
-
-    vars="-framework Cocoa -framework Carbon"
+    vars="tkUnixTree.c"
     for i in $vars; do
-	if test "${TEA_PLATFORM}" = "windows" -a "$GCC" = "yes" ; then
-	    # Convert foo.lib to -lfoo for GCC.  No-op if not *.lib
-	    i=`echo "$i" | sed -e 's/^\([^-].*\)\.lib$/-l\1/i'`
-	fi
-	PKG_LIBS="$PKG_LIBS $i"
+	case $i in
+	    \$*)
+		# allow $-var names
+		PKG_SOURCES="$PKG_SOURCES $i"
+		PKG_OBJECTS="$PKG_OBJECTS $i"
+		;;
+	    *)
+		# check for existence - allows for generic/win/unix VPATH
+		# To add more dirs here (like 'src'), you have to update VPATH
+		# in Makefile.in as well
+		if test ! -f "${srcdir}/$i" -a ! -f "${srcdir}/generic/$i" \
+		    -a ! -f "${srcdir}/win/$i" -a ! -f "${srcdir}/unix/$i" \
+		    -a ! -f "${srcdir}/macosx/$i" \
+		    ; then
+		    as_fn_error $? "could not find source file '$i'" "$LINENO" 5
+		fi
+		PKG_SOURCES="$PKG_SOURCES $i"
+		# this assumes it is in a VPATH dir
+		i=`basename $i`
+		# handle user calling this before or after TEA_SETUP_COMPILER
+		if test x"${OBJEXT}" != x ; then
+		    j="`echo $i | sed -e 's/\.[^.]*$//'`.${OBJEXT}"
+		else
+		    j="`echo $i | sed -e 's/\.[^.]*$//'`.\${OBJEXT}"
+		fi
+		PKG_OBJECTS="$PKG_OBJECTS $j"
+		;;
+	esac
     done
 
 
-        else
-        	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: Carbon" >&5
-$as_echo "Carbon" >&6; }
 
-    PKG_CFLAGS="$PKG_CFLAGS -DMAC_TK_CARBON"
-
-
-
-    vars="-framework Carbon"
-    for i in $vars; do
-	if test "${TEA_PLATFORM}" = "windows" -a "$GCC" = "yes" ; then
-	    # Convert foo.lib to -lfoo for GCC.  No-op if not *.lib
-	    i=`echo "$i" | sed -e 's/^\([^-].*\)\.lib$/-l\1/i'`
-	fi
-	PKG_LIBS="$PKG_LIBS $i"
-    done
-
-
-        fi
-    else
-
-    PKG_CFLAGS="$PKG_CFLAGS -DMAC_TK_CARBON"
-
-
-
-    vars="-framework Carbon"
-    for i in $vars; do
-	if test "${TEA_PLATFORM}" = "windows" -a "$GCC" = "yes" ; then
-	    # Convert foo.lib to -lfoo for GCC.  No-op if not *.lib
-	    i=`echo "$i" | sed -e 's/^\([^-].*\)\.lib$/-l\1/i'`
-	fi
-	PKG_LIBS="$PKG_LIBS $i"
-    done
-
-
-    fi
 fi
 
 #--------------------------------------------------------------------

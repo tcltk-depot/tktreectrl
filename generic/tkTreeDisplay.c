@@ -4396,9 +4396,7 @@ Proxy_IsXOR(void)
 {
 #if defined(WIN32)
     return FALSE; /* TRUE on XP, FALSE on Win7 (lots of flickering) */
-#elif defined(MAC_TK_CARBON)
-    return TRUE;
-#elif defined(MAC_TK_COCOA)
+#elif defined(MAC_OSX_TK)
     return FALSE; /* Cocoa doesn't have XOR */
 #else
     return TRUE; /* X11 */
@@ -4432,14 +4430,11 @@ Proxy_DrawXOR(
     int y2
     )
 {
-#if defined(MAC_TK_CARBON)
-    DrawXORLine(tree->display, Tk_WindowId(tree->tkwin), x1, y1, x2, y2);
-#else
     XGCValues gcValues;
     unsigned long gcMask;
     GC gc;
 
-#if defined(MAC_TK_COCOA)
+#if defined(MAC_OSX_TK)
     gcValues.function = GXcopy;
 #else
     gcValues.function = GXinvert;
@@ -4455,8 +4450,6 @@ Proxy_DrawXOR(
     XFillRectangle(tree->display, Tk_WindowId(tree->tkwin), gc,
 	    x1, y1, MAX(x2 - x1, 1), MAX(y2 - y1, 1));
 #endif
-
-#endif /* !MAC_TK_CARBON */
 }
 
 /*
@@ -5610,7 +5603,7 @@ SetBuffering(
 	overlays = TRUE;
     }
 
-#if defined(MAC_TK_COCOA)
+#if (TK_MAJOR_VERSION==8) && (TK_MINOR_VERSION>=6)
     /* Do NOT call TkScrollWindow(), it generates an <Expose> event which redraws *all*
      * child windows of children of the toplevel this treectrl is in. See Tk bug 3086887. */
     tree->doubleBuffer = DOUBLEBUFFER_WINDOW;

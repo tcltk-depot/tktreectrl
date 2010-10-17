@@ -109,6 +109,8 @@ proc LoadSharedLibrary {} {
     return 1
 }
 
+puts "demo.tcl: Tcl/Tk [info patchlevel] [winfo server .]"
+
 # See if treectrl is already loaded for some reason
 if {[llength [info commands treectrl]]} {
     puts "demo.tcl: using previously-loaded treectrl package v[package provide treectrl]"

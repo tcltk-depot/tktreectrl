@@ -16,13 +16,6 @@
 #include "tkInt.h"
 #include "qebind.h"
 
-#ifdef MAC_TK_COCOA
-#include <Cocoa/Cocoa.h>
-#endif
-#ifdef MAC_TK_CARBON
-#include <Carbon/Carbon.h>
-#endif
-
 /*
  * Used to tag functions that are only to be visible within the module being
  * built and not outside it (where this is supported by the linker).
@@ -747,6 +740,16 @@ MODULE_SCOPE int TreeColumn_FirstAndLast(TreeColumn *first, TreeColumn *last);
 MODULE_SCOPE int TreeColumnList_FromObj(TreeCtrl *tree, Tcl_Obj *objPtr, TreeColumnList *columns, int flags);
 MODULE_SCOPE int TreeColumn_FromObj(TreeCtrl *tree, Tcl_Obj *objPtr, TreeColumn *columnPtr, int flags);
 
+/* Values for TreeColumn -arrow option, needed by themes */
+#define COLUMN_ARROW_NONE 0
+#define COLUMN_ARROW_UP 1
+#define COLUMN_ARROW_DOWN 2
+
+/* Values for TreeColumn -state option, needed by themes */
+#define COLUMN_STATE_NORMAL 0
+#define COLUMN_STATE_ACTIVE 1
+#define COLUMN_STATE_PRESSED 2
+
 typedef struct ColumnForEach ColumnForEach;
 struct ColumnForEach {
     TreeCtrl *tree;
@@ -970,10 +973,6 @@ MODULE_SCOPE int TextLayout_TotalWidth(TextLayout textLayout);
 MODULE_SCOPE void TextLayout_Draw(Display *display, Drawable drawable, GC gc,
 	TextLayout layout, int x, int y, int firstChar, int lastChar,
 	int underline);
-#ifdef MAC_TK_CARBON
-MODULE_SCOPE void DrawXORLine(Display *display, Drawable drawable, int x1, int y1,
-	int x2, int y2);
-#endif
 MODULE_SCOPE void Tree_RedrawImage(Tk_Image image, int imageX, int imageY,
 	int width, int height, TreeDrawable td, int drawableX, int drawableY);
 MODULE_SCOPE void Tree_DrawBitmapWithGC(TreeCtrl *tree, Pixmap bitmap, Drawable drawable,
@@ -1202,6 +1201,7 @@ MODULE_SCOPE int Tree_GetIntForIndex(TreeCtrl *tree, Tcl_Obj *objPtr, int *index
 MODULE_SCOPE Tk_ObjCustomOption TreeCtrlCO_pixels;
 MODULE_SCOPE Tk_ObjCustomOption TreeCtrlCO_string;
 MODULE_SCOPE Tk_ObjCustomOption TreeCtrlCO_style;
+MODULE_SCOPE Tk_ObjCustomOption TreeCtrlCO_treecolor;
 
 /*****/
 
@@ -1219,33 +1219,12 @@ MODULE_SCOPE Tk_ObjCustomOption TreeCtrlCO_style;
 
 MODULE_SCOPE TreeColor *Tree_AllocColorFromObj(TreeCtrl *tree, Tcl_Obj *obj);
 MODULE_SCOPE void Tree_FreeColor(TreeCtrl *tree, TreeColor *tc);
+MODULE_SCOPE Tcl_Obj *TreeColor_ToObj(TreeCtrl *tree, TreeColor *tc);
 
 #define pstGradient TreeCtrl_pstGradient
 MODULE_SCOPE PerStateType pstGradient;
 MODULE_SCOPE TreeGradient PerStateGradient_ForState(TreeCtrl *tree, PerStateInfo *pInfo,
     int state, int *match);
-
-/*****/
-
-#ifdef MAC_TK_COCOA
-#if (TK_MAJOR_VERSION == 8) && (TK_MINOR_VERSION >= 6)
-typedef struct {
-    CGContextRef context;
-} MacContextSetup;
-#endif /* Tk 8.6 */
-#if (TK_MAJOR_VERSION == 8) && (TK_MINOR_VERSION < 6)
-typedef struct {
-    CGrafPtr port, savePort;
-    Boolean portChanged;
-    CGContextRef context;
-} MacContextSetup;
-#endif /* Tk 8.4 + 8.5 */
-
-MODULE_SCOPE CGContextRef TreeMacOSX_GetContext(TreeCtrl *tree,
-    Drawable pixmap, TreeRectangle tr, MacContextSetup *dc);
-MODULE_SCOPE void TreeMacOSX_ReleaseContext(TreeCtrl *tree,
-    MacContextSetup *dc);
-#endif /* MAC_TK_COCOA */
 
 /*****/
 
@@ -1288,25 +1267,37 @@ MODULE_SCOPE void TreeGradient_Free(TreeCtrl *tree);
 MODULE_SCOPE int TreeGradientCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]);
 MODULE_SCOPE int TreeGradient_FromObj(TreeCtrl *tree, Tcl_Obj *objPtr, TreeGradient *gradientPtr);
 MODULE_SCOPE void TreeGradient_Release(TreeCtrl *tree, TreeGradient gradient);
-MODULE_SCOPE void TreeGradient_FillRect(TreeCtrl *tree, TreeDrawable td, TreeGradient gradient, TreeRectangle tr);
-
-MODULE_SCOPE int TreeDraw_InitInterp(Tcl_Interp *interp);
 
 /*****/
 
-MODULE_SCOPE void TreeColor_DrawRect(TreeCtrl *tree, TreeDrawable td,
-    TreeColor *tc, TreeRectangle tr, int outlineWidth, int open);
-MODULE_SCOPE void TreeColor_FillRect(TreeCtrl *tree, TreeDrawable td,
-    TreeColor *tc, TreeRectangle tr);
 #define RECT_OPEN_W 0x01
 #define RECT_OPEN_N 0x02
 #define RECT_OPEN_E 0x04
 #define RECT_OPEN_S 0x08
 #define RECT_OPEN_WNES (RECT_OPEN_W|RECT_OPEN_N|RECT_OPEN_E|RECT_OPEN_S)
+
+MODULE_SCOPE void Tree_DrawRoundRectX11(TreeCtrl *tree, TreeDrawable td,
+    GC gc, TreeRectangle tr, int outlineWidth, int rx, int ry, int open);
+MODULE_SCOPE void Tree_FillRoundRectX11(TreeCtrl *tree, TreeDrawable td,
+    GC gc, TreeRectangle tr, int rx, int ry, int open);
+MODULE_SCOPE void TreeGradient_FillRectX11(TreeCtrl *tree, TreeDrawable td,
+    TreeGradient gradient, TreeRectangle tr);
+
 MODULE_SCOPE void Tree_DrawRoundRect(TreeCtrl *tree, TreeDrawable td,
     XColor *xcolor, TreeRectangle tr, int outlineWidth, int rx, int ry, int open);
+MODULE_SCOPE void Tree_FillRoundRect(TreeCtrl *tree, TreeDrawable td,
+    XColor *xcolor, TreeRectangle tr, int rx, int ry, int open);
+
+MODULE_SCOPE void TreeGradient_FillRect(TreeCtrl *tree, TreeDrawable td,
+    TreeGradient gradient, TreeRectangle tr);
+
+MODULE_SCOPE void TreeColor_DrawRect(TreeCtrl *tree, TreeDrawable td,
+    TreeColor *tc, TreeRectangle tr, int outlineWidth, int open);
+MODULE_SCOPE void TreeColor_FillRect(TreeCtrl *tree, TreeDrawable td,
+    TreeColor *tc, TreeRectangle tr);
 MODULE_SCOPE void TreeColor_DrawRoundRect(TreeCtrl *tree, TreeDrawable td,
     TreeColor *tc, TreeRectangle tr, int outlineWidth, int rx, int ry, int open);
 MODULE_SCOPE void TreeColor_FillRoundRect(TreeCtrl *tree, TreeDrawable td,
     TreeColor *tc, TreeRectangle tr, int rx, int ry, int open);
 
+MODULE_SCOPE int TreeDraw_InitInterp(Tcl_Interp *interp);

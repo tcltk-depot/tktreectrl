@@ -4405,17 +4405,11 @@ TreeItem_DrawButton(
 {
     int indent, left, lineLeft, lineTop;
     int buttonLeft, buttonTop, w1;
-    int macoffset = 0;
     Tk_Image image;
     Pixmap bitmap;
 
     if (!TreeItem_HasButton(tree, item))
 	return;
-
-#if defined(MAC_TK_CARBON)
-    /* QuickDraw on Mac is offset by one pixel in both x and y. */
-    macoffset = 1;
-#endif
 
     indent = TreeItem_Indent(tree, item);
 
@@ -4482,8 +4476,8 @@ TreeItem_DrawButton(
     XDrawRectangle(tree->display, td.drawable, tree->buttonGC,
 	    buttonLeft + w1,
 	    buttonTop + w1,
-	    tree->buttonSize - tree->buttonThickness + macoffset,
-	    tree->buttonSize - tree->buttonThickness + macoffset);
+	    tree->buttonSize - tree->buttonThickness,
+	    tree->buttonSize - tree->buttonThickness);
 
     /* Horizontal '-' */
     XFillRectangle(tree->display, td.drawable, tree->buttonGC,

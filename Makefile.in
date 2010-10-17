@@ -281,7 +281,7 @@ $(PKG_LIB_FILE): $(PKG_OBJECTS)
 #========================================================================
 
 # I added leading $(srcdir) because autoconf 2.53 strips it off
-VPATH = $(srcdir):$(srcdir)/generic:$(srcdir)/unix:$(srcdir)/win
+VPATH = $(srcdir):$(srcdir)/generic:$(srcdir)/macosx:$(srcdir)/unix:$(srcdir)/win
 
 .c.@OBJEXT@:
 	$(COMPILE) -c `@CYGPATH@ $<` $(CC_OBJNAME)
@@ -338,10 +338,13 @@ dist: dist-clean
 	mkdir -p $(DIST_DIR)/doc
 	mkdir -p $(DIST_DIR)/generic
 	mkdir -p $(DIST_DIR)/library
+	mkdir -p $(DIST_DIR)/macosx
 	mkdir -p $(DIST_DIR)/shellicon
 	mkdir -p $(DIST_DIR)/shellicon/tclconfig
 	mkdir -p $(DIST_DIR)/tclconfig
 	mkdir -p $(DIST_DIR)/tests
+	mkdir -p $(DIST_DIR)/unix
+	mkdir -p $(DIST_DIR)/win
 
 	list='aclocal.m4 ChangeLog configure configure.ac license.terms Makefile.in README.txt treectrl.dll.manifest.in treectrl.rc winrc.m4'; \
 	for p in $$list; do \
@@ -365,8 +368,10 @@ dist: dist-clean
 	cp -p $(srcdir)/doc/$(DIST_DOCS2) $(DIST_DIR)/doc/$(DIST_DOCS2)
 	chmod 664 $(DIST_DIR)/doc/$(DIST_DOCS2)
 
-	cp -p $(srcdir)/generic/*.[ch] $(DIST_DIR)/generic/
-	chmod 664 $(DIST_DIR)/generic/*.[ch]
+	list='generic macosx unix win'; for p in $$list; do \
+	    cp -p $(srcdir)/$$p/*.[ch] $(DIST_DIR)/$$p/; \
+	    chmod 664 $(DIST_DIR)/$$p/*.[ch]; \
+	done
 
 	list='$(DIST_LIBRARY)'; for p in $$list; do \
 	    cp -p $(srcdir)/library/$$p $(DIST_DIR)/library/$$p; \
