@@ -929,6 +929,7 @@ proc ::TreeCtrl::SelectionMotion {w item} {
     variable Priv
 
     if {$item eq ""} return
+    set item [$w item id $item]
     if {$item eq $Priv(prev)} return
     if {![$w item enabled $item]} return
 

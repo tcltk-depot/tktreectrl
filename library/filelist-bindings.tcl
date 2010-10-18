@@ -124,6 +124,45 @@ proc ::TreeCtrl::IsSensitive {T x y} {
     return 0
 }
 
+# ::TreeCtrl::IsSensitiveMarquee
+#
+# Returns 1 if the given window coordinates are over an element that
+# should respond to the marquee.  The list of elements that respond to the
+# marquee is set by calling ::TreeCtrl::SetSensitiveMarquee, or if that list
+# is empty then the same list passed to ::TreeCtrl::SetSensitive.
+#
+# Arguments:
+# T		The treectrl widget.
+# x		Window coord of pointer.
+# y		Window coord of pointer.
+
+proc ::TreeCtrl::IsSensitiveMarquee {T x y} {
+    variable Priv
+    set id [$T identify $x $y]
+    if {[lindex $id 0] ne "item" || [llength $id] != 6} {
+	return 0
+    }
+    lassign $id where item arg1 arg2 arg3 arg4
+    if {![$T item enabled $item]} {
+	return 0
+    }
+    if {![info exists Priv(sensitive,marquee,$T)]} {
+	set sensitive $Priv(sensitive,$T)
+    } elseif {[llength $Priv(sensitive,marquee,$T)] == 0} {
+	set sensitive $Priv(sensitive,$T)
+    } else {
+	set sensitive $Priv(sensitive,marquee,$T)
+    }
+    foreach list $sensitive {
+	set eList [lassign $list C S]
+	if {[$T column compare $arg2 != $C]} continue
+	if {[$T item style set $item $C] ne $S} continue
+	if {[lsearch -exact $eList $arg4] == -1} continue
+	return 1
+    }
+    return 0
+}
+
 # ::TreeCtrl::FileListButton1
 #
 # Handle <ButtonPress-1>.
@@ -184,9 +223,27 @@ proc ::TreeCtrl::FileListButton1 {T x y} {
 		    # Changing the selection might change the list
 		    if {[$T item id $item] eq ""} return
 
-		    # Click selected item to drag
+		    # Click selected item(s) to drag or rename
 		    if {[$T selection includes $item]} {
 			set Priv(buttonMode) drag
+		    }
+		} elseif {[FileListEmulateWin7 $T]} {
+		    # Click selected item(s) to drag or rename
+		    if {[$T selection includes $item]
+			&& [IsSensitiveMarquee $T $x $y]} {
+			set Priv(drag,motion) 0
+			set Priv(drag,click,x) $x
+			set Priv(drag,click,y) $y
+			set Priv(drag,x) [$T canvasx $x]
+			set Priv(drag,y) [$T canvasy $y]
+			set Priv(drop) ""
+			set Priv(drag,wasSel) 1
+			set Priv(drag,C) $arg2
+			set Priv(drag,E) $arg4
+			$T activate $item
+			set Priv(buttonMode) drag
+		    } else {
+			set marquee 1
 		    }
 		} else {
 		    set marquee 1
@@ -196,13 +253,29 @@ proc ::TreeCtrl::FileListButton1 {T x y} {
     }
     if {$marquee} {
 	set Priv(buttonMode) marquee
+	if {![info exists Priv(sensitive,marquee,$T)]} {
+	    set Priv(sensitive,marquee,$T) {}
+	}
 	if {$Priv(selectMode) ne "set"} {
 	    set Priv(selection) [$T selection get]
 	} else {
-	    $T selection clear
+	    if {![FileListEmulateWin7 $T]} {
+		$T selection clear
+	    }
 	    set Priv(selection) {}
 	}
 	MarqueeBegin $T $x $y
+
+	set Priv(marquee,motion) 0
+	if {[FileListEmulateWin7 $T]} {
+	    if {[IsSensitiveMarquee $T $x $y]} {
+		set item [lindex $id 1]
+		$T activate $item
+		if {$Priv(selectMode) ne "add"} {
+		    $T selection anchor $item
+		}
+	    }
+	}
     }
     return
 }
@@ -252,6 +325,13 @@ proc ::TreeCtrl::FileListMotion {T x y} {
 	    set deselect {}
 	    set items {}
 
+	    set Priv(marquee,motion) 1
+
+	    set sensitive $Priv(sensitive,marquee,$T)
+	    if {[llength $sensitive] == 0} {
+		set sensitive $Priv(sensitive,$T)
+	    }
+
 	    # Check items covered by the marquee
 	    foreach list [$T marque identify] {
 		set item [lindex $list 0]
@@ -264,7 +344,7 @@ proc ::TreeCtrl::FileListMotion {T x y} {
 
 		    # Check covered elements in this column
 		    foreach E [lrange $sublist 1 end] {
-			foreach sList $Priv(sensitive,$T) {
+			foreach sList $sensitive {
 			    set sEList [lassign $sList sC sS]
 			    if {[$T column compare $column != $sC]} continue
 			    if {[$T item style set $item $sC] ne $sS} continue
@@ -321,6 +401,13 @@ proc ::TreeCtrl::FileListMotion {T x y} {
 	    set drop ""
 	    set id [$T identify $x $y]
 	    if {[IsSensitive $T $x $y]} {
+		set sensitive 1
+	    } elseif {[FileListEmulateWin7 $T] && [IsSensitiveMarquee $T $x $y]} {
+		set sensitive 1
+	    } else {
+		set sensitive 0
+	    }
+	    if {$sensitive} {
 		set item [lindex $id 1]
 		# If the item is not in the pre-drag selection
 		# (i.e. not being dragged) and it is a directory,
@@ -399,6 +486,27 @@ proc ::TreeCtrl::FileListRelease1 {T x y} {
 	"marquee" {
 	    AutoScanCancel $T
 	    MarqueeEnd $T $x $y
+
+	    if {[FileListEmulateWin7 $T]} {
+		# If the mouse was clicked in whitespace or insensitive part
+		# of an item and the mouse did not move then the selection
+		# is not modified until after the mouse button is released.
+		if {!$Priv(marquee,motion)} {
+		    if {[IsSensitiveMarquee $T $x $y]} {
+			set item [$T item id active]
+			if {$Priv(selectMode) eq "add"} {
+			    BeginExtend $T $item
+			} elseif {$Priv(selectMode) eq "toggle"} {
+			    BeginToggle $T $item
+			} else {
+			    BeginSelect $T $item
+			}
+		    } elseif {$Priv(selectMode) eq "set"} {
+			# Clicked whitespace
+			$T selection clear
+		    }
+		}
+	    }
 	}
 	"drag" {
 	    AutoScanCancel $T
@@ -412,28 +520,53 @@ proc ::TreeCtrl::FileListRelease1 {T x y} {
 			[list I $Priv(drop) l $Priv(selection)]
 		}
 		TryEvent $T Drag end {}
-	    } elseif {$Priv(selectMode) eq "toggle"} {
-		# don't rename
-
-		# Clicked/released a selected item, but didn't drag
-	    } elseif {$Priv(drag,wasSel)} {
-		set I [$T item id active]
-		set C $Priv(drag,C)
-		set E $Priv(drag,E)
-		set S [$T item style set $I $C]
-		set ok 0
-		foreach list $Priv(edit,$T) {
-		    set eEList [lassign $list eC eS]
-		    if {[$T column compare $C != $eC]} continue
-		    if {$S ne $eS} continue
-		    if {[lsearch -exact $eEList $E] == -1} continue
-		    set ok 1
-		    break
+	    } else {
+		set rename 0
+		if {[FileListEmulateWin7 $T]} {
+		    # If the mouse was clicked in the insensitive parts of
+		    # a selected item and multiple items are selected and the
+		    # mouse did not move then the selection is not modified
+		    # until after the mouse button is released.
+		    set item [$T item id active]
+		    if {[$T selection count] == 1 && $Priv(selectMode) eq "set"} {
+			# If clicked already-selected item, rename it
+			set rename $Priv(drag,wasSel)
+		    } elseif {[IsSensitive $T $x $y] && !$Priv(drag,wasSel)} {
+			# Selection was modified on ButtonPress, do nothing
+		    } elseif {$Priv(selectMode) eq "add"} {
+			# Shift-click does nothing to already-selected item
+			#BeginExtend $T $item
+		    } elseif {$Priv(selectMode) eq "toggle"} {
+			BeginToggle $T $item
+		    } else {
+			# Make this the only selected item
+			BeginSelect $T $item
+		    }
+		} elseif {$Priv(selectMode) eq "toggle"} {
+		    # don't rename
+		} elseif {$Priv(drag,wasSel)} {
+		    # Clicked/released a selected item, but didn't drag
+		    set rename 1
 		}
-		if {$ok} {
-		    FileListEditCancel $T
-		    set Priv(editId,$T) \
-			[after $Priv(edit,delay) [list ::TreeCtrl::FileListEdit $T $I $C $E]]
+		if {$rename} {
+		    set I [$T item id active]
+		    set C $Priv(drag,C)
+		    set E $Priv(drag,E)
+		    set S [$T item style set $I $C]
+		    set ok 0
+		    foreach list $Priv(edit,$T) {
+			set eEList [lassign $list eC eS]
+			if {[$T column compare $C != $eC]} continue
+			if {$S ne $eS} continue
+			if {[lsearch -exact $eEList $E] == -1} continue
+			set ok 1
+			break
+		    }
+		    if {$ok} {
+			FileListEditCancel $T
+			set Priv(editId,$T) \
+			    [after $Priv(edit,delay) [list ::TreeCtrl::FileListEdit $T $I $C $E]]
+		    }
 		}
 	    }
 	}
@@ -604,6 +737,78 @@ proc ::TreeCtrl::SetSensitive {T listOfLists} {
     }
     set Priv(sensitive,$T) $listOfLists
     return
+}
+
+# ::TreeCtrl::SetSensitiveMarquee
+#
+# Specifies the list of elements that are sensitive to the marquee.
+# If the list is empty then the same list passed to SetSensitive
+# is used.
+#
+# Arguments:
+# T		The treectrl widget.
+# sensitive	Boolean value.
+
+proc ::TreeCtrl::SetSensitiveMarquee {T listOfLists} {
+    variable Priv
+    foreach list $listOfLists {
+	set elements [lassign $list column style]
+	if {[$T column id $column] eq ""} {
+	    error "column \"$column\" doesn't exist"
+	}
+	if {[lsearch -exact [$T style names] $style] == -1} {
+	    error "style \"$style\" doesn't exist"
+	}
+	foreach element $elements {
+	    if {[lsearch -exact [$T element names] $element] == -1} {
+		error "element \"$element\" doesn't exist"
+	    }
+	}
+    }
+    set Priv(sensitive,marquee,$T) $listOfLists
+    return
+}
+
+# ::TreeCtrl::SetSelectedItemsSensitive
+#
+# Specifies whether or not entire items are sensitive to mouse clicks
+# when they are already selected.
+#
+# Arguments:
+# T		The treectrl widget.
+# sensitive	Boolean value.
+
+proc ::TreeCtrl::SetSelectedItemsSensitive {T sensitive} {
+    variable Priv
+    if {![string is boolean -strict $sensitive]} {
+	error "expected boolean but got \"$sensitive\""
+    }
+    set Priv(sensitiveSelected,$T) $sensitive
+    return
+}
+
+# ::TreeCtrl::FileListEmulateWin7
+#
+# Test the flag telling the bindings to use Windows 7 behavior.
+#
+# Arguments:
+# T		The treectrl widget.
+# win7		Boolean value.
+
+proc ::TreeCtrl::FileListEmulateWin7 {T args} {
+    variable Priv
+    if {[llength $args]} {
+	set win7 [lindex $args 0]
+	if {![string is boolean -strict $win7]} {
+	    error "expected boolean but got \"$win7\""
+	}
+	set Priv(win7,$T) $win7
+	return
+    }
+    if {[info exists Priv(win7,$T)]} {
+	return $Priv(win7,$T)
+    }
+    return 0
 }
 
 # ::TreeCtrl::EntryOpen

@@ -72,19 +72,37 @@ proc DemoExplorerAux {scriptDir scriptFile {scriptFollowup ""}} {
     set Explorer(scriptDir) $scriptDir
     set Explorer(scriptFile) $scriptFile
     set Explorer(scriptFollowup) $scriptFollowup
+
+    return
+}
+
+proc DemoExplorerBindings {{win7 0}} {
+
+    # Double-clicking a directory displays its contents.
     bind DemoExplorer <Double-ButtonPress-1> {
 	ExplorerDoubleButton1 %W %x %y
     }
 
-    bind DemoExplorer <Motion> {
-	ExplorerMotion %W %x %y
-    }
-    bind DemoExplorer <Leave> {
-	ExplorerMotion %W -1 -1
-    }
-    set ::Explorer(prev) ""
+    TreeCtrl::FileListEmulateWin7 [DemoList] $win7
 
-    return
+    if {$win7} {
+	set ::Explorer(buttonDown) 0
+	set ::Explorer(prev) ""
+	bind DemoExplorerWin7 <ButtonPress-1> {
+	    ExplorerButton1 %W %x %y
+	}
+	bind DemoExplorerWin7 <ButtonRelease-1> {
+	    ExplorerRelease1 %W %x %y
+	}
+	bind DemoExplorerWin7 <Motion> {
+	    if {$Explorer(buttonDown) == 0} {
+		ExplorerMotion %W %x %y
+	    }
+	}
+	bind DemoExplorerWin7 <Leave> {
+	    ExplorerMotion %W -1 -1
+	}
+    }
 }
 
 #
@@ -169,16 +187,21 @@ proc DemoExplorerDetails {} {
     $T style layout $S txtDate -padx 6 -squeeze x -expand ns
 
     # List of lists: {column style element ...} specifying text elements
-    # the user can edit
+    # the user can edit.
     TreeCtrl::SetEditable $T {
 	{name styName txtName}
     }
 
     # List of lists: {column style element ...} specifying elements
-    # the user can click on or select with the selection rectangle
+    # the user can click on.
     TreeCtrl::SetSensitive $T {
 	{name styName elemImg txtName}
     }
+
+    # List of lists: {column style element ...} specifying elements
+    # the user can select with the selection rectangle. Empty means
+    # use the same list passed to TreeCtrl::SetSensitive.
+    TreeCtrl::SetSensitiveMarquee $T {}
 
     # List of lists: {column style element ...} specifying elements
     # added to the drag image when dragging selected items
@@ -267,6 +290,7 @@ proc DemoExplorerDetails {} {
     }
 
     DemoExplorerAux $scriptDir $scriptFile
+    DemoExplorerBindings
 
     set ::Explorer(sortColumn) name
     set ::Explorer(sortColor) #F7F7F7
@@ -390,13 +414,18 @@ proc DemoExplorerLargeIcons {} {
     }
 
     # List of lists: {column style element ...} specifying elements
-    # the user can click on or select with the selection rectangle
+    # the user can click on.
     TreeCtrl::SetSensitive $T {
 	{C0 STYLE elemImg elemTxt}
     }
 
     # List of lists: {column style element ...} specifying elements
-    # added to the drag image when dragging selected items
+    # the user can select with the selection rectangle. Empty means
+    # use the same list passed to TreeCtrl::SetSensitive.
+    TreeCtrl::SetSensitiveMarquee $T {}
+
+    # List of lists: {column style element ...} specifying elements
+    # added to the drag image when dragging selected items.
     TreeCtrl::SetDragImage $T {
 	{C0 STYLE elemImg elemTxt}
     }
@@ -472,6 +501,7 @@ proc DemoExplorerLargeIcons {} {
     }
 
     DemoExplorerAux $scriptDir $scriptFile
+    DemoExplorerBindings
 
     $T activate [$T item id "root firstchild"]
 
@@ -561,13 +591,18 @@ proc DemoExplorerList {} {
     }
 
     # List of lists: {column style element ...} specifying elements
-    # the user can click on or select with the selection rectangle
+    # the user can click on.
     TreeCtrl::SetSensitive $T {
 	{C0 STYLE elemImg elemTxt}
     }
 
     # List of lists: {column style element ...} specifying elements
-    # added to the drag image when dragging selected items
+    # the user can select with the selection rectangle. Empty means
+    # use the same list passed to TreeCtrl::SetSensitive.
+    TreeCtrl::SetSensitiveMarquee $T {}
+
+    # List of lists: {column style element ...} specifying elements
+    # added to the drag image when dragging selected items.
     TreeCtrl::SetDragImage $T {
 	{C0 STYLE elemImg elemTxt}
     }
@@ -643,6 +678,7 @@ proc DemoExplorerList {} {
     }
 
     DemoExplorerAux $scriptDir $scriptFile
+    DemoExplorerBindings
 
     $T activate [$T item firstchild root]
 
@@ -838,19 +874,32 @@ proc DemoExplorerDetailsWin7 {} {
     $T style layout $S txtDate -padx 6 -pady {2 3} -squeeze x -expand ns
 
     # List of lists: {column style element ...} specifying text elements
-    # the user can edit
+    # the user can edit.
     TreeCtrl::SetEditable $T {
 	{name styName txtName}
     }
 
     # List of lists: {column style element ...} specifying elements
-    # the user can click on or select with the selection rectangle
+    # the user can click on.
     TreeCtrl::SetSensitive $T {
 	{name styName elemImg txtName}
+	{size stySize txtSize}
+	{type styType txtType}
+	{modified styDate txtDate}
     }
 
     # List of lists: {column style element ...} specifying elements
-    # added to the drag image when dragging selected items
+    # the user can select with the selection rectangle. Empty means
+    # use the same list passed to TreeCtrl::SetSensitive.
+    TreeCtrl::SetSensitiveMarquee $T {
+	{name styName elemRectOutline elemImg txtName}
+	{size stySize elemRectOutline txtSize}
+	{type styType elemRectOutline txtType}
+	{modified styDate elemRectOutline txtDate}
+    }
+
+    # List of lists: {column style element ...} specifying elements
+    # added to the drag image when dragging selected items.
     TreeCtrl::SetDragImage $T {
 	{name styName elemImg txtName}
     }
@@ -938,6 +987,7 @@ proc DemoExplorerDetailsWin7 {} {
     }
 
     DemoExplorerAux $scriptDir $scriptFile $scriptFollowup
+    DemoExplorerBindings true
 
     # Fix the display when a column is dragged
     $T notify bind $T <ColumnDrag-receive> {
@@ -954,7 +1004,7 @@ proc DemoExplorerDetailsWin7 {} {
     set ::Explorer(sortColor) ""
     $T notify bind $T <Header-invoke> { ExplorerHeaderInvoke %T %C }
 
-    bindtags $T [list $T DemoExplorer TreeCtrlFileList TreeCtrl [winfo toplevel $T] all]
+    bindtags $T [list $T DemoExplorerWin7 DemoExplorer TreeCtrlFileList TreeCtrl [winfo toplevel $T] all]
 
     return
 }
@@ -1022,7 +1072,7 @@ proc DemoExplorerLargeIconsWin7 {} {
 
     $T configure -showroot no -showbuttons no -showlines no \
 	-selectmode extended -wrap window -orient horizontal \
-	-itemheight $itemHeight -itemwidth 75 -showheader no \
+	-itemwidth 75 -showheader no \
 	-scrollmargin 16 -xscrolldelay "500 50" -yscrolldelay "500 50"
 
     InitPics big-*
@@ -1091,19 +1141,26 @@ proc DemoExplorerLargeIconsWin7 {} {
     $T style layout $S elemTxt -pady {4 0} -squeeze x -expand we
 
     # List of lists: {column style element ...} specifying text elements
-    # the user can edit
+    # the user can edit.
     TreeCtrl::SetEditable $T {
 	{C0 STYLE elemTxt}
     }
 
     # List of lists: {column style element ...} specifying elements
-    # the user can click on or select with the selection rectangle
+    # the user can click on.
     TreeCtrl::SetSensitive $T {
 	{C0 STYLE elemImg elemTxt}
     }
 
     # List of lists: {column style element ...} specifying elements
-    # added to the drag image when dragging selected items
+    # the user can select with the selection rectangle. Empty means
+    # use the same list passed to TreeCtrl::SetSensitive.
+    TreeCtrl::SetSensitiveMarquee $T {
+	{C0 STYLE elemRectOutline elemImg elemTxt}
+    }
+
+    # List of lists: {column style element ...} specifying elements
+    # added to the drag image when dragging selected items.
     TreeCtrl::SetDragImage $T {
 	{C0 STYLE elemImg elemTxt}
     }
@@ -1178,6 +1235,7 @@ proc DemoExplorerLargeIconsWin7 {} {
     }
 
     DemoExplorerAux $scriptDir $scriptFile
+    DemoExplorerBindings true
 
     $T activate [$T item id "root firstchild"]
 
@@ -1191,18 +1249,19 @@ proc DemoExplorerLargeIconsWin7 {} {
     }
     $T item element configure active C0 elemTxt -lines 3
 
-    bindtags $T [list $T DemoExplorer TreeCtrlFileList TreeCtrl [winfo toplevel $T] all]
+    bindtags $T [list $T DemoExplorerWin7 DemoExplorer TreeCtrlFileList TreeCtrl [winfo toplevel $T] all]
 
     return
 }
 
+# Win7: Handle <Motion> and <Leave> events.
 proc ExplorerMotion {w x y} {
     global Explorer
     if {[lsearch -exact [$w state names] mouseover] == -1} return
     set id [$w identify $x $y]
     if {$id eq ""} {
     } elseif {[lindex $id 0] eq "header"} {
-    } elseif {[lindex $id 0] eq "item"} {
+    } elseif {[lindex $id 0] eq "item" && [llength $id] > 4} {
 	set item [lindex $id 1]
 	set column all ; # [lindex $id 3]
 	set curr [list $item $column]
@@ -1222,3 +1281,17 @@ proc ExplorerMotion {w x y} {
     return
 }
 
+# Win7: Handle ButtonPress-1
+proc ExplorerButton1 {T x y} {
+    global Explorer
+    ExplorerMotion $T -1 -1
+    set Explorer(buttonDown) 1
+    return
+}
+
+# Win7: Handle ButtonRelease-1
+proc ExplorerRelease1 {T x y} {
+    global Explorer
+    set Explorer(buttonDown) 0
+    return
+}
