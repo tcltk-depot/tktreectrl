@@ -751,6 +751,24 @@ proc DragStyleInit {} {
     return
 }
 
+# Configure the marquee for a modern transparent selection rectangle
+# where transparent gradients are supported.
+proc ConfigTransparentMarquee {T} {
+    if {![$T gradient native]} return
+    if {[winfo depth $T] < 15} return
+    if {[Platform windows]} {
+	set outline SystemHighlight
+	set stops [list [list 0.0 SystemHighlight 0.3] [list 1.0 SystemHighlight 0.3]]
+    } else {
+	set outline gray
+	set stops [list [list 0.0 gray 0.3] [list 1.0 gray 0.3]]
+    }
+    $T gradient api 1.0
+    $T gradient create G_marquee -stops $stops
+    $T marquee configure -fill G_marquee -outline $outline
+    return
+}
+
 #
 # Demo: explorer files with Windows-7-like gradients
 #
@@ -988,6 +1006,8 @@ proc DemoExplorerDetailsWin7 {} {
 
     DemoExplorerAux $scriptDir $scriptFile $scriptFollowup
     DemoExplorerBindings true
+
+    ConfigTransparentMarquee $T
 
     # Fix the display when a column is dragged
     $T notify bind $T <ColumnDrag-receive> {
@@ -1236,6 +1256,8 @@ proc DemoExplorerLargeIconsWin7 {} {
 
     DemoExplorerAux $scriptDir $scriptFile
     DemoExplorerBindings true
+
+    ConfigTransparentMarquee $T
 
     $T activate [$T item id "root firstchild"]
 

@@ -447,6 +447,7 @@ struct TreeCtrl
     Tk_OptionTable gradientOptionTable;
     Tcl_HashTable gradientHash;	/* TreeGradient.name -> TreeGradient */
     int gradientAPI[2];		/* major.minor version */
+    int nativeGradients;	/* Preference, not availability. */
 };
 
 #define TREE_CONF_FONT 0x0001
@@ -1278,33 +1279,53 @@ MODULE_SCOPE int Tree_HasNativeGradients(TreeCtrl *tree);
 
 /*****/
 
+typedef enum  {
+    TREE_CLIP_REGION,
+    TREE_CLIP_RECT,
+    TREE_CLIP_AREA
+} TreeClipType;
+typedef struct {
+    TreeClipType type;
+    TkRegion region;
+    TreeRectangle tr;
+    int area;
+} TreeClip;
+
 #define RECT_OPEN_W 0x01
 #define RECT_OPEN_N 0x02
 #define RECT_OPEN_E 0x04
 #define RECT_OPEN_S 0x08
 #define RECT_OPEN_WNES (RECT_OPEN_W|RECT_OPEN_N|RECT_OPEN_E|RECT_OPEN_S)
 
+MODULE_SCOPE void Tree_FillRectangle(TreeCtrl *tree, TreeDrawable td,
+    TreeClip *clip, GC gc, TreeRectangle tr);
+
 MODULE_SCOPE void Tree_DrawRoundRectX11(TreeCtrl *tree, TreeDrawable td,
     GC gc, TreeRectangle tr, int outlineWidth, int rx, int ry, int open);
 MODULE_SCOPE void Tree_FillRoundRectX11(TreeCtrl *tree, TreeDrawable td,
     GC gc, TreeRectangle tr, int rx, int ry, int open);
 MODULE_SCOPE void TreeGradient_FillRectX11(TreeCtrl *tree, TreeDrawable td,
-    TreeGradient gradient, TreeRectangle trBrush, TreeRectangle tr);
+    TreeClip *clip, TreeGradient gradient, TreeRectangle trBrush,
+    TreeRectangle tr);
 
 MODULE_SCOPE void Tree_DrawRoundRect(TreeCtrl *tree, TreeDrawable td,
-    XColor *xcolor, TreeRectangle tr, int outlineWidth, int rx, int ry, int open);
+    XColor *xcolor, TreeRectangle tr, int outlineWidth, int rx, int ry,
+    int open);
 MODULE_SCOPE void Tree_FillRoundRect(TreeCtrl *tree, TreeDrawable td,
     XColor *xcolor, TreeRectangle tr, int rx, int ry, int open);
 
 MODULE_SCOPE void TreeGradient_FillRect(TreeCtrl *tree, TreeDrawable td,
-    TreeGradient gradient, TreeRectangle trBrush, TreeRectangle tr);
+    TreeClip *clip, TreeGradient gradient, TreeRectangle trBrush,
+    TreeRectangle tr);
 
 MODULE_SCOPE void TreeColor_DrawRect(TreeCtrl *tree, TreeDrawable td,
-    TreeColor *tc, TreeRectangle tr, int outlineWidth, int open);
+    TreeClip *clip, TreeColor *tc, TreeRectangle tr, int outlineWidth,
+    int open);
 MODULE_SCOPE void TreeColor_FillRect(TreeCtrl *tree, TreeDrawable td,
-    TreeColor *tc, TreeRectangle trBrush, TreeRectangle tr);
+    TreeClip *clip, TreeColor *tc, TreeRectangle trBrush, TreeRectangle tr);
 MODULE_SCOPE void TreeColor_DrawRoundRect(TreeCtrl *tree, TreeDrawable td,
-    TreeColor *tc, TreeRectangle tr, int outlineWidth, int rx, int ry, int open);
+    TreeColor *tc, TreeRectangle tr, int outlineWidth, int rx, int ry,
+    int open);
 MODULE_SCOPE void TreeColor_FillRoundRect(TreeCtrl *tree, TreeDrawable td,
     TreeColor *tc, TreeRectangle tr, int rx, int ry, int open);
 

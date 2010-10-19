@@ -332,6 +332,9 @@ proc MakeMenuBar {} {
     $m2 add command -label "View Source" -command ToggleSourceWindow
     $m2 add command -label "Magnifier" -command ToggleLoupeWindow
     $m2 add separator
+    $m2 add checkbutton -label "Native Gradients" -command ToggleNativeGradients \
+	-variable ::NativeGradients
+    $m2 add separator
     $m2 add command -label "Increase Font Size" -command IncreaseFontSize
     $m2 add command -label "Decrease Font Size" -command DecreaseFontSize
     switch -- [Platform] {
@@ -755,6 +758,13 @@ proc SetThemeWindow {} {
 	    }
 	}
     }
+    return
+}
+
+set ::NativeGradients 1
+proc ToggleNativeGradients {} {
+    [DemoList] gradient native $::NativeGradients
+    dbwin "native gradients is now $::NativeGradients"
     return
 }
 
@@ -1553,14 +1563,6 @@ bind [DemoList] <ButtonRelease-1> {
     %T column move %C %b
 }
 
-if {[info exists ::TreeCtrl::nativeGradients]} {
-    bind [DemoList] <Control-g> {
-	set ::TreeCtrl::nativeGradients [expr {!$::TreeCtrl::nativeGradients}]
-	[DemoList] debug expose 0 0 10000 10000
-	dbwin "nativeGradients is now $::TreeCtrl::nativeGradients"
-    }
-}
-
 proc DemoClear {} {
 
     set T [DemoList]
@@ -1595,6 +1597,9 @@ proc DemoClear {} {
 	if {[string equal $child $T.mTree] || [string equal $child $T.mHeader]} continue
 	destroy $child
     }
+
+    # Restore defaults to marquee
+    $T marquee configure -fill {} -outline {} -outlinewidth 1
 
     # Delete gradients
     if {$::UseGradient} {

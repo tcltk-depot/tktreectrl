@@ -4950,7 +4950,9 @@ DrawColumnBackground(
     int index			/* Used for alternating background colors. */
     )
 {
+#if 0
     int bgCount = TreeColumn_BackgroundCount(treeColumn);
+#endif
     GC gc = None, backgroundGC;
     TreeRectangle dirtyBox, drawBox, rowBox;
     int top, bottom;
@@ -5007,7 +5009,7 @@ if (tree->doubleBuffer == DOUBLE_BUFFER_ITEM) {
 		if (!TreeColor_IsOpaque(tree ,tc))
 		    XFillRectangle(tree->display, td.drawable, backgroundGC,
 			drawBox.x, drawBox.y, drawBox.width, drawBox.height);
-		TreeColor_FillRect(tree, td, tc, rowBox, drawBox);
+		TreeColor_FillRect(tree, td, NULL, tc, rowBox, drawBox);
 	    }
 	}
 	if (rItem != NULL && rItem == rItem->range->last) {

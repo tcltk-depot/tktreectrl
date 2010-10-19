@@ -6630,11 +6630,11 @@ TreeGradientCmd(
     TreeCtrl *tree = clientData;
     static CONST char *commandNames[] = {
 	"api", "cget", "configure", "create", "delete", "names",
-	(char *) NULL
+	"native", (char *) NULL
     };
     enum {
 	COMMAND_API, COMMAND_CGET, COMMAND_CONFIGURE, COMMAND_CREATE,
-	COMMAND_DELETE, COMMAND_NAMES
+	COMMAND_DELETE, COMMAND_NAMES, COMMAND_NATIVE,
     };
     int index;
 
@@ -6649,6 +6649,7 @@ TreeGradientCmd(
     }
 
     switch (index) {
+	/* T gradient api ?version? */
 	case COMMAND_API: {
 	    char *string;
 	    int length, n, major, minor;
@@ -6728,6 +6729,7 @@ TreeGradientCmd(
 	    }
 	    break;
 	}
+	/* T gradient create NAME ?option value ...? */
 	case COMMAND_CREATE: {
 	    char *name;
 	    int len;
@@ -6780,6 +6782,7 @@ TreeGradientCmd(
 	    Tcl_SetObjResult(interp, Gradient_ToObj((TreeGradient) gradient));
 	    break;
 	}
+	/* T gradient delete ?name ...? */
 	case COMMAND_DELETE: {
 	    int i;
 	    TreeGradient gradient;
@@ -6800,6 +6803,7 @@ TreeGradientCmd(
 	    }
 	    break;
 	}
+	/* T gradient names */
 	case COMMAND_NAMES: {
 	    Tcl_Obj *listObj;
 	    Tcl_HashSearch search;
@@ -6820,6 +6824,27 @@ TreeGradientCmd(
 		hPtr = Tcl_NextHashEntry(&search);
 	    }
 	    Tcl_SetObjResult(interp, listObj);
+	    break;
+	}
+	/* T gradient native ?bool? */
+	case COMMAND_NATIVE: {
+	    int native;
+
+	    if (objc > 4) {
+		Tcl_WrongNumArgs(interp, 3, objv, "?preference?");
+		return TCL_ERROR;
+	    }
+	    if (objc == 4) {
+		if (Tcl_GetBooleanFromObj(interp, objv[3], &native) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+		if (native != tree->nativeGradients) {
+		    Tree_DInfoChanged(tree, DINFO_INVALIDATE | DINFO_OUT_OF_DATE);
+		    tree->nativeGradients = native;
+		}
+	    }
+	    native = Tree_HasNativeGradients(tree);
+	    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(native));
 	    break;
 	}
     }
@@ -6854,7 +6879,7 @@ TreeGradient_IsOpaque(
     if (stopArrPtr->nstops < 2)
 	return 0; /* no colors == fully transparent */
 
-    if (!Tree_HasNativeGradients(tree))
+    if (!tree->nativeGradients || !Tree_HasNativeGradients(tree))
 	return 1;
 
     for (i = 0; i < stopArrPtr->nstops; i++) {
@@ -6890,6 +6915,7 @@ TreeGradient_Init(
     tree->gradientAPI[0] = tree->gradientAPI[1] = 0; /* UNSPECIFIED */
     tree->gradientOptionTable = Tk_CreateOptionTable(tree->interp,
 	gradientOptionSpecs); 
+    tree->nativeGradients = 1; /* Preference, not availability */
 }
 
 /*
@@ -6951,6 +6977,7 @@ void
 TreeGradient_FillRectX11(
     TreeCtrl *tree,		/* Widget info. */
     TreeDrawable td,		/* Where to draw. */
+    TreeClip *clip,		/* Clipping area or NULL. */
     TreeGradient gradient,	/* Gradient token. */
     TreeRectangle trBrush,	/* Brush bounds. */
     TreeRectangle tr		/* Rectangle to paint. */
@@ -6975,8 +7002,7 @@ TreeGradient_FillRectX11(
 	    trSub.height = (int)(ceil(y2) - floor(y1));
 	    if (Tree_IntersectRect(&trPaint, &trSub, &tr)) {
 		gc = Tk_GCForColor(gradient->stepColors[i], Tk_WindowId(tree->tkwin));
-		XFillRectangle(tree->display, td.drawable, gc,
-		    trPaint.x, trPaint.y, trPaint.width, trPaint.height);
+		Tree_FillRectangle(tree, td, clip, gc, trPaint);
 	    }
 	}
     } else {
@@ -6988,8 +7014,7 @@ TreeGradient_FillRectX11(
 	    trSub.width = (int)(ceil(x2) - floor(x1));
 	    if (Tree_IntersectRect(&trPaint, &trSub, &tr)) {
 		gc = Tk_GCForColor(gradient->stepColors[i], Tk_WindowId(tree->tkwin));
-		XFillRectangle(tree->display, td.drawable, gc,
-		    trPaint.x, trPaint.y, trPaint.width, trPaint.height);
+		Tree_FillRectangle(tree, td, clip, gc, trPaint);
 	    }
 	}
     }
@@ -7015,9 +7040,10 @@ void
 TreeColor_DrawRect(
     TreeCtrl *tree,		/* Widget info. */
     TreeDrawable td,		/* Where to draw. */
+    TreeClip *clip,		/* Clipping area or NULL. */
     TreeColor *tc,		/* Color info. */
-    TreeRectangle tr,		/* Where to draw. */
-    int outlineWidth,
+    TreeRectangle tr,		/* Rectangle to outline. */
+    int outlineWidth,		/* Width of outline. */
     int open			/* RECT_OPEN_x flags */
     )
 {
@@ -7027,18 +7053,27 @@ TreeColor_DrawRect(
 	TreeGradient_DrawRect(tree, td, tc->gradient, tr);*/
     if (tc->color != NULL) {
 	GC gc = Tk_GCForColor(tc->color, td.drawable);
-	if (!(open & RECT_OPEN_W))
-	    XFillRectangle(tree->display, td.drawable, gc,
-		    tr.x, tr.y, outlineWidth, tr.height);
-	if (!(open & RECT_OPEN_N))
-	    XFillRectangle(tree->display, td.drawable, gc,
-		    tr.x, tr.y, tr.width, outlineWidth);
-	if (!(open & RECT_OPEN_E))
-	    XFillRectangle(tree->display, td.drawable, gc,
-		    tr.x + tr.width - outlineWidth, tr.y, outlineWidth, tr.height);
-	if (!(open & RECT_OPEN_S))
-	    XFillRectangle(tree->display, td.drawable, gc,
-		    tr.x, tr.y + tr.height - outlineWidth, tr.width, outlineWidth);
+	TreeRectangle trEdge;
+	if (!(open & RECT_OPEN_W)) {
+	    trEdge.x = tr.x, trEdge.y = tr.y,
+		trEdge.width = outlineWidth, trEdge.height = tr.height;
+	    Tree_FillRectangle(tree, td, clip, gc, trEdge);
+	}
+	if (!(open & RECT_OPEN_N)) {
+	    trEdge.x = tr.x, trEdge.y = tr.y,
+		trEdge.width = tr.width, trEdge.height = outlineWidth;
+	    Tree_FillRectangle(tree, td, clip, gc, trEdge);
+	}
+	if (!(open & RECT_OPEN_E)) {
+	    trEdge.x = tr.x + tr.width - outlineWidth, trEdge.y = tr.y,
+		trEdge.width = outlineWidth, trEdge.height = tr.height;
+	    Tree_FillRectangle(tree, td, clip, gc, trEdge);
+	}
+	if (!(open & RECT_OPEN_S)) {
+	    trEdge.x = tr.x, trEdge.y = tr.y + tr.height - outlineWidth,
+		trEdge.width = tr.width, trEdge.height = outlineWidth;
+	    Tree_FillRectangle(tree, td, clip, gc, trEdge);
+	}
     }
 }
 
@@ -7062,19 +7097,19 @@ void
 TreeColor_FillRect(
     TreeCtrl *tree,		/* Widget info. */
     TreeDrawable td,		/* Where to draw. */
+    TreeClip *clip,		/* Clipping area or NULL. */
     TreeColor *tc,		/* Color info. */
     TreeRectangle trBrush,	/* Brush bounds. */
-    TreeRectangle tr		/* Where to draw. */
+    TreeRectangle tr		/* Rectangle to paint. */
     )
 {
     if (tc == NULL)
 	return;
     if (tc->gradient != NULL)
-	TreeGradient_FillRect(tree, td, tc->gradient, trBrush, tr);
+	TreeGradient_FillRect(tree, td, clip, tc->gradient, trBrush, tr);
     if (tc->color != NULL) {
 	GC gc = Tk_GCForColor(tc->color, td.drawable);
-	XFillRectangle(tree->display, td.drawable, gc,
-	    tr.x, tr.y, tr.width, tr.height);
+	Tree_FillRectangle(tree, td, clip, gc, tr);
     }
 }
 
@@ -7099,8 +7134,8 @@ TreeColor_DrawRoundRect(
     TreeCtrl *tree,		/* Widget info. */
     TreeDrawable td,		/* Where to draw. */
     TreeColor *tc,		/* Color info. */
-    TreeRectangle tr,		/* Where to draw. */
-    int outlineWidth,
+    TreeRectangle tr,		/* Rectangle to outline. */
+    int outlineWidth,		/* Width of outline. */
     int rx, int ry,		/* Corner radius */
     int open			/* RECT_OPEN_x flags */
     )
@@ -7135,7 +7170,7 @@ TreeColor_FillRoundRect(
     TreeCtrl *tree,		/* Widget info. */
     TreeDrawable td,		/* Where to draw. */
     TreeColor *tc,		/* Color info. */
-    TreeRectangle tr,		/* Where to draw. */
+    TreeRectangle tr,		/* Rectangle to paint. */
     int rx, int ry,		/* Corner radius */
     int open			/* RECT_OPEN_x flags */
     )

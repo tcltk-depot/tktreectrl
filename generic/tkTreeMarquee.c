@@ -10,8 +10,6 @@
 
 #include "tkTreeCtrl.h"
 
-#define MARQUEE_COLORS
-
 typedef struct TreeMarquee_ TreeMarquee_;
 
 /*
@@ -29,21 +27,19 @@ struct TreeMarquee_
 					 * corner of the window when we
 					 * were drawn. */
     int sw, sh;				/* Width & height when drawn. */
-#ifdef MARQUEE_COLORS
-    TreeColor *fillColorPtr;
-    Tcl_Obj *fillObj;
-    TreeColor *outlineColorPtr;
-    Tcl_Obj *outlineObj;
-    int outlineWidth;
-    Tcl_Obj *outlineWidthObj;
-#endif
+
+    TreeColor *fillColorPtr;		/* -fill */
+    Tcl_Obj *fillObj;			/* -fill */
+    TreeColor *outlineColorPtr;		/* -outline */
+    Tcl_Obj *outlineObj;		/* -outline */
+    int outlineWidth;			/* -outlinewidth */
+    Tcl_Obj *outlineWidthObj;		/* -outlinewidth */
 };
 
 #define MARQ_CONF_VISIBLE		0x0001
 #define MARQ_CONF_COLORS		0x0002
 
 static Tk_OptionSpec optionSpecs[] = {
-#ifdef MARQUEE_COLORS
     {TK_OPTION_CUSTOM, "-fill", (char *) NULL, (char *) NULL,
 	(char *) NULL, Tk_Offset(TreeMarquee_, fillObj),
 	Tk_Offset(TreeMarquee_, fillColorPtr), TK_OPTION_NULL_OK,
@@ -56,7 +52,6 @@ static Tk_OptionSpec optionSpecs[] = {
 	"1", Tk_Offset(TreeMarquee_, outlineWidthObj),
 	Tk_Offset(TreeMarquee_, outlineWidth), 0,
 	(ClientData) NULL, MARQ_CONF_COLORS},
-#endif
     {TK_OPTION_BOOLEAN, "-visible", (char *) NULL, (char *) NULL,
 	"0", -1, Tk_Offset(TreeMarquee_, visible),
 	0, (ClientData) NULL, MARQ_CONF_VISIBLE},
@@ -145,10 +140,8 @@ TreeMarquee_Free(
 
 int TreeMarquee_IsXOR(TreeMarquee marquee)
 {
-#ifdef MARQUEE_COLORS
     if (marquee->fillColorPtr || marquee->outlineColorPtr)
 	return FALSE;
-#endif
 
 #if defined(WIN32)
     return FALSE; /* TRUE on XP, FALSE on Win7 (lots of flickering) */
@@ -323,21 +316,21 @@ TreeMarquee_Draw(
     if (!marquee->visible)
 	return;
 
-#ifdef MARQUEE_COLORS
     if (marquee->fillColorPtr || marquee->outlineColorPtr) {
 	TreeRectangle tr;
+	TreeClip clip;
 	tr.x = 0 - tree->xOrigin + MIN(marquee->x1, marquee->x2);
 	tr.width = abs(marquee->x1 - marquee->x2) + 1;
 	tr.y = 0 - tree->yOrigin + MIN(marquee->y1, marquee->y2);
 	tr.height = abs(marquee->y1 - marquee->y2) + 1;
+	clip.type = TREE_CLIP_AREA, clip.area = TREE_AREA_CONTENT;
 	if (marquee->fillColorPtr)
-	    TreeColor_FillRect(tree, td, marquee->fillColorPtr, tr, tr);
+	    TreeColor_FillRect(tree, td, &clip, marquee->fillColorPtr, tr, tr);
 	if (marquee->outlineColorPtr && marquee->outlineWidth > 0)
-	    TreeColor_DrawRect(tree, td, marquee->outlineColorPtr, tr,
+	    TreeColor_DrawRect(tree, td, &clip, marquee->outlineColorPtr, tr,
 		marquee->outlineWidth, 0);
 	return;
     }
-#endif
 
     /* Yes this is XOR drawing but we aren't erasing the previous
      * marquee as when TreeMarquee_IsXOR() returns TRUE. */

@@ -3723,7 +3723,7 @@ ItemDrawBackground(
 	    GC gc = Tk_3DBorderGC(tree->tkwin, tree->border, TK_3D_FLAT_GC);
 	    XFillRectangle(tree->display, td.drawable, gc, x, y, width, height);
 	}
-	TreeColor_FillRect(tree, td, tc, tr, tr);
+	TreeColor_FillRect(tree, td, NULL, tc, tr, tr);
     } else {
 	GC gc = Tk_3DBorderGC(tree->tkwin, tree->border, TK_3D_FLAT_GC);
 	XFillRectangle(tree->display, td.drawable, gc, x, y, width, height);

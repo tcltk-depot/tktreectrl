@@ -701,6 +701,95 @@ Tree_XImage2Photo(
     Tcl_Free((char *) pixelPtr);
 }
 
+static TkRegion
+ClipToDC(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeClip *clip,		/* Clipping area or NULL. */
+    DC dc			/* Windows device context. */
+    )
+{
+    TkRegion rgn = NULL;
+
+    if (clip && clip->type == TREE_CLIP_RECT) {
+	rgn = Tree_GetRegion(tree);
+	Tree_SetRectRegion(rgn, &clip->tr);
+	SelectClipRgn(dc, (HRGN) rgn);
+    }
+    if (clip && clip->type == TREE_CLIP_AREA) {
+	int x1, y1, x2, y2;
+	XRectangle xr;
+	if (Tree_AreaBbox(tree, clip->area, &x1, &y1, &x2, &y2) == 0)
+	    return;
+	xr.x = x1, xr.y = y1, xr.width = x2 - x1, xr.height = y2 - y1;
+	rgn = Tree_GetRegion(tree);
+	TkUnionRectWithRegion(&xr, rgn, rgn);
+	SelectClipRgn(dc, (HRGN) rgn);
+    }
+    if (clip && clip->type == TREE_CLIP_REGION) {
+	SelectClipRgn(dc, (HRGN) clip->region);
+    }
+
+    return rgn;
+}
+
+static void
+ClipFinishDC(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeClip *clip,		/* Clipping area or NULL. */
+    DC dc,			/* Windows device context. */
+    TkRegion rgn		/* Clipping area or NULL. */
+    )
+{
+    SelectClipRgn(dc, NULL);
+    if (rgn != NULL)
+	Tree_FreeRegion(tree, rgn);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tree_FillRectangle --
+ *
+ *	Wrapper around XFillRectangle() because the clip region is
+ *	ignored on Win32.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Draws onto the specified drawable.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tree_FillRectangle(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeDrawable td,		/* Where to draw. */
+    TreeClip *clip,		/* Clipping area or NULL. */
+    GC gc,			/* Graphics context. */
+    TreeRectangle tr		/* Rectangle to paint. */
+    )
+{
+    HDC dc;
+    TkWinDCState dcState;
+    HBRUSH brush;
+    RECT rect;
+    TkRegion rgn = NULL;
+
+    dc = TkWinGetDrawableDC(tree->display, td.drawable, &dcState);
+    rgn = ClipToDC(tree, clip, dc);
+
+    brush = CreateSolidBrush(gc->foreground);
+    rect.left = tr.x, rect.top = tr.y,
+	rect.right = tr.x + tr.width, rect.bottom = tr.y + tr.height;
+    FillRect(dc, &rect, brush);
+
+    ClipFinishDC(tree, clip, dc, rgn);
+    DeleteObject(brush);
+    TkWinReleaseDrawableDC(td.drawable, dc, &dcState);
+}
+
 /*** Themes ***/
 
 #include <uxtheme.h>
@@ -1672,6 +1761,9 @@ int TreeTheme_InitInterp(Tcl_Interp *interp)
 #define WINGDIPAPI __stdcall
 #define GDIPCONST const
 #define VOID void
+typedef enum CombineMode {
+    CombineModeReplace = 0
+} CombineMode;
 typedef enum GpFillMode
 {
     FillModeAlternate,
@@ -1748,6 +1840,7 @@ static struct
     GpStatus (WINGDIPAPI *_GdipDeleteGraphics)(GpGraphics*);
     GpStatus (WINGDIPAPI *_GdipDrawPath)(GpGraphics*,GpPen*,GpPath*);
     GpStatus (WINGDIPAPI *_GdipFillPath)(GpGraphics*,GpBrush*,GpPath*);
+    GpStatus (WINGDIPAPI *_GdipSetClipRectI)(GpGraphics*,INT,INT,INT,INT,CombineMode);
 
     /* GraphicsPath */
     GpStatus (WINGDIPAPI *_GdipCreatePath)(GpFillMode,GpPath**);
@@ -1783,9 +1876,6 @@ typedef struct
 
 static TreeDrawAppData *appDrawData = NULL;
 
-/* Linked to ::TreeCtrl::nativeGradients in each interpreter */
-static int gNativeGradients = 1;
-
 /* Tcl_CreateExitHandler() callback that shuts down GDI+ */
 static void
 TreeDraw_ExitHandler(
@@ -1817,6 +1907,7 @@ LoadGdiplus(void)
 	    && LOADPROC(GdipDeleteGraphics)
 	    && LOADPROC(GdipDrawPath)
 	    && LOADPROC(GdipFillPath)
+	    && LOADPROC(GdipSetClipRectI)
 	    && LOADPROC(GdipCreatePath)
 	    && LOADPROC(GdipDeletePath)
 	    && LOADPROC(GdipResetPath)
@@ -1871,14 +1962,6 @@ TreeDraw_InitInterp(
 	Tcl_CreateExitHandler(TreeDraw_ExitHandler, NULL);
     }
 
-    if (Tcl_CreateNamespace(interp, "::TreeCtrl", NULL, NULL) == NULL) {
-	Tcl_ResetResult(interp);
-    }
-    if (Tcl_LinkVar(interp, "::TreeCtrl::nativeGradients",
-	(char *) &gNativeGradients, TCL_LINK_BOOLEAN) != TCL_OK) {
-	Tcl_ResetResult(interp);
-    }
-
     return TCL_OK;
 }
 
@@ -1890,7 +1973,7 @@ TreeDraw_InitInterp(
  *	Determine if this platform supports gradients natively.
  *
  * Results:
- *	1 if GDI+ is available and the global gNativeGradients==1,
+ *	1 if GDI+ is available,
  *	0 otherwise.
  *
  * Side effects:
@@ -1903,7 +1986,7 @@ int
 Tree_HasNativeGradients(
     TreeCtrl *tree)
 {
-    return gNativeGradients && (DllExports.handle != NULL);
+    return (DllExports.handle != NULL);
 }
 
 /* ARGB is a DWORD color used by GDI+ */
@@ -1920,6 +2003,42 @@ static ARGB MakeGDIPlusColor(XColor *xc, double opacity)
 	(BYTE)((xc)->pixel & 0xFF),
 	(BYTE)(((xc)->pixel >> 8) & 0xFF),
 	(BYTE)(((xc)->pixel >> 16) & 0xFF));
+}
+
+static GpStatus
+ClipToGraphics(
+    TreeCtrl *tree,
+    TreeClip *clip,
+    GpGraphics *graphics
+    )
+{
+    GpStatus status = Ok;
+
+    if (clip && clip->type == TREE_CLIP_RECT) {
+	status = DllExports._GdipSetClipRectI(graphics,
+	    clip->tr.x,
+	    clip->tr.y,
+	    clip->tr.width,
+	    clip->tr.height,
+	    CombineModeReplace);
+    }
+    if (clip && clip->type == TREE_CLIP_AREA) {
+	int x1, y1, x2, y2;
+	if (Tree_AreaBbox(tree, clip->area, &x1, &y1, &x2, &y2) == 0) {
+	    x1 = y1 = x2 = y2 = 0;
+	}
+	status = DllExports._GdipSetClipRectI(graphics,
+	    x1,
+	    y1,
+	    x2 - x1,
+	    y2 - y1,
+	    CombineModeReplace);
+    }
+    if (clip && clip->type == TREE_CLIP_REGION) {
+	panic("TREE_CLIP_REGION unimplemented @ %s:%s", __FILE__, __LINE__);
+    }
+
+    return status;
 }
 
 /*
@@ -1943,6 +2062,7 @@ void
 TreeGradient_FillRect(
     TreeCtrl *tree,		/* Widget info. */
     TreeDrawable td,		/* Where to draw. */
+    TreeClip *clip,		/* Clipping area or NULL. */
     TreeGradient gradient,	/* Gradient token. */
     TreeRectangle trBrush,	/* Brush bounds. */
     TreeRectangle tr		/* Where to draw. */
@@ -1958,8 +2078,8 @@ TreeGradient_FillRect(
     int i, nstops;
     ARGB color1, color2;
 
-    if (!gNativeGradients || (DllExports.handle == NULL)) {
-	TreeGradient_FillRectX11(tree, td, gradient, trBrush, tr);
+    if (!tree->nativeGradients || (DllExports.handle == NULL)) {
+	TreeGradient_FillRectX11(tree, td, clip, gradient, trBrush, tr);
 	return;
     }
 
@@ -1972,6 +2092,10 @@ TreeGradient_FillRect(
     status = DllExports._GdipCreateFromHDC(hDC, &graphics);
     if (status != Ok)
 	goto error1;
+
+    status = ClipToGraphics(tree, clip, graphics);
+    if (status != Ok)
+	goto error2;
 
     rect.X = trBrush.x, rect.Y = trBrush.y,
 	rect.Width = trBrush.width, rect.Height = trBrush.height;
@@ -2143,7 +2267,7 @@ Tree_DrawRoundRect(
     GpStatus status;
     int i;
 
-    if (!gNativeGradients || (DllExports.handle == NULL)) {
+    if (!tree->nativeGradients || (DllExports.handle == NULL)) {
 	GC gc = Tk_GCForColor(xcolor, td.drawable);
 	Tree_DrawRoundRectX11(tree, td, gc, tr, outlineWidth, rx, ry, open);
 	return;
@@ -2288,7 +2412,7 @@ Tree_FillRoundRect(
     GpPen *pen;
     GpStatus status;
 
-    if (!gNativeGradients || (DllExports.handle == NULL)) {
+    if (!tree->nativeGradients || (DllExports.handle == NULL)) {
 	GC gc = Tk_GCForColor(xcolor, td.drawable);
 	Tree_FillRoundRectX11(tree, td, gc, tr, rx, ry, open);
 	return;

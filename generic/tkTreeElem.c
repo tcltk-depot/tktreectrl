@@ -2203,33 +2203,15 @@ static void DisplayProcRect(TreeElementArgs *args)
     TREECOLOR_FOR_STATE(tc, fill, state)
     if (tc != NULL) {
 	tr.x = x, tr.y = y, tr.width = width, tr.height = height;
-	TreeColor_FillRect(tree, args->display.td, tc, tr, tr);
+	TreeColor_FillRect(tree, args->display.td, NULL, tc, tr, tr);
     }
 
-#if 1
     TREECOLOR_FOR_STATE(tc, outline, state)
     if ((tc != NULL) && (outlineWidth > 0) && (open != RECT_OPEN_WNES)) {
 	tr.x = x, tr.y = y, tr.width = width, tr.height = height;
-	TreeColor_DrawRect(tree, args->display.td, tc, tr, outlineWidth, open);
+	TreeColor_DrawRect(tree, args->display.td, NULL, tc, tr,
+	    outlineWidth, open);
     }
-#else
-    COLOR_FOR_STATE(color, outline, state)
-    if ((color != NULL) && (outlineWidth > 0) && (open != RECT_OPEN_WNES)) {
-	GC gc = Tk_GCForColor(color, Tk_WindowId(tree->tkwin));
-	if (!(open & RECT_OPEN_W))
-	    XFillRectangle(tree->display, args->display.drawable, gc,
-		    x, y, outlineWidth, height);
-	if (!(open & RECT_OPEN_N))
-	    XFillRectangle(tree->display, args->display.drawable, gc,
-		    x, y, width, outlineWidth);
-	if (!(open & RECT_OPEN_E))
-	    XFillRectangle(tree->display, args->display.drawable, gc,
-		    x + width - outlineWidth, y, outlineWidth, height);
-	if (!(open & RECT_OPEN_S))
-	    XFillRectangle(tree->display, args->display.drawable, gc,
-		    x, y + height - outlineWidth, width, outlineWidth);
-    }
-#endif
 
     if (showFocus && (state & STATE_FOCUS) && (state & STATE_ACTIVE)) {
 	Tree_DrawActiveOutline(tree, args->display.drawable,

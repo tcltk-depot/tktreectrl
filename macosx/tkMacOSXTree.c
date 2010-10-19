@@ -755,6 +755,61 @@ Tree_XImage2Photo(
     Tcl_Free((char *) pixelPtr);
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tree_FillRectangle --
+ *
+ *	Wrapper around XFillRectangle() because the clip region is
+ *	ignored on Win32.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Draws onto the specified drawable.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tree_FillRectangle(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeDrawable td,		/* Where to draw. */
+    TreeClip *clip,		/* Clipping area or NULL. */
+    GC gc,			/* Graphics context. */
+    TreeRectangle tr		/* Rectangle to paint. */
+    )
+{
+    TkRegion rgn = NULL;
+
+    if (clip && clip->type == TREE_CLIP_RECT) {
+	rgn = Tree_GetRegion(tree);
+	Tree_SetRectRegion(rgn, &clip->tr);
+	TkSetRegion(tree->display, gc, rgn);
+    }
+    if (clip && clip->type == TREE_CLIP_AREA) {
+	int x1, y1, x2, y2;
+	XRectangle xr;
+	if (Tree_AreaBbox(tree, clip->area, &x1, &y1, &x2, &y2) == 0)
+	    return;
+	xr.x = x1, xr.y = y1, xr.width = x2 - x1, xr.height = y2 - y1;
+	rgn = Tree_GetRegion(tree);
+	TkUnionRectWithRegion(&xr, rgn, rgn);
+	TkSetRegion(tree->display, gc, rgn);
+    }
+    if (clip && clip->type == TREE_CLIP_REGION) {
+	TkSetRegion(tree->display, gc, clip->region);
+    }
+
+    XFillRectangle(tree->display, td.drawable, gc, tr.x, tr.y, tr.width, tr.height);
+
+    XSetClipMask(tree->display, gc, None);
+
+    if (rgn != NULL)
+	Tree_FreeRegion(tree, rgn);
+}
+
 /*** Themes ***/
 
 static HIThemeButtonDrawInfo
@@ -1305,8 +1360,6 @@ ShadeRelease(void *info)
     /* Not sure if anything to do here. */
 }
 
-static int gNativeGradients = 1;
-
 #if 0
 /* Get the colorspace used by the monitor. */
 /* FIXME: 8.4+ only */
@@ -1329,7 +1382,7 @@ CGColorSpaceRef CreateSystemColorSpace() {
  *	Determine if this platform supports gradients natively.
  *
  * Results:
- *	1 the global gNativeGradients==1, 0 otherwise.
+ *	1.
  *
  * Side effects:
  *	None.
@@ -1341,7 +1394,7 @@ int
 Tree_HasNativeGradients(
     TreeCtrl *tree)
 {
-    return gNativeGradients;
+    return 1;
 }
 
 /*
@@ -1364,6 +1417,7 @@ void
 TreeGradient_FillRect(
     TreeCtrl *tree,		/* Widget info. */
     TreeDrawable td,		/* Where to draw. */
+    TreeClip *clip,		/* Clipping area or NULL. */
     TreeGradient gradient,	/* Gradient token. */
     TreeRectangle trBrush,	/* Brush bounds. */
     TreeRectangle tr		/* Rectangle to paint. */
@@ -1381,14 +1435,14 @@ TreeGradient_FillRect(
     ShadeData data;
     int i;
 
-    if (!(macDraw->flags & TK_IS_PIXMAP) || !gNativeGradients) {
-	TreeGradient_FillRectX11(tree, td, gradient, trBrush, tr);
+    if (!(macDraw->flags & TK_IS_PIXMAP) || !tree->nativeGradients) {
+	TreeGradient_FillRectX11(tree, td, clip, gradient, trBrush, tr);
 	return;
     }
 
     context = TreeMacOSX_GetContext(tree, td.drawable, tr, &dc);
     if (context == NULL) {
-	TreeGradient_FillRectX11(tree, td, gradient, trBrush, tr);
+	TreeGradient_FillRectX11(tree, td, clip, gradient, trBrush, tr);
 	return;
     }
 
@@ -1410,7 +1464,6 @@ TreeGradient_FillRect(
 
 /*    colorSpaceRef = CGColorSpaceCreateDeviceRGB();*/
 /*    colorSpaceRef = CreateSystemColorSpace();*/
-    /* This matches the Pixmap colorspace */
 /*    colorSpaceRef = CGColorSpaceCreateWithName(kCGColorSpaceGenericRGB);*/
     colorSpaceRef = CGBitmapContextGetColorSpace(context);
     CGColorSpaceRetain(colorSpaceRef);
@@ -1432,10 +1485,13 @@ TreeGradient_FillRect(
     }
     shading = CGShadingCreateAxial(colorSpaceRef, start, end, function, 1, 1);
 
+    /* Must clip to the area to be painted otherwise the entire context
+     * is filled with the gradient. */
     CGContextBeginPath(context);
     r = CGRectMake(tr.x, tr.y, tr.width, tr.height);
     CGContextAddRect(context, r);
     CGContextClip(context);
+
     CGContextDrawShading(context, shading);
 
     CGShadingRelease(shading);
@@ -1479,14 +1535,5 @@ TreeDraw_InitInterp(
     Tcl_Interp *interp
     )
 {
-    if (Tcl_CreateNamespace(interp, "::TreeCtrl", NULL, NULL) == NULL) {
-	Tcl_ResetResult(interp);
-    }
-    if (Tcl_LinkVar(interp, "::TreeCtrl::nativeGradients",
-	(char *) &gNativeGradients, TCL_LINK_BOOLEAN) != TCL_OK) {
-	Tcl_ResetResult(interp);
-    }
-
-
     return TCL_OK;
 }
