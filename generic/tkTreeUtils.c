@@ -5626,7 +5626,7 @@ Tree_FillRoundRectX11(
     TreeCtrl *tree,		/* Widget info. */
     TreeDrawable td,		/* Where to draw. */
     GC gc,			/* Graphics context. */
-    TreeRectangle tr,		/* Where to draw. */
+    TreeRectangle tr,		/* Rectangle to paint. */
     int rx, int ry,		/* Corner radius */
     int open			/* RECT_OPEN_x flags */
     )
@@ -6960,6 +6960,44 @@ TreeGradient_Free(
 /*
  *----------------------------------------------------------------------
  *
+ * TreeGradient_FillRoundRectX11 --
+ *
+ *	Paint a rectangle with a gradient using XFillRectangle.
+ *	We can't paint a rounded rectangle with a gradient on X11.
+ *	If I could clip drawing to arc's then I could do it.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Drawing.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TreeGradient_FillRoundRectX11(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeDrawable td,		/* Where to draw. */
+    TreeClip *clip,		/* Clipping area or NULL. */
+    TreeGradient gradient,	/* Gradient token. */
+    TreeRectangle trBrush,	/* Brush bounds. */
+    TreeRectangle tr,		/* Rectangle to paint. */
+    int rx, int ry,		/* Corner radius */
+    int open			/* RECT_OPEN_x flags */
+    )
+{
+    if (tr.height <= 0 || tr.width <= 0 || gradient->nStepColors <= 0)
+	return;
+
+    /* Use the first stop color */
+    Tree_FillRoundRect(tree, td, gradient->stopArrPtr->stops[0]->color,
+	tr, rx, ry, open);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TreeGradient_FillRectX11 --
  *
  *	Paint a rectangle with a gradient using XFillRectangle.
@@ -7171,14 +7209,15 @@ TreeColor_FillRoundRect(
     TreeDrawable td,		/* Where to draw. */
     TreeColor *tc,		/* Color info. */
     TreeRectangle tr,		/* Rectangle to paint. */
+    TreeRectangle trBrush,	/* Brush bounds. */
     int rx, int ry,		/* Corner radius */
     int open			/* RECT_OPEN_x flags */
     )
 {
     if (tc == NULL)
 	return;
-/*    if (tc->gradient != NULL)
-	TreeGradient_FillRoundRect(tree, td, tc->gradient, tr, rx, ry);*/
+    if (tc->gradient != NULL)
+	TreeGradient_FillRoundRect(tree, td, tc->gradient, trBrush, tr, rx, ry, open);
     if (tc->color != NULL) {
 	Tree_FillRoundRect(tree, td, tc->color, tr, rx, ry, open);
     }

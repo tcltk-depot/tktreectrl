@@ -587,6 +587,56 @@ Tree_XImage2Photo(
     ckfree((char *) xcolors);
 }
 
+typedef struct {
+    TreeCtrl *tree;
+    TreeClip *clip;
+    GC gc;
+    TkRegion region;
+} TreeClipStateGC;
+
+void
+TreeClip_ToGC(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeClip *clip,		/* Clipping area or NULL. */
+    GC gc,			/* Graphics context. */
+    TreeClipStateGC *state
+    )
+{
+    state->tree = tree;
+    state->clip = clip;
+    state->gc = gc;
+    state->region = None;
+
+    if (clip && clip->type == TREE_CLIP_RECT) {
+	state->region = Tree_GetRegion(tree);
+	Tree_SetRectRegion(state->region, &clip->tr);
+	TkSetRegion(tree->display, gc, state->region);
+    }
+    if (clip && clip->type == TREE_CLIP_AREA) {
+	int x1, y1, x2, y2;
+	XRectangle xr;
+	if (Tree_AreaBbox(tree, clip->area, &x1, &y1, &x2, &y2) == 0)
+	    return;
+	xr.x = x1, xr.y = y1, xr.width = x2 - x1, xr.height = y2 - y1;
+	state->region = Tree_GetRegion(tree);
+	TkUnionRectWithRegion(&xr, state->region, state->region);
+	TkSetRegion(tree->display, gc, state->region);
+    }
+    if (clip && clip->type == TREE_CLIP_REGION) {
+	TkSetRegion(tree->display, gc, clip->region);
+    }
+}
+
+void
+TreeClip_FinishGC(
+    TreeClipStateGC *state
+    )
+{
+    XSetClipMask(state->tree->display, state->gc, None);
+    if (state->region != None)
+	Tree_FreeRegion(state->tree, state->region);
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -613,33 +663,11 @@ Tree_FillRectangle(
     TreeRectangle tr		/* Rectangle to paint. */
     )
 {
-    TkRegion rgn = NULL;
+    TreeClipStateGC clipState;
 
-    if (clip && clip->type == TREE_CLIP_RECT) {
-	rgn = Tree_GetRegion(tree);
-	Tree_SetRectRegion(rgn, &clip->tr);
-	TkSetRegion(tree->display, gc, rgn);
-    }
-    if (clip && clip->type == TREE_CLIP_AREA) {
-	int x1, y1, x2, y2;
-	XRectangle xr;
-	if (Tree_AreaBbox(tree, clip->area, &x1, &y1, &x2, &y2) == 0)
-	    return;
-	xr.x = x1, xr.y = y1, xr.width = x2 - x1, xr.height = y2 - y1;
-	rgn = Tree_GetRegion(tree);
-	TkUnionRectWithRegion(&xr, rgn, rgn);
-	TkSetRegion(tree->display, gc, rgn);
-    }
-    if (clip && clip->type == TREE_CLIP_REGION) {
-	TkSetRegion(tree->display, gc, clip->region);
-    }
-
+    TreeClip_ToGC(tree, clip, gc, &clipState);
     XFillRectangle(tree->display, td.drawable, gc, tr.x, tr.y, tr.width, tr.height);
-
-    XSetClipMask(tree->display, gc, None);
-
-    if (rgn != NULL)
-	Tree_FreeRegion(tree, rgn);
+    TreeClip_FinishGC(&clipState);
 }
 
 /*** Themes ***/
@@ -776,6 +804,22 @@ TreeGradient_FillRect(
     )
 {
     TreeGradient_FillRectX11(tree, td, clip, gradient, trBrush, tr);
+
+    /* FIXME: Can use 'cairo' on Unix, but need to add it to configure + Make */
+}
+
+void
+TreeGradient_FillRoundRect(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeDrawable td,		/* Where to draw. */
+    TreeGradient gradient,	/* Gradient token. */
+    TreeRectangle trBrush,	/* Brush bounds. */
+    TreeRectangle tr,		/* Where to draw. */
+    int rx, int ry,		/* Corner radius */
+    int open			/* RECT_OPEN_x flags */
+    )
+{
+    TreeGradient_FillRoundRectX11(tree, td, NULL, gradient, trBrush, tr, rx, ry, open);
 
     /* FIXME: Can use 'cairo' on Unix, but need to add it to configure + Make */
 }

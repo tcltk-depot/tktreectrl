@@ -15,6 +15,8 @@
 #import <Cocoa/Cocoa.h>
 #endif
 
+#define radians(d) ((d) * (M_PI/180.0))
+
 #if MAC_TK_COCOA /*(TK_MAJOR_VERSION == 8) && (TK_MINOR_VERSION >= 6)*/
 typedef struct {
     CGContextRef context;
@@ -755,6 +757,56 @@ Tree_XImage2Photo(
     Tcl_Free((char *) pixelPtr);
 }
 
+typedef struct {
+    TreeCtrl *tree;
+    TreeClip *clip;
+    GC gc;
+    TkRegion region;
+} TreeClipStateGC;
+
+static void
+TreeClip_ToGC(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeClip *clip,		/* Clipping area or NULL. */
+    GC gc,			/* Graphics context. */
+    TreeClipStateGC *state
+    )
+{
+    state->tree = tree;
+    state->clip = clip;
+    state->gc = gc;
+    state->region = None;
+
+    if (clip && clip->type == TREE_CLIP_RECT) {
+	state->region = Tree_GetRegion(tree);
+	Tree_SetRectRegion(state->region, &clip->tr);
+	TkSetRegion(tree->display, gc, state->region);
+    }
+    if (clip && clip->type == TREE_CLIP_AREA) {
+	int x1, y1, x2, y2;
+	XRectangle xr;
+	if (Tree_AreaBbox(tree, clip->area, &x1, &y1, &x2, &y2) == 0)
+	    return;
+	xr.x = x1, xr.y = y1, xr.width = x2 - x1, xr.height = y2 - y1;
+	state->region = Tree_GetRegion(tree);
+	TkUnionRectWithRegion(&xr, state->region, state->region);
+	TkSetRegion(tree->display, gc, state->region);
+    }
+    if (clip && clip->type == TREE_CLIP_REGION) {
+	TkSetRegion(tree->display, gc, clip->region);
+    }
+}
+
+static void
+TreeClip_FinishGC(
+    TreeClipStateGC *state
+    )
+{
+    XSetClipMask(state->tree->display, state->gc, None);
+    if (state->region != None)
+	Tree_FreeRegion(state->tree, state->region);
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -781,33 +833,11 @@ Tree_FillRectangle(
     TreeRectangle tr		/* Rectangle to paint. */
     )
 {
-    TkRegion rgn = NULL;
+    TreeClipStateGC clipState;
 
-    if (clip && clip->type == TREE_CLIP_RECT) {
-	rgn = Tree_GetRegion(tree);
-	Tree_SetRectRegion(rgn, &clip->tr);
-	TkSetRegion(tree->display, gc, rgn);
-    }
-    if (clip && clip->type == TREE_CLIP_AREA) {
-	int x1, y1, x2, y2;
-	XRectangle xr;
-	if (Tree_AreaBbox(tree, clip->area, &x1, &y1, &x2, &y2) == 0)
-	    return;
-	xr.x = x1, xr.y = y1, xr.width = x2 - x1, xr.height = y2 - y1;
-	rgn = Tree_GetRegion(tree);
-	TkUnionRectWithRegion(&xr, rgn, rgn);
-	TkSetRegion(tree->display, gc, rgn);
-    }
-    if (clip && clip->type == TREE_CLIP_REGION) {
-	TkSetRegion(tree->display, gc, clip->region);
-    }
-
+    TreeClip_ToGC(tree, clip, gc, &clipState);
     XFillRectangle(tree->display, td.drawable, gc, tr.x, tr.y, tr.width, tr.height);
-
-    XSetClipMask(tree->display, gc, None);
-
-    if (rgn != NULL)
-	Tree_FreeRegion(tree, rgn);
+    TreeClip_FinishGC(&clipState);
 }
 
 /*** Themes ***/
@@ -1102,7 +1132,7 @@ TreeMacOSX_ReleaseContext(
     )
 {
     if (dc->context != NULL) {
-	CGContextSynchronize(dc->context);
+	CGContextSynchronize(dc->context); /* does nothing, expects window context */
 	CGContextRestoreGState(dc->context);
     }
 }
@@ -1148,7 +1178,7 @@ TreeMacOSX_ReleaseContext(
     )
 {
     if (dc->context != NULL) {
-	CGContextSynchronize(dc->context);
+	CGContextSynchronize(dc->context); /* does nothing, expects window context */
 	CGContextRestoreGState(dc->context);
 	if (dc->port) {
 	    QDEndCGContext(dc->port, &dc->context);
@@ -1160,6 +1190,29 @@ TreeMacOSX_ReleaseContext(
 }
 
 #endif /* Tk 8.4 and 8.5 */
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tree_HasNativeGradients --
+ *
+ *	Determine if this platform supports gradients natively.
+ *
+ * Results:
+ *	1.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tree_HasNativeGradients(
+    TreeCtrl *tree)
+{
+    return 1;
+}
 
 /* Copy-and-paste from TkPath */
 
@@ -1374,27 +1427,76 @@ CGColorSpaceRef CreateSystemColorSpace() {
 }
 #endif
 
-/*
- *----------------------------------------------------------------------
- *
- * Tree_HasNativeGradients --
- *
- *	Determine if this platform supports gradients natively.
- *
- * Results:
- *	1.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
+typedef struct {
+    CGFunctionRef function;
+    CGColorSpaceRef colorSpaceRef;
+    CGShadingRef shading;
+    ShadeData data;
+} MacShading;
 
-int
-Tree_HasNativeGradients(
-    TreeCtrl *tree)
+static CGShadingRef
+MakeLinearGradientShading(
+    CGContextRef context,
+    TreeGradient gradient,	/* Gradient token. */
+    TreeRectangle trBrush,	/* Brush bounds. */
+    MacShading *ms
+    )
 {
-    return 1;
+    int i;
+    CGFunctionCallbacks callbacks;
+    CGPoint start, end;
+
+    ms->data.nstops = gradient->stopArrPtr->nstops;
+    for (i = 0; i < gradient->stopArrPtr->nstops; i++) {
+	GradientStop *stop = gradient->stopArrPtr->stops[i];
+#if 0
+        ms->data.red[i] = stop->color->red;
+        ms->data.green[i] = stop->color->green;
+        ms->data.blue[i] = stop->color->blue;
+#else
+        ms->data.red[i] = RedFloatFromXColorPtr(stop->color);
+        ms->data.green[i] = GreenFloatFromXColorPtr(stop->color);
+        ms->data.blue[i] = BlueFloatFromXColorPtr(stop->color);
+#endif
+        ms->data.offset[i] = stop->offset;
+        ms->data.opacity[i] = stop->opacity;
+    }
+
+/*    colorSpaceRef = CGColorSpaceCreateDeviceRGB();*/
+/*    colorSpaceRef = CreateSystemColorSpace();*/
+/*    colorSpaceRef = CGColorSpaceCreateWithName(kCGColorSpaceGenericRGB);*/
+    ms->colorSpaceRef = CGBitmapContextGetColorSpace(context);
+    CGColorSpaceRetain(ms->colorSpaceRef);
+
+    callbacks.version = 0;
+    callbacks.evaluate = ShadeEvaluate;
+    callbacks.releaseInfo = ShadeRelease;
+    ms->function = CGFunctionCreate((void *) &ms->data,
+	1, kValidDomain,
+	4, kValidRange,
+	&callbacks);
+
+    if (gradient->vertical) {
+	start = CGPointMake(trBrush.x, trBrush.y);
+	end = CGPointMake(trBrush.x, trBrush.y + trBrush.height);
+    } else {
+	start = CGPointMake(trBrush.x, trBrush.y);
+	end = CGPointMake(trBrush.x + trBrush.width, trBrush.y);
+    }
+    ms->shading = CGShadingCreateAxial(ms->colorSpaceRef, start, end,
+	ms->function, 1, 1);
+
+    return ms->shading;
+}
+
+static void
+ReleaseLinearGradientShading(
+    MacShading *ms
+    )
+{
+    CGShadingRelease(ms->shading);
+    CGFunctionRelease(ms->function);
+    CGColorSpaceRelease(ms->colorSpaceRef);
 }
 
 /*
@@ -1425,15 +1527,10 @@ TreeGradient_FillRect(
 {
     MacDrawable *macDraw = (MacDrawable *) td.drawable;
     MacContextSetup dc;
+    MacShading ms;
     CGContextRef context;
-    CGFunctionCallbacks callbacks;
-    CGFunctionRef function;
-    CGColorSpaceRef colorSpaceRef;
-    CGPoint start, end;
     CGShadingRef shading;
     CGRect r;
-    ShadeData data;
-    int i;
 
     if (!(macDraw->flags & TK_IS_PIXMAP) || !tree->nativeGradients) {
 	TreeGradient_FillRectX11(tree, td, clip, gradient, trBrush, tr);
@@ -1446,59 +1543,276 @@ TreeGradient_FillRect(
 	return;
     }
 
-    data.nstops = gradient->stopArrPtr->nstops;
-    for (i = 0; i < gradient->stopArrPtr->nstops; i++) {
-	GradientStop *stop = gradient->stopArrPtr->stops[i];
-#if 0
-        data.red[i] = stop->color->red;
-        data.green[i] = stop->color->green;
-        data.blue[i] = stop->color->blue;
-#else
-        data.red[i] = RedFloatFromXColorPtr(stop->color);
-        data.green[i] = GreenFloatFromXColorPtr(stop->color);
-        data.blue[i] = BlueFloatFromXColorPtr(stop->color);
-#endif
-        data.offset[i] = stop->offset;
-        data.opacity[i] = stop->opacity;
+    shading = MakeLinearGradientShading(context, gradient, trBrush, &ms);
+    if (shading) {
+
+	/* Must clip to the area to be painted otherwise the entire context
+	* is filled with the gradient. */
+	CGContextBeginPath(context);
+	r = CGRectMake(tr.x, tr.y, tr.width, tr.height);
+	CGContextAddRect(context, r);
+	CGContextClip(context);
+
+	CGContextDrawShading(context, shading);
+
+	ReleaseLinearGradientShading(&ms);
     }
-
-/*    colorSpaceRef = CGColorSpaceCreateDeviceRGB();*/
-/*    colorSpaceRef = CreateSystemColorSpace();*/
-/*    colorSpaceRef = CGColorSpaceCreateWithName(kCGColorSpaceGenericRGB);*/
-    colorSpaceRef = CGBitmapContextGetColorSpace(context);
-    CGColorSpaceRetain(colorSpaceRef);
-
-    callbacks.version = 0;
-    callbacks.evaluate = ShadeEvaluate;
-    callbacks.releaseInfo = ShadeRelease;
-    function = CGFunctionCreate((void *) &data,
-	1, kValidDomain,
-	4, kValidRange,
-	&callbacks);
-
-    if (gradient->vertical) {
-	start = CGPointMake(trBrush.x, trBrush.y);
-	end = CGPointMake(trBrush.x, trBrush.y + trBrush.height);
-    } else {
-	start = CGPointMake(trBrush.x, trBrush.y);
-	end = CGPointMake(trBrush.x + trBrush.width, trBrush.y);
-    }
-    shading = CGShadingCreateAxial(colorSpaceRef, start, end, function, 1, 1);
-
-    /* Must clip to the area to be painted otherwise the entire context
-     * is filled with the gradient. */
-    CGContextBeginPath(context);
-    r = CGRectMake(tr.x, tr.y, tr.width, tr.height);
-    CGContextAddRect(context, r);
-    CGContextClip(context);
-
-    CGContextDrawShading(context, shading);
-
-    CGShadingRelease(shading);
-    CGFunctionRelease(function);
-    CGColorSpaceRelease(colorSpaceRef);
 
     TreeMacOSX_ReleaseContext(tree, &dc);
+}
+
+static void
+AddArcToPath(
+    CGMutablePathRef p,
+    CGAffineTransform *t,
+    CGAffineTransform *it,
+    int x, int y,
+    CGFloat radius,
+    int startAngle,
+    int endAngle
+    )
+{
+    if (t) {
+	CGPoint c = CGPointMake(x, y);
+	c = CGPointApplyAffineTransform(c, *it);
+	CGPathAddArc(p, t, c.x, c.y, radius, radians(startAngle), radians(endAngle), 0);
+    } else {
+	CGPathAddArc(p, NULL, x, y, radius, radians(startAngle), radians(endAngle), 0);
+    }
+}
+    
+static CGMutablePathRef
+MakeRoundRectPath_Fill(
+    TreeRectangle tr,		/* Where to draw. */
+    int rx, int ry,		/* Corner radius */
+    int open			/* RECT_OPEN_x flags */
+    )
+{
+    int x = tr.x, y = tr.y, width = tr.width, height = tr.height;
+    int drawW = (open & RECT_OPEN_W) == 0;
+    int drawN = (open & RECT_OPEN_N) == 0;
+    int drawE = (open & RECT_OPEN_E) == 0;
+    int drawS = (open & RECT_OPEN_S) == 0;
+    CGMutablePathRef p = CGPathCreateMutable();
+    CGAffineTransform t, it, *tp, *itp;
+
+    if (rx == ry) {
+	itp = tp = NULL;
+    } else {
+	t = CGAffineTransformMakeScale(1.0, ry / (float)rx);
+	it = CGAffineTransformInvert(t);
+	tp = &t;
+	itp = &it;
+    }
+
+    /* Simple case: draw all 4 corners and 4 edges */
+    if (!open) {
+	AddArcToPath(p, tp, itp, x + rx, y + ry, rx, 180, 270); /* top-left */
+	AddArcToPath(p, tp, itp, x + width - rx, y + ry, rx, 270, 0); /* top-right */
+	AddArcToPath(p, tp, itp, x + width - rx, y + height - ry, rx, 0, 90); /* bottom-right */
+	AddArcToPath(p, tp, itp, x + rx, y + height - ry, rx, 90, 180); /* bottom-left */
+
+    /* Complicated case: some edges are "open" */
+    } else {
+	CGPoint start[4], end[4]; /* start and end points of line segments*/
+	start[0] = CGPointMake(x, y);
+	end[3] = start[0];
+	if (drawW && drawN) {
+	    start[0].x += rx;
+	    end[3].y += ry;
+	}
+	end[0] = CGPointMake(x + width, y);
+	start[1]= end[0];
+	if (drawE && drawN) {
+	    end[0].x -= rx;
+	    start[1].y += ry;
+	}
+	end[1] = CGPointMake(x + width, y + height);
+	start[2] = end[1];
+	if (drawE && drawS) {
+	    end[1].y -= ry;
+	    start[2].x -= rx;
+	}
+	end[2] = CGPointMake(x, y + height);
+	start[3] = end[2];
+	if (drawW && drawS) {
+	    end[2].x += rx;
+	    start[3].y -= ry;
+	}
+
+	if (drawW && drawN) {
+	    AddArcToPath(p, tp, itp, x + rx, y + ry, rx, 180, 270); /* top-left */
+	} else {
+	    CGPathMoveToPoint(p, NULL, start[0].x, start[0].y);
+	}
+	CGPathAddLineToPoint(p, NULL, end[0].x, end[0].y);
+	if (drawE && drawN)
+	    AddArcToPath(p, tp, itp, x + width - rx, y + ry, rx, 270, 0); /* top-right */
+	/*else
+	    CGPathMoveToPoint(p, NULL, start[1].x, start[1].y);*/
+	CGPathAddLineToPoint(p, NULL, end[1].x, end[1].y);
+	if (drawE && drawS)
+	    AddArcToPath(p, tp, itp, x + width - rx, y + height - ry, rx, 0, 90); /* bottom-right */
+	/*else
+	    CGPathMoveToPoint(p, NULL, start[2].x, start[2].y);*/
+	CGPathAddLineToPoint(p, NULL, end[2].x, end[2].y);
+	if (drawW && drawS)
+	    AddArcToPath(p, tp, itp, x + rx, y + height - ry, rx, 90, 180); /* bottom-left */
+	/*else
+	    CGPathMoveToPoint(p, NULL, start[3].x, start[3].y);*/
+	CGPathAddLineToPoint(p, NULL, end[3].x, end[3].y);
+    }
+
+    return p;
+}
+
+void
+TreeGradient_FillRoundRect(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeDrawable td,		/* Where to draw. */
+    TreeGradient gradient,	/* Gradient token. */
+    TreeRectangle trBrush,	/* Brush bounds. */
+    TreeRectangle tr,		/* Where to draw. */
+    int rx, int ry,		/* Corner radius */
+    int open			/* RECT_OPEN_x flags */
+    )
+{
+    MacDrawable *macDraw = (MacDrawable *) td.drawable;
+    MacContextSetup dc;
+    MacShading ms;
+    CGContextRef context;
+    CGShadingRef shading;
+
+    if (!(macDraw->flags & TK_IS_PIXMAP) || !tree->nativeGradients) {
+	TreeGradient_FillRoundRectX11(tree, td, NULL, gradient, trBrush, tr,
+	    rx, ry, open);
+	return;
+    }
+
+    context = TreeMacOSX_GetContext(tree, td.drawable, tr, &dc);
+    if (context == NULL) {
+	TreeGradient_FillRoundRectX11(tree, td, NULL, gradient, trBrush, tr,
+	    rx, ry, open);
+	return;
+    }
+
+    shading = MakeLinearGradientShading(context, gradient, trBrush, &ms);
+    if (shading) {
+
+	CGContextBeginPath(context);
+	if (rx == ry && !open) {
+	    CGContextAddArc(context, tr.x + rx, tr.y + ry, rx, radians(180), radians(270), 0); /* top-left */
+	    CGContextAddArc(context, tr.x + tr.width - rx, tr.y + ry, rx, radians(270), radians(0), 0); /* top-right */
+	    CGContextAddArc(context, tr.x + tr.width - rx, tr.y + tr.height - ry, rx, radians(0), radians(90), 0); /* bottom-right */
+	    CGContextAddArc(context, tr.x + rx, tr.y + tr.height - ry, rx, radians(90), radians(180), 0); /* bottom-left */
+	} else {
+	    CGMutablePathRef p = MakeRoundRectPath_Fill(tr, rx, ry, open);
+	    if (p) {
+		CGContextAddPath(context, p);
+		CGPathRelease(p);
+	    }
+	}
+	/* Must clip to the area to be painted otherwise the entire context
+	* is filled with the gradient. */
+	CGContextClip(context);
+
+	CGContextDrawShading(context, shading);
+
+	ReleaseLinearGradientShading(&ms);
+    }
+
+    TreeMacOSX_ReleaseContext(tree, &dc);
+}
+
+static CGMutablePathRef
+MakeRoundRectPath_Stroke(
+    TreeRectangle tr,		/* Where to draw. */
+    int rx, int ry,		/* Corner radius */
+    int open			/* RECT_OPEN_x flags */
+    )
+{
+    CGFloat x = tr.x, y = tr.y, width = tr.width, height = tr.height;
+    int drawW = (open & RECT_OPEN_W) == 0;
+    int drawN = (open & RECT_OPEN_N) == 0;
+    int drawE = (open & RECT_OPEN_E) == 0;
+    int drawS = (open & RECT_OPEN_S) == 0;
+    CGMutablePathRef p = CGPathCreateMutable();
+    CGAffineTransform t, it, *tp, *itp;
+
+    if (rx == ry) {
+	itp = tp = NULL;
+    } else {
+	t = CGAffineTransformMakeScale(1.0, ry / (float)rx);
+	it = CGAffineTransformInvert(t);
+	tp = &t;
+	itp = &it;
+    }
+
+    x += 0.5, y += 0.5, width -= 1, height -= 1;
+
+    /* Simple case: draw all 4 corners and 4 edges */
+    if (!open) {
+	AddArcToPath(p, tp, itp, x + rx, y + ry, rx, 180, 270); /* top-left */
+	AddArcToPath(p, tp, itp, x + width - rx, y + ry, rx, 270, 0); /* top-right */
+	AddArcToPath(p, tp, itp, x + width - rx, y + height - ry, rx, 0, 90); /* bottom-right */
+	AddArcToPath(p, tp, itp, x + rx, y + height - ry, rx, 90, 180); /* bottom-left */
+
+    /* Complicated case: some edges are "open" */
+    } else {
+	CGPoint start[4], end[4]; /* start and end points of line segments*/
+	start[0] = CGPointMake(x, y);
+	end[3] = start[0];
+	if (drawW && drawN) {
+	    start[0].x += rx;
+	    end[3].y += ry;
+	}
+	end[0] = CGPointMake(x + width, y);
+	start[1]= end[0];
+	if (drawE && drawN) {
+	    end[0].x -= rx;
+	    start[1].y += ry;
+	}
+	end[1] = CGPointMake(x + width, y + height);
+	start[2] = end[1];
+	if (drawE && drawS) {
+	    end[1].y -= ry;
+	    start[2].x -= rx;
+	}
+	end[2] = CGPointMake(x, y + height);
+	start[3] = end[2];
+	if (drawW && drawS) {
+	    end[2].x += rx;
+	    start[3].y -= ry;
+	}
+
+	if (drawW && drawN) {
+	    AddArcToPath(p, tp, itp, x + rx, y + ry, rx, 180, 270); /* top-left */
+	} else if (drawN) {
+	    CGPathMoveToPoint(p, NULL, start[0].x, start[0].y);
+	}
+	if (drawN)
+	    CGPathAddLineToPoint(p, NULL, end[0].x, end[0].y);
+	if (drawE && drawN)
+	    AddArcToPath(p, tp, itp, x + width - rx, y + ry, rx, 270, 0); /* top-right */
+	else if (!drawN && drawE)
+	    CGPathMoveToPoint(p, NULL, start[1].x, start[1].y);
+	if (drawE)
+	    CGPathAddLineToPoint(p, NULL, end[1].x, end[1].y);
+	if (drawE && drawS)
+	    AddArcToPath(p, tp, itp, x + width - rx, y + height - ry, rx, 0, 90); /* bottom-right */
+	else if (!drawE && drawS)
+	    CGPathMoveToPoint(p, NULL, start[2].x, start[2].y);
+	if (drawS)
+	    CGPathAddLineToPoint(p, NULL, end[2].x, end[2].y);
+	if (drawW && drawS)
+	    AddArcToPath(p, tp, itp, x + rx, y + height - ry, rx, 90, 180); /* bottom-left */
+	else if (!drawS && drawW)
+	    CGPathMoveToPoint(p, NULL, start[3].x, start[3].y);
+	if (drawW)
+	    CGPathAddLineToPoint(p, NULL, end[3].x, end[3].y);
+    }
+
+    return p;
 }
 
 void
@@ -1512,8 +1826,55 @@ Tree_DrawRoundRect(
     int open			/* RECT_OPEN_x flags */
     )
 {
+#if 0
+    MacDrawable *macDraw = (MacDrawable *) td.drawable;
+    MacContextSetup dc;
+    CGContextRef context;
+
+    if (!(macDraw->flags & TK_IS_PIXMAP) || !tree->nativeGradients) {
+	GC gc = Tk_GCForColor(xcolor, Tk_WindowId(tree->tkwin));
+	Tree_DrawRoundRectX11(tree, td, gc, tr, outlineWidth, rx, ry, open);
+	return;
+    }
+
+    context = TreeMacOSX_GetContext(tree, td.drawable, tr, &dc);
+    if (context == NULL) {
+	GC gc = Tk_GCForColor(xcolor, Tk_WindowId(tree->tkwin));
+	Tree_DrawRoundRectX11(tree, td, gc, tr, outlineWidth, rx, ry, open);
+	return;
+    }
+
+    CGContextBeginPath(context);
+    if (rx == ry && !open) {
+	CGFloat x = tr.x, y = tr.y, width = tr.width, height = tr.height;
+	x += 0.5, y += 0.4, width -= 1, height -= 1;
+	CGContextAddArc(context, x + rx, y + ry, rx, radians(180), radians(270), 0); /* top-left */
+	CGContextAddArc(context, x + width - rx, y + ry, rx, radians(270), radians(0), 0); /* top-right */
+	CGContextAddArc(context, x + width - rx, y + height - ry, rx, radians(0), radians(90), 0); /* bottom-right */
+	CGContextAddArc(context, x + rx, y + height - ry, rx, radians(90), radians(180), 0); /* bottom-left */
+	CGContextClosePath(context);
+    } else {
+	CGMutablePathRef p = MakeRoundRectPath_Stroke(tr, rx, ry, open);
+	if (p) {
+	    CGContextAddPath(context, p);
+	    CGPathRelease(p);
+	}
+    }
+
+    CGContextSetLineWidth(context, 0.01);
+    CGContextSetShouldAntialias(context, 0);
+    CGContextSetRGBStrokeColor/*WithColor*/(context,
+	RedFloatFromXColorPtr(xcolor),
+	GreenFloatFromXColorPtr(xcolor),
+	BlueFloatFromXColorPtr(xcolor),
+	1.0f);
+    CGContextStrokePath(context);
+
+    TreeMacOSX_ReleaseContext(tree, &dc);
+#else
     GC gc = Tk_GCForColor(xcolor, Tk_WindowId(tree->tkwin));
     Tree_DrawRoundRectX11(tree, td, gc, tr, outlineWidth, rx, ry, open);
+#endif
 }
 
 void

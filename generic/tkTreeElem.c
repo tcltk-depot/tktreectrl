@@ -2189,7 +2189,7 @@ static void DisplayProcRect(TreeElementArgs *args)
 	tr.x = x, tr.y = y, tr.width = width, tr.height = height;
 	TREECOLOR_FOR_STATE(tc, fill, state)
 	if (tc != NULL) {
-	    TreeColor_FillRoundRect(tree, args->display.td, tc, tr, rx, ry, open);
+	    TreeColor_FillRoundRect(tree, args->display.td, tc, tr, tr, rx, ry, open);
 	}
 	COLOR_FOR_STATE(color, outline, state)
 	if ((color != NULL) && (outlineWidth > 0) && (open != RECT_OPEN_WNES)) {
