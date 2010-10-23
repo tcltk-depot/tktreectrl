@@ -173,6 +173,16 @@ fi
 
 if test "${TEA_WINDOWINGSYSTEM}" = "x11"; then
     TEA_ADD_SOURCES([tkUnixTree.c])
+
+    AC_ARG_ENABLE(gtk,
+        AC_HELP_STRING([--enable-gtk],
+        [build GTK+ theme-aware treectrl (default: no)]),
+        [tcl_ok=$enableval], [tcl_ok=no])
+    if test "$tcl_ok" = "yes" ; then
+		PKG_CHECK_MODULES([GTK], [gtk+-2.0 gdk-pixbuf-xlib-2.0])
+        TEA_ADD_CFLAGS([-DTREECTRL_GTK $GTK_CFLAGS])
+        TEA_ADD_LIBS([$GTK_LIBS])
+    fi
 fi
 
 #--------------------------------------------------------------------
