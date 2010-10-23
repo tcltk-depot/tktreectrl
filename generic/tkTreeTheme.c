@@ -56,7 +56,7 @@ int TreeTheme_GetHeaderContentMargins(TreeCtrl *tree, int state, int arrow, int 
     return TCL_ERROR;
 }
 
-int TreeTheme_DrawHeaderArrow(TreeCtrl *tree, Drawable drawable, int up, int x, int y, int width, int height)
+int TreeTheme_DrawHeaderArrow(TreeCtrl *tree, Drawable drawable, int state, int up, int x, int y, int width, int height)
 {
     return TCL_ERROR;
 }

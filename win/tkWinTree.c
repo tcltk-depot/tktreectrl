@@ -1286,8 +1286,8 @@ dbwin("margins %d %d %d %d\n", bounds[0], bounds[1], bounds[2], bounds[3]);
     return TCL_OK;
 }
 
-int TreeTheme_DrawHeaderArrow(TreeCtrl *tree, Drawable drawable, int up,
-    int x, int y, int width, int height)
+int TreeTheme_DrawHeaderArrow(TreeCtrl *tree, Drawable drawable, int state,
+    int up, int x, int y, int width, int height)
 {
 #if 1
     XColor *color;

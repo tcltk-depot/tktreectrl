@@ -674,6 +674,20 @@ Tree_FillRectangle(
 
 #ifdef TREECTRL_GTK
 
+#ifdef TREECTRL_DEBUG
+/* FIXME: This errors out, even with a small Gtk+ app (no Tcl) */
+/*
+  gtk_init_check()
+    gdk_display_open_default_libgtk_only()
+      gdk_display_manager_set_default_display()
+        g_object_notify()
+          ...
+            link_is_locked()          in /usr/lib/libORBit-2.so.0
+              link_mutex_is_locked()  in /usr/lib/libORBit-2.so.0
+*/
+/*#define G_ERRORCHECK_MUTEXES*/
+#endif
+
 #include <glib.h>
 #include <gdk/gdk.h>
 #include <gtk/gtk.h>
@@ -689,7 +703,8 @@ typedef struct {
 
 /* Per-application data */
 typedef struct {
-    int gtk_init;
+    gboolean gtk_init;
+    int pixbuf_init;
     GtkWidget *gtkWindow;
     GtkWidget *protoLayout;
     GtkWidget *gtkArrow;
@@ -698,6 +713,8 @@ typedef struct {
 } TreeThemeAppData;
 
 static TreeThemeAppData *appThemeData = NULL;
+
+#define IsGtkUnavailable() ( appThemeData == NULL || appThemeData->gtk_init == 0)
 
 int TreeTheme_DrawHeaderItem(TreeCtrl *tree, Drawable drawable, int state,
     int arrow, int visIndex, int x, int y, int width, int height)
@@ -710,8 +727,10 @@ int TreeTheme_DrawHeaderItem(TreeCtrl *tree, Drawable drawable, int state,
     GdkPixmap *gdkPixmap;
     GdkPixbuf *pixbuf;
     
-    if (appThemeData == NULL || appThemeData->gtkTreeHeader == NULL)
+    if (IsGtkUnavailable() || appThemeData->gtkTreeHeader == NULL)
 	return TCL_ERROR;
+
+    gdk_threads_enter(); /* +++ grab global mutex +++ */
 
     widget = appThemeData->gtkTreeHeader;
     style = gtk_widget_get_style(widget);
@@ -731,7 +750,7 @@ int TreeTheme_DrawHeaderItem(TreeCtrl *tree, Drawable drawable, int state,
     /* Allocate GdkPixmap to draw background in */
     gdkPixmap = gdk_pixmap_new(appThemeData->gtkWindow->window, width, height, -1);
     if (gdkPixmap == NULL) {
-	return TCL_ERROR;
+	goto ret_error;
     }
     
     /* Paint the background */
@@ -743,7 +762,7 @@ int TreeTheme_DrawHeaderItem(TreeCtrl *tree, Drawable drawable, int state,
 	width, height);
     if (pixbuf == NULL) {
 	g_object_unref(gdkPixmap);
-	return TCL_ERROR;
+	goto ret_error;
     }
     gdk_pixbuf_xlib_render_to_drawable(pixbuf, drawable, tree->copyGC,
 	0, 0, x, y, width, height, XLIB_RGB_DITHER_NONE, 0, 0);
@@ -751,7 +770,11 @@ int TreeTheme_DrawHeaderItem(TreeCtrl *tree, Drawable drawable, int state,
     gdk_pixbuf_unref(pixbuf);
     g_object_unref(gdkPixmap);
 
+    gdk_threads_leave(); /* +++ release global mutex +++ */
     return TCL_OK;
+ret_error:
+    gdk_threads_leave(); /* +++ release global mutex +++ */
+    return TCL_ERROR;
 }
 
 int TreeTheme_GetHeaderContentMargins(TreeCtrl *tree, int state, int arrow, int bounds[4])
@@ -759,11 +782,11 @@ int TreeTheme_GetHeaderContentMargins(TreeCtrl *tree, int state, int arrow, int 
     return TCL_ERROR;
 }
 
-int TreeTheme_DrawHeaderArrow(TreeCtrl *tree, Drawable drawable, int up, int x, int y, int width, int height)
+int TreeTheme_DrawHeaderArrow(TreeCtrl *tree, Drawable drawable, int state, int up, int x, int y, int width, int height)
 {
     GtkWidget *widget;
     GtkStyle *style;
-    GtkStateType state = GTK_STATE_NORMAL; /* FIXME: mouseover GTK_STATE_PRELIGHT */
+    GtkStateType state_type = GTK_STATE_NORMAL;
     GdkRectangle area = {0, 0, width, height}; /* clip */
     const gchar *detail = "arrow";
     GtkShadowType shadow_type;
@@ -772,19 +795,40 @@ int TreeTheme_DrawHeaderArrow(TreeCtrl *tree, Drawable drawable, int up, int x, 
     GdkRectangle clipped;
     GdkPixbuf *pixbuf;
 
-    if (appThemeData == NULL || appThemeData->gtkArrow == NULL)
+    if (IsGtkUnavailable() || appThemeData->gtkArrow == NULL)
 	return TCL_ERROR;
+
+    clipped.x = x, clipped.y = y, clipped.width = width, clipped.height = height;
+    if (clipped.x < 0)
+	clipped.width += clipped.x, clipped.x = 0;
+    if (clipped.y < 0)
+	clipped.height += clipped.y, clipped.y = 0;
+    if (clipped.width < 1 || clipped.height < 1)
+	return TCL_OK;
+
+    gdk_threads_enter(); /* +++ grab global mutex +++ */
 
     widget = appThemeData->gtkArrow;
     style = gtk_widget_get_style(widget);
     shadow_type = GTK_ARROW(widget)->shadow_type;
-    
+   
+    switch (state) {
+	case COLUMN_STATE_ACTIVE:
+	    state_type = GTK_STATE_PRELIGHT;
+	    break;
+	case COLUMN_STATE_PRESSED:
+	    state_type = GTK_STATE_ACTIVE;
+	    break;
+	case COLUMN_STATE_NORMAL: 
+	    break;
+    }
+
     if (appThemeData->gtkTreeView != NULL) {
 	gboolean alternative = FALSE;
 	GtkSettings *settings = gtk_widget_get_settings(appThemeData->gtkTreeView);
 	g_object_get(settings, "gtk-alternative-sort-arrows", &alternative, NULL);
 	if (alternative)
-		effective_arrow_type = up ? GTK_ARROW_UP : GTK_ARROW_DOWN;
+	    effective_arrow_type = up ? GTK_ARROW_UP : GTK_ARROW_DOWN;
     }
 
     /* This gives warning "widget class `GtkArrow' has no property named `shadow-type'" */
@@ -792,30 +836,21 @@ int TreeTheme_DrawHeaderArrow(TreeCtrl *tree, Drawable drawable, int up, int x, 
     gtk_widget_style_get(widget, "shadow-type", &shadow_type, NULL);
 */
 
-    clipped.x = x, clipped.y = y, clipped.width = width, clipped.height = height;
-    if (clipped.x < 0)
-	clipped.width += clipped.x, clipped.x = 0;
-    if (clipped.y < 0)
-	clipped.height += clipped.y, clipped.y = 0;
-    
-    if (clipped.width < 1 || clipped.height < 1)
-	return TCL_ERROR;
-
     /* Copy background from Tk Pixmap -> GdkPixbuf */
     pixbuf = gdk_pixbuf_new(GDK_COLORSPACE_RGB, 1, 8, width, height);
     if (pixbuf == NULL)
-	return TCL_ERROR;
+	goto ret_error;
     pixbuf = gdk_pixbuf_xlib_get_from_drawable(pixbuf, drawable,
 	Tk_Colormap(tree->tkwin), Tk_Visual(tree->tkwin), clipped.x, clipped.y,
 	x < 0 ? -x : 0, y < 0 ? -y : 0, clipped.width, clipped.height);
     if (pixbuf == NULL)
-	return TCL_ERROR;
+	goto ret_error;
     
     /* Allocate GdkPixmap to draw button in */
     gdkPixmap = gdk_pixmap_new(appThemeData->gtkWindow->window, width, height, -1);
     if (gdkPixmap == NULL) {
 	gdk_pixbuf_unref(pixbuf);
-	return TCL_ERROR;
+	goto ret_error;
     }
     
     /* Copy GdkPixbuf containing background to GdkPixmap */
@@ -823,7 +858,7 @@ int TreeTheme_DrawHeaderArrow(TreeCtrl *tree, Drawable drawable, int up, int x, 
 	width, height, GDK_RGB_DITHER_NONE, 0, 0);
 
     /* Draw the button */
-    gtk_paint_arrow(style, gdkPixmap, state, shadow_type, &area, widget,
+    gtk_paint_arrow(style, gdkPixmap, state_type, shadow_type, &area, widget,
 	detail, effective_arrow_type, TRUE, 0, 0, width, height);
     
     /* Copy GdkPixmap to Tk Pixmap */
@@ -831,7 +866,7 @@ int TreeTheme_DrawHeaderArrow(TreeCtrl *tree, Drawable drawable, int up, int x, 
 	width, height);
     if (pixbuf == NULL) {
 	g_object_unref(gdkPixmap);
-	return TCL_ERROR;
+	goto ret_error;
     }
     gdk_pixbuf_xlib_render_to_drawable(pixbuf, drawable, tree->copyGC,
 	0, 0, x, y, width, height, XLIB_RGB_DITHER_MAX, 0, 0);
@@ -839,7 +874,11 @@ int TreeTheme_DrawHeaderArrow(TreeCtrl *tree, Drawable drawable, int up, int x, 
     gdk_pixbuf_unref(pixbuf);
     g_object_unref(gdkPixmap);
 
+    gdk_threads_leave(); /* +++ release global mutex +++ */
     return TCL_OK;
+ret_error:
+    gdk_threads_leave(); /* +++ release global mutex +++ */
+    return TCL_ERROR;
 }
 
 int TreeTheme_DrawButton(TreeCtrl *tree, Drawable drawable, int open, int x, int y, int width, int height)
@@ -854,36 +893,37 @@ int TreeTheme_DrawButton(TreeCtrl *tree, Drawable drawable, int open, int x, int
     GdkRectangle clipped;
     GdkPixbuf *pixbuf;
 
-    if (appThemeData == NULL || appThemeData->gtkTreeView == NULL)
+    if (IsGtkUnavailable() || appThemeData->gtkTreeView == NULL)
 	return TCL_ERROR;
-
-    widget = appThemeData->gtkTreeView;
-    style = gtk_widget_get_style(widget);
 
     clipped.x = x, clipped.y = y, clipped.width = width, clipped.height = height;
     if (clipped.x < 0)
 	clipped.width += clipped.x, clipped.x = 0;
     if (clipped.y < 0)
 	clipped.height += clipped.y, clipped.y = 0;
-    
     if (clipped.width < 1 || clipped.height < 1)
-	return TCL_ERROR;
+	return TCL_OK;
+
+    gdk_threads_enter(); /* +++ grab global mutex +++ */
+
+    widget = appThemeData->gtkTreeView;
+    style = gtk_widget_get_style(widget);
 
     /* Copy background from Tk Pixmap -> GdkPixbuf */
     pixbuf = gdk_pixbuf_new(GDK_COLORSPACE_RGB, 1, 8, width, height);
     if (pixbuf == NULL)
-	return TCL_ERROR;
+	goto ret_error;
     pixbuf = gdk_pixbuf_xlib_get_from_drawable(pixbuf, drawable,
 	Tk_Colormap(tree->tkwin), Tk_Visual(tree->tkwin), clipped.x, clipped.y,
 	x < 0 ? -x : 0, y < 0 ? -y : 0, clipped.width, clipped.height);
     if (pixbuf == NULL)
-	return TCL_ERROR;
+	goto ret_error;
     
     /* Allocate GdkPixmap to draw button in */
     gdkPixmap = gdk_pixmap_new(appThemeData->gtkWindow->window, width, height, -1);
     if (gdkPixmap == NULL) {
 	gdk_pixbuf_unref(pixbuf);
-	return TCL_ERROR;
+	goto ret_error;
     }
     
     /* Copy GdkPixbuf containing background to GdkPixmap */
@@ -899,7 +939,7 @@ int TreeTheme_DrawButton(TreeCtrl *tree, Drawable drawable, int open, int x, int
 	width, height);
     if (pixbuf == NULL) {
 	g_object_unref(gdkPixmap);
-	return TCL_ERROR;
+	goto ret_error;
     }
     gdk_pixbuf_xlib_render_to_drawable(pixbuf, drawable, tree->copyGC,
 	0, 0, x, y, width, height, XLIB_RGB_DITHER_MAX, 0, 0);
@@ -907,7 +947,11 @@ int TreeTheme_DrawButton(TreeCtrl *tree, Drawable drawable, int open, int x, int
     gdk_pixbuf_unref(pixbuf);
     g_object_unref(gdkPixmap);
 
+    gdk_threads_leave(); /* +++ release global mutex +++ */
     return TCL_OK;
+ret_error:
+    gdk_threads_leave(); /* +++ release global mutex +++ */
+    return TCL_ERROR;
 }
 
 int TreeTheme_GetButtonSize(TreeCtrl *tree, Drawable drawable, int open, int *widthPtr, int *heightPtr)
@@ -916,13 +960,17 @@ int TreeTheme_GetButtonSize(TreeCtrl *tree, Drawable drawable, int open, int *wi
     const gchar *property_name = "expander-size";
     gint expander_size;
 
-    if (appThemeData == NULL || appThemeData->gtkTreeView == NULL)
+    if (IsGtkUnavailable() || appThemeData->gtkTreeView == NULL)
 	return TCL_ERROR;
-    
+
+    gdk_threads_enter(); /* +++ grab global mutex +++ */
+
     widget = appThemeData->gtkTreeView;
 
     gtk_widget_style_get(widget, property_name, &expander_size, NULL);
     (*widthPtr) = (*heightPtr) = expander_size;
+
+    gdk_threads_leave(); /* +++ release global mutex +++ */
 
     return TCL_OK;
 }
@@ -935,8 +983,10 @@ int TreeTheme_GetArrowSize(TreeCtrl *tree, Drawable drawable, int up, int *width
     GtkMisc *misc;
     gint width, height, extent;
      
-    if (appThemeData == NULL || appThemeData->gtkArrow == NULL)
+    if (IsGtkUnavailable() || appThemeData->gtkArrow == NULL)
 	return TCL_ERROR;
+
+    gdk_threads_enter(); /* +++ grab global mutex +++ */
 
     widget = appThemeData->gtkArrow;
     misc = GTK_MISC(widget);
@@ -949,6 +999,8 @@ int TreeTheme_GetArrowSize(TreeCtrl *tree, Drawable drawable, int up, int *width
 
     (*widthPtr) = extent;
     (*heightPtr) = extent;
+
+    gdk_threads_leave(); /* +++ release global mutex +++ */
 
     return TCL_OK;
 }
@@ -988,13 +1040,22 @@ void TreeTheme_ThemeChanged(TreeCtrl *tree)
 
 int TreeTheme_Init(TreeCtrl *tree)
 {
-    if (appThemeData != NULL && appThemeData->gtk_init) {
+    Tcl_MutexLock(&themeMutex);
+
+    if (IsGtkUnavailable() == 0 && appThemeData->pixbuf_init == 0) {
 	Tk_MakeWindowExist(tree->tkwin);
 	
+	gdk_threads_enter(); /* +++ grab global mutex +++ */
+
 	gdk_pixbuf_xlib_init(Tk_Display(tree->tkwin), 0);
-	/* Needed for gdk_pixbuf_xlib_render_to_drawable() */
 	xlib_rgb_init(Tk_Display(tree->tkwin), Tk_Screen(tree->tkwin));
+
+	gdk_threads_leave(); /* +++ release global mutex +++ */
+	
+	appThemeData->pixbuf_init = 1;
     }
+    
+    Tcl_MutexUnlock(&themeMutex);
 
     return TCL_OK;
 }
@@ -1014,11 +1075,33 @@ int TreeTheme_InitInterp(Tcl_Interp *interp)
 	argv[0] = (char *) Tcl_GetNameOfExecutable();
 	GtkTreeViewColumn *column;
 
+	if (!g_thread_supported()) {
+	    /* Initialized Glib threads.  Must be done before gdk_threads_init(). */
+	    g_thread_init(NULL);
+
+	    /* Initialize Gdk threads.  Should be done before gtk_init(). */
+	    /* FIXME: it isn't ok to call this multiple times, it creates mutexes each time, could
+	     * be an embedded interp in a Gtk+ application which already called this. 
+	     * Assume it hasn't been done if g_thread_init() wasn't called. */
+	    gdk_threads_init();
+	}
+
+
 	appThemeData = (TreeThemeAppData*) ckalloc(sizeof(TreeThemeAppData));
+	memset(appThemeData, '\0', sizeof(TreeThemeAppData));
+
+	gdk_threads_enter(); /* +++ grab global mutex +++ */
+	
+#if 0
+	/* This must be called before gtk_init(). */
+	/* FIXME: this might already have been called (from tile-gtk, or if this is an
+	 * an embedded interp in a Gtk+ application which already called gtk_init. */
+	gtk_disable_setlocale();
+#endif
 	appThemeData->gtk_init = gtk_init_check(&argc, &argv);
+	g_free(argv);
 	if (!appThemeData->gtk_init) {
-	    ckfree((char *) appThemeData);
-	    appThemeData = NULL;
+	    gdk_threads_leave(); /* +++ release global mutex +++ */
 	    Tcl_MutexUnlock(&themeMutex);
 	    return TCL_ERROR;
 	}
@@ -1055,6 +1138,8 @@ int TreeTheme_InitInterp(Tcl_Interp *interp)
 	column = gtk_tree_view_column_new();
 	gtk_tree_view_append_column(GTK_TREE_VIEW(appThemeData->gtkTreeView),
 	    column);
+	
+	gdk_threads_leave(); /* +++ release global mutex +++ */
     }
     
     Tcl_MutexUnlock(&themeMutex);

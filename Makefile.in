@@ -346,7 +346,7 @@ dist: dist-clean
 	mkdir -p $(DIST_DIR)/unix
 	mkdir -p $(DIST_DIR)/win
 
-	list='aclocal.m4 ChangeLog configure configure.ac license.terms Makefile.in README.txt treectrl.dll.manifest.in treectrl.rc winrc.m4'; \
+	list='aclocal.m4 ChangeLog configure configure.ac license.terms Makefile.in pkg.m4 README.txt treectrl.dll.manifest.in treectrl.rc winrc.m4'; \
 	for p in $$list; do \
 	    cp -p $(srcdir)/$$p $(DIST_DIR)/$$p; \
 	    chmod 664 $(DIST_DIR)/$$p; \

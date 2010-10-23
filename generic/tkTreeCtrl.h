@@ -938,7 +938,7 @@ MODULE_SCOPE int TreeTheme_DrawHeaderItem(TreeCtrl *tree, Drawable drawable,
     int state, int arrow, int visIndex, int x, int y, int width, int height);
 MODULE_SCOPE int TreeTheme_GetHeaderFixedHeight(TreeCtrl *tree, int *heightPtr);
 MODULE_SCOPE int TreeTheme_GetHeaderContentMargins(TreeCtrl *tree, int state, int arrow, int bounds[4]);
-MODULE_SCOPE int TreeTheme_DrawHeaderArrow(TreeCtrl *tree, Drawable drawable, int up, int x, int y, int width, int height);
+MODULE_SCOPE int TreeTheme_DrawHeaderArrow(TreeCtrl *tree, Drawable drawable, int state, int up, int x, int y, int width, int height);
 MODULE_SCOPE int TreeTheme_DrawButton(TreeCtrl *tree, Drawable drawable, int open, int x, int y, int width, int height);
 MODULE_SCOPE int TreeTheme_GetButtonSize(TreeCtrl *tree, Drawable drawable, int open, int *widthPtr, int *heightPtr);
 MODULE_SCOPE int TreeTheme_GetArrowSize(TreeCtrl *tree, Drawable drawable, int up, int *widthPtr, int *heightPtr);
