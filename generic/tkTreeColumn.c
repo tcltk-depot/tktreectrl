@@ -4393,8 +4393,10 @@ Column_DrawArrow(
     Pixmap bitmap;
     Tk_3DBorder border;
     int state = Column_MakeState(column);
-    int arrowPadY = column->arrowPadY[PAD_TOP_LEFT] +
-	column->arrowPadY[PAD_BOTTOM_RIGHT];
+    int arrowPadTop = column->arrowPadY[PAD_TOP_LEFT];
+    int arrowPadY = arrowPadTop + column->arrowPadY[PAD_BOTTOM_RIGHT];
+    int arrowTop = y + (height - (layout.arrowHeight + arrowPadY)) / 2
+	+ arrowPadTop;
 
     if (column->arrow == COLUMN_ARROW_NONE)
 	return;
@@ -4404,7 +4406,7 @@ Column_DrawArrow(
 	Tree_RedrawImage(image, 0, 0, layout.arrowWidth, layout.arrowHeight,
 	    td,
 	    x + layout.arrowLeft + sunken,
-	    y + (height - (layout.arrowHeight + arrowPadY)) / 2 + sunken);
+	    arrowTop + sunken);
 	return;
     }
 
@@ -4412,7 +4414,7 @@ Column_DrawArrow(
     if (bitmap != None) {
 	int bx, by;
 	bx = x + layout.arrowLeft + sunken;
-	by = y + (height - (layout.arrowHeight + arrowPadY)) / 2 + sunken;
+	by = arrowTop + sunken;
 	Tree_DrawBitmap(tree, bitmap, td.drawable, NULL, NULL,
 		0, 0,
 		(unsigned int) layout.arrowWidth, (unsigned int) layout.arrowHeight,
@@ -4423,7 +4425,7 @@ Column_DrawArrow(
     if (tree->useTheme) {
 	if (TreeTheme_DrawHeaderArrow(tree, td.drawable,
 	    column->arrow == COLUMN_ARROW_UP, x + layout.arrowLeft + sunken,
-	    y + (height - (layout.arrowHeight + arrowPadY)) / 2 + sunken,
+	    arrowTop + sunken,
 	    layout.arrowWidth, layout.arrowHeight) == TCL_OK)
 	    return;
     }
@@ -4431,7 +4433,6 @@ Column_DrawArrow(
     if (1) {
 	int arrowWidth = layout.arrowWidth;
 	int arrowHeight = layout.arrowHeight;
-	int arrowTop = y + (height - (layout.arrowHeight + arrowPadY)) / 2 + column->arrowPadY[PAD_TOP_LEFT];
 	int arrowBottom = arrowTop + arrowHeight;
 	XPoint points[5];
 	int color1 = 0, color2 = 0;
