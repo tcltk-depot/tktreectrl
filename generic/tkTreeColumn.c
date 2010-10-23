@@ -4423,7 +4423,7 @@ Column_DrawArrow(
     }
 
     if (tree->useTheme) {
-	if (TreeTheme_DrawHeaderArrow(tree, td.drawable,
+	if (TreeTheme_DrawHeaderArrow(tree, td.drawable, column->state,
 	    column->arrow == COLUMN_ARROW_UP, x + layout.arrowLeft + sunken,
 	    arrowTop + sunken,
 	    layout.arrowWidth, layout.arrowHeight) == TCL_OK)
