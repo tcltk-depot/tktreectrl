@@ -1511,6 +1511,14 @@ TreeTheme_DrawBorders(
     return TCL_ERROR;
 }
 
+int TreeTheme_GetColumnTextColor(
+    TreeCtrl *tree,
+    int columnState,
+    XColor **colorPtrPtr)
+{
+    return TCL_ERROR;
+}
+
 void
 TreeTheme_Relayout(
     TreeCtrl *tree

@@ -361,6 +361,11 @@ struct TreeCtrl
     Tcl_HashTable uniformGroupHash;	/* -uniform -> UniformGroup */
 #endif
 
+    XColor *defColumnTextColor;	/* Default column header text color when
+    				 * the column's -textcolor option
+    				 * is not specified and the system theme
+    				 * doesn't specify a color. */
+
     TreeItem root;
     TreeItem activeItem;
     TreeItem anchorItem;
@@ -944,6 +949,7 @@ MODULE_SCOPE int TreeTheme_GetButtonSize(TreeCtrl *tree, Drawable drawable, int 
 MODULE_SCOPE int TreeTheme_GetArrowSize(TreeCtrl *tree, Drawable drawable, int up, int *widthPtr, int *heightPtr);
 MODULE_SCOPE int TreeTheme_SetBorders(TreeCtrl *tree);
 MODULE_SCOPE int TreeTheme_DrawBorders(TreeCtrl *tree, Drawable drawable);
+MODULE_SCOPE int TreeTheme_GetColumnTextColor(TreeCtrl *tree, int state, XColor **xColorPtr);
 MODULE_SCOPE void TreeTheme_Relayout(TreeCtrl *tree);
 MODULE_SCOPE int TreeTheme_IsDesktopComposited(TreeCtrl *tree);
 

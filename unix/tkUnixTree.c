@@ -710,6 +710,11 @@ typedef struct {
     GtkWidget *gtkArrow;
     GtkWidget *gtkTreeView;
     GtkWidget *gtkTreeHeader;
+    
+    /* Cached theme parameters */
+    int buttonWidth, buttonHeight;
+    int arrowWidth, arrowHeight;
+    XColor *textColor[3];
 } TreeThemeAppData;
 
 static TreeThemeAppData *appThemeData = NULL;
@@ -963,14 +968,23 @@ int TreeTheme_GetButtonSize(TreeCtrl *tree, Drawable drawable, int open, int *wi
     if (IsGtkUnavailable() || appThemeData->gtkTreeView == NULL)
 	return TCL_ERROR;
 
+    /* Use the cached value if available */
+    if (appThemeData->buttonWidth > 0) {
+    	(*widthPtr) = appThemeData->buttonWidth;
+    	(*heightPtr) = appThemeData->buttonHeight;
+    	return TCL_OK;
+    }
+
     gdk_threads_enter(); /* +++ grab global mutex +++ */
 
     widget = appThemeData->gtkTreeView;
 
     gtk_widget_style_get(widget, property_name, &expander_size, NULL);
-    (*widthPtr) = (*heightPtr) = expander_size;
 
     gdk_threads_leave(); /* +++ release global mutex +++ */
+
+    appThemeData->buttonWidth = appThemeData->buttonHeight = expander_size;
+    (*widthPtr) = (*heightPtr) = expander_size;
 
     return TCL_OK;
 }
@@ -986,6 +1000,13 @@ int TreeTheme_GetArrowSize(TreeCtrl *tree, Drawable drawable, int up, int *width
     if (IsGtkUnavailable() || appThemeData->gtkArrow == NULL)
 	return TCL_ERROR;
 
+    /* Use the cached value if available */
+    if (appThemeData->arrowWidth > 0) {
+    	(*widthPtr) = appThemeData->arrowWidth;
+    	(*heightPtr) = appThemeData->arrowHeight;
+    	return TCL_OK;
+    }
+
     gdk_threads_enter(); /* +++ grab global mutex +++ */
 
     widget = appThemeData->gtkArrow;
@@ -997,10 +1018,10 @@ int TreeTheme_GetArrowSize(TreeCtrl *tree, Drawable drawable, int up, int *width
     height = requisition.height - misc->ypad * 2;
     extent = MIN(width, height) * arrow_scaling;
 
-    (*widthPtr) = extent;
-    (*heightPtr) = extent;
-
     gdk_threads_leave(); /* +++ release global mutex +++ */
+
+    appThemeData->arrowWidth = appThemeData->arrowHeight = extent;
+    (*widthPtr) = (*heightPtr) = extent;
 
     return TCL_OK;
 }
@@ -1017,6 +1038,58 @@ TreeTheme_DrawBorders(
     )
 {
     return TCL_ERROR;
+}
+
+int TreeTheme_GetColumnTextColor(
+    TreeCtrl *tree,
+    int columnState,
+    XColor **colorPtrPtr)
+{
+    GtkWidget *widget;
+    GtkStyle *style;
+    GtkStateType state_type = GTK_STATE_NORMAL;
+    int colorIndex = 0;
+    GdkColor *gdkColor;
+    XColor pref;
+
+    if (IsGtkUnavailable() || appThemeData->gtkTreeHeader == NULL)
+	return TCL_ERROR;
+
+     switch (columnState) {
+	case COLUMN_STATE_ACTIVE:
+	    state_type = GTK_STATE_PRELIGHT;
+	    colorIndex = 1;
+	    break;
+	case COLUMN_STATE_PRESSED:
+	    state_type = GTK_STATE_ACTIVE;
+	    colorIndex = 2;
+	    break;
+	case COLUMN_STATE_NORMAL:
+	    break;
+    }
+    
+    /* Use the cached value if available */
+    if (appThemeData->textColor[colorIndex] != NULL) {
+    	(*colorPtrPtr) = appThemeData->textColor[colorIndex];
+    	return TCL_OK;
+    }
+    
+    gdk_threads_enter(); /* +++ grab global mutex +++ */
+
+    widget = appThemeData->gtkTreeHeader;
+    style = gtk_widget_get_style(widget);
+
+    gdkColor = &style->fg[state_type];
+
+    pref.red = gdkColor->red;
+    pref.green = gdkColor->green;
+    pref.blue = gdkColor->blue;
+    appThemeData->textColor[colorIndex] = Tk_GetColorByValue(tree->tkwin, &pref);
+    (*colorPtrPtr) = appThemeData->textColor[colorIndex];
+
+    gdk_threads_leave(); /* +++ release global mutex +++ */
+
+    return TCL_OK;
 }
 
 void
@@ -1161,7 +1234,7 @@ int TreeTheme_GetHeaderContentMargins(TreeCtrl *tree, int state, int arrow, int 
     return TCL_ERROR;
 }
 
-int TreeTheme_DrawHeaderArrow(TreeCtrl *tree, Drawable drawable, int up, int x, int y, int width, int height)
+int TreeTheme_DrawHeaderArrow(TreeCtrl *tree, Drawable drawable, int state, int up, int x, int y, int width, int height)
 {
     return TCL_ERROR;
 }
@@ -1192,6 +1265,14 @@ TreeTheme_DrawBorders(
     TreeCtrl *tree,
     Drawable drawable
     )
+{
+    return TCL_ERROR;
+}
+
+int TreeTheme_GetColumnTextColor(
+    TreeCtrl *tree,
+    int columnState,
+    XColor **colorPtrPtr)
 {
     return TCL_ERROR;
 }

@@ -47,7 +47,7 @@ struct TreeColumn_
     PerStateInfo border;	/* -background */
     Tcl_Obj *borderWidthObj;	/* -borderwidth */
     int borderWidth;		/* -borderwidth */
-    XColor *textColor;		/* -textcolor */
+    PerStateInfo textColor;	/* -textcolor */
     int expand;			/* -expand */
     int squeeze;		/* -squeeze */
     int visible;		/* -visible */
@@ -378,9 +378,10 @@ static Tk_OptionSpec columnSpecs[] = {
      (char *) NULL, Tk_Offset(TreeColumn_, textObj), Tk_Offset(TreeColumn_, text),
      TK_OPTION_NULL_OK, (ClientData) NULL,
      COLU_CONF_TEXT | COLU_CONF_NWIDTH | COLU_CONF_NHEIGHT | COLU_CONF_DISPLAY},
-    {TK_OPTION_COLOR, "-textcolor", (char *) NULL, (char *) NULL,
-     DEF_BUTTON_FG, -1, Tk_Offset(TreeColumn_, textColor),
-     0, (ClientData) NULL, COLU_CONF_DISPLAY},
+    /* -textcolor initialized by TreeColumn_InitInterp() */
+    {TK_OPTION_CUSTOM, "-textcolor", (char *) NULL, (char *) NULL,
+     (char *) NULL, Tk_Offset(TreeColumn_, textColor.obj),
+     Tk_Offset(TreeColumn_, textColor), 0, (ClientData) NULL, COLU_CONF_DISPLAY},
     {TK_OPTION_INT, "-textlines", (char *) NULL, (char *) NULL,
      "1", -1, Tk_Offset(TreeColumn_, textLines),
      0, (ClientData) NULL, COLU_CONF_TEXT | COLU_CONF_NWIDTH |
@@ -4520,6 +4521,7 @@ Column_Draw(
     int relief = sunken ? TK_RELIEF_SUNKEN : TK_RELIEF_RAISED;
     Tk_3DBorder border;
     int theme = TCL_ERROR;
+    GC gc;
 
     layout.width = width;
     layout.height = height;
@@ -4565,28 +4567,40 @@ Column_Draw(
 		0, 0, (unsigned int) imgW, (unsigned int) imgH,
 		bx, by);
     }
-
-    if ((column->text != NULL) && (column->textLayout != NULL)) {
-	int h;
+    
+    /* Get a graphics context for drawing the text */
+    if ((column->text != NULL) && ((column->textLayout != NULL) || (layout.bytesThatFit != 0))) {
+	TreeColor *tc;
+	XColor *textColor = tree->defColumnTextColor;
 	XGCValues gcValues;
-	GC gc;
 	unsigned long mask;
-	TextLayout_Size(column->textLayout, NULL, &h);
-	h += column->textPadY[PAD_TOP_LEFT] + column->textPadY[PAD_BOTTOM_RIGHT];
-	gcValues.font = Tk_FontId(column->tkfont ? column->tkfont : tree->tkfont);
-	gcValues.foreground = column->textColor->pixel;
+	tc = PerStateColor_ForState(tree, &column->textColor,
+	    Column_MakeState(column), NULL);
+	if (tc == NULL || tc->color == NULL) {
+	    if (tree->useTheme && TreeTheme_GetColumnTextColor(tree, column->state, &textColor)
+		    != TCL_OK) {
+		/*textColor = tree->fgColorPtr*/;
+	    }
+	} else {
+	    textColor = tc->color;
+	}
+	gcValues.font = Tk_FontId(column->tkfont ? column->tkfont : tree->tkfont); /* layout.tkfont */
+	gcValues.foreground = textColor->pixel;
 	gcValues.graphics_exposures = False;
 	mask = GCFont | GCForeground | GCGraphicsExposures;
 	gc = Tree_GetGC(tree, mask, &gcValues);
+    }
+
+    if ((column->text != NULL) && (column->textLayout != NULL)) {
+	int h;
+	TextLayout_Size(column->textLayout, NULL, &h);
+	h += column->textPadY[PAD_TOP_LEFT] + column->textPadY[PAD_BOTTOM_RIGHT];
 	TextLayout_Draw(tree->display, td.drawable, gc,
 		column->textLayout,
 		x + layout.textLeft + sunken,
 		y + (height - h) / 2 + column->textPadY[PAD_TOP_LEFT] + sunken,
 		0, -1, -1);
     } else if ((column->text != NULL) && (layout.bytesThatFit != 0)) {
-	XGCValues gcValues;
-	GC gc;
-	unsigned long mask;
 	char staticStr[256], *text = staticStr;
 	int textLen = column->textLen;
 	char *ellipsis = "...";
@@ -4604,11 +4618,6 @@ Column_Draw(
 	    }
 	}
 
-	gcValues.font = Tk_FontId(layout.tkfont);
-	gcValues.foreground = column->textColor->pixel;
-	gcValues.graphics_exposures = False;
-	mask = GCFont | GCForeground | GCGraphicsExposures;
-	gc = Tree_GetGC(tree, mask, &gcValues);
 	tx = x + layout.textLeft + sunken;
 	h = column->textPadY[PAD_TOP_LEFT] + layout.fm.linespace
 	    + column->textPadY[PAD_BOTTOM_RIGHT];
@@ -5701,6 +5710,8 @@ Tree_InitColumns(
 #ifdef UNIFORM_GROUP
     Tcl_InitHashTable(&tree->uniformGroupHash, TCL_STRING_KEYS);
 #endif
+
+    tree->defColumnTextColor = Tk_GetColor(tree->interp, tree->tkwin, DEF_BUTTON_FG);
 }
 
 /*
@@ -5735,6 +5746,8 @@ void Tree_FreeColumns(
 #ifdef UNIFORM_GROUP
     Tcl_DeleteHashTable(&tree->uniformGroupHash);
 #endif
+
+    Tk_FreeColor(tree->defColumnTextColor);
 }
 
 int
@@ -5760,6 +5773,7 @@ TreeColumn_InitInterp(
     PerStateCO_Init(columnSpecs, "-arrowbitmap", &pstBitmap, ColumnStateFromObj);
     PerStateCO_Init(columnSpecs, "-arrowimage", &pstImage, ColumnStateFromObj);
     PerStateCO_Init(columnSpecs, "-background", &pstBorder, ColumnStateFromObj);
+    PerStateCO_Init(columnSpecs, "-textcolor", &pstColor, ColumnStateFromObj);
     StringTableCO_Init(columnSpecs, "-itemjustify", justifyStrings);
 
     return TCL_OK;
