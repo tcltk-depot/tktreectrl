@@ -274,6 +274,7 @@ struct TreeCtrl
     int buttonSize;		/* -buttonsize */
     Tcl_Obj *buttonThicknessObj;/* -buttonthickness */
     int buttonThickness;	/* -buttonthickness */
+    int buttonTracking;		/* -buttontracking */
     XColor *lineColor;		/* -linecolor */
     Tcl_Obj *lineThicknessObj;	/* -linethickness */
     int lineThickness;		/* -linethickness */
@@ -576,6 +577,11 @@ MODULE_SCOPE int TreeItem_Deleted(TreeCtrl *tree, TreeItem item);
 #define STATE_FOCUS	0x0010
 #define STATE_USER	6		/* first user bit */
 MODULE_SCOPE int TreeItem_GetState(TreeCtrl *tree, TreeItem item_);
+
+/* State flags for button state, needed by themes */
+/* FIXME: These may conflict with [state define] states */
+#define BUTTON_STATE_ACTIVE (1<<30)
+#define BUTTON_STATE_PRESSED (1<<31)
 
 #define CS_DISPLAY 0x01
 #define CS_LAYOUT 0x02
@@ -944,7 +950,7 @@ MODULE_SCOPE int TreeTheme_DrawHeaderItem(TreeCtrl *tree, Drawable drawable,
 MODULE_SCOPE int TreeTheme_GetHeaderFixedHeight(TreeCtrl *tree, int *heightPtr);
 MODULE_SCOPE int TreeTheme_GetHeaderContentMargins(TreeCtrl *tree, int state, int arrow, int bounds[4]);
 MODULE_SCOPE int TreeTheme_DrawHeaderArrow(TreeCtrl *tree, Drawable drawable, int state, int up, int x, int y, int width, int height);
-MODULE_SCOPE int TreeTheme_DrawButton(TreeCtrl *tree, Drawable drawable, int open, int x, int y, int width, int height);
+MODULE_SCOPE int TreeTheme_DrawButton(TreeCtrl *tree, Drawable drawable, int state, int x, int y, int width, int height);
 MODULE_SCOPE int TreeTheme_GetButtonSize(TreeCtrl *tree, Drawable drawable, int open, int *widthPtr, int *heightPtr);
 MODULE_SCOPE int TreeTheme_GetArrowSize(TreeCtrl *tree, Drawable drawable, int up, int *widthPtr, int *heightPtr);
 MODULE_SCOPE int TreeTheme_SetBorders(TreeCtrl *tree);
@@ -952,6 +958,7 @@ MODULE_SCOPE int TreeTheme_DrawBorders(TreeCtrl *tree, Drawable drawable);
 MODULE_SCOPE int TreeTheme_GetColumnTextColor(TreeCtrl *tree, int state, XColor **xColorPtr);
 MODULE_SCOPE void TreeTheme_Relayout(TreeCtrl *tree);
 MODULE_SCOPE int TreeTheme_IsDesktopComposited(TreeCtrl *tree);
+MODULE_SCOPE int TreeThemeCmd(TreeCtrl *tree, int objc, Tcl_Obj *CONST objv[]);
 
 /* tkTreeUtils.c */
 #ifdef TREECTRL_DEBUG

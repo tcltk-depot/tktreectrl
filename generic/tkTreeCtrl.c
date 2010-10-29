@@ -111,6 +111,8 @@ static Tk_OptionSpec optionSpecs[] = {
      "1", Tk_Offset(TreeCtrl, buttonThicknessObj),
      Tk_Offset(TreeCtrl, buttonThickness),
      0, (ClientData) NULL, TREE_CONF_BUTTON | TREE_CONF_REDISPLAY},
+    {TK_OPTION_BOOLEAN, "-buttontracking", "buttonTracking", "ButtonTracking",
+     "0", -1, Tk_Offset(TreeCtrl, buttonTracking), 0, (ClientData) NULL, 0},
     {TK_OPTION_STRING, "-columnprefix", "columnPrefix", "ColumnPrefix",
      "", -1, Tk_Offset(TreeCtrl, columnPrefix), 0, (ClientData) NULL, 0},
     {TK_OPTION_PIXELS, "-columnproxy", "columnProxy", "ColumnProxy",
@@ -526,7 +528,7 @@ static int TreeWidgetCmd(
 #ifdef DEPRECATED
 	"range",
 #endif
-	"scan", "see", "selection", "state", "style",
+	"scan", "see", "selection", "state", "style", "theme",
 #ifdef DEPRECATED
 	"toggle",
 #endif
@@ -558,7 +560,7 @@ static int TreeWidgetCmd(
 	COMMAND_RANGE,
 #endif
 	COMMAND_SCAN, COMMAND_SEE, COMMAND_SELECTION, COMMAND_STATE,
-	COMMAND_STYLE,
+	COMMAND_STYLE, COMMAND_THEME,
 #ifdef DEPRECATED
 	COMMAND_TOGGLE,
 #endif
@@ -1144,6 +1146,10 @@ static int TreeWidgetCmd(
 	    break;
 	}
 
+	case COMMAND_THEME: {
+	    result = TreeThemeCmd(tree, objc, objv);
+	    break;
+	}
 	case COMMAND_XVIEW: {
 	    result = TreeXviewCmd(interp, tree, objc, objv);
 	    break;
@@ -2315,7 +2321,7 @@ TreeSeeCmd(
  *
  *	If the object contains "foo", then the state "foo" is set on.
  *	If the object contains "!foo", then the state "foo" is set off.
- *	If the object contains "^foo", then the state "foo" is toggled.
+ *	If the object contains "~foo", then the state "foo" is toggled.
  *
  * Results:
  *	A standard Tcl result.

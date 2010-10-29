@@ -856,7 +856,30 @@ proc TreePlusScrollbarsInAFrame {f h v} {
 	    }
 	}
     }
+
+    switch -- [$f.t theme platform] {
+	aqua {
+	    $f.t configure -buttontracking yes
+	}
+	gtk {
+	    $f.t configure -buttontracking yes
+	}
+    }
+
     return
+}
+
+proc ShouldShowLines {T} {
+    if {![$T cget -usetheme]} {
+	return 1
+    }
+    switch -- [$T theme platform] {
+	aqua -
+	gtk {
+	    return 0
+	}
+    }
+    return 1
 }
 
 proc MakeMainWindow {} {
@@ -867,11 +890,9 @@ proc MakeMainWindow {} {
 	macintosh -
 	macosx {
 	    wm geometry . +6+30
-	    set ::ShowLines 0
 	}
 	default {
 	    wm geometry . +0+0
-	    set ::ShowLines 1
 	}
     }
 
@@ -886,13 +907,13 @@ proc MakeMainWindow {} {
 
     # Tree + scrollbar: styles + elements in list
     TreePlusScrollbarsInAFrame .f4 1 1
-    .f4.t configure -showlines $::ShowLines -showroot no -height 140
+    .f4.t configure -showlines [ShouldShowLines .f4.t] -showroot no -height 140
     .f4.t column create -text "Elements and Styles" -expand yes -button no -tags C0
     .f4.t configure -treecolumn C0
 
     # Tree + scrollbar: styles + elements in selected item
     TreePlusScrollbarsInAFrame .f3 1 1
-    .f3.t configure -showlines $::ShowLines -showroot no
+    .f3.t configure -showlines [ShouldShowLines .f3.t] -showroot no
     .f3.t column create -text "Styles in Item" -expand yes -button no -tags C0
     .f3.t configure -treecolumn C0
 
@@ -997,6 +1018,9 @@ proc MakeListPopup {T} {
 	    -command {$Popup(T) configure -backgroundmode $Popup(bgmode)}
     }
     $m add cascade -label "Background Mode" -menu $m2
+
+    $m add checkbutton -label "Button Tracking" -variable Popup(buttontracking) \
+	-command {$Popup(T) configure -buttontracking $Popup(buttontracking)}
 
     set m2 [menu $m.mVisible -tearoff no]
     $m add cascade -label Columns -menu $m2
@@ -1218,6 +1242,7 @@ proc ShowPopup {T x y X Y} {
     set Popup(bgimg) [$T cget -backgroundimage]
     if {$Popup(bgimg) eq ""} { set Popup(bgimg) none }
     set Popup(bgmode) [$T cget -backgroundmode]
+    set Popup(buttontracking) [$T cget -buttontracking]
     set Popup(columnresizemode) [$T cget -columnresizemode]
     set Popup(doublebuffer) [$T cget -doublebuffer]
     set Popup(linestyle) [$T cget -linestyle]
@@ -1619,6 +1644,20 @@ proc DemoClear {} {
 	-highlightthickness [expr {$::tileFull ? 0 : 3}] -usetheme yes -cursor {} \
 	-itemwidth 0 -itemwidthequal no -itemwidthmultiple 0 \
 	-font [.f4.t cget -font]
+
+    switch -- [$T theme platform] {
+	aqua -
+	gtk {
+	    $T configure -buttontracking yes
+	}
+	visualstyles {
+	    $T configure -buttontracking no
+	    $T theme setwindowtheme ""
+	}
+	default {
+	    $T configure -buttontracking no
+	}
+    }
 
     # Restore defaults to the tail column
     foreach spec [$T column configure tail] {

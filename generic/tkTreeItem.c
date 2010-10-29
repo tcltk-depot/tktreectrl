@@ -61,9 +61,15 @@ struct TreeItem_ {
 #define ITEM_FLAG_BUTTON_AUTO	0x0010 /* -button auto */
 #define ITEM_FLAG_VISIBLE	0x0020 /* -visible */
 #define ITEM_FLAG_WRAP		0x0040 /* -wrap */
+
+#define ITEM_FLAG_BUTTONSTATE_ACTIVE	0x0080 /* buttonstate "active" */
+#define ITEM_FLAG_BUTTONSTATE_PRESSED	0x0100 /* buttonstate "pressed" */
     int flags;
     TagInfo *tagInfo;	/* Tags. May be NULL. */
 };
+
+#define ITEM_FLAGS_BUTTONSTATE (ITEM_FLAG_BUTTONSTATE_ACTIVE | \
+    ITEM_FLAG_BUTTONSTATE_PRESSED)
 
 static CONST char *ItemUid = "Item", *ItemColumnUid = "ItemColumn";
 
@@ -4445,11 +4451,19 @@ TreeItem_DrawButton(
 
     if (tree->useTheme) {
 	int bw, bh;
-	if (TreeTheme_GetButtonSize(tree, td.drawable, item->state & STATE_OPEN,
-	    &bw, &bh) == TCL_OK) {
-	    if (TreeTheme_DrawButton(tree, td.drawable, item->state & STATE_OPEN,
-		left + (tree->useIndent - bw) / 2, y + (height - bh) / 2,
-		bw, bh) == TCL_OK) {
+	int buttonState = item->state;
+
+	/* FIXME: These may conflict with [state define] states */
+	if (item->flags & ITEM_FLAG_BUTTONSTATE_ACTIVE)
+	    buttonState |= BUTTON_STATE_ACTIVE;
+	if (item->flags & ITEM_FLAG_BUTTONSTATE_PRESSED)
+	    buttonState |= BUTTON_STATE_PRESSED;
+
+	if (TreeTheme_GetButtonSize(tree, td.drawable,
+		(buttonState & STATE_OPEN) != 0, &bw, &bh) == TCL_OK) {
+	    if (TreeTheme_DrawButton(tree, td.drawable, buttonState,
+		    left + (tree->useIndent - bw) / 2, y + (height - bh) / 2,
+		    bw, bh) == TCL_OK) {
 		return;
 	    }
 	}
@@ -7180,6 +7194,7 @@ TreeItemCmd(
     enum {
 	COMMAND_ANCESTORS,
 	COMMAND_BBOX,
+	COMMAND_BUTTONSTATE,
 	COMMAND_CGET,
 	COMMAND_CHILDREN,
 	COMMAND_COLLAPSE,
@@ -7240,6 +7255,8 @@ TreeItemCmd(
 	{ "ancestors", 1, 1, IFO_NOT_MANY | IFO_NOT_NULL, 0, 0, "item", NULL },
 	{ "bbox", 1, 3, IFO_NOT_MANY | IFO_NOT_NULL, AF_NOT_ITEM, AF_NOT_ITEM,
 		"item ?column? ?element?", NULL },
+	{ "buttonstate", 1, 2, IFO_NOT_MANY | IFO_NOT_NULL, AF_NOT_ITEM, 0,
+		"item ?state?", NULL },
 	{ "cget", 2, 2, IFO_NOT_MANY | IFO_NOT_NULL, AF_NOT_ITEM, 0,
 		"item option", NULL },
 	{ "children", 1, 1, IFO_NOT_MANY | IFO_NOT_NULL, 0, 0,
@@ -7457,6 +7474,36 @@ TreeItemCmd(
 		    y - tree->yOrigin,
 		    x - tree->xOrigin + w,
 		    y - tree->yOrigin + h);
+	    break;
+	}
+	/* T item buttonstate I ?state? */
+	case COMMAND_BUTTONSTATE: {
+	    static const char *stateNames[] = {
+		"active", "normal", "pressed", NULL
+	    };
+	    int state;
+	    if (numArgs == 2) {
+		int prevFlags = item->flags;
+		if (Tcl_GetIndexFromObj(interp, objv[4], stateNames, "state",
+			0, &state) != TCL_OK) {
+		    goto errorExit;
+		}
+		item->flags &= ~ITEM_FLAGS_BUTTONSTATE;
+		if (state == 0)
+		    item->flags |= ITEM_FLAG_BUTTONSTATE_ACTIVE;
+		else if (state == 2)
+		    item->flags |= ITEM_FLAG_BUTTONSTATE_PRESSED;
+		if (item->flags != prevFlags && tree->columnTree != NULL)
+		    Tree_InvalidateItemDInfo(tree, tree->columnTree, item, NULL);
+	    } else {
+		if (item->flags & ITEM_FLAG_BUTTONSTATE_ACTIVE)
+		    state = 0;
+		else if (item->flags & ITEM_FLAG_BUTTONSTATE_PRESSED)
+		    state = 2;
+		else
+		    state = 1;
+	    }
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(stateNames[state], -1));
 	    break;
 	}
 	case COMMAND_CGET: {

@@ -1046,6 +1046,13 @@ using the gradient have stopped using it.
 Returns a list of names of all the gradients that have been created by this treectrl
 widget.
 
+[call [arg pathName] [cmd {gradient native}] [opt [arg preference]]]
+Without any arguments, this command returns a boolean indicating whether
+or not the platform supports native transparent gradients.  The [arg preference]
+argument is a boolean that indicates whether native gradients should be used;
+this can be used to test the appearance of the application.
+
+
 [list_end]
 
 
@@ -1108,6 +1115,13 @@ over all non-locked columns. If a [arg column] is specified, only the area of th
 in this column is considered. If an additional [arg element] is specified,
 the area of this [arg element] in [arg column] of the specified item is
 returned.
+
+[call [arg pathName] [cmd {item buttonstate}] [arg itemDesc] [opt [arg state]]]
+If [arg state] is specified, this command sets the state of the expand/collapse
+button for the single item specified by [arg itemDesc].  The [arg state]
+argument may be one of [const active], [const normal] or [const pressed].
+The current (or newly-set) state of the button is returned.  The button state
+is used by the system theme, if any, to change the appearance of the button.
 
 [call [arg pathName] [cmd {item cget}] [arg itemDesc] [arg option]]
 Returns the current value of the configuration option for the item specified by
@@ -2327,6 +2341,28 @@ item state, then the element is not displayed and consumes no space in the layou
 Returns a list containing the names of all existing styles.
 [list_end]
 
+[call [arg pathName] [cmd theme] [arg option] [opt [arg {arg ...}]]]
+This command is used to interact with the platform-specific theme.
+The exact behavior of the command depends on the [arg option] argument
+that follows the [cmd theme] argument.
+The following forms of the command are supported:
+
+[list_begin definitions]
+[call [arg pathName] [cmd {theme platform}]]
+Returns the API used to draw themed parts of the treectrl.  On Mac OS X the result
+is always [const aqua].  On MS Windows the result is [const visualstyles] if the
+uxtheme.dll was loaded and visual themes are in use, otherwise [const X11] is
+returned to indicate the Tk Xlib calls are drawing the themed parts.
+On Unix systems the result is [const gtk] if the Gtk+ version of treectrl
+was built, otherwise [const X11] is returned.
+[call [arg pathName] [cmd {theme setwindowtheme}] [arg appname]]
+The command is available on MS Windows only.  If [arg appname] is "Explorer" then
+the item buttons look like those in the Explorer file browser (disclosure
+triangles under Windows Vista/7).  If [arg appname] is an empty string then
+the buttons revert to their default appearance according to the system's
+current visual style.
+[list_end]
+
 [call [arg pathName] [cmd toggle] [opt [option -recurse]] \
      [opt [arg {itemDesc ...}]]]
 Use [cmd {item toggle}] instead.
@@ -2583,8 +2619,10 @@ See also the [cmd {column tag}] command.
 Specifies a text string to be displayed as the column title.
 
 [opt_def [option -textcolor] [arg color]]
-Specifies a color, which should be used as foreground color
-to display the column title.
+Specifies as a [sectref {PER-STATE OPTIONS} per-state] option the color to
+display the column title with.  When the value of this option is unspecified,
+the title will be drawn according to the system theme, if any, otherwise
+the Tk button foreground color (usually black) is used.  The default is unspecified.
 
 [opt_def [option -textlines] [arg count]]
 Specifies the maximum number of lines of text to display in the column title.

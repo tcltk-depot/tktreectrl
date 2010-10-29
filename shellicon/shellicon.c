@@ -505,7 +505,7 @@ static void DisplayProcShellIcon(TreeElementArgs *args)
     HDC hDC;
     TkWinDCState dcState;
     UINT fStyle = ILD_TRANSPARENT;
-    HICON hIcon;
+    HICON hIcon = NULL;
     int useSelected;
 
 #ifdef DEPRECATED

@@ -803,6 +803,14 @@ Tree_FillRectangle(
 #include <shlwapi.h>
 #include <basetyps.h> /* MingW32 */
 
+#ifdef __MINGW32__
+#define TVP_HOTGLYPH 4
+#define HGLPS_CLOSED 1
+#define HGLPS_OPENED 2
+#else
+#include <vsstyle.h>
+#endif
+
 #ifndef TMT_CONTENTMARGINS
 #define TMT_CONTENTMARGINS 3602
 #endif
@@ -843,6 +851,7 @@ typedef BOOL (STDAPICALLTYPE IsAppThemedProc)(VOID);
 typedef BOOL (STDAPICALLTYPE IsThemePartDefinedProc)(HTHEME, int, int);
 typedef HRESULT (STDAPICALLTYPE IsThemeBackgroundPartiallyTransparentProc)(
     HTHEME, int, int);
+typedef HRESULT (STDAPICALLTYPE SetWindowThemeProc)(HWND, LPCWSTR, LPCWSTR);
 
 typedef struct
 {
@@ -862,6 +871,7 @@ typedef struct
     IsAppThemedProc				*IsAppThemed;
     IsThemePartDefinedProc			*IsThemePartDefined;
     IsThemeBackgroundPartiallyTransparentProc 	*IsThemeBackgroundPartiallyTransparent;
+    SetWindowThemeProc				*SetWindowTheme;
 } XPThemeProcs;
 
 typedef struct
@@ -870,14 +880,14 @@ typedef struct
     XPThemeProcs *procs;
     int registered;
     int themeEnabled;
-    SIZE buttonOpen;
-    SIZE buttonClosed;
 } XPThemeData;
 
 typedef struct TreeThemeData_
 {
     HTHEME hThemeHEADER;
     HTHEME hThemeTREEVIEW;
+    SIZE buttonOpen;
+    SIZE buttonClosed;
 } TreeThemeData_;
 
 static XPThemeProcs *procs = NULL;
@@ -1117,6 +1127,7 @@ LoadXPThemeProcs(HINSTANCE *phlib)
 		&& LOADPROC(IsAppThemed)
 		&& LOADPROC(IsThemePartDefined)
 		&& LOADPROC(IsThemeBackgroundPartiallyTransparent)
+		&& LOADPROC(SetWindowTheme)
 		&& ComCtlVersionOK()
 	    ) {
 		return procs;
@@ -1363,9 +1374,11 @@ int TreeTheme_DrawHeaderArrow(TreeCtrl *tree, Drawable drawable, int state,
 #endif /* 0 */
 }
 
-int TreeTheme_DrawButton(TreeCtrl *tree, Drawable drawable, int open,
+int TreeTheme_DrawButton(TreeCtrl *tree, Drawable drawable, int state,
     int x, int y, int width, int height)
 {
+    int open = state & STATE_OPEN;
+    int active = state & (BUTTON_STATE_ACTIVE|BUTTON_STATE_PRESSED); /* windows theme has no "pressed" state */
     HTHEME hTheme;
     HDC hDC;
     TkWinDCState dcState;
@@ -1376,12 +1389,20 @@ int TreeTheme_DrawButton(TreeCtrl *tree, Drawable drawable, int open,
     if (!appThemeData->themeEnabled || !procs)
 	return TCL_ERROR;
 
-    iPartId  = TVP_GLYPH;
-    iStateId = open ? GLPS_OPENED : GLPS_CLOSED;
-
     hTheme = tree->themeData->hThemeTREEVIEW;
     if (!hTheme)
 	return TCL_ERROR;
+
+    /* On Win7 IsThemePartDefined(TVP_HOTGLYPH) correctly returns
+     * TRUE when SetWindowTheme("explorer") is called and FALSE when it
+     * wasn't called. */
+    if (active && procs->IsThemePartDefined(hTheme, TVP_HOTGLYPH, 0)) {
+	iPartId  = TVP_HOTGLYPH;
+	iStateId = open ? HGLPS_OPENED : HGLPS_CLOSED;
+    } else {
+	iPartId  = TVP_GLYPH;
+	iStateId = open ? GLPS_OPENED : GLPS_CLOSED;
+    }
 
 #if 0 /* Always returns FALSE */
     if (!procs->IsThemePartDefined(
@@ -1417,6 +1438,7 @@ int TreeTheme_DrawButton(TreeCtrl *tree, Drawable drawable, int open,
 int TreeTheme_GetButtonSize(TreeCtrl *tree, Drawable drawable, int open,
     int *widthPtr, int *heightPtr)
 {
+    TreeThemeData themeData = tree->themeData;
     HTHEME hTheme;
     HDC hDC;
     TkWinDCState dcState;
@@ -1428,19 +1450,19 @@ int TreeTheme_GetButtonSize(TreeCtrl *tree, Drawable drawable, int open,
 	return TCL_ERROR;
 
     /* Use cached values */
-    size = open ? appThemeData->buttonOpen : appThemeData->buttonClosed;
+    size = open ? themeData->buttonOpen : themeData->buttonClosed;
     if (size.cx > 1) {
 	*widthPtr = size.cx;
 	*heightPtr = size.cy;
 	return TCL_OK;
     }
 
-    iPartId  = TVP_GLYPH;
-    iStateId = open ? GLPS_OPENED : GLPS_CLOSED;
-
-    hTheme = tree->themeData->hThemeTREEVIEW;
+    hTheme = themeData->hThemeTREEVIEW;
     if (!hTheme)
 	return TCL_ERROR;
+
+    iPartId  = TVP_GLYPH;
+    iStateId = open ? GLPS_OPENED : GLPS_CLOSED;
 
 #if 0 /* Always returns FALSE */
     if (!procs->IsThemePartDefined(
@@ -1478,9 +1500,9 @@ int TreeTheme_GetButtonSize(TreeCtrl *tree, Drawable drawable, int open,
 
     /* Cache the values */
     if (open)
-	appThemeData->buttonOpen = size;
+	themeData->buttonOpen = size;
     else
-	appThemeData->buttonClosed = size;
+	themeData->buttonClosed = size;
 
     *widthPtr = size.cx;
     *heightPtr = size.cy;
@@ -1597,9 +1619,9 @@ WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
 	    Tcl_MutexLock(&themeMutex);
 	    appThemeData->themeEnabled = procs->IsThemeActive() &&
 		    procs->IsAppThemed();
-	    appThemeData->buttonClosed.cx = appThemeData->buttonOpen.cx = -1;
 	    Tcl_MutexUnlock(&themeMutex);
 	    Tree_TheWorldHasChanged(interp);
+	    /* FIXME: must get tree->themeData->hThemeHEADER etc for each widget */
 	    break;
     }
     return DefWindowProc(hwnd, msg, wp, lp);
@@ -1685,6 +1707,8 @@ void TreeTheme_ThemeChanged(TreeCtrl *tree)
 
     tree->themeData->hThemeHEADER = procs->OpenThemeData(hwnd, L"HEADER");
     tree->themeData->hThemeTREEVIEW = procs->OpenThemeData(hwnd, L"TREEVIEW");
+
+    tree->themeData->buttonClosed.cx = tree->themeData->buttonOpen.cx = -1;
 }
 
 int TreeTheme_Init(TreeCtrl *tree)
@@ -1702,6 +1726,9 @@ int TreeTheme_Init(TreeCtrl *tree)
 
     tree->themeData->hThemeHEADER = procs->OpenThemeData(hwnd, L"HEADER");
     tree->themeData->hThemeTREEVIEW = procs->OpenThemeData(hwnd, L"TREEVIEW");
+
+    tree->themeData->buttonClosed.cx = tree->themeData->buttonOpen.cx = -1;
+
     return TCL_OK;
 }
 
@@ -1730,7 +1757,6 @@ int TreeTheme_InitInterp(Tcl_Interp *interp)
 	appThemeData->procs = LoadXPThemeProcs(&appThemeData->hlibrary);
 	appThemeData->registered = FALSE;
 	appThemeData->themeEnabled = FALSE;
-	appThemeData->buttonClosed.cx = appThemeData->buttonOpen.cx = -1;
 
 	procs = appThemeData->procs;
 
@@ -1757,6 +1783,70 @@ int TreeTheme_InitInterp(Tcl_Interp *interp)
     data = (PerInterpData *) ckalloc(sizeof(PerInterpData));
     data->hwnd = hwnd;
     Tcl_SetAssocData(interp, "TreeCtrlTheme", FreeAssocData, (ClientData) data);
+
+    return TCL_OK;
+}
+
+int 
+TreeThemeCmd(
+    TreeCtrl *tree,		/* Widget info. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *CONST objv[]	/* Argument values. */
+    )
+{
+    Tcl_Interp *interp = tree->interp;
+    static CONST char *commandName[] = {
+	"platform", "setwindowtheme", (char *) NULL
+    };
+    enum {
+	COMMAND_PLATFORM, COMMAND_SETWINDOWTHEME
+    };
+    int index;
+
+    if (objc < 3) {
+	Tcl_WrongNumArgs(interp, 2, objv, "command ?arg arg ...?");
+	return TCL_ERROR;
+    }
+
+    if (Tcl_GetIndexFromObj(interp, objv[2], commandName, "command", 0,
+	    &index) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    switch (index) {
+	/* T theme platform */
+	case COMMAND_PLATFORM: {
+	    char *platform = "X11"; /* X11, xlib, whatever */
+	    if (appThemeData->themeEnabled && appThemeData->procs)
+		platform = "visualstyles";
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(platform, -1));
+	    break;
+	}
+	/* T theme setwindowtheme $appname */
+	case COMMAND_SETWINDOWTHEME: {
+	    LPCWSTR pszSubAppName; /* L"Explorer" for example */
+	    int length;
+	    Window win;
+	    HWND hwnd;
+
+	    if (objc != 4) {
+		Tcl_WrongNumArgs(interp, 3, objv, "appname");
+		return TCL_ERROR;
+	    }
+	    if (!appThemeData->themeEnabled || !appThemeData->procs)
+		break;
+	    win = Tk_WindowId(tree->tkwin);
+	    hwnd = Tk_GetHWND(win);
+	    pszSubAppName = Tcl_GetUnicodeFromObj(objv[3], &length);
+	    procs->SetWindowTheme(hwnd, length ? pszSubAppName : NULL, NULL);
+
+	    /* uxtheme.h says a WM_THEMECHANGED is sent to the window. */
+	    /* FIXME: only this window needs to be updated. */
+	    /* This calls TreeTheme_ThemeChanged which is needed. */
+	    Tree_TheWorldHasChanged(tree->interp);
+	    break;
+	}
+    }
 
     return TCL_OK;
 }

@@ -4521,7 +4521,7 @@ Column_Draw(
     int relief = sunken ? TK_RELIEF_SUNKEN : TK_RELIEF_RAISED;
     Tk_3DBorder border;
     int theme = TCL_ERROR;
-    GC gc;
+    GC gc = None;
 
     layout.width = width;
     layout.height = height;

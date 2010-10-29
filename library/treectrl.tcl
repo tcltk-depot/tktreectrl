@@ -3,10 +3,12 @@
 bind TreeCtrl <Motion> {
     TreeCtrl::CursorCheck %W %x %y
     TreeCtrl::MotionInHeader %W %x %y
+    TreeCtrl::MotionInButtons %W %x %y
 }
 bind TreeCtrl <Leave> {
     TreeCtrl::CursorCancel %W
     TreeCtrl::MotionInHeader %W
+    TreeCtrl::MotionInButtons %W
 }
 bind TreeCtrl <ButtonPress-1> {
     TreeCtrl::ButtonPress1 %W %x %y
@@ -541,6 +543,69 @@ proc ::TreeCtrl::MotionInHeader {w args} {
     return
 }
 
+# ::TreeCtrl::MotionInButtons --
+#
+# This procedure updates the active/normal states of item buttons.
+# Typically this results in visual feedback by changing the appearance
+# of the buttons.
+#
+# Arguments:
+# T		The treectrl widget.
+# args		x y coords if the pointer is in the window, or an empty list.
+
+proc ::TreeCtrl::MotionInButtons {T args} {
+    variable Priv
+    set button ""
+    if {[llength $args]} {
+	set x [lindex $args 0]
+	set y [lindex $args 1]
+	set id [$T identify $x $y]
+	if {[lindex $id 2] eq "button"} {
+	    set button [lindex $id 1]
+	}
+    }
+    if {[info exists Priv(inbutton,$T)]} {
+	set prevButton $Priv(inbutton,$T)
+    } else {
+	set prevButton ""
+    }
+    if {$button ne $prevButton} {
+	if {$prevButton ne ""} {
+	    if {[$T item id $prevButton] ne ""} {
+		$T item buttonstate $prevButton normal
+	    }
+	}
+	if {$button ne ""} {
+	    $T item buttonstate $button active
+	    set Priv(inbutton,$T) $button
+	} else {
+	    unset Priv(inbutton,$T)
+	}
+    }
+    if {[$T notify bind TreeCtrlButtonNotifyScroll] eq ""} {
+	$T notify bind TreeCtrlButtonNotifyScroll <Scroll> {
+	    TreeCtrl::ButtonNotifyScroll %T
+	}
+    }
+    return
+}
+
+# ::TreeCtrl::ButtonNotifyScroll --
+#
+# Called when a <Scroll> event occurs and a button is in the active state.
+# Finds the mouse pointer coords and calls MotionInButtons to update the
+# state of affected buttons.
+#
+# Arguments:
+# T		The treectrl widget.
+
+proc ::TreeCtrl::ButtonNotifyScroll {T} {
+    set x [expr {[winfo pointerx $T] - [winfo rootx $T]}]
+    set y [expr {[winfo pointery $T] - [winfo rooty $T]}]
+    MotionInButtons $T $x $y
+    return
+}
+
 # ::TreeCtrl::ButtonPress1 --
 #
 # Handle <ButtonPress-1> event.
@@ -562,7 +627,13 @@ proc ::TreeCtrl::ButtonPress1 {w x y} {
     if {[lindex $id 0] eq "item"} {
 	lassign $id where item arg1 arg2
 	if {$arg1 eq "button"} {
-	    $w item toggle $item
+	    if {[$w cget -buttontracking]} {
+		$w item buttonstate $item pressed
+		set Priv(buttonMode) buttonTracking
+		set Priv(buttontrack,item) $item
+	    } else {
+		$w item toggle $item
+	    }
 	    return
 	} elseif {$arg1 eq "line"} {
 	    $w item toggle $arg2
@@ -632,7 +703,12 @@ proc ::TreeCtrl::DoubleButton1 {w x y} {
     if {[lindex $id 0] eq "item"} {
 	lassign $id where item arg1 arg2
 	if {$arg1 eq "button"} {
-	    $w item toggle $item
+	    if {[$w cget -buttontracking]} {
+		# There is no <ButtonRelease> so just toggle it
+		$w item toggle $item
+	    } else {
+		$w item toggle $item
+	    }
 	    return
 	} elseif {$arg1 eq "line"} {
 	    $w item toggle $arg2
@@ -685,6 +761,23 @@ proc ::TreeCtrl::Motion1 {w x y} {
 		    set Priv(buttonMode) dragColumn
 		    TryEvent $w ColumnDrag begin [list C $Priv(column)]
 		}
+	    }
+	}
+	buttonTracking {
+	    set id [$w identify $x $y]
+	    lassign $id where item arg1 arg2
+	    set itemTrack $Priv(buttontrack,item)
+	    set exists [expr {[$w item id $itemTrack] ne ""}]
+	    set mouseover 0
+	    if {$where eq "item" && $arg1 eq "button"} {
+		if {$exists && [$w item compare $itemTrack == $item]} {
+		    set mouseover 1
+		}
+	    }
+	    if {$mouseover} {
+		$w item buttonstate $itemTrack pressed
+	    } elseif {$exists} {
+		$w item buttonstate $itemTrack normal
 	    }
 	}
 	dragColumnWait {
@@ -830,6 +923,18 @@ proc ::TreeCtrl::Release1 {w x y} {
 	    if {[$w column cget $Priv(column) -state] eq "pressed"} {
 		$w column configure $Priv(column) -state active
 		TryEvent $w Header invoke [list C $Priv(column)]
+	    }
+	}
+	buttonTracking {
+	    set id [$w identify $x $y]
+	    lassign $id where item arg1 arg2
+	    set itemTrack $Priv(buttontrack,item)
+	    set exists [expr {[$w item id $itemTrack] ne ""}]
+	    if {$where eq "item" && $arg1 eq "button"} {
+		if {$exists && [$w item compare $itemTrack == $item]} {
+		    $w item buttonstate $item active
+		    $w item toggle $itemTrack
+		}
 	    }
 	}
 	dragColumn {

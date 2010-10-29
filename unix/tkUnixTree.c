@@ -886,11 +886,12 @@ ret_error:
     return TCL_ERROR;
 }
 
-int TreeTheme_DrawButton(TreeCtrl *tree, Drawable drawable, int open, int x, int y, int width, int height)
+int TreeTheme_DrawButton(TreeCtrl *tree, Drawable drawable, int state, int x, int y, int width, int height)
 {
+    int open = state & STATE_OPEN;
     GtkWidget *widget;
     GtkStyle *style;
-    GtkStateType state = GTK_STATE_NORMAL; /* FIXME: mouseover GTK_STATE_PRELIGHT */
+    GtkStateType state_type = GTK_STATE_NORMAL;
     GdkRectangle area = {0, 0, width, height}; /* clip */
     const gchar *detail = "treeview";
     GtkExpanderStyle expander_style = open ? GTK_EXPANDER_EXPANDED : GTK_EXPANDER_COLLAPSED;
@@ -908,6 +909,11 @@ int TreeTheme_DrawButton(TreeCtrl *tree, Drawable drawable, int open, int x, int
 	clipped.height += clipped.y, clipped.y = 0;
     if (clipped.width < 1 || clipped.height < 1)
 	return TCL_OK;
+
+    if (state & BUTTON_STATE_ACTIVE)
+	state_type = GTK_STATE_PRELIGHT;
+    else if (state & BUTTON_STATE_PRESSED)
+	state_type = GTK_STATE_ACTIVE;
 
     gdk_threads_enter(); /* +++ grab global mutex +++ */
 
@@ -936,7 +942,7 @@ int TreeTheme_DrawButton(TreeCtrl *tree, Drawable drawable, int open, int x, int
 	width, height, GDK_RGB_DITHER_NONE, 0, 0);
 
     /* Draw the button */
-    gtk_paint_expander(style, gdkPixmap, state, &area, widget, detail,
+    gtk_paint_expander(style, gdkPixmap, state_type, &area, widget, detail,
 	width / 2, height / 2, expander_style);
     
     /* Copy GdkPixmap to Tk Pixmap */
@@ -1111,6 +1117,17 @@ void TreeTheme_ThemeChanged(TreeCtrl *tree)
 {
 }
 
+#if 0
+/* _GTK_READ_RCFILES ClientMessage sent to X toplevel windows with WM_STATE property */
+/* gtk_rc_reparse_all_for_settings(gtk_widget_get_settings(widget), FALSE); */
+
+static int ClientMessageHandler(Tk_Window tkwin, XEvent *eventPtr) {
+    dbwin("ClientMessageHandler type=%d\n",eventPtr->type);
+    fprintf(stderr,"ClientMessageHandler type=%d\n",eventPtr->type);
+    return 0;
+}
+#endif
+
 int TreeTheme_Init(TreeCtrl *tree)
 {
     Tcl_MutexLock(&themeMutex);
@@ -1129,13 +1146,59 @@ int TreeTheme_Init(TreeCtrl *tree)
     }
     
     Tcl_MutexUnlock(&themeMutex);
-
+#if 0
+    Tk_CreateClientMessageHandler(ClientMessageHandler);
+#endif
     return TCL_OK;
 }
 
 int TreeTheme_Free(TreeCtrl *tree)
 {
     return TCL_OK;
+}
+
+#if 0
+static void StyleSetCallback(
+    GtkWidget *widget,
+    GtkStyle *previous_style,
+    gpointer user_data)
+{
+    Tcl_Interp *interp = user_data;
+    dbwin("StyleSetCallback\n");
+/*    Tree_TheWorldHasChanged(interp);*/
+}
+
+static int
+ThemeChangedObjCmd(
+    ClientData clientData,	/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *CONST objv[]	/* Argument values. */
+    )
+{
+    if (IsGtkUnavailable() == 0) {
+       int i;
+       const gchar *theme_name;
+       GtkSettings *settings = gtk_widget_get_settings(appThemeData->gtkWindow);
+       GtkRcContext *context = settings ? settings->rc_context : NULL;
+       if (context == NULL) return TCL_OK;
+       g_object_get(settings, "gtk-theme-name", &theme_name, NULL);
+       dbwin("context->theme_name %s\n", theme_name);
+       dbwin("gtk_rc_get_theme_dir %s\n", gtk_rc_get_theme_dir());
+       for (i = 0; gtk_rc_get_default_files()[i] != NULL; i++) {
+       	    dbwin("gtk_rc_parse %s\n", gtk_rc_get_default_files()[i]);
+//            gtk_rc_parse(gtk_rc_get_default_files()[i]);
+        }
+        gtk_rc_reparse_all_for_settings(settings, TRUE); /* calls StyleSetCallback! */
+    }
+    return TCL_OK;
+}
+#endif
+
+static int (*TkXErrorHandler)(Display *displayPtr, XErrorEvent *errorPtr);
+static int TreeCtrlErrorHandler(Display *displayPtr, XErrorEvent *errorPtr)
+{
+    return TkXErrorHandler(displayPtr, errorPtr);
 }
 
 int TreeTheme_InitInterp(Tcl_Interp *interp)
@@ -1165,6 +1228,12 @@ int TreeTheme_InitInterp(Tcl_Interp *interp)
 
 	gdk_threads_enter(); /* +++ grab global mutex +++ */
 	
+	/* Gtk+ installs an X error handler which terminates the application.
+	 * Install our own error handler so we can get the Tk error handler
+	 * before Gtk+ installs its own.  After initializing Gtk+ the Tk
+	 * error handler is restored. */
+	TkXErrorHandler = XSetErrorHandler(TreeCtrlErrorHandler);
+	
 #if 0
 	/* This must be called before gtk_init(). */
 	/* FIXME: this might already have been called (from tile-gtk, or if this is an
@@ -1174,6 +1243,7 @@ int TreeTheme_InitInterp(Tcl_Interp *interp)
 	appThemeData->gtk_init = gtk_init_check(&argc, &argv);
 	g_free(argv);
 	if (!appThemeData->gtk_init) {
+	    XSetErrorHandler(TkXErrorHandler);
 	    gdk_threads_leave(); /* +++ release global mutex +++ */
 	    Tcl_MutexUnlock(&themeMutex);
 	    return TCL_ERROR;
@@ -1190,7 +1260,10 @@ int TreeTheme_InitInterp(Tcl_Interp *interp)
 	gtk_container_add(GTK_CONTAINER(appThemeData->protoLayout),
 	    appThemeData->gtkTreeView);
 	gtk_widget_realize(appThemeData->gtkTreeView);
-
+#if 0
+	g_signal_connect(G_OBJECT(appThemeData->gtkTreeView), "style-set",
+	    G_CALLBACK(StyleSetCallback), interp); /* FIXME: all interps, which thread */
+#endif
 	/* GTK_SHADOW_IN is default for GtkTreeView */
 	appThemeData->gtkArrow = gtk_arrow_new(GTK_ARROW_NONE, GTK_SHADOW_IN);
 	gtk_container_add(GTK_CONTAINER(appThemeData->protoLayout),
@@ -1212,11 +1285,15 @@ int TreeTheme_InitInterp(Tcl_Interp *interp)
 	gtk_tree_view_append_column(GTK_TREE_VIEW(appThemeData->gtkTreeView),
 	    column);
 	
+	XSetErrorHandler(TkXErrorHandler);
+	
 	gdk_threads_leave(); /* +++ release global mutex +++ */
     }
     
     Tcl_MutexUnlock(&themeMutex);
-
+#if 0
+    Tcl_CreateObjCommand(interp, "gtk-theme-changed", ThemeChangedObjCmd, NULL, NULL);
+#endif
     return TCL_OK;
 }
 
@@ -1312,6 +1389,48 @@ int TreeTheme_InitInterp(Tcl_Interp *interp)
 }
 
 #endif /* not TREECTRL_GTK */
+
+int 
+TreeThemeCmd(
+    TreeCtrl *tree,		/* Widget info. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *CONST objv[]	/* Argument values. */
+    )
+{
+    Tcl_Interp *interp = tree->interp;
+    static CONST char *commandName[] = {
+	"platform", (char *) NULL
+    };
+    enum {
+	COMMAND_PLATFORM
+    };
+    int index;
+
+    if (objc < 3) {
+	Tcl_WrongNumArgs(interp, 2, objv, "command ?arg arg ...?");
+	return TCL_ERROR;
+    }
+
+    if (Tcl_GetIndexFromObj(interp, objv[2], commandName, "command", 0,
+	    &index) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    switch (index) {
+	/* T theme platform */
+	case COMMAND_PLATFORM: {
+	    char *platform = "X11";
+#ifdef TREECTRL_GTK
+	    if (IsGtkUnavailable() == 0)
+		platform = "gtk";
+#endif
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(platform, -1));
+	    break;
+	}
+    }
+
+    return TCL_OK;
+}
 
 /*** Gradients ***/
 

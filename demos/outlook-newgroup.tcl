@@ -24,6 +24,12 @@ proc DemoOutlookNewsgroup {} {
 	-showroot no -showrootbutton no -showbuttons yes -showlines no \
 	-xscrollincrement 20
 
+    switch -- [$T theme platform] {
+	visualstyles {
+	    $T theme setwindowtheme "Explorer"
+	}
+    }
+
     #
     # Create columns
     #

@@ -133,7 +133,7 @@ proc DemoExplorerDetails {} {
     # Create columns
     #
 
-    $T column create -text Name -tags name -width 200 \
+    $T column create -text Name -tags {C0 name} -width 200 \
 	-arrow up -itembackground #F7F7F7
     $T column create -text Size -tags size -justify right -width 60 \
 	-arrowside left -arrowgravity right
@@ -695,7 +695,7 @@ proc ExplorerDoubleButton1 {w x y} {
 	set item [lindex $id 1]
 	set column [lindex $id 3]
 	if {[$w item tag expr $item directory]} {
-	    set name [$w item text $item $column]
+	    set name [$w item text $item {tag C0}]
 	    if {$name eq ".."} {
 		set Dir [file dirname $Dir]
 	    } else {
@@ -798,7 +798,7 @@ proc DemoExplorerDetailsWin7 {} {
     # Create columns
     #
 
-    $T column create -text Name -tags name -width 200 \
+    $T column create -text Name -tags {C0 name} -width 200 \
 	-arrow up
     $T column create -text Size -tags size -justify right -width 60 \
 	-arrowside left -arrowgravity right
@@ -1044,8 +1044,8 @@ proc DemoExplorerDetailsWin7_FixItemStyles {T} {
 	    set padx {0 0}
 	    set state openWE
 	}
-	switch [$T column cget $C -tags] {
-	    name {
+	switch -glob [$T column cget $C -tags] {
+	    *name* {
 		set style styName
 		set padelem elemImg
 		set padelemX {6 2}

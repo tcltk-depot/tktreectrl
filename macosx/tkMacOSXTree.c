@@ -974,9 +974,11 @@ int TreeTheme_DrawHeaderArrow(TreeCtrl *tree, Drawable drawable, int state, int 
     return TCL_ERROR;
 }
 
-int TreeTheme_DrawButton(TreeCtrl *tree, Drawable drawable, int open,
+int TreeTheme_DrawButton(TreeCtrl *tree, Drawable drawable, int state,
     int x, int y, int width, int height)
 {
+    int open = (state & STATE_OPEN) != 0;
+    int pressed = (state & BUTTON_STATE_PRESSED) != 0;
     MacDrawable *macDraw = (MacDrawable *) drawable;
     CGRect bounds;
     HIThemeButtonDrawInfo info;
@@ -994,7 +996,7 @@ int TreeTheme_DrawButton(TreeCtrl *tree, Drawable drawable, int open,
     bounds.size.height = height;
 
     info.version = 0;
-    info.state = kThemeStateActive;
+    info.state = pressed ? kThemeStatePressed : kThemeStateActive;
     info.kind = kThemeDisclosureButton;
     info.value = open ? kThemeDisclosureDown : kThemeDisclosureRight;
     info.adornment = kThemeAdornmentDrawIndicatorOnly;
@@ -1097,6 +1099,44 @@ int TreeTheme_Free(TreeCtrl *tree)
 
 int TreeTheme_InitInterp(Tcl_Interp *interp)
 {
+    return TCL_OK;
+}
+
+int 
+TreeThemeCmd(
+    TreeCtrl *tree,		/* Widget info. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *CONST objv[]	/* Argument values. */
+    )
+{
+    Tcl_Interp *interp = tree->interp;
+    static CONST char *commandName[] = {
+	"platform", (char *) NULL
+    };
+    enum {
+	COMMAND_PLATFORM
+    };
+    int index;
+
+    if (objc < 3) {
+	Tcl_WrongNumArgs(interp, 2, objv, "command ?arg arg ...?");
+	return TCL_ERROR;
+    }
+
+    if (Tcl_GetIndexFromObj(interp, objv[2], commandName, "command", 0,
+	    &index) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    switch (index) {
+	/* T theme platform */
+	case COMMAND_PLATFORM: {
+	    char *platform = "aqua";
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(platform, -1));
+	    break;
+	}
+    }
+
     return TCL_OK;
 }
 
@@ -1732,6 +1772,7 @@ TreeGradient_FillRoundRect(
     TreeMacOSX_ReleaseContext(tree, &dc);
 }
 
+#if 0
 static CGMutablePathRef
 MakeRoundRectPath_Stroke(
     TreeRectangle tr,		/* Where to draw. */
@@ -1822,7 +1863,7 @@ MakeRoundRectPath_Stroke(
 
     return p;
 }
-
+#endif
 void
 Tree_DrawRoundRect(
     TreeCtrl *tree,		/* Widget info. */

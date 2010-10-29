@@ -22,7 +22,8 @@ proc DemoRandom {} {
     #
 
     $T configure -itemheight $height -selectmode extended \
-	-showroot yes -showrootbutton yes -showbuttons yes -showlines $::ShowLines \
+	-showroot yes -showrootbutton yes -showbuttons yes \
+	-showlines [ShouldShowLines $T] \
 	-scrollmargin 16 -xscrolldelay "500 50" -yscrolldelay "500 50"
 
     #
@@ -178,10 +179,10 @@ proc RandomButton1 {T x y} {
 	lassign $id where item arg1 arg2 arg3 arg4
 	switch $arg1 {
 	    button {
-		$T item toggle $item
+		TreeCtrl::ButtonPress1 $T $x $y
 	    }
 	    line {
-		$T item toggle $arg2
+		TreeCtrl::ButtonPress1 $T $x $y
 	    }
 	    column {
 		if {![TreeCtrl::IsSensitive $T $x $y]} {
@@ -313,7 +314,7 @@ proc RandomMotion {T x y} {
 
 proc RandomRelease1 {T x y} {
     variable TreeCtrl::Priv
-if {![info exists Priv(buttonMode)]} return
+    if {![info exists Priv(buttonMode)]} return
     switch $Priv(buttonMode) {
 	"drag" {
 	    TreeCtrl::AutoScanCancel $T

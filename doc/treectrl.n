@@ -368,6 +368,8 @@ package require \fBtreectrl  2.2.10\fR
 .sp
 \fIpathName\fR \fBgradient names\fR
 .sp
+\fIpathName\fR \fBgradient native\fR ?\fIpreference\fR?
+.sp
 \fIpathName\fR \fBidentify\fR \fIx\fR \fIy\fR
 .sp
 \fIpathName\fR \fBindex\fR \fIitemDesc\fR
@@ -377,6 +379,8 @@ package require \fBtreectrl  2.2.10\fR
 \fIpathName\fR \fBitem ancestors\fR \fIitemDesc\fR
 .sp
 \fIpathName\fR \fBitem bbox\fR \fIitemDesc\fR ?\fIcolumn\fR? ?\fIelement\fR?
+.sp
+\fIpathName\fR \fBitem buttonstate\fR \fIitemDesc\fR ?\fIstate\fR?
 .sp
 \fIpathName\fR \fBitem cget\fR \fIitemDesc\fR \fIoption\fR
 .sp
@@ -577,6 +581,12 @@ package require \fBtreectrl  2.2.10\fR
 \fIpathName\fR \fBstyle layout\fR \fIstyle\fR \fIelement\fR ?\fIoption\fR? ?\fIvalue\fR? ?\fIoption value ...\fR?
 .sp
 \fIpathName\fR \fBstyle names\fR
+.sp
+\fIpathName\fR \fBtheme\fR \fIoption\fR ?\fIarg ...\fR?
+.sp
+\fIpathName\fR \fBtheme platform\fR
+.sp
+\fIpathName\fR \fBtheme setwindowtheme\fR \fIappname\fR
 .sp
 \fIpathName\fR \fBtoggle\fR ?\fB-recurse\fR? ?\fIitemDesc ...\fR?
 .sp
@@ -1925,6 +1935,12 @@ using the gradient have stopped using it.
 \fIpathName\fR \fBgradient names\fR
 Returns a list of names of all the gradients that have been created by this treectrl
 widget.
+.TP
+\fIpathName\fR \fBgradient native\fR ?\fIpreference\fR?
+Without any arguments, this command returns a boolean indicating whether
+or not the platform supports native transparent gradients.  The \fIpreference\fR
+argument is a boolean that indicates whether native gradients should be used;
+this can be used to test the appearance of the application.
 .RE
 .TP
 \fIpathName\fR \fBidentify\fR \fIx\fR \fIy\fR
@@ -1982,6 +1998,13 @@ over all non-locked columns. If a \fIcolumn\fR is specified, only the area of th
 in this column is considered. If an additional \fIelement\fR is specified,
 the area of this \fIelement\fR in \fIcolumn\fR of the specified item is
 returned.
+.TP
+\fIpathName\fR \fBitem buttonstate\fR \fIitemDesc\fR ?\fIstate\fR?
+If \fIstate\fR is specified, this command sets the state of the expand/collapse
+button for the single item specified by \fIitemDesc\fR.  The \fIstate\fR
+argument may be one of \fBactive\fR, \fBnormal\fR or \fBpressed\fR.
+The current (or newly-set) state of the button is returned.  The button state
+is used by the system theme, if any, to change the appearance of the button.
 .TP
 \fIpathName\fR \fBitem cget\fR \fIitemDesc\fR \fIoption\fR
 Returns the current value of the configuration option for the item specified by
@@ -3158,6 +3181,29 @@ item state, then the element is not displayed and consumes no space in the layou
 Returns a list containing the names of all existing styles.
 .RE
 .TP
+\fIpathName\fR \fBtheme\fR \fIoption\fR ?\fIarg ...\fR?
+This command is used to interact with the platform-specific theme.
+The exact behavior of the command depends on the \fIoption\fR argument
+that follows the \fBtheme\fR argument.
+The following forms of the command are supported:
+.RS
+.TP
+\fIpathName\fR \fBtheme platform\fR
+Returns the API used to draw themed parts of the treectrl.  On Mac OS X the result
+is always \fBaqua\fR.  On MS Windows the result is \fBvisualstyles\fR if the
+uxtheme.dll was loaded and visual themes are in use, otherwise \fBX11\fR is
+returned to indicate the Tk Xlib calls are drawing the themed parts.
+On Unix systems the result is \fBgtk\fR if the Gtk+ version of treectrl
+was built, otherwise \fBX11\fR is returned.
+.TP
+\fIpathName\fR \fBtheme setwindowtheme\fR \fIappname\fR
+The command is available on MS Windows only.  If \fIappname\fR is "Explorer" then
+the item buttons look like those in the Explorer file browser (disclosure
+triangles under Windows Vista/7).  If \fIappname\fR is an empty string then
+the buttons revert to their default appearance according to the system's
+current visual style.
+.RE
+.TP
 \fIpathName\fR \fBtoggle\fR ?\fB-recurse\fR? ?\fIitemDesc ...\fR?
 Use \fBitem toggle\fR instead.
 .TP
@@ -3407,8 +3453,10 @@ See also the \fBcolumn tag\fR command.
 Specifies a text string to be displayed as the column title.
 .TP
 \fB\fB-textcolor\fR\fR \fIcolor\fR
-Specifies a color, which should be used as foreground color
-to display the column title.
+Specifies as a \fBper-state\fR option the color to
+display the column title with.  When the value of this option is unspecified,
+the title will be drawn according to the system theme, if any, otherwise
+the Tk button foreground color (usually black) is used.  The default is unspecified.
 .TP
 \fB\fB-textlines\fR\fR \fIcount\fR
 Specifies the maximum number of lines of text to display in the column title.
@@ -4487,7 +4535,7 @@ Gradients may be used in the following places:
 .IP [1]
 The -fill option of rect elements.
 .IP [2]
-The -fill option of \fBmarquee configure\fR.
+The -fill option of the \fBmarquee configure\fR command.
 .IP [3]
 The -itembackground option of columns.
 .PP
