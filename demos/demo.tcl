@@ -192,6 +192,7 @@ if {$tile} {
 set UseGradient 1
 
 option add *TreeCtrl.useTheme 1
+option add *TreeCtrl.Background white
 #option add *TreeCtrl.itemPrefix item
 #option add *TreeCtrl.ColumnPrefix col
 

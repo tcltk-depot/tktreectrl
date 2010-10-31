@@ -1954,7 +1954,7 @@ Tree_AddItem(
     int id, isNew;
 
     id = TreeItem_SetID(tree, item, tree->nextItemId++);
-    hPtr = Tcl_CreateHashEntry(&tree->itemHash, (char *) id, &isNew);
+    hPtr = Tcl_CreateHashEntry(&tree->itemHash, (char *) INT2PTR(id), &isNew);
     Tcl_SetHashValue(hPtr, item);
     tree->itemCount++;
 }
@@ -1994,7 +1994,7 @@ Tree_RemoveItem(
 	Tcl_DeleteHashEntry(hPtr);
 
     hPtr = Tcl_FindHashEntry(&tree->itemHash,
-	    (char *) TreeItem_GetID(tree, item));
+	    (char *) INT2PTR(TreeItem_GetID(tree, item)));
     Tcl_DeleteHashEntry(hPtr);
     tree->itemCount--;
     if (tree->itemCount == 1)

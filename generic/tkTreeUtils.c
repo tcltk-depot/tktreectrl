@@ -5218,7 +5218,7 @@ BooleanFlagCO_Set(
     int flags
     )
 {
-    int theFlag = (int) clientData;
+    int theFlag = PTR2INT(clientData);
     int new, *internalPtr;
 
     if (internalOffset >= 0)
@@ -5248,7 +5248,7 @@ BooleanFlagCO_Get(
     int internalOffset
     )
 {
-    int theFlag = (int) clientData;
+    int theFlag = PTR2INT(clientData);
     int value = *(int *) (recordPtr + internalOffset);
 
     return Tcl_NewBooleanObj(value & theFlag);
@@ -5262,7 +5262,7 @@ BooleanFlagCO_Restore(
     char *saveInternalPtr
     )
 {
-    int theFlag = (int) clientData;
+    int theFlag = PTR2INT(clientData);
     int value = *(int *) saveInternalPtr;
 
     if (value & theFlag)
@@ -5294,7 +5294,7 @@ BooleanFlagCO_Init(
     co->getProc = BooleanFlagCO_Get;
     co->restoreProc = BooleanFlagCO_Restore;
     co->freeProc = NULL;
-    co->clientData = (ClientData) theFlag;
+    co->clientData = (ClientData) INT2PTR(theFlag);
 
     specPtr->clientData = co;
 

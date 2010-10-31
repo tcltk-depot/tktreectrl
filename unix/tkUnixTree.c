@@ -1762,90 +1762,465 @@ TreeTheme_InitInterp(
 #endif /* TREECTRL_GTK */
 
 #ifndef TREECTRL_GTK
-int TreeTheme_DrawHeaderItem(TreeCtrl *tree, Drawable drawable, int state,
-    int arrow, int visIndex, int x, int y, int width, int height)
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeTheme_DrawHeaderItem --
+ *
+ *	Draws the background of a single column header.  On Mac OS X
+ *	this also draws the sort arrow, if any.
+ *
+ * Results:
+ *	TCL_OK if drawing occurred, TCL_ERROR if the X11 fallback
+ *	should be used.
+ *
+ * Side effects:
+ *	Drawing.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TreeTheme_DrawHeaderItem(
+    TreeCtrl *tree,		/* Widget info. */
+    Drawable drawable,		/* Where to draw. */
+    int state,			/* COLUMN_STATE_xxx flags. */
+    int arrow,			/* COLUMN_ARROW_xxx flags. */
+    int visIndex,		/* 0-based index in list of visible columns. */
+    int x, int y,		/* Bounds of the header. */
+    int width, int height	/* Bounds of the header. */
+    )
 {
     return TCL_ERROR;
 }
 
-int TreeTheme_GetHeaderContentMargins(TreeCtrl *tree, int state, int arrow, int bounds[4])
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeTheme_GetHeaderContentMargins --
+ *
+ *	Returns the padding inside the column header borders where
+ *	text etc may be displayed.
+ *
+ * Results:
+ *	TCL_OK if 'bounds' was set, TCL_ERROR otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TreeTheme_GetHeaderContentMargins(
+    TreeCtrl *tree,		/* Widget info. */
+    int state,			/* COLUMN_STATE_xxx flags. */
+    int arrow,			/* COLUMN_ARROW_xxx flags. */
+    int bounds[4]		/* Returned left-top-right-bottom padding. */
+    )
 {
     return TCL_ERROR;
 }
 
-int TreeTheme_DrawHeaderArrow(TreeCtrl *tree, Drawable drawable, int state, int up, int x, int y, int width, int height)
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeTheme_DrawHeaderArrow --
+ *
+ *	Draws the sort arrow in a column header.
+ *
+ * Results:
+ *	TCL_OK if drawing occurred, TCL_ERROR if the X11 fallback
+ *	should be used.
+ *
+ * Side effects:
+ *	Drawing.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TreeTheme_DrawHeaderArrow(
+    TreeCtrl *tree,		/* Widget info. */
+    Drawable drawable,		/* Where to draw. */
+    int state,			/* COLUMN_STATE_xxx flags. */
+    int up,			/* TRUE if up arrow, FALSE otherwise. */
+    int x, int y,		/* Bounds of arrow.  Width and */
+    int width, int height	/* height are the same as that returned */
+				/* by TreeTheme_GetArrowSize(). */ 
+    )
 {
     return TCL_ERROR;
 }
 
-int TreeTheme_DrawButton(TreeCtrl *tree, Drawable drawable, TreeItem item, int open, int x, int y, int width, int height)
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeTheme_DrawButton --
+ *
+ *	Draws a single expand/collapse item button.
+ *
+ * Results:
+ *	TCL_OK if drawing occurred, TCL_ERROR if the X11 fallback
+ *	should be used.
+ *
+ * Side effects:
+ *	Drawing.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TreeTheme_DrawButton(
+    TreeCtrl *tree,		/* Widget info. */
+    Drawable drawable,		/* Where to draw. */
+    TreeItem item,		/* Needed for animating. */
+    int state,			/* STATE_xxx | BUTTON_STATE_xxx flags. */
+    int x, int y,		/* Bounds of the button.  Width and height */
+    int width, int height	/* are the same as that returned by */
+				/* TreeTheme_GetButtonSize(). */
+    )
 {
     return TCL_ERROR;
 }
 
-int TreeTheme_GetButtonSize(TreeCtrl *tree, Drawable drawable, int open, int *widthPtr, int *heightPtr)
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeTheme_GetButtonSize --
+ *
+ *	Returns the width and height of an expand/collapse item button.
+ *
+ * Results:
+ *	TCL_OK if *widthPtr and *heightPtr were set, TCL_ERROR
+ *	if themed buttons can't be drawn.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TreeTheme_GetButtonSize(
+    TreeCtrl *tree,		/* Widget info. */
+    Drawable drawable,		/* Needed on MS Windows. */
+    int open,			/* TRUE if expanded button. */
+    int *widthPtr,		/* Returned width of button. */
+    int *heightPtr		/* Returned height of button. */
+    )
 {
     return TCL_ERROR;
 }
 
-int TreeTheme_GetArrowSize(TreeCtrl *tree, Drawable drawable, int up, int *widthPtr, int *heightPtr)
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeTheme_GetArrowSize --
+ *
+ *	Returns the width and height of a column header sort arrow.
+ *
+ * Results:
+ *	TCL_OK if *widthPtr and *heightPtr were set, TCL_ERROR
+ *	if themed sort arrows can't be drawn.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TreeTheme_GetArrowSize(
+    TreeCtrl *tree,		/* Widget info. */
+    Drawable drawable,		/* Needed on MS Windows. */
+    int up,			/* TRUE if up arrow. */
+    int *widthPtr,		/* Returned width of arrow. */
+    int *heightPtr		/* Returned height of arrow. */
+    )
 {
     return TCL_ERROR;
 }
 
 
-int TreeTheme_SetBorders(TreeCtrl *tree)
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeTheme_SetBorders --
+ *
+ *	Sets the TreeCtrl.inset pad values according to the needs of
+ *	the system theme.
+ *
+ * Results:
+ *	TCL_OK if the inset was set, TCL_ERROR if the -highlightthickness
+ *	and -borderwidth values should be used.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TreeTheme_SetBorders(
+    TreeCtrl *tree		/* Widget info. */
+    )
 {
     return TCL_ERROR;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeTheme_DrawBorders --
+ *
+ *	Draws themed borders around the edges of the treectrl.
+ *
+ * Results:
+ *	TCL_OK if drawing occurred, TCL_ERROR if the Tk focus rectangle
+ *	and 3D border should be drawn.
+ *
+ * Side effects:
+ *	Drawing.
+ *
+ *----------------------------------------------------------------------
+ */
 
 int
 TreeTheme_DrawBorders(
-    TreeCtrl *tree,
-    Drawable drawable
+    TreeCtrl *tree,		/* Widget info. */
+    Drawable drawable		/* Where to draw. */
     )
 {
     return TCL_ERROR;
 }
 
-int TreeTheme_GetColumnTextColor(
-    TreeCtrl *tree,
-    int columnState,
-    XColor **colorPtrPtr)
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeTheme_GetColumnTextColor --
+ *
+ *	Returns the text fill color to display a column title with.
+ *
+ * Results:
+ *	TCL_OK if the *colorPtrPtr was set, TCL_ERROR if a non-theme
+ *	color should be used.
+ *
+ * Side effects:
+ *	May allocate a new XColor.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TreeTheme_GetColumnTextColor(
+    TreeCtrl *tree,		/* Widget info. */
+    int columnState,		/* COLUMN_STATE_xxx flags. */
+    XColor **colorPtrPtr	/* Returned text color. */
+    )
 {
     return TCL_ERROR;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeTheme_AnimateButtonStart --
+ *
+ *	Starts an expand/collapse item button animating from open to
+ *	closed or vice versa.
+ *
+ * Results:
+ *	TCL_OK.
+ *
+ * Side effects:
+ *	May create a new Tcl_TimerToken.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TreeTheme_AnimateButtonStart(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeItem item		/* The item whose button should animate. */
+    )
+{
+    TreeItem_OpenClose(tree, item, -1);
+#ifdef SELECTION_VISIBLE
+    Tree_DeselectHidden(tree);
+#endif
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeTheme_ItemDeleted --
+ *
+ *	Cancels any item-button animation in progress.
+ *
+ * Results:
+ *	TCL_OK.
+ *
+ * Side effects:
+ *	May delete a TCL_TimerToken.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TreeTheme_ItemDeleted(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeItem item		/* Item being deleted. */
+    )
+{
+    return TCL_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeTheme_Relayout --
+ *
+ *	This gets called when certain config options change and when
+ *	the size of the widget changes.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
 
 void
 TreeTheme_Relayout(
-    TreeCtrl *tree
+    TreeCtrl *tree		/* Widget info. */
     )
 {
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeTheme_IsDesktopComposited --
+ *
+ *	Determine if the OS windowing system is composited AKA
+ *	double-buffered.
+ *
+ * Results:
+ *	FALSE FALSE FALSE.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
 int
 TreeTheme_IsDesktopComposited(
-    TreeCtrl *tree
+    TreeCtrl *tree		/* Widget info. */
     )
 {
     return FALSE;
 }
 
-void TreeTheme_ThemeChanged(TreeCtrl *tree)
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeTheme_ThemeChanged --
+ *
+ *	Called after the system theme changes.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TreeTheme_ThemeChanged(
+    TreeCtrl *tree		/* Widget info. */
+    )
 {
 }
 
-int TreeTheme_Init(TreeCtrl *tree)
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeTheme_Init --
+ *
+ *	Performs theme-related initialization when a treectrl is
+ *	created.
+ *
+ * Results:
+ *	TCL_OK or TCL_ERROR, but result is ignored.
+ *
+ * Side effects:
+ *	Depends on the platform.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TreeTheme_Init(
+    TreeCtrl *tree		/* Widget info. */
+    )
 {
     return TCL_OK;
 }
 
-int TreeTheme_Free(TreeCtrl *tree)
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeTheme_Free --
+ *
+ *	Performs theme-related cleanup a when a treectrl is destroyed.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Depends on the platform.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TreeTheme_Free(
+    TreeCtrl *tree		/* Widget info. */
+    )
 {
     return TCL_OK;
 }
 
-int TreeTheme_InitInterp(Tcl_Interp *interp)
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeTheme_InitInterp --
+ *
+ *	Performs theme-related initialization when the TkTreeCtrl
+ *	package is loaded into an interpreter.
+ *
+ * Results:
+ *	TCL_OK or TCL_ERROR, but result is ignored.
+ *
+ * Side effects:
+ *	Depends on the platform.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TreeTheme_InitInterp(
+    Tcl_Interp *interp		/* Interp that loaded TkTreeCtrl pkg. */
+    )
 {
     return TCL_OK;
 }
@@ -1916,7 +2291,11 @@ int
 Tree_HasNativeGradients(
     TreeCtrl *tree)
 {
-    return 0; /* TODO: cairo */
+#ifdef  TREECTRL_GTK
+    return IsGtkUnavailable() == 0;
+#else
+    return 0;
+#endif
 }
 
 /*
@@ -1935,6 +2314,14 @@ Tree_HasNativeGradients(
  *----------------------------------------------------------------------
  */
 
+#ifdef TREECTRL_GTK
+#include <cairo-xlib.h>
+
+#define BlueDoubleFromXColorPtr(xc)   (double) (((xc)->pixel & 0xFF)) / 255.0
+#define GreenDoubleFromXColorPtr(xc)  (double) ((((xc)->pixel >> 8) & 0xFF)) / 255.0
+#define RedDoubleFromXColorPtr(xc)    (double) ((((xc)->pixel >> 16) & 0xFF)) / 255.0
+#endif /* TREECTRL_GTK */
+
 void
 TreeGradient_FillRect(
     TreeCtrl *tree,		/* Widget info. */
@@ -1945,10 +2332,149 @@ TreeGradient_FillRect(
     TreeRectangle tr		/* Rectangle to paint. */
     )
 {
-    TreeGradient_FillRectX11(tree, td, clip, gradient, trBrush, tr);
+#ifdef TREECTRL_GTK
+    cairo_t *c;
+    cairo_surface_t *surface;
+    cairo_pattern_t *pattern;
+    int x1, y1, x2, y2, i;
 
-    /* FIXME: Can use 'cairo' on Unix, but need to add it to configure + Make */
+    if (IsGtkUnavailable() || !tree->nativeGradients) {
+errorExit:
+	TreeGradient_FillRectX11(tree, td, clip, gradient, trBrush, tr);
+	return;
+    }
+
+    surface =  cairo_xlib_surface_create(tree->display, td.drawable,
+	Tk_Visual(tree->tkwin), td.width, td.height);
+    if  (surface == NULL)
+	goto errorExit;
+
+    c = cairo_create(surface);
+    if  (c == NULL)
+	goto errorExit;
+
+    x1 = trBrush.x, y1 = trBrush.y;
+    if (gradient->vertical) {
+	x2 = x1, y2 = y1 + trBrush.height;
+    } else {
+	x2 = x1 + trBrush.width, y2 = y1;
+    }
+    pattern = cairo_pattern_create_linear(x1, y1, x2, y2);
+    if  (pattern == NULL)
+	goto errorExit;
+
+    for (i = 0; i < gradient->stopArrPtr->nstops; i++) {
+	GradientStop *stop = gradient->stopArrPtr->stops[i];
+	cairo_pattern_add_color_stop_rgba(pattern,
+	    stop->offset,
+	    RedDoubleFromXColorPtr(stop->color),
+	    GreenDoubleFromXColorPtr(stop->color),
+	    BlueDoubleFromXColorPtr(stop->color),
+	    stop->opacity);
+    }
+    cairo_set_source(c, pattern);
+    cairo_rectangle(c, tr.x, tr.y, tr.width, tr.height);
+    cairo_fill(c);
+    cairo_pattern_destroy(pattern);
+    cairo_destroy(c);
+    cairo_surface_destroy(surface);
+#else
+    TreeGradient_FillRectX11(tree, td, clip, gradient, trBrush, tr);
+#endif
 }
+
+#ifdef TREECTRL_GTK
+
+/* http://cairographics.org/cookbook/roundedrectangles/ */
+#define ARC_TO_BEZIER 0.55228475
+
+static void
+MakeRoundRectPath_Fill(
+    cairo_t *c,			/* Cairo context. */
+    TreeRectangle tr,		/* Where to draw. */
+    int rx, int ry,		/* Corner radius */
+    int open			/* RECT_OPEN_x flags */
+    )
+{
+    double x = tr.x, y = tr.y, w = tr.width, h = tr.height;
+    int drawW = (open & RECT_OPEN_W) == 0;
+    int drawN = (open & RECT_OPEN_N) == 0;
+    int drawE = (open & RECT_OPEN_E) == 0;
+    int drawS = (open & RECT_OPEN_S) == 0;
+    double c1, c2;
+
+    c1 = ARC_TO_BEZIER * rx;
+    c2 = ARC_TO_BEZIER * ry;
+
+    /* Simple case: draw all 4 corners and 4 edges */
+    if (!open) {
+
+	cairo_move_to(c, x + rx, y);
+	cairo_rel_line_to(c, w - 2 * rx, 0.0);
+	cairo_rel_curve_to(c, c1, 0.0, rx, c2, rx, ry);
+	cairo_rel_line_to(c, 0, h - 2 * ry);
+	cairo_rel_curve_to(c, 0.0, c2, c1 - rx, ry, -rx, ry);
+	cairo_rel_line_to(c, -w + 2 * rx, 0);
+	cairo_rel_curve_to(c, -c1, 0, -rx, -c2, -rx, -ry);
+	cairo_rel_line_to(c, 0, -h + 2 * ry);
+	cairo_rel_curve_to(c, 0.0, -c2, rx - c1, -ry, rx, -ry);
+
+    /* Complicated case: some edges are "open" */
+    } else {
+	struct {double x,y;} start[4], end[4]; /* start and end points of line segments */
+#define  PointMake(P,X,Y) (P).x=X,(P).y=Y
+	PointMake(start[0], x, y);
+	end[3] = start[0];
+	if (drawW && drawN) {
+	    start[0].x += rx;
+	    end[3].y += ry;
+	}
+	PointMake(end[0], x + w, y);
+	start[1]= end[0];
+	if (drawE && drawN) {
+	    end[0].x -= rx;
+	    start[1].y += ry;
+	}
+	PointMake(end[1], x + w, y + h);
+	start[2] = end[1];
+	if (drawE && drawS) {
+	    end[1].y -= ry;
+	    start[2].x -= rx;
+	}
+	PointMake(end[2], x, y + h);
+	start[3] = end[2];
+	if (drawW && drawS) {
+	    end[2].x += rx;
+	    start[3].y -= ry;
+	}
+#undef  PointMake
+
+	if (drawW && drawN) {
+	    cairo_move_to(c, x, y + ry);
+	    cairo_rel_curve_to(c, 0.0, -c2, rx - c1, -ry, rx, -ry); /* top-left */
+	} else {
+	    cairo_move_to(c, start[0].x, start[0].y);
+	}
+	cairo_line_to(c, end[0].x, end[0].y);
+	if (drawE && drawN)
+	    cairo_rel_curve_to(c, c1, 0.0, rx, c2, rx, ry); /* top-right */
+	/*else
+	    CGPathMoveToPoint(p, NULL, start[1].x, start[1].y);*/
+	cairo_line_to(c, end[1].x, end[1].y);
+	if (drawE && drawS)
+	    cairo_rel_curve_to(c, 0.0, c2, c1 - rx, ry, -rx, ry); /* bottom-right */
+	/*else
+	    CGPathMoveToPoint(p, NULL, start[2].x, start[2].y);*/
+	cairo_line_to(c, end[2].x, end[2].y);
+	if (drawW && drawS)
+	    cairo_rel_curve_to(c, -c1, 0, -rx, -c2, -rx, -ry); /* bottom-left */
+	/*else
+	    CGPathMoveToPoint(p, NULL, start[3].x, start[3].y);*/
+	cairo_line_to(c, end[3].x, end[3].y);
+    }
+}
+
+#endif /* TREECTRL_GTK */
 
 void
 TreeGradient_FillRoundRect(
@@ -1961,9 +2487,76 @@ TreeGradient_FillRoundRect(
     int open			/* RECT_OPEN_x flags */
     )
 {
-    TreeGradient_FillRoundRectX11(tree, td, NULL, gradient, trBrush, tr, rx, ry, open);
+#ifdef TREECTRL_GTK
+    cairo_t *c;
+    cairo_surface_t *surface;
+    cairo_pattern_t *pattern;
+    int x1, y1, x2, y2, i, x, y, w, h, c1, c2;
 
-    /* FIXME: Can use 'cairo' on Unix, but need to add it to configure + Make */
+    if (IsGtkUnavailable() || !tree->nativeGradients) {
+errorExit:
+	TreeGradient_FillRoundRectX11(tree, td, NULL, gradient, trBrush, tr, rx, ry, open);
+	return;
+    }
+
+    surface =  cairo_xlib_surface_create(tree->display, td.drawable,
+	Tk_Visual(tree->tkwin), td.width, td.height);
+    if  (surface == NULL)
+	goto errorExit;
+
+    c = cairo_create(surface);
+    if  (c == NULL)
+	goto errorExit;
+
+    x1 = trBrush.x, y1 = trBrush.y;
+    if (gradient->vertical) {
+	x2 = x1, y2 = y1 + trBrush.height;
+    } else {
+	x2 = x1 + trBrush.width, y2 = y1;
+    }
+    pattern = cairo_pattern_create_linear(x1, y1, x2, y2);
+    if  (pattern == NULL)
+	goto errorExit;
+
+    for (i = 0; i < gradient->stopArrPtr->nstops; i++) {
+	GradientStop *stop = gradient->stopArrPtr->stops[i];
+	cairo_pattern_add_color_stop_rgba(pattern,
+	    stop->offset,
+	    RedDoubleFromXColorPtr(stop->color),
+	    GreenDoubleFromXColorPtr(stop->color),
+	    BlueDoubleFromXColorPtr(stop->color),
+	    stop->opacity);
+    }
+    cairo_set_source(c, pattern);
+
+    /* http://cairographics.org/cookbook/roundedrectangles/ */
+#if 1
+    MakeRoundRectPath_Fill(c, tr, rx, ry, open);
+#else
+    x = tr.x, y = tr.y, w = tr.width, h = tr.height;
+    /*   A****BQ	*/
+    /*  H      C	*/
+    /*  *      *	*/
+    /*  G      D	*/
+    /*   F****E		*/
+    cairo_move_to(c,x+rx,y);                      /* Move to A */
+    cairo_line_to(c,x+w-rx,y);                    /* Straight line to B */
+    cairo_curve_to(c,x+w,y,x+w,y,x+w,y+ry);       /* Curve to C, Control points are both at Q */
+    cairo_line_to(c,x+w,y+h-ry);                  /* Move to D */
+    cairo_curve_to(c,x+w,y+h,x+w,y+h,x+w-rx,y+h); /* Curve to E */
+    cairo_line_to(c,x+rx,y+h);                    /* Line to F */
+    cairo_curve_to(c,x,y+h,x,y+h,x,y+h-ry);       /* Curve to G */
+    cairo_line_to(c,x,y+ry);                      /* Line to H */
+    cairo_curve_to(c,x,y,x,y,x+rx,y);             /* Curve to A */
+#endif
+
+    cairo_fill(c);
+    cairo_pattern_destroy(pattern);
+    cairo_destroy(c);
+    cairo_surface_destroy(surface);
+#else
+    TreeGradient_FillRoundRectX11(tree, td, NULL, gradient, trBrush, tr, rx, ry, open);
+#endif
 }
 
 void
@@ -1977,7 +2570,7 @@ Tree_DrawRoundRect(
     int open			/* RECT_OPEN_x flags */
     )
 {
-    /* FIXME: MacOSX + Cocoa, Unix + cairo */
+    /* FIXME: Can use 'cairo' on Unix, but need to add it to configure + Make */
     GC gc = Tk_GCForColor(xcolor, Tk_WindowId(tree->tkwin));
     Tree_DrawRoundRectX11(tree, td, gc, tr, outlineWidth, rx, ry, open);
 }
@@ -1992,7 +2585,7 @@ Tree_FillRoundRect(
     int open			/* RECT_OPEN_x flags */
     )
 {
-    /* FIXME: MacOSX + Cocoa, Unix + cairo */
+    /* FIXME: Can use 'cairo' on Unix, but need to add it to configure + Make */
     GC gc = Tk_GCForColor(xcolor, Tk_WindowId(tree->tkwin));
     Tree_FillRoundRectX11(tree, td, gc, tr, rx, ry, open);
 }

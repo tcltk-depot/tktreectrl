@@ -754,6 +754,7 @@ proc DragStyleInit {} {
 # Configure the marquee for a modern transparent selection rectangle
 # where transparent gradients are supported.
 proc ConfigTransparentMarquee {T} {
+    if {!$::NativeGradients}  return
     if {![$T gradient native]} return
     if {[winfo depth $T] < 15} return
     if {[Platform windows]} {

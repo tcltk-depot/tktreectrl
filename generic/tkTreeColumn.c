@@ -454,7 +454,7 @@ ColumnCO_Set(
     int flags			/* Flags for the option, set Tk_SetOptions. */
     )
 {
-    int cfoFlags = (int) clientData;
+    int cfoFlags = PTR2INT(clientData);
     TreeCtrl *tree = (TreeCtrl *) ((TkWindow *) tkwin)->instanceData;
     int objEmpty;
     TreeColumn new, *internalPtr;

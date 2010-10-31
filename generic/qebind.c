@@ -29,6 +29,9 @@
 
 #include <ctype.h>
 #include <string.h>
+#ifdef  HAVE_INTPTR_T
+#include <stdint.h>
+#endif
 #include <tcl.h>
 #include <tk.h>
 #include "qebind.h"
@@ -43,6 +46,22 @@ MODULE_SCOPE void dbwin(char *fmt, ...);
  */
 
 #define UCHAR(c) ((unsigned char) (c))
+
+/*
+ * Macros used to cast between pointers and integers (e.g. when storing an int
+ * in ClientData), on 64-bit architectures they avoid gcc warning about "cast
+ * to/from pointer from/to integer of different size".
+ */
+
+#if !defined(INT2PTR) && !defined(PTR2INT)
+#   if defined(HAVE_INTPTR_T) || defined(intptr_t)
+#	define INT2PTR(p) ((void *)(intptr_t)(p))
+#	define PTR2INT(p) ((int)(intptr_t)(p))
+#   else
+#	define INT2PTR(p) ((void *)(p))
+#	define PTR2INT(p) ((int)(p))
+#   endif
+#endif
 
 int debug_bindings = 0;
 
@@ -224,7 +243,7 @@ int QE_InstallEvent(QE_BindingTable bindingTable, char *name, QE_ExpandProc expa
 
 	Tcl_SetHashValue(hPtr, (ClientData) eiPtr);
 
-	hPtr = Tcl_CreateHashEntry(&bindPtr->eventTableByType, (char *) type, &isNew);
+	hPtr = Tcl_CreateHashEntry(&bindPtr->eventTableByType, (char *) INT2PTR(type), &isNew);
 	Tcl_SetHashValue(hPtr, (ClientData) eiPtr);
 
 	/* List of EventInfos */
@@ -348,7 +367,7 @@ int QE_UninstallEvent(QE_BindingTable bindingTable, int eventType)
 	int i, count = 0;
 
 	/* Find the event */
-	hPtr = Tcl_FindHashEntry(&bindPtr->eventTableByType, (char *) eventType);
+	hPtr = Tcl_FindHashEntry(&bindPtr->eventTableByType, (char *) INT2PTR(eventType));
 	if (hPtr == NULL)
 		return TCL_ERROR;
 	eiPtr = (EventInfo *) Tcl_GetHashValue(hPtr);
@@ -455,7 +474,7 @@ static EventInfo *FindEvent(BindingTable *bindPtr, int eventType)
 {
 	Tcl_HashEntry *hPtr;
 
-	hPtr = Tcl_FindHashEntry(&bindPtr->eventTableByType, (char *) eventType);
+	hPtr = Tcl_FindHashEntry(&bindPtr->eventTableByType, (char *) INT2PTR(eventType));
 	if (hPtr == NULL) return NULL;
 	return (EventInfo *) Tcl_GetHashValue(hPtr);
 }

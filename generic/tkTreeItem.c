@@ -2078,7 +2078,7 @@ TreeItemList_FromObj(
 	    gotId = TRUE;
 	}
 	if (gotId) {
-	    hPtr = Tcl_FindHashEntry(&tree->itemHash, (char *) id);
+	    hPtr = Tcl_FindHashEntry(&tree->itemHash, (char *) INT2PTR(id));
 	    if (hPtr != NULL) {
 		item = (TreeItem) Tcl_GetHashValue(hPtr);
 	    } else {
