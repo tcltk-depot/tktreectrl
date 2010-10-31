@@ -1139,8 +1139,34 @@ LoadXPThemeProcs(HINSTANCE *phlib)
     return 0;
 }
 
-int TreeTheme_DrawHeaderItem(TreeCtrl *tree, Drawable drawable, int state,
-    int arrow, int visIndex, int x, int y, int width, int height)
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeTheme_DrawHeaderItem --
+ *
+ *	Draws the background of a single column header.  On Mac OS X
+ *	this also draws the sort arrow, if any.
+ *
+ * Results:
+ *	TCL_OK if drawing occurred, TCL_ERROR if the X11 fallback
+ *	should be used.
+ *
+ * Side effects:
+ *	Drawing.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TreeTheme_DrawHeaderItem(
+    TreeCtrl *tree,		/* Widget info. */
+    Drawable drawable,		/* Where to draw. */
+    int state,			/* COLUMN_STATE_xxx flags. */
+    int arrow,			/* COLUMN_ARROW_xxx flags. */
+    int visIndex,		/* 0-based index in list of visible columns. */
+    int x, int y,		/* Bounds of the header. */
+    int width, int height	/* Bounds of the header. */
+    )
 {
     HTHEME hTheme;
     HDC hDC;
@@ -1244,7 +1270,30 @@ int TreeTheme_DrawHeaderItem(TreeCtrl *tree, Drawable drawable, int state,
     return TCL_OK;
 }
 
-int TreeTheme_GetHeaderContentMargins(TreeCtrl *tree, int state, int arrow, int bounds[4])
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeTheme_GetHeaderContentMargins --
+ *
+ *	Returns the padding inside the column header borders where
+ *	text etc may be displayed.
+ *
+ * Results:
+ *	TCL_OK if 'bounds' was set, TCL_ERROR otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TreeTheme_GetHeaderContentMargins(
+    TreeCtrl *tree,		/* Widget info. */
+    int state,			/* COLUMN_STATE_xxx flags. */
+    int arrow,			/* COLUMN_ARROW_xxx flags. */
+    int bounds[4]		/* Returned left-top-right-bottom padding. */
+    )
 {
     Window win = Tk_WindowId(tree->tkwin);
     HTHEME hTheme;
@@ -1297,8 +1346,33 @@ dbwin("margins %d %d %d %d\n", bounds[0], bounds[1], bounds[2], bounds[3]);
     return TCL_OK;
 }
 
-int TreeTheme_DrawHeaderArrow(TreeCtrl *tree, Drawable drawable, int state,
-    int up, int x, int y, int width, int height)
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeTheme_DrawHeaderArrow --
+ *
+ *	Draws the sort arrow in a column header.
+ *
+ * Results:
+ *	TCL_OK if drawing occurred, TCL_ERROR if the X11 fallback
+ *	should be used.
+ *
+ * Side effects:
+ *	Drawing.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TreeTheme_DrawHeaderArrow(
+    TreeCtrl *tree,		/* Widget info. */
+    Drawable drawable,		/* Where to draw. */
+    int state,			/* COLUMN_STATE_xxx flags. */
+    int up,			/* TRUE if up arrow, FALSE otherwise. */
+    int x, int y,		/* Bounds of arrow.  Width and */
+    int width, int height	/* height are the same as that returned */
+				/* by TreeTheme_GetArrowSize(). */ 
+    )
 {
 #if 1
     XColor *color;
@@ -1374,8 +1448,33 @@ int TreeTheme_DrawHeaderArrow(TreeCtrl *tree, Drawable drawable, int state,
 #endif /* 0 */
 }
 
-int TreeTheme_DrawButton(TreeCtrl *tree, Drawable drawable, int state,
-    int x, int y, int width, int height)
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeTheme_DrawButton --
+ *
+ *	Draws a single expand/collapse item button.
+ *
+ * Results:
+ *	TCL_OK if drawing occurred, TCL_ERROR if the X11 fallback
+ *	should be used.
+ *
+ * Side effects:
+ *	Drawing.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TreeTheme_DrawButton(
+    TreeCtrl *tree,		/* Widget info. */
+    Drawable drawable,		/* Where to draw. */
+    TreeItem item,		/* Needed for animating. */
+    int state,			/* STATE_xxx | BUTTON_STATE_xxx flags. */
+    int x, int y,		/* Bounds of the button.  Width and height */
+    int width, int height	/* are the same as that returned by */
+				/* TreeTheme_GetButtonSize(). */
+    )
 {
     int open = state & STATE_OPEN;
     int active = state & (BUTTON_STATE_ACTIVE|BUTTON_STATE_PRESSED); /* windows theme has no "pressed" state */
@@ -1435,8 +1534,31 @@ int TreeTheme_DrawButton(TreeCtrl *tree, Drawable drawable, int state,
     return TCL_OK;
 }
 
-int TreeTheme_GetButtonSize(TreeCtrl *tree, Drawable drawable, int open,
-    int *widthPtr, int *heightPtr)
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeTheme_GetButtonSize --
+ *
+ *	Returns the width and height of an expand/collapse item button.
+ *
+ * Results:
+ *	TCL_OK if *widthPtr and *heightPtr were set, TCL_ERROR
+ *	if themed buttons can't be drawn.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TreeTheme_GetButtonSize(
+    TreeCtrl *tree,		/* Widget info. */
+    Drawable drawable,		/* Needed on MS Windows. */
+    int open,			/* TRUE if expanded button. */
+    int *widthPtr,		/* Returned width of button. */
+    int *heightPtr		/* Returned height of button. */
+    )
 {
     TreeThemeData themeData = tree->themeData;
     HTHEME hTheme;
@@ -1509,7 +1631,31 @@ int TreeTheme_GetButtonSize(TreeCtrl *tree, Drawable drawable, int open,
     return TCL_OK;
 }
 
-int TreeTheme_GetArrowSize(TreeCtrl *tree, Drawable drawable, int up, int *widthPtr, int *heightPtr)
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeTheme_GetArrowSize --
+ *
+ *	Returns the width and height of a column header sort arrow.
+ *
+ * Results:
+ *	TCL_OK if *widthPtr and *heightPtr were set, TCL_ERROR
+ *	if themed sort arrows can't be drawn.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TreeTheme_GetArrowSize(
+    TreeCtrl *tree,		/* Widget info. */
+    Drawable drawable,		/* Needed on MS Windows. */
+    int up,			/* TRUE if up arrow. */
+    int *widthPtr,		/* Returned width of arrow. */
+    int *heightPtr		/* Returned height of arrow. */
+    )
 {
     if (!appThemeData->themeEnabled || !procs)
 	return TCL_ERROR;
@@ -1519,38 +1665,184 @@ int TreeTheme_GetArrowSize(TreeCtrl *tree, Drawable drawable, int up, int *width
     return TCL_OK;
 }
 
-int TreeTheme_SetBorders(TreeCtrl *tree)
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeTheme_SetBorders --
+ *
+ *	Sets the TreeCtrl.inset pad values according to the needs of
+ *	the system theme.
+ *
+ * Results:
+ *	TCL_OK if the inset was set, TCL_ERROR if the -highlightthickness
+ *	and -borderwidth values should be used.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TreeTheme_SetBorders(
+    TreeCtrl *tree		/* Widget info. */
+    )
 {
     return TCL_ERROR;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeTheme_DrawBorders --
+ *
+ *	Draws themed borders around the edges of the treectrl.
+ *
+ * Results:
+ *	TCL_OK if drawing occurred, TCL_ERROR if the Tk focus rectangle
+ *	and 3D border should be drawn.
+ *
+ * Side effects:
+ *	Drawing.
+ *
+ *----------------------------------------------------------------------
+ */
 
 int
 TreeTheme_DrawBorders(
-    TreeCtrl *tree,
-    Drawable drawable
+    TreeCtrl *tree,		/* Widget info. */
+    Drawable drawable		/* Where to draw. */
     )
 {
     return TCL_ERROR;
 }
 
-int TreeTheme_GetColumnTextColor(
-    TreeCtrl *tree,
-    int columnState,
-    XColor **colorPtrPtr)
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeTheme_GetColumnTextColor --
+ *
+ *	Returns the text fill color to display a column title with.
+ *
+ * Results:
+ *	TCL_OK if the *colorPtrPtr was set, TCL_ERROR if a non-theme
+ *	color should be used.
+ *
+ * Side effects:
+ *	May allocate a new XColor.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TreeTheme_GetColumnTextColor(
+    TreeCtrl *tree,		/* Widget info. */
+    int columnState,		/* COLUMN_STATE_xxx flags. */
+    XColor **colorPtrPtr	/* Returned text color. */
+    )
 {
     return TCL_ERROR;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeTheme_AnimateButtonStart --
+ *
+ *	Starts an expand/collapse item button animating from open to
+ *	closed or vice versa.
+ *
+ * Results:
+ *	TCL_OK.
+ *
+ * Side effects:
+ *	May create a new Tcl_TimerToken.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TreeTheme_AnimateButtonStart(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeItem item		/* The item whose button should animate. */
+    )
+{
+    TreeItem_OpenClose(tree, item, -1);
+#ifdef SELECTION_VISIBLE
+    Tree_DeselectHidden(tree);
+#endif
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeTheme_ItemDeleted --
+ *
+ *	Cancels any item-button animation in progress.
+ *
+ * Results:
+ *	TCL_OK.
+ *
+ * Side effects:
+ *	May delete a TCL_TimerToken.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TreeTheme_ItemDeleted(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeItem item		/* Item being deleted. */
+    )
+{
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeTheme_Relayout --
+ *
+ *	This gets called when certain config options change and when
+ *	the size of the widget changes.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
 
 void
 TreeTheme_Relayout(
-    TreeCtrl *tree
+    TreeCtrl *tree		/* Widget info. */
     )
 {
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeTheme_IsDesktopComposited --
+ *
+ *	Determine if the OS windowing system is composited AKA
+ *	double-buffered.
+ *
+ * Results:
+ *	FALSE FALSE FALSE.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
 int
 TreeTheme_IsDesktopComposited(
-    TreeCtrl *tree
+    TreeCtrl *tree		/* Widget info. */
     )
 {
     /* TODO:
@@ -1683,7 +1975,26 @@ static void FreeAssocData(ClientData clientData, Tcl_Interp *interp)
     ckfree((char *) data);
 }
 
-void TreeTheme_ThemeChanged(TreeCtrl *tree)
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeTheme_ThemeChanged --
+ *
+ *	Called after the system theme changes.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TreeTheme_ThemeChanged(
+    TreeCtrl *tree		/* Widget info. */
+    )
 {
     Window win = Tk_WindowId(tree->tkwin);
     HWND hwnd = Tk_GetHWND(win);
@@ -1711,7 +2022,27 @@ void TreeTheme_ThemeChanged(TreeCtrl *tree)
     tree->themeData->buttonClosed.cx = tree->themeData->buttonOpen.cx = -1;
 }
 
-int TreeTheme_Init(TreeCtrl *tree)
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeTheme_Init --
+ *
+ *	Performs theme-related initialization when a treectrl is
+ *	created.
+ *
+ * Results:
+ *	TCL_OK or TCL_ERROR, but result is ignored.
+ *
+ * Side effects:
+ *	Depends on the platform.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TreeTheme_Init(
+    TreeCtrl *tree		/* Widget info. */
+    )
 {
     Window win = Tk_WindowId(tree->tkwin);
     HWND hwnd = Tk_GetHWND(win);
@@ -1732,7 +2063,26 @@ int TreeTheme_Init(TreeCtrl *tree)
     return TCL_OK;
 }
 
-int TreeTheme_Free(TreeCtrl *tree)
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeTheme_Free --
+ *
+ *	Performs theme-related cleanup a when a treectrl is destroyed.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Depends on the platform.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TreeTheme_Free(
+    TreeCtrl *tree		/* Widget info. */
+    )
 {
     if (tree->themeData != NULL) {
 	if (tree->themeData->hThemeHEADER != NULL)
@@ -1744,7 +2094,27 @@ int TreeTheme_Free(TreeCtrl *tree)
     return TCL_OK;
 }
 
-int TreeTheme_InitInterp(Tcl_Interp *interp)
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeTheme_InitInterp --
+ *
+ *	Performs theme-related initialization when the TkTreeCtrl
+ *	package is loaded into an interpreter.
+ *
+ * Results:
+ *	TCL_OK or TCL_ERROR, but result is ignored.
+ *
+ * Side effects:
+ *	Depends on the platform.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TreeTheme_InitInterp(
+    Tcl_Interp *interp		/* Interp that loaded TkTreeCtrl pkg. */
+    )
 {
     HWND hwnd;
     PerInterpData *data;

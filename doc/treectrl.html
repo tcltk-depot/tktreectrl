@@ -208,7 +208,7 @@
 <li><a href="#69"><i class="arg">pathName</i> <b class="cmd">item buttonstate</b> <i class="arg">itemDesc</i> <span class="opt">?<i class="arg">state</i>?</span></a></li>
 <li><a href="#70"><i class="arg">pathName</i> <b class="cmd">item cget</b> <i class="arg">itemDesc</i> <i class="arg">option</i></a></li>
 <li><a href="#71"><i class="arg">pathName</i> <b class="cmd">item children</b> <i class="arg">itemDesc</i></a></li>
-<li><a href="#72"><i class="arg">pathName</i> <b class="cmd">item collapse</b> <i class="arg">itemDesc</i> <span class="opt">?<b class="option">-recurse</b>?</span></a></li>
+<li><a href="#72"><i class="arg">pathName</i> <b class="cmd">item collapse</b> <i class="arg">itemDesc</i> <span class="opt">?<b class="option">-recurse</b>?</span> <span class="opt">?<b class="option">-recurse</b>?</span></a></li>
 <li><a href="#73"><i class="arg">pathName</i> <b class="cmd">item compare</b> <i class="arg">itemDesc1</i> <i class="arg">op</i> <i class="arg">itemDesc2</i></a></li>
 <li><a href="#74"><i class="arg">pathName</i> <b class="cmd">item complex</b> <i class="arg">itemDesc</i> <span class="opt">?<i class="arg">list...</i>?</span></a></li>
 <li><a href="#75"><i class="arg">pathName</i> <b class="cmd">item configure</b> <i class="arg">itemDesc</i> <span class="opt">?<i class="arg">option</i>?</span> <span class="opt">?<i class="arg">value</i>?</span> <span class="opt">?<i class="arg">option value ...</i>?</span></a></li>
@@ -223,7 +223,7 @@
 <li><a href="#84"><i class="arg">pathName</i> <b class="cmd">item element configure</b> <i class="arg">itemDesc</i> <i class="arg">column</i> <i class="arg">element</i> <span class="opt">?<i class="arg">option</i>?</span> <span class="opt">?<i class="arg">value</i>?</span> <span class="opt">?<i class="arg">option value ...</i>?</span></a></li>
 <li><a href="#85"><i class="arg">pathName</i> <b class="cmd">item element perstate</b> <i class="arg">itemDesc</i> <i class="arg">column</i> <i class="arg">element</i> <i class="arg">option</i> <span class="opt">?<i class="arg">stateList</i>?</span></a></li>
 <li><a href="#86"><i class="arg">pathName</i> <b class="cmd">item enabled</b> <i class="arg">itemDesc</i> <span class="opt">?<i class="arg">boolean</i>?</span></a></li>
-<li><a href="#87"><i class="arg">pathName</i> <b class="cmd">item expand</b> <i class="arg">itemDesc</i> <span class="opt">?<b class="option">-recurse</b>?</span></a></li>
+<li><a href="#87"><i class="arg">pathName</i> <b class="cmd">item expand</b> <i class="arg">itemDesc</i> <span class="opt">?<b class="option">-animate</b>?</span> <span class="opt">?<b class="option">-recurse</b>?</span></a></li>
 <li><a href="#88"><i class="arg">pathName</i> <b class="cmd">item firstchild</b> <i class="arg">parent</i> <span class="opt">?<i class="arg">child</i>?</span></a></li>
 <li><a href="#89"><i class="arg">pathName</i> <b class="cmd">item id</b> <i class="arg">itemDesc</i></a></li>
 <li><a href="#90"><i class="arg">pathName</i> <b class="cmd">item image</b> <i class="arg">itemDesc</i> <span class="opt">?<i class="arg">column</i>?</span> <span class="opt">?<i class="arg">image</i>?</span> <span class="opt">?<i class="arg">column image ...</i>?</span></a></li>
@@ -254,7 +254,7 @@
 <li><a href="#115"><i class="arg">pathName</i> <b class="cmd">item tag names</b> <i class="arg">itemDesc</i></a></li>
 <li><a href="#116"><i class="arg">pathName</i> <b class="cmd">item tag remove</b> <i class="arg">itemDesc</i> <i class="arg">tagList</i></a></li>
 <li><a href="#117"><i class="arg">pathName</i> <b class="cmd">item text</b> <i class="arg">itemDesc</i> <span class="opt">?<i class="arg">column</i>?</span> <span class="opt">?<i class="arg">text</i>?</span> <span class="opt">?<i class="arg">column text ...</i>?</span></a></li>
-<li><a href="#118"><i class="arg">pathName</i> <b class="cmd">item toggle</b> <i class="arg">itemDesc</i> <span class="opt">?<b class="option">-recurse</b>?</span></a></li>
+<li><a href="#118"><i class="arg">pathName</i> <b class="cmd">item toggle</b> <i class="arg">itemDesc</i> <span class="opt">?<b class="option">-animate</b>?</span> <span class="opt">?<b class="option">-recurse</b>?</span></a></li>
 <li><a href="#119"><i class="arg">pathName</i> <b class="cmd">marquee</b> <i class="arg">option</i> <span class="opt">?<i class="arg">arg ...</i>?</span></a></li>
 <li><a href="#120"><i class="arg">pathName</i> <b class="cmd">marquee anchor</b> <span class="opt">?<i class="arg">x y</i>?</span></a></li>
 <li><a href="#121"><i class="arg">pathName</i> <b class="cmd">marquee cget</b> <i class="arg">option</i></a></li>
@@ -1394,10 +1394,13 @@ values accepted by the <b class="cmd">item configure</b> command.</p></dd>
 <dd><p>Returns a list containing the item ids of all children
 of the item specified by <i class="arg">itemDesc</i> in the correct order from
 the first child to the last child.</p></dd>
-<dt><a name="72"><i class="arg">pathName</i> <b class="cmd">item collapse</b> <i class="arg">itemDesc</i> <span class="opt">?<b class="option">-recurse</b>?</span></a></dt>
+<dt><a name="72"><i class="arg">pathName</i> <b class="cmd">item collapse</b> <i class="arg">itemDesc</i> <span class="opt">?<b class="option">-recurse</b>?</span> <span class="opt">?<b class="option">-recurse</b>?</span></a></dt>
 <dd><p>Switches off the <b class="const">open</b> state of the item(s) described by <i class="arg">itemDesc</i>.
 If an item has descendants, then they are no longer displayed.
 If an item is already closed, then this command has no effect on that item.
+If <b class="option">-animate</b> is specified, then item's button will animate as it
+transitions between states if the theme supports it; in this case only one item
+may be specified.
 If <b class="option">-recurse</b> is specified, then all descendants of the items described
 by <i class="arg">itemDesc</i> will also be collapsed.
 For every item that actually will be collapsed, two events are generated:
@@ -1592,10 +1595,13 @@ then the <b class="const">enabled</b> state of every item described by the
 <span class="sectref"><a href="#section17">item description</a></span> <i class="arg">itemDesc</i> is set accordingly.
 All items are enabled when first created. Disabled items cannot be selected,
 and are ignored by the default key-navigation and mouse bindings.</p></dd>
-<dt><a name="87"><i class="arg">pathName</i> <b class="cmd">item expand</b> <i class="arg">itemDesc</i> <span class="opt">?<b class="option">-recurse</b>?</span></a></dt>
+<dt><a name="87"><i class="arg">pathName</i> <b class="cmd">item expand</b> <i class="arg">itemDesc</i> <span class="opt">?<b class="option">-animate</b>?</span> <span class="opt">?<b class="option">-recurse</b>?</span></a></dt>
 <dd><p>Switches on the <b class="const">open</b> state of the item(s) described by <i class="arg">itemDesc</i>.
 If an item has descendants, then they are now displayed.
 If an item is already open, then this command has no effect on that item.
+If <b class="option">-animate</b> is specified, then item's button will animate as it
+transitions between states if the theme supports it; in this case only one item
+may be specified.
 If <b class="option">-recurse</b> is specified, then all descendants of the items described by
 <i class="arg">itemDesc</i> will also be expanded.
 For every item that actually will be expanded, two events are generated:
@@ -1840,11 +1846,14 @@ may refer to multiple columns.</p>
 <p>Note that this command is provided as a convenience. Use the
 <b class="cmd">item element configure</b> or <b class="cmd">item element cget</b> commands if you
 want to set or retrieve the value of the -text option for a specific text element.</p></dd>
-<dt><a name="118"><i class="arg">pathName</i> <b class="cmd">item toggle</b> <i class="arg">itemDesc</i> <span class="opt">?<b class="option">-recurse</b>?</span></a></dt>
+<dt><a name="118"><i class="arg">pathName</i> <b class="cmd">item toggle</b> <i class="arg">itemDesc</i> <span class="opt">?<b class="option">-animate</b>?</span> <span class="opt">?<b class="option">-recurse</b>?</span></a></dt>
 <dd><p>Changes the <b class="const">open</b> state of the item(s) described by <i class="arg">itemDesc</i>.
 If the <b class="const">open</b> state is currently switched off, then
 this command does the same as the <b class="cmd">item expand</b> widget command;
 otherwise the same as the <b class="cmd">item collapse</b> widget command.
+If <b class="option">-animate</b> is specified, then item's button will animate as it
+transitions between states if the theme supports it; in this case only one item
+may be specified.
 If <b class="option">-recurse</b> is specified, then the <b class="const">open</b> state of all descendants of
 the items described by <i class="arg">itemDesc</i> will also be toggled.</p></dd>
 </dl></dd>

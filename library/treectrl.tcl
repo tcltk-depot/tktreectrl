@@ -632,7 +632,7 @@ proc ::TreeCtrl::ButtonPress1 {w x y} {
 		set Priv(buttonMode) buttonTracking
 		set Priv(buttontrack,item) $item
 	    } else {
-		$w item toggle $item
+		$w item toggle $item -animate
 	    }
 	    return
 	} elseif {$arg1 eq "line"} {
@@ -705,9 +705,9 @@ proc ::TreeCtrl::DoubleButton1 {w x y} {
 	if {$arg1 eq "button"} {
 	    if {[$w cget -buttontracking]} {
 		# There is no <ButtonRelease> so just toggle it
-		$w item toggle $item
+		$w item toggle $item -animate
 	    } else {
-		$w item toggle $item
+		$w item toggle $item -animate
 	    }
 	    return
 	} elseif {$arg1 eq "line"} {
@@ -933,7 +933,7 @@ proc ::TreeCtrl::Release1 {w x y} {
 	    if {$where eq "item" && $arg1 eq "button"} {
 		if {$exists && [$w item compare $itemTrack == $item]} {
 		    $w item buttonstate $item active
-		    $w item toggle $itemTrack
+		    $w item toggle $itemTrack -animate
 		}
 	    }
 	}

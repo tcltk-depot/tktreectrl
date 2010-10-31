@@ -386,7 +386,7 @@ package require \fBtreectrl  2.2.10\fR
 .sp
 \fIpathName\fR \fBitem children\fR \fIitemDesc\fR
 .sp
-\fIpathName\fR \fBitem collapse\fR \fIitemDesc\fR ?\fB-recurse\fR?
+\fIpathName\fR \fBitem collapse\fR \fIitemDesc\fR ?\fB-recurse\fR? ?\fB-recurse\fR?
 .sp
 \fIpathName\fR \fBitem compare\fR \fIitemDesc1\fR \fIop\fR \fIitemDesc2\fR
 .sp
@@ -416,7 +416,7 @@ package require \fBtreectrl  2.2.10\fR
 .sp
 \fIpathName\fR \fBitem enabled\fR \fIitemDesc\fR ?\fIboolean\fR?
 .sp
-\fIpathName\fR \fBitem expand\fR \fIitemDesc\fR ?\fB-recurse\fR?
+\fIpathName\fR \fBitem expand\fR \fIitemDesc\fR ?\fB-animate\fR? ?\fB-recurse\fR?
 .sp
 \fIpathName\fR \fBitem firstchild\fR \fIparent\fR ?\fIchild\fR?
 .sp
@@ -478,7 +478,7 @@ package require \fBtreectrl  2.2.10\fR
 .sp
 \fIpathName\fR \fBitem text\fR \fIitemDesc\fR ?\fIcolumn\fR? ?\fItext\fR? ?\fIcolumn text ...\fR?
 .sp
-\fIpathName\fR \fBitem toggle\fR \fIitemDesc\fR ?\fB-recurse\fR?
+\fIpathName\fR \fBitem toggle\fR \fIitemDesc\fR ?\fB-animate\fR? ?\fB-recurse\fR?
 .sp
 \fIpathName\fR \fBmarquee\fR \fIoption\fR ?\fIarg ...\fR?
 .sp
@@ -2016,10 +2016,13 @@ Returns a list containing the item ids of all children
 of the item specified by \fIitemDesc\fR in the correct order from
 the first child to the last child.
 .TP
-\fIpathName\fR \fBitem collapse\fR \fIitemDesc\fR ?\fB-recurse\fR?
+\fIpathName\fR \fBitem collapse\fR \fIitemDesc\fR ?\fB-recurse\fR? ?\fB-recurse\fR?
 Switches off the \fBopen\fR state of the item(s) described by \fIitemDesc\fR.
 If an item has descendants, then they are no longer displayed.
 If an item is already closed, then this command has no effect on that item.
+If \fB-animate\fR is specified, then item's button will animate as it
+transitions between states if the theme supports it; in this case only one item
+may be specified.
 If \fB-recurse\fR is specified, then all descendants of the items described
 by \fIitemDesc\fR will also be collapsed.
 For every item that actually will be collapsed, two events are generated:
@@ -2254,10 +2257,13 @@ then the \fBenabled\fR state of every item described by the
 All items are enabled when first created. Disabled items cannot be selected,
 and are ignored by the default key-navigation and mouse bindings.
 .TP
-\fIpathName\fR \fBitem expand\fR \fIitemDesc\fR ?\fB-recurse\fR?
+\fIpathName\fR \fBitem expand\fR \fIitemDesc\fR ?\fB-animate\fR? ?\fB-recurse\fR?
 Switches on the \fBopen\fR state of the item(s) described by \fIitemDesc\fR.
 If an item has descendants, then they are now displayed.
 If an item is already open, then this command has no effect on that item.
+If \fB-animate\fR is specified, then item's button will animate as it
+transitions between states if the theme supports it; in this case only one item
+may be specified.
 If \fB-recurse\fR is specified, then all descendants of the items described by
 \fIitemDesc\fR will also be expanded.
 For every item that actually will be expanded, two events are generated:
@@ -2551,11 +2557,14 @@ Note that this command is provided as a convenience. Use the
 \fBitem element configure\fR or \fBitem element cget\fR commands if you
 want to set or retrieve the value of the -text option for a specific text element.
 .TP
-\fIpathName\fR \fBitem toggle\fR \fIitemDesc\fR ?\fB-recurse\fR?
+\fIpathName\fR \fBitem toggle\fR \fIitemDesc\fR ?\fB-animate\fR? ?\fB-recurse\fR?
 Changes the \fBopen\fR state of the item(s) described by \fIitemDesc\fR.
 If the \fBopen\fR state is currently switched off, then
 this command does the same as the \fBitem expand\fR widget command;
 otherwise the same as the \fBitem collapse\fR widget command.
+If \fB-animate\fR is specified, then item's button will animate as it
+transitions between states if the theme supports it; in this case only one item
+may be specified.
 If \fB-recurse\fR is specified, then the \fBopen\fR state of all descendants of
 the items described by \fIitemDesc\fR will also be toggled.
 .RE

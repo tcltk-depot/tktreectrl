@@ -950,12 +950,14 @@ MODULE_SCOPE int TreeTheme_DrawHeaderItem(TreeCtrl *tree, Drawable drawable,
 MODULE_SCOPE int TreeTheme_GetHeaderFixedHeight(TreeCtrl *tree, int *heightPtr);
 MODULE_SCOPE int TreeTheme_GetHeaderContentMargins(TreeCtrl *tree, int state, int arrow, int bounds[4]);
 MODULE_SCOPE int TreeTheme_DrawHeaderArrow(TreeCtrl *tree, Drawable drawable, int state, int up, int x, int y, int width, int height);
-MODULE_SCOPE int TreeTheme_DrawButton(TreeCtrl *tree, Drawable drawable, int state, int x, int y, int width, int height);
+MODULE_SCOPE int TreeTheme_DrawButton(TreeCtrl *tree, Drawable drawable, TreeItem item, int state, int x, int y, int width, int height);
 MODULE_SCOPE int TreeTheme_GetButtonSize(TreeCtrl *tree, Drawable drawable, int open, int *widthPtr, int *heightPtr);
 MODULE_SCOPE int TreeTheme_GetArrowSize(TreeCtrl *tree, Drawable drawable, int up, int *widthPtr, int *heightPtr);
 MODULE_SCOPE int TreeTheme_SetBorders(TreeCtrl *tree);
 MODULE_SCOPE int TreeTheme_DrawBorders(TreeCtrl *tree, Drawable drawable);
 MODULE_SCOPE int TreeTheme_GetColumnTextColor(TreeCtrl *tree, int state, XColor **xColorPtr);
+MODULE_SCOPE int TreeTheme_AnimateButtonStart(TreeCtrl *tree, TreeItem item);
+MODULE_SCOPE int TreeTheme_ItemDeleted(TreeCtrl *tree, TreeItem item);
 MODULE_SCOPE void TreeTheme_Relayout(TreeCtrl *tree);
 MODULE_SCOPE int TreeTheme_IsDesktopComposited(TreeCtrl *tree);
 MODULE_SCOPE int TreeThemeCmd(TreeCtrl *tree, int objc, Tcl_Obj *CONST objv[]);

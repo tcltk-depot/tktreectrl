@@ -698,8 +698,12 @@ Tree_FillRectangle(
 TCL_DECLARE_MUTEX(themeMutex)
 
 /* Per-interp data */
-typedef struct {
-} TreeThemeData_;
+struct TreeThemeData_ {
+    TreeItem animButtonItem;
+    Tcl_TimerToken animButtonTimer;
+    GtkExpanderStyle animButtonStyle;
+    int animButtonExpanding;
+};
 
 /* Per-application data */
 typedef struct {
@@ -721,8 +725,34 @@ static TreeThemeAppData *appThemeData = NULL;
 
 #define IsGtkUnavailable() ( appThemeData == NULL || appThemeData->gtk_init == 0)
 
-int TreeTheme_DrawHeaderItem(TreeCtrl *tree, Drawable drawable, int state,
-    int arrow, int visIndex, int x, int y, int width, int height)
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeTheme_DrawHeaderItem --
+ *
+ *	Draws the background of a single column header.  On Mac OS X
+ *	this also draws the sort arrow, if any.
+ *
+ * Results:
+ *	TCL_OK if drawing occurred, TCL_ERROR if the X11 fallback
+ *	should be used.
+ *
+ * Side effects:
+ *	Drawing.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TreeTheme_DrawHeaderItem(
+    TreeCtrl *tree,		/* Widget info. */
+    Drawable drawable,		/* Where to draw. */
+    int state,			/* COLUMN_STATE_xxx flags. */
+    int arrow,			/* COLUMN_ARROW_xxx flags. */
+    int visIndex,		/* 0-based index in list of visible columns. */
+    int x, int y,		/* Bounds of the header. */
+    int width, int height	/* Bounds of the header. */
+    )
 {
     GtkWidget *widget;
     GtkStyle *style;
@@ -782,12 +812,61 @@ ret_error:
     return TCL_ERROR;
 }
 
-int TreeTheme_GetHeaderContentMargins(TreeCtrl *tree, int state, int arrow, int bounds[4])
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeTheme_GetHeaderContentMargins --
+ *
+ *	Returns the padding inside the column header borders where
+ *	text etc may be displayed.
+ *
+ * Results:
+ *	TCL_OK if 'bounds' was set, TCL_ERROR otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TreeTheme_GetHeaderContentMargins(
+    TreeCtrl *tree,		/* Widget info. */
+    int state,			/* COLUMN_STATE_xxx flags. */
+    int arrow,			/* COLUMN_ARROW_xxx flags. */
+    int bounds[4]		/* Returned left-top-right-bottom padding. */
+    )
 {
     return TCL_ERROR;
 }
 
-int TreeTheme_DrawHeaderArrow(TreeCtrl *tree, Drawable drawable, int state, int up, int x, int y, int width, int height)
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeTheme_DrawHeaderArrow --
+ *
+ *	Draws the sort arrow in a column header.
+ *
+ * Results:
+ *	TCL_OK if drawing occurred, TCL_ERROR if the X11 fallback
+ *	should be used.
+ *
+ * Side effects:
+ *	Drawing.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TreeTheme_DrawHeaderArrow(
+    TreeCtrl *tree,		/* Widget info. */
+    Drawable drawable,		/* Where to draw. */
+    int state,			/* COLUMN_STATE_xxx flags. */
+    int up,			/* TRUE if up arrow, FALSE otherwise. */
+    int x, int y,		/* Bounds of arrow.  Width and */
+    int width, int height	/* height are the same as that returned */
+				/* by TreeTheme_GetArrowSize(). */ 
+    )
 {
     GtkWidget *widget;
     GtkStyle *style;
@@ -886,7 +965,33 @@ ret_error:
     return TCL_ERROR;
 }
 
-int TreeTheme_DrawButton(TreeCtrl *tree, Drawable drawable, int state, int x, int y, int width, int height)
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeTheme_DrawButton --
+ *
+ *	Draws a single expand/collapse item button.
+ *
+ * Results:
+ *	TCL_OK if drawing occurred, TCL_ERROR if the X11 fallback
+ *	should be used.
+ *
+ * Side effects:
+ *	Drawing.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TreeTheme_DrawButton(
+    TreeCtrl *tree,		/* Widget info. */
+    Drawable drawable,		/* Where to draw. */
+    TreeItem item,		/* Needed for animating. */
+    int state,			/* STATE_xxx | BUTTON_STATE_xxx flags. */
+    int x, int y,		/* Bounds of the button.  Width and height */
+    int width, int height	/* are the same as that returned by */
+				/* TreeTheme_GetButtonSize(). */
+    )
 {
     int open = state & STATE_OPEN;
     GtkWidget *widget;
@@ -914,6 +1019,10 @@ int TreeTheme_DrawButton(TreeCtrl *tree, Drawable drawable, int state, int x, in
 	state_type = GTK_STATE_PRELIGHT;
     else if (state & BUTTON_STATE_PRESSED)
 	state_type = GTK_STATE_ACTIVE;
+
+    if (item == tree->themeData->animButtonItem) {
+	expander_style = tree->themeData->animButtonStyle;
+    }
 
     gdk_threads_enter(); /* +++ grab global mutex +++ */
 
@@ -965,7 +1074,31 @@ ret_error:
     return TCL_ERROR;
 }
 
-int TreeTheme_GetButtonSize(TreeCtrl *tree, Drawable drawable, int open, int *widthPtr, int *heightPtr)
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeTheme_GetButtonSize --
+ *
+ *	Returns the width and height of an expand/collapse item button.
+ *
+ * Results:
+ *	TCL_OK if *widthPtr and *heightPtr were set, TCL_ERROR
+ *	if themed buttons can't be drawn.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TreeTheme_GetButtonSize(
+    TreeCtrl *tree,		/* Widget info. */
+    Drawable drawable,		/* Needed on MS Windows. */
+    int open,			/* TRUE if expanded button. */
+    int *widthPtr,		/* Returned width of button. */
+    int *heightPtr		/* Returned height of button. */
+    )
 {
     GtkWidget *widget;
     const gchar *property_name = "expander-size";
@@ -995,7 +1128,31 @@ int TreeTheme_GetButtonSize(TreeCtrl *tree, Drawable drawable, int open, int *wi
     return TCL_OK;
 }
 
-int TreeTheme_GetArrowSize(TreeCtrl *tree, Drawable drawable, int up, int *widthPtr, int *heightPtr)
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeTheme_GetArrowSize --
+ *
+ *	Returns the width and height of a column header sort arrow.
+ *
+ * Results:
+ *	TCL_OK if *widthPtr and *heightPtr were set, TCL_ERROR
+ *	if themed sort arrows can't be drawn.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TreeTheme_GetArrowSize(
+    TreeCtrl *tree,		/* Widget info. */
+    Drawable drawable,		/* Needed on MS Windows. */
+    int up,			/* TRUE if up arrow. */
+    int *widthPtr,		/* Returned width of arrow. */
+    int *heightPtr		/* Returned height of arrow. */
+    )
 {
     GtkWidget *widget;
     GtkRequisition requisition;
@@ -1032,24 +1189,81 @@ int TreeTheme_GetArrowSize(TreeCtrl *tree, Drawable drawable, int up, int *width
     return TCL_OK;
 }
 
-int TreeTheme_SetBorders(TreeCtrl *tree)
-{
-    return TCL_ERROR;
-}
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeTheme_SetBorders --
+ *
+ *	Sets the TreeCtrl.inset pad values according to the needs of
+ *	the system theme.
+ *
+ * Results:
+ *	TCL_OK if the inset was set, TCL_ERROR if the -highlightthickness
+ *	and -borderwidth values should be used.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
 
 int
-TreeTheme_DrawBorders(
-    TreeCtrl *tree,
-    Drawable drawable
+TreeTheme_SetBorders(
+    TreeCtrl *tree		/* Widget info. */
     )
 {
     return TCL_ERROR;
 }
 
-int TreeTheme_GetColumnTextColor(
-    TreeCtrl *tree,
-    int columnState,
-    XColor **colorPtrPtr)
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeTheme_DrawBorders --
+ *
+ *	Draws themed borders around the edges of the treectrl.
+ *
+ * Results:
+ *	TCL_OK if drawing occurred, TCL_ERROR if the Tk focus rectangle
+ *	and 3D border should be drawn.
+ *
+ * Side effects:
+ *	Drawing.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TreeTheme_DrawBorders(
+    TreeCtrl *tree,		/* Widget info. */
+    Drawable drawable		/* Where to draw. */
+    )
+{
+    return TCL_ERROR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeTheme_GetColumnTextColor --
+ *
+ *	Returns the text fill color to display a column title with.
+ *
+ * Results:
+ *	TCL_OK if the *colorPtrPtr was set, TCL_ERROR if a non-theme
+ *	color should be used.
+ *
+ * Side effects:
+ *	May allocate a new XColor.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TreeTheme_GetColumnTextColor(
+    TreeCtrl *tree,		/* Widget info. */
+    int columnState,		/* COLUMN_STATE_xxx flags. */
+    XColor **colorPtrPtr	/* Returned text color. */
+    )
 {
     GtkWidget *widget;
     GtkStyle *style;
@@ -1098,22 +1312,203 @@ int TreeTheme_GetColumnTextColor(
     return TCL_OK;
 }
 
+#define ANIM_BUTTON_INTERVAL 50 /* same as gtk_treeview */
+
+static void
+AnimButtonTimerProc(
+    ClientData clientData
+    )
+{
+    TreeCtrl *tree = clientData;
+    int finished = 0;
+
+    if (tree->themeData->animButtonExpanding) {
+	if (tree->themeData->animButtonStyle == GTK_EXPANDER_SEMI_COLLAPSED)
+	    tree->themeData->animButtonStyle = GTK_EXPANDER_SEMI_EXPANDED;
+	else
+	    finished = 1;
+    } else {
+	if (tree->themeData->animButtonStyle == GTK_EXPANDER_SEMI_EXPANDED)
+	    tree->themeData->animButtonStyle = GTK_EXPANDER_SEMI_COLLAPSED;
+	else
+	    finished = 1;
+    }
+
+    Tree_InvalidateItemDInfo(tree, tree->columnTree,
+	tree->themeData->animButtonItem, NULL);
+
+    if (finished) {
+	tree->themeData->animButtonTimer = NULL;
+	tree->themeData->animButtonItem = NULL;
+    } else {
+	tree->themeData->animButtonTimer = Tcl_CreateTimerHandler(
+	    ANIM_BUTTON_INTERVAL, AnimButtonTimerProc, tree);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeTheme_AnimateButtonStart --
+ *
+ *	Starts an expand/collapse item button animating from open to
+ *	closed or vice versa.
+ *
+ * Results:
+ *	TCL_OK.
+ *
+ * Side effects:
+ *	May create a new Tcl_TimerToken.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TreeTheme_AnimateButtonStart(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeItem item		/* The item whose button should animate. */
+    )
+{
+    int open = (TreeItem_GetState(tree, item) & STATE_OPEN) != 0;
+    int animate;
+
+    /* gtk_treeview toggles right away, not when the animation finishes. */
+    TreeItem_OpenClose(tree, item, -1);
+#ifdef SELECTION_VISIBLE
+    Tree_DeselectHidden(tree);
+#endif
+
+    if (IsGtkUnavailable() || appThemeData->gtkTreeView == NULL) {
+	return TCL_OK;
+    }
+
+    gdk_threads_enter(); /* +++ grab global mutex +++ */
+
+    g_object_get(gtk_widget_get_settings(GTK_WIDGET(appThemeData->gtkTreeView)),
+	"gtk-enable-animations", &animate, NULL);
+
+    gdk_threads_leave(); /* +++ release global mutex +++ */
+
+    if (!animate) {
+	return TCL_OK;
+    }
+
+    if (tree->themeData->animButtonTimer != NULL)
+	Tcl_DeleteTimerHandler(tree->themeData->animButtonTimer);
+
+    tree->themeData->animButtonItem = item;
+    tree->themeData->animButtonTimer = Tcl_CreateTimerHandler(
+	ANIM_BUTTON_INTERVAL, AnimButtonTimerProc, tree);
+    tree->themeData->animButtonExpanding = !open;
+    if (open)
+	tree->themeData->animButtonStyle = GTK_EXPANDER_SEMI_EXPANDED;
+    else
+	tree->themeData->animButtonStyle = GTK_EXPANDER_SEMI_COLLAPSED;
+    
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeTheme_ItemDeleted --
+ *
+ *	Cancels any item-button animation in progress.
+ *
+ * Results:
+ *	TCL_OK.
+ *
+ * Side effects:
+ *	May delete a TCL_TimerToken.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TreeTheme_ItemDeleted(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeItem item		/* Item being deleted. */
+    )
+{
+    if (item != tree->themeData->animButtonItem)
+	return TCL_OK;
+    if (tree->themeData->animButtonTimer != NULL) {
+	Tcl_DeleteTimerHandler(tree->themeData->animButtonTimer);
+	tree->themeData->animButtonTimer = NULL;
+	tree->themeData->animButtonItem = NULL;
+    }
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeTheme_Relayout --
+ *
+ *	This gets called when certain config options change and when
+ *	the size of the widget changes.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
 void
 TreeTheme_Relayout(
-    TreeCtrl *tree
+    TreeCtrl *tree		/* Widget info. */
     )
 {
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeTheme_IsDesktopComposited --
+ *
+ *	Determine if the OS windowing system is composited AKA
+ *	double-buffered.
+ *
+ * Results:
+ *	FALSE FALSE FALSE.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
 int
 TreeTheme_IsDesktopComposited(
-    TreeCtrl *tree
+    TreeCtrl *tree		/* Widget info. */
     )
 {
     return FALSE;
 }
 
-void TreeTheme_ThemeChanged(TreeCtrl *tree)
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeTheme_ThemeChanged --
+ *
+ *	Called after the system theme changes.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TreeTheme_ThemeChanged(
+    TreeCtrl *tree		/* Widget info. */
+    )
 {
 }
 
@@ -1128,8 +1523,31 @@ static int ClientMessageHandler(Tk_Window tkwin, XEvent *eventPtr) {
 }
 #endif
 
-int TreeTheme_Init(TreeCtrl *tree)
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeTheme_Init --
+ *
+ *	Performs theme-related initialization when a treectrl is
+ *	created.
+ *
+ * Results:
+ *	TCL_OK or TCL_ERROR, but result is ignored.
+ *
+ * Side effects:
+ *	Depends on the platform.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TreeTheme_Init(
+    TreeCtrl *tree		/* Widget info. */
+    )
 {
+    tree->themeData = (TreeThemeData) ckalloc(sizeof(struct TreeThemeData_));
+    tree->themeData->animButtonTimer = NULL;
+
     Tcl_MutexLock(&themeMutex);
 
     if (IsGtkUnavailable() == 0 && appThemeData->pixbuf_init == 0) {
@@ -1152,8 +1570,32 @@ int TreeTheme_Init(TreeCtrl *tree)
     return TCL_OK;
 }
 
-int TreeTheme_Free(TreeCtrl *tree)
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeTheme_Free --
+ *
+ *	Performs theme-related cleanup a when a treectrl is destroyed.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Depends on the platform.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TreeTheme_Free(
+    TreeCtrl *tree		/* Widget info. */
+    )
 {
+    if (tree->themeData != NULL) {
+	ckfree((char *) tree->themeData);
+	tree->themeData = NULL;
+    }
+
     return TCL_OK;
 }
 
@@ -1201,7 +1643,27 @@ static int TreeCtrlErrorHandler(Display *displayPtr, XErrorEvent *errorPtr)
     return TkXErrorHandler(displayPtr, errorPtr);
 }
 
-int TreeTheme_InitInterp(Tcl_Interp *interp)
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeTheme_InitInterp --
+ *
+ *	Performs theme-related initialization when the TkTreeCtrl
+ *	package is loaded into an interpreter.
+ *
+ * Results:
+ *	TCL_OK or TCL_ERROR, but result is ignored.
+ *
+ * Side effects:
+ *	Depends on the platform.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TreeTheme_InitInterp(
+    Tcl_Interp *interp		/* Interp that loaded TkTreeCtrl pkg. */
+    )
 {
     Tcl_MutexLock(&themeMutex);
     
@@ -1316,7 +1778,7 @@ int TreeTheme_DrawHeaderArrow(TreeCtrl *tree, Drawable drawable, int state, int 
     return TCL_ERROR;
 }
 
-int TreeTheme_DrawButton(TreeCtrl *tree, Drawable drawable, int open, int x, int y, int width, int height)
+int TreeTheme_DrawButton(TreeCtrl *tree, Drawable drawable, TreeItem item, int open, int x, int y, int width, int height)
 {
     return TCL_ERROR;
 }

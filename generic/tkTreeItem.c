@@ -2715,6 +2715,7 @@ TreeItem_Delete(
 
     TreeItem_RemoveFromParent(tree, item);
     TreeDisplay_ItemDeleted(tree, item);
+    TreeTheme_ItemDeleted(tree, item);
     Tree_RemoveItem(tree, item);
     TreeItem_FreeResources(tree, item);
     if (tree->activeItem == item) {
@@ -4461,7 +4462,7 @@ TreeItem_DrawButton(
 
 	if (TreeTheme_GetButtonSize(tree, td.drawable,
 		(buttonState & STATE_OPEN) != 0, &bw, &bh) == TCL_OK) {
-	    if (TreeTheme_DrawButton(tree, td.drawable, buttonState,
+	    if (TreeTheme_DrawButton(tree, td.drawable, item, buttonState,
 		    left + (tree->useIndent - bw) / 2, y + (height - bh) / 2,
 		    bw, bh) == TCL_OK) {
 		return;
@@ -7534,20 +7535,30 @@ TreeItemCmd(
 	case COMMAND_COLLAPSE:
 	case COMMAND_EXPAND:
 	case COMMAND_TOGGLE: {
+	    int animate = 0;
 	    int recurse = 0;
 	    int mode = 0; /* lint */
 	    int i, count;
 	    TreeItemList items;
 
-	    if (numArgs == 2) {
-		int len;
-		char *s = Tcl_GetStringFromObj(objv[4], &len);
-		if (strncmp(s, "-recurse", len)) {
-		    FormatResult(interp, "bad option \"%s\": must be -recurse",
-			    s);
-		    goto errorExit;
+	    if (numArgs > 1) {
+		static const char *optionName[] = { "-animate", "-recurse",
+		    NULL };
+		int option;
+		for (i = 4; i < objc; i++) {
+		    if (Tcl_GetIndexFromObj(interp, objv[i], optionName,
+			    "option", 0, &option) != TCL_OK) {
+			goto errorExit;
+		    }
+		    switch (option) {
+			case 0: /* -animate */
+			    animate = 1;
+			    break;
+			case 1: /* -recurse */
+			    recurse = 1;
+			    break;
+		    }
 		}
-		recurse = 1;
 	    }
 	    switch (index) {
 		case COMMAND_COLLAPSE:
@@ -7559,6 +7570,19 @@ TreeItemCmd(
 		case COMMAND_TOGGLE:
 		    mode = -1;
 		    break;
+	    }
+	    if (animate && tree->useTheme) {
+		int open;
+		if (IS_ALL(item) || TreeItemList_Count(&itemList) != 1) {
+		    FormatResult(interp,
+			"only 1 item may be specified with -animate");
+		    goto errorExit;
+		}
+		open = (item->state & STATE_OPEN) != 0;
+		if (mode == -1 || open != mode) {
+		    (void) TreeTheme_AnimateButtonStart(tree, item);
+		}
+		break;
 	    }
 	    TreeItemList_Init(tree, &items, 0);
 	    ITEM_FOR_EACH(item, &itemList, NULL, &iter) {

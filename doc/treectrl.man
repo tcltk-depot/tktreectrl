@@ -1133,10 +1133,13 @@ Returns a list containing the item ids of all children
 of the item specified by [arg itemDesc] in the correct order from
 the first child to the last child.
 
-[call [arg pathName] [cmd {item collapse}] [arg itemDesc] [opt [option -recurse]]]
+[call [arg pathName] [cmd {item collapse}] [arg itemDesc] [opt [option -recurse]] [opt [option -recurse]]]
 Switches off the [const open] state of the item(s) described by [arg itemDesc].
 If an item has descendants, then they are no longer displayed.
 If an item is already closed, then this command has no effect on that item.
+If [option -animate] is specified, then item's button will animate as it
+transitions between states if the theme supports it; in this case only one item
+may be specified.
 If [option -recurse] is specified, then all descendants of the items described
 by [arg itemDesc] will also be collapsed.
 For every item that actually will be collapsed, two events are generated:
@@ -1374,10 +1377,13 @@ then the [const enabled] state of every item described by the
 All items are enabled when first created. Disabled items cannot be selected,
 and are ignored by the default key-navigation and mouse bindings.
 
-[call [arg pathName] [cmd {item expand}] [arg itemDesc] [opt [option -recurse]]]
+[call [arg pathName] [cmd {item expand}] [arg itemDesc] [opt [option -animate]] [opt [option -recurse]]]
 Switches on the [const open] state of the item(s) described by [arg itemDesc].
 If an item has descendants, then they are now displayed.
 If an item is already open, then this command has no effect on that item.
+If [option -animate] is specified, then item's button will animate as it
+transitions between states if the theme supports it; in this case only one item
+may be specified.
 If [option -recurse] is specified, then all descendants of the items described by
 [arg itemDesc] will also be expanded.
 For every item that actually will be expanded, two events are generated:
@@ -1696,11 +1702,14 @@ Note that this command is provided as a convenience. Use the
 [cmd "item element configure"] or [cmd "item element cget"] commands if you
 want to set or retrieve the value of the -text option for a specific text element.
 
-[call [arg pathName] [cmd {item toggle}] [arg itemDesc] [opt [option -recurse]]]
+[call [arg pathName] [cmd {item toggle}] [arg itemDesc] [opt [option -animate]] [opt [option -recurse]]]
 Changes the [const open] state of the item(s) described by [arg itemDesc].
 If the [const open] state is currently switched off, then
 this command does the same as the [cmd {item expand}] widget command;
 otherwise the same as the [cmd {item collapse}] widget command.
+If [option -animate] is specified, then item's button will animate as it
+transitions between states if the theme supports it; in this case only one item
+may be specified.
 If [option -recurse] is specified, then the [const open] state of all descendants of
 the items described by [arg itemDesc] will also be toggled.
 
