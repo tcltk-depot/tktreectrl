@@ -593,6 +593,8 @@ proc ::TreeCtrl::FileListEdit {T I C E} {
     variable Priv
     array unset Priv editId,$T
 
+    if {![winfo exists $T]} return
+
     set lines [$T item element cget $I $C $E -lines]
     if {$lines eq ""} {
 	set lines [$T element cget $E -lines]
@@ -1014,6 +1016,8 @@ proc ::TreeCtrl::EntryExpanderKeypress {T} {
 
     variable Priv
 
+    if {![winfo exists $T]} return
+
     set font $Priv(entry,$T,font)
     set text [$T.entry get]
     set ebw [$T.entry cget -borderwidth]
@@ -1202,6 +1206,8 @@ proc ::TreeCtrl::TextExpanderOpen {T item column element width} {
 proc ::TreeCtrl::TextExpanderKeypress {T} {
 
     variable Priv
+
+    if {![winfo exists $T]} return
 
     set font $Priv(text,$T,font)
     set justify $Priv(text,$T,justify)

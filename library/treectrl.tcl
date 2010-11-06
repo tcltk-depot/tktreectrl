@@ -55,7 +55,7 @@ bind TreeCtrl <Shift-KeyPress-Down> {
     TreeCtrl::Extend %W below
 }
 bind TreeCtrl <KeyPress-Left> {
-    if {[%W cget -orient] eq "vertical" && [%W cget -wrap] eq ""} {
+    if {![TreeCtrl::Has2DLayout %W]} {
 	%W item collapse [%W item id active]
     } else {
 	TreeCtrl::SetActiveItem %W [TreeCtrl::LeftRight %W active -1]
@@ -68,7 +68,7 @@ bind TreeCtrl <Control-KeyPress-Left> {
     %W xview scroll -1 pages
 }
 bind TreeCtrl <KeyPress-Right> {
-    if {[%W cget -orient] eq "vertical" && [%W cget -wrap] eq ""} {
+    if {![TreeCtrl::Has2DLayout %W]} {
 	%W item expand [%W item id active]
     } else {
 	TreeCtrl::SetActiveItem %W [TreeCtrl::LeftRight %W active 1]
@@ -470,6 +470,7 @@ proc ::TreeCtrl::CursorCheck {w x y} {
 
 proc ::TreeCtrl::CursorCheckAux {w} {
     variable Priv
+    if {![winfo exists $w]} return
     set x [winfo pointerx $w]
     set y [winfo pointery $w]
     if {[info exists Priv(cursor,$w)]} {
@@ -530,7 +531,7 @@ proc ::TreeCtrl::MotionInHeader {w args} {
 	set column [lindex $action 2]
     }
     if {$column ne $prevColumn} {
-	if {$prevColumn ne ""} {
+	if {$prevColumn ne "" && [$w column id $prevColumn] ne ""} {
 	    $w column configure $prevColumn -state normal
 	}
 	if {$column ne ""} {
@@ -1204,6 +1205,7 @@ proc ::TreeCtrl::AutoScanCheck {w x y} {
 
 proc ::TreeCtrl::AutoScanCheckAux {w} {
     variable Priv
+    if {![winfo exists $w]} return
     # Not quite sure how this can happen
     if {![info exists Priv(autoscan,afterId,$w)]} return
     unset Priv(autoscan,afterId,$w)
@@ -1289,6 +1291,7 @@ proc ::TreeCtrl::ColumnDragScrollCheck {w x y} {
 
 proc ::TreeCtrl::ColumnDragScrollCheckAux {w} {
     variable Priv
+    if {![winfo exists $w]} return
     # Not quite sure how this can happen
     if {![info exists Priv(autoscan,afterId,$w)]} return
     unset Priv(autoscan,afterId,$w)
@@ -1298,6 +1301,28 @@ proc ::TreeCtrl::ColumnDragScrollCheckAux {w} {
     set y [expr {$y - [winfo rooty $w]}]
     ColumnDragScrollCheck $w $x $y
     return
+}
+
+# ::TreeCtrl::Has2DLayout --
+#
+# Determine if items are displayed in a 2-dimensional arrangement.
+# This is used by the <Left> and <Right> bindings.
+#
+# Arguments:
+# w		The treectrl widget.
+
+proc ::TreeCtrl::Has2DLayout {T} {
+    if {[$T cget -orient] ne "vertical" || [$T cget -wrap] ne ""} {
+	return 1
+    }
+    set item [$T item id "last visible"]
+    if {$item ne ""} {
+	lassign [$T item rnc $item] row column
+	if {$column > 0} {
+	    return 1
+	}
+    }
+    return 0
 }
 
 # ::TreeCtrl::UpDown --
