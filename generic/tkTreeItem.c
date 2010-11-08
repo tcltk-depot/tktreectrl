@@ -7265,7 +7265,7 @@ TreeItemCmd(
 	{ "collapse", 1, 2, IFO_NOT_NULL, AF_NOT_ITEM, 0,
 		"item ?-recurse?", NULL},
 	{ "compare", 3, 3, IFO_NOT_MANY | IFO_NOT_NULL, AF_NOT_ITEM,
-		IFO_NOT_MANY | IFO_NOT_NULL | AF_SAMEROOT, "item1 op item2",
+		IFO_NOT_MANY | IFO_NOT_NULL, "item1 op item2",
 		NULL },
 #ifdef DEPRECATED
 	{ "complex", 2, 100000, IFO_NOT_MANY | IFO_NOT_NULL, AF_NOT_ITEM,
@@ -7408,6 +7408,7 @@ TreeItemCmd(
 	    if ((flags & AF_SAMEROOT) &&
 		    TreeItem_RootAncestor(tree, item) !=
 		    TreeItem_RootAncestor(tree, item2)) {
+reqSameRoot:
 		FormatResult(interp,
 			"item %s%d and item %s%d don't share a common ancestor",
 			tree->itemPrefix, item->id, tree->itemPrefix, item2->id);
@@ -7605,20 +7606,40 @@ TreeItemCmd(
 	/* T item compare I op I */
 	case COMMAND_COMPARE: {
 	    static CONST char *opName[] = { "<", "<=", "==", ">=", ">", "!=", NULL };
+	    enum { COP_LT, COP_LE, COP_EQ, COP_GE, COP_GT, COP_NE };
 	    int op, compare = 0, index1, index2;
 
 	    if (Tcl_GetIndexFromObj(interp, objv[4], opName, "comparison operator", 0,
-		    &op) != TCL_OK)
+		    &op) != TCL_OK) {
 		goto errorExit;
-	    TreeItem_ToIndex(tree, item, &index1, NULL);
-	    TreeItem_ToIndex(tree, item2, &index2, NULL);
+	    }
+	    if (op != COP_EQ && op != COP_NE) {
+		if (TreeItem_RootAncestor(tree, item) !=
+		    TreeItem_RootAncestor(tree, item2)) {
+		    goto reqSameRoot;
+		}
+		TreeItem_ToIndex(tree, item, &index1, NULL);
+		TreeItem_ToIndex(tree, item2, &index2, NULL);
+	    }
 	    switch (op) {
-		case 0: compare = index1 < index2; break;
-		case 1: compare = index1 <= index2; break;
-		case 2: compare = index1 == index2; break;
-		case 3: compare = index1 >= index2; break;
-		case 4: compare = index1 > index2; break;
-		case 5: compare = index1 != index2; break;
+		case COP_LT:
+		    compare = index1 < index2;
+		    break;
+		case COP_LE:
+		    compare = index1 <= index2;
+		    break;
+		case COP_EQ:
+		    compare = item == item2;
+		    break;
+		case COP_GE:
+		    compare = index1 >= index2;
+		    break;
+		case COP_GT:
+		    compare = index1 > index2;
+		    break;
+		case COP_NE:
+		    compare = item != item2;
+		    break;
 	    }
 	    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(compare));
 	    break;

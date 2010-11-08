@@ -113,6 +113,16 @@ static Tk_OptionSpec optionSpecs[] = {
      0, (ClientData) NULL, TREE_CONF_BUTTON | TREE_CONF_REDISPLAY},
     {TK_OPTION_BOOLEAN, "-buttontracking", "buttonTracking", "ButtonTracking",
      "0", -1, Tk_Offset(TreeCtrl, buttonTracking), 0, (ClientData) NULL, 0},
+    {TK_OPTION_CUSTOM, "-canvaspadx", "canvasPadX", "CanvasPadX",
+     "0",
+     Tk_Offset(TreeCtrl, canvasPadXObj),
+     Tk_Offset(TreeCtrl, canvasPadX),
+     0, (ClientData) &TreeCtrlCO_pad, TREE_CONF_RELAYOUT},
+    {TK_OPTION_CUSTOM, "-canvaspady", "canvasPadY", "CanvasPadY",
+     "0",
+     Tk_Offset(TreeCtrl, canvasPadYObj),
+     Tk_Offset(TreeCtrl, canvasPadY),
+     0, (ClientData) &TreeCtrlCO_pad, TREE_CONF_RELAYOUT},
     {TK_OPTION_STRING, "-columnprefix", "columnPrefix", "ColumnPrefix",
      "", -1, Tk_Offset(TreeCtrl, columnPrefix), 0, (ClientData) NULL, 0},
     {TK_OPTION_PIXELS, "-columnproxy", "columnProxy", "ColumnProxy",
@@ -166,6 +176,16 @@ static Tk_OptionSpec optionSpecs[] = {
      "0", Tk_Offset(TreeCtrl, itemHeightObj),
      Tk_Offset(TreeCtrl, itemHeight),
      0, (ClientData) NULL, TREE_CONF_ITEMSIZE | TREE_CONF_RELAYOUT},
+    {TK_OPTION_PIXELS, "-itemgapx", "itemGapX", "ItemGapX",
+     "0",
+     Tk_Offset(TreeCtrl, itemGapXObj),
+     Tk_Offset(TreeCtrl, itemGapX),
+     0, (ClientData) NULL, TREE_CONF_RELAYOUT},
+    {TK_OPTION_PIXELS, "-itemgapy", "itemGapY", "ItemGapY",
+     "0",
+     Tk_Offset(TreeCtrl, itemGapYObj),
+     Tk_Offset(TreeCtrl, itemGapY),
+     0, (ClientData) NULL, TREE_CONF_RELAYOUT},
 #if 0
     {TK_OPTION_CUSTOM, "-itempadx", (char *) NULL, (char *) NULL,
      "0",
@@ -942,10 +962,10 @@ static int TreeWidgetCmd(
 	    /* Point is in a line or button */
 	    if (tree->columnTreeVis &&
 		    (TreeColumn_Lock(tree->columnTree) == lock) &&
-		    (x >= tree->columnTreeLeft) &&
-		    (x < tree->columnTreeLeft + TreeColumn_UseWidth(tree->columnTree)) &&
-		    (x < tree->columnTreeLeft + depth * tree->useIndent)) {
-		int column = (x - tree->columnTreeLeft) / tree->useIndent + 1;
+		    (x >= tree->columnTreeLeft - tree->canvasPadX[PAD_TOP_LEFT]) &&
+		    (x < (tree->columnTreeLeft - tree->canvasPadX[PAD_TOP_LEFT]) + TreeColumn_UseWidth(tree->columnTree)) &&
+		    (x < (tree->columnTreeLeft - tree->canvasPadX[PAD_TOP_LEFT]) + depth * tree->useIndent)) {
+		int column = (x - (tree->columnTreeLeft - tree->canvasPadX[PAD_TOP_LEFT])) / tree->useIndent + 1;
 		if (column == depth) {
 		    if (TreeItem_HasButton(tree, item))
 			sprintf(buf + strlen(buf), " button");
@@ -3230,7 +3250,7 @@ A_XviewCmd(
 	int count, index = 0, indexMax, offset, type;
 	double fraction;
 	int visWidth = Tree_ContentWidth(tree);
-	int totWidth = Tree_TotalWidth(tree);
+	int totWidth = Tree_CanvasWidth(tree);
 	int xIncr = tree->xScrollIncrement;
 
 	if (visWidth < 0)
@@ -3334,7 +3354,7 @@ A_YviewCmd(
 	int count, index = 0, indexMax, offset, type;
 	double fraction;
 	int visHeight = Tree_ContentHeight(tree);
-	int totHeight = Tree_TotalHeight(tree);
+	int totHeight = Tree_CanvasHeight(tree);
 	int yIncr = tree->yScrollIncrement;
 
 	if (visHeight < 0)
@@ -3613,7 +3633,7 @@ TreeDebugCmd(
 
 	case COMMAND_SCROLL: {
 	    int visHeight = Tree_ContentHeight(tree);
-	    int totHeight = Tree_TotalHeight(tree);
+	    int totHeight = Tree_CanvasHeight(tree);
 	    int yIncr = tree->yScrollIncrement;
 	    if (yIncr <= 0)
 		yIncr = tree->itemHeight;

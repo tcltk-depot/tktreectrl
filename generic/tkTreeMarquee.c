@@ -627,8 +627,8 @@ TreeMarqueeCmd(
 	/* T marquee identify */
 	case COMMAND_IDENTIFY: {
 	    int x1, y1, x2, y2, n = 0;
-	    int totalWidth = Tree_TotalWidth(tree);
-	    int totalHeight = Tree_TotalHeight(tree);
+	    int totalWidth = Tree_CanvasWidth(tree);
+	    int totalHeight = Tree_CanvasHeight(tree);
 	    TreeItemList items;
 	    Tcl_Obj *listObj;
 

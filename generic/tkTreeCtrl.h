@@ -298,11 +298,22 @@ struct TreeCtrl
 #endif /* DEPRECATED */
     int backgroundMode;		/* -backgroundmode */
     int columnResizeMode;	/* -columnresizemode */
+
+    int *canvasPadX;		/* -canvaspadx */
+    Tcl_Obj *canvasPadXObj;	/* -canvaspadx */
+    int *canvasPadY;		/* -canvaspady */
+    Tcl_Obj *canvasPadYObj;	/* -canvaspady */
+
+    int itemGapX;		/* -itemgapx */
+    Tcl_Obj *itemGapXObj;	/* -itemgapx */
+    int itemGapY;		/* -itemgapy */
+    Tcl_Obj *itemGapYObj;	/* -itemgapy */
+#if 0
     int *itemPadX;		/* -itempadx */
     Tcl_Obj *itemPadXObj;	/* -itempadx */
     int *itemPadY;		/* -itempady */
     Tcl_Obj *itemPadYObj;	/* -itempady */
-
+#endif
     struct TreeCtrlDebug debug;
     struct TreeCtrlColumnDrag columnDrag;
 
@@ -336,7 +347,7 @@ struct TreeCtrl
     TreeColumn columns;		/* List of columns */
     TreeColumn columnLast;	/* Last in list of columns */
     TreeColumn columnTail;	/* Last infinitely-wide column */
-    TreeColumn columnVis;	/* First visible column */
+    TreeColumn columnVis;	/* First visible non-locked column */
     int columnCount;		/* Number of columns */
     int columnCountVis;		/* Number of visible columns */
     int headerHeight;		/* Height of column titles */
@@ -849,8 +860,8 @@ MODULE_SCOPE void TreeMarquee_Draw(TreeMarquee marquee_, TreeDrawable td);
 MODULE_SCOPE int TreeMarqueeCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]);
 
 /* tkTreeDisplay.c */
-MODULE_SCOPE int Tree_TotalWidth(TreeCtrl *tree);
-MODULE_SCOPE int Tree_TotalHeight(TreeCtrl *tree);
+MODULE_SCOPE int Tree_CanvasWidth(TreeCtrl *tree);
+MODULE_SCOPE int Tree_CanvasHeight(TreeCtrl *tree);
 MODULE_SCOPE TreeItem Tree_ItemUnderPoint(TreeCtrl *tree, int *x, int *y, int nearest);
 MODULE_SCOPE void Tree_FreeItemRInfo(TreeCtrl *tree, TreeItem item);
 MODULE_SCOPE int Tree_ItemBbox(TreeCtrl *tree, TreeItem item, int lock, int *x, int *y, int *w, int *h);
@@ -1006,6 +1017,7 @@ MODULE_SCOPE void Tree_FreeRegion(TreeCtrl *tree, TkRegion region);
 MODULE_SCOPE void Tree_FillRegion(Display *display, Drawable drawable, GC gc, TkRegion rgn);
 MODULE_SCOPE void Tree_OffsetRegion(TkRegion region, int xOffset, int yOffset);
 MODULE_SCOPE void Tree_SetEmptyRegion(TkRegion region);
+MODULE_SCOPE TkRegion Tree_GetRectRegion(TreeCtrl *tree, TreeRectangle *rect);
 MODULE_SCOPE void Tree_SetRectRegion(TkRegion region, TreeRectangle *rect);
 MODULE_SCOPE void Tree_GetRegionBounds(TkRegion region, TreeRectangle *rect);
 MODULE_SCOPE void Tree_UnionRegion(TkRegion rgnA, TkRegion rgnB, TkRegion rgnOut);

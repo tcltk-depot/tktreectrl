@@ -2764,7 +2764,7 @@ Column_DoLayout(
 #endif
 
 #if defined(MAC_OSX_TK)
-    /* Under Aqua, we let the Appearance Manager draw the sort arrow */
+    /* Under Aqua, we let the Appearance Manager draw the sort arrow. */
     if (tree->useTheme) {
 	column->arrow = COLUMN_ARROW_NONE;
 	column->arrowSide = SIDE_RIGHT;
@@ -2870,8 +2870,8 @@ Column_DoLayout(
     }
 
 #if defined(MAC_OSX_TK)
-    /* Under Aqua, we let the Appearance Manager draw the sort arrow */
-    /* This code assumes the arrow is on the right */
+    /* Under Aqua, we let the Appearance Manager draw the sort arrow. */
+    /* This code assumes the arrow is on the right. */
     if (tree->useTheme && (arrow != COLUMN_ARROW_NONE)) {
 	if (TreeTheme_GetHeaderContentMargins(tree, column->state,
 		arrow, margins) == TCL_OK) {
@@ -3048,7 +3048,7 @@ finish:
     }
 
 #if defined(MAC_OSX_TK)
-    /* Under Aqua, we let the Appearance Manager draw the sort arrow */
+    /* Under Aqua, we let the Appearance Manager draw the sort arrow. */
     column->arrow = arrow;
     column->arrowSide = arrowSide;
     column->arrowGravity = arrowGravity;
@@ -4301,7 +4301,7 @@ doneDELETE:
 		return TCL_ERROR;
 
 	    /* Update layout if needed */
-	    (void) Tree_TotalWidth(tree);
+	    (void) Tree_CanvasWidth(tree);
 	    width = TreeColumn_WidthOfItems(column);
 	    width = MAX(width, TreeColumn_NeededWidth(column));
 	    Tcl_SetObjResult(interp, Tcl_NewIntObj(width));
@@ -4536,13 +4536,24 @@ Column_Draw(
 	GC gc = Tk_GCForColor(tree->columnDrag.color, Tk_WindowId(tree->tkwin));
 	XFillRectangle(tree->display, td.drawable, gc, x, y, width, height);
     } else {
+	/* Hack on */
+	if (visIndex == 0 && column->lock == COLUMN_LOCK_NONE) {
+	    x -= tree->canvasPadX[PAD_TOP_LEFT];
+	    width += tree->canvasPadX[PAD_TOP_LEFT];
+	}
 	if (tree->useTheme) {
 	    theme = TreeTheme_DrawHeaderItem(tree, td.drawable, column->state,
 		    column->arrow, visIndex, x, y, width, height);
 	}
-	if (theme != TCL_OK)
+	if (theme != TCL_OK) {
 	    Tk_Fill3DRectangle(tree->tkwin, td.drawable, border,
 		    x, y, width, height, 0, TK_RELIEF_FLAT);
+	}
+	/* Hack off */
+	if (visIndex == 0 && column->lock == COLUMN_LOCK_NONE) {
+	    x += tree->canvasPadX[PAD_TOP_LEFT];
+	    width -= tree->canvasPadX[PAD_TOP_LEFT];
+	}
     }
 
     if (column->image != NULL) {
@@ -4638,9 +4649,15 @@ Column_Draw(
 #endif
     Column_DrawArrow(column, td, x, y, layout);
 
-    if (theme != TCL_OK)
+    if (theme != TCL_OK) {
+	/* Hack */
+	if (visIndex == 0 && column->lock == COLUMN_LOCK_NONE) {
+	    x -= tree->canvasPadX[PAD_TOP_LEFT];
+	    width += tree->canvasPadX[PAD_TOP_LEFT];
+	}
 	Tk_Draw3DRectangle(tree->tkwin, td.drawable, border,
 		x, y, width, height, column->borderWidth, relief);
+    }
 }
 
 /*
@@ -4707,6 +4724,23 @@ SetImageForColumn(
 	NULL, (ClientData) NULL);
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * DrawDragIndicator --
+ *
+ *	Draws the marker between column headers that shows where a
+ *	dragged column will end up when dropped.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Drawing.
+ *
+ *----------------------------------------------------------------------
+ */
+
 static void
 DrawDragIndicator(
     TreeCtrl *tree,		/* Widget info. */
@@ -4753,6 +4787,22 @@ DrawDragIndicator(
     }
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * DrawHeaderLeft --
+ *
+ *	Draws the column headers for the left-locked columns.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Drawing.
+ *
+ *----------------------------------------------------------------------
+ */
+
 static void
 DrawHeaderLeft(
     TreeCtrl *tree,		/* Widget info. */
@@ -4789,6 +4839,22 @@ DrawHeaderLeft(
 
     Tk_FreePixmap(tree->display, td2.drawable);
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DrawHeaderRight --
+ *
+ *	Draws the column headers for the right-locked columns.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Drawing.
+ *
+ *----------------------------------------------------------------------
+ */
 
 static void
 DrawHeaderRight(
@@ -4847,7 +4913,8 @@ void
 Tree_DrawHeader(
     TreeCtrl *tree,		/* Widget info. */
     TreeDrawable td,		/* Where to draw. */
-    int x, int y		/* Top-left corner of the header. */
+    int x, int y		/* Top-left corner of the header in
+				 * window coordinates. */
     )
 {
     TreeColumn column = tree->columns;
@@ -4875,19 +4942,33 @@ Tree_DrawHeader(
     }
     pixmap = tp.drawable;
 
+    /* Hack */
+    x += tree->canvasPadX[PAD_TOP_LEFT];
+
     column = tree->columnLockNone;
     while (column != NULL && column->lock == COLUMN_LOCK_NONE) {
 	if (column->visible) {
+	    /* Hack */
+	    if (column == tree->columnVis && tree->canvasPadX[PAD_TOP_LEFT] > 0)
+		Column_Draw(column, tp, x, y, visIndex++, FALSE);
+	    else
 	    if ((x < maxX) && (x + column->useWidth > minX))
 		Column_Draw(column, tp, x, y, visIndex++, FALSE);
 	    x += column->useWidth;
 	}
+	if (x >= maxX)
+	    break;
 	column = column->next;
     }
 
     /* Draw "tail" column */
     if (x < maxX) {
 	column = tree->columnTail;
+
+	/* Hack */
+	if (tree->columnCountVis == 0)
+	    x -= tree->canvasPadX[PAD_TOP_LEFT];
+
 	width = maxX - x + column->borderWidth;
 	height = tree->headerHeight;
 	if (!column->visible) {
@@ -5167,7 +5248,7 @@ Tree_HeaderHeight(
  *	Return the bounding box for a column header.
  *
  * Results:
- *	Return value is -1 if the item is not visible.
+ *	Return value is -1 if the column is not visible.
  *
  * Side effects:
  *	Column layout will be updated if needed.
@@ -5183,7 +5264,7 @@ TreeColumn_Bbox(
     )
 {
     TreeCtrl *tree = column->tree;
-    int left = 0 - tree->xOrigin;
+    int left = 0 - Tree_GetOriginX(tree); /* Canvas -> Window */
 
     if (!tree->showHeader || !TreeColumn_Visible(column))
 	return -1;
@@ -5192,7 +5273,7 @@ TreeColumn_Bbox(
     *h = Tree_HeaderHeight(tree);
 
     if (column == tree->columnTail) {
-	*x = Tree_WidthOfColumns(tree) - tree->xOrigin;
+	*x = Tree_WidthOfColumns(tree) - tree->xOrigin; /* Canvas -> Window */
 	*w = 1; /* xxx */
 	return 0;
     }
@@ -5246,10 +5327,8 @@ Tree_HeaderUnderPoint(
     int x = *x_, y = *y_;
     int left, top, width, height;
     TreeColumn column = tree->columns;
-    int hit;
 
-    hit = Tree_HitTest(tree, x, y);
-    if (!nearest && (hit != TREE_AREA_HEADER))
+    if (!nearest && (Tree_HitTest(tree, x, y) != TREE_AREA_HEADER))
 	return NULL;
 
     if (nearest) {
@@ -5287,6 +5366,9 @@ Tree_HeaderUnderPoint(
     column = tree->columnLockNone;
     while ((column != NULL) && (TreeColumn_Lock(column) == COLUMN_LOCK_NONE)) {
 	if (TreeColumn_Bbox(column, &left, &top, &width, &height) == 0) {
+	    /* Hack */
+	    if (x + tree->xOrigin < tree->canvasPadX[PAD_TOP_LEFT])
+		goto done;
 	    if ((x >= left) && (x < left + width)) {
 		goto done;
 	    }
@@ -5440,6 +5522,10 @@ LayoutColumns(
 	goto doOffsets;
 
     visWidth = Tree_ContentWidth(tree);
+
+    /* Hack */
+    visWidth -= tree->canvasPadX[PAD_TOP_LEFT] + tree->canvasPadX[PAD_BOTTOM_RIGHT];
+
     if (visWidth <= 0)
 	goto doOffsets;
 
@@ -5522,6 +5608,11 @@ doOffsets:
     column = first;
     while (column != NULL && column->lock == first->lock) {
 	column->offset = totalWidth;
+
+	/* Hack */
+	if (column->lock == COLUMN_LOCK_NONE)
+	    column->offset += tree->canvasPadX[PAD_TOP_LEFT];
+
 	totalWidth += column->useWidth;
 	column = column->next;
     }
@@ -5749,6 +5840,23 @@ void Tree_FreeColumns(
 
     Tk_FreeColor(tree->defColumnTextColor);
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeColumn_InitInterp --
+ *
+ *	Performs column-related initialization when the TkTreeCtrl
+ *	package is loaded into an interpreter.
+ *
+ * Results:
+ *	TCL_OK.
+ *
+ * Side effects:
+ *	Messes with the columnSpecs[] option array.
+ *
+ *----------------------------------------------------------------------
+ */
 
 int
 TreeColumn_InitInterp(

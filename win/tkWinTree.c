@@ -423,7 +423,8 @@ void
 Tree_UnionRegion(
     TkRegion rgnA,
     TkRegion rgnB,
-    TkRegion rgnOut)
+    TkRegion rgnOut
+    )
 {
     CombineRgn((HRGN) rgnA, (HRGN) rgnB, (HRGN) rgnOut, RGN_OR);
 }

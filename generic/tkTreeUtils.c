@@ -354,6 +354,37 @@ Tree_SetEmptyRegion(
 /*
  *----------------------------------------------------------------------
  *
+ * Tree_GetRectRegion --
+ *
+ *	Allocate a region and set it to a single rectangle.
+ *
+ * Results:
+ *	Changes a region.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+TkRegion
+Tree_GetRectRegion(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeRectangle *rect		/* Rectangle */
+    )
+{
+    XRectangle xr;
+    TkRegion region;
+
+    region = Tree_GetRegion(tree);
+    TreeRectToXRect(*rect, &xr);
+    TkUnionRectWithRegion(&xr, region, region);
+    return region;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tree_SetRectRegion --
  *
  *	Set a region to a single rectangle.
