@@ -126,7 +126,8 @@
 <li class="section"><a href="#section19">DYNAMIC EVENTS</a></li>
 <li class="section"><a href="#section20">DEFAULT BINDINGS</a></li>
 <li class="section"><a href="#section21">GRADIENTS</a></li>
-<li class="section"><a href="#section22">EXAMPLES</a></li>
+<li class="section"><a href="#section22">GRADIENT COORDINATES</a></li>
+<li class="section"><a href="#section23">EXAMPLES</a></li>
 <li class="section"><a href="#see-also">See Also</a></li>
 <li class="section"><a href="#keywords">Keywords</a></li>
 </ul>
@@ -140,8 +141,8 @@
 <li><a href="#1"><b class="cmd">treectrl</b> <i class="arg">pathName</i> <span class="opt">?<i class="arg">options</i>?</span></a></li>
 <li><a href="#2"><i class="arg">pathName</i> <b class="cmd">activate</b> <i class="arg">itemDesc</i></a></li>
 <li><a href="#3"><i class="arg">pathName</i> <b class="cmd">bbox</b> <span class="opt">?<i class="arg">area</i>?</span></a></li>
-<li><a href="#4"><i class="arg">pathName</i> <b class="cmd">canvasx</b> <i class="arg">screenx</i></a></li>
-<li><a href="#5"><i class="arg">pathName</i> <b class="cmd">canvasy</b> <i class="arg">screeny</i></a></li>
+<li><a href="#4"><i class="arg">pathName</i> <b class="cmd">canvasx</b> <i class="arg">windowx</i></a></li>
+<li><a href="#5"><i class="arg">pathName</i> <b class="cmd">canvasy</b> <i class="arg">windowy</i></a></li>
 <li><a href="#6"><i class="arg">pathName</i> <b class="cmd">cget</b> <i class="arg">option</i></a></li>
 <li><a href="#7"><i class="arg">pathName</i> <b class="cmd">collapse</b> <span class="opt">?<b class="option">-recurse</b>?</span> <span class="opt">?<i class="arg">itemDesc ...</i>?</span></a></li>
 <li><a href="#8"><i class="arg">pathName</i> <b class="cmd">column</b> <i class="arg">option</i> <i class="arg">column</i> <span class="opt">?<i class="arg">arg ...</i>?</span></a></li>
@@ -208,7 +209,7 @@
 <li><a href="#69"><i class="arg">pathName</i> <b class="cmd">item buttonstate</b> <i class="arg">itemDesc</i> <span class="opt">?<i class="arg">state</i>?</span></a></li>
 <li><a href="#70"><i class="arg">pathName</i> <b class="cmd">item cget</b> <i class="arg">itemDesc</i> <i class="arg">option</i></a></li>
 <li><a href="#71"><i class="arg">pathName</i> <b class="cmd">item children</b> <i class="arg">itemDesc</i></a></li>
-<li><a href="#72"><i class="arg">pathName</i> <b class="cmd">item collapse</b> <i class="arg">itemDesc</i> <span class="opt">?<b class="option">-recurse</b>?</span> <span class="opt">?<b class="option">-recurse</b>?</span></a></li>
+<li><a href="#72"><i class="arg">pathName</i> <b class="cmd">item collapse</b> <i class="arg">itemDesc</i> <span class="opt">?<b class="option">-animate</b>?</span> <span class="opt">?<b class="option">-recurse</b>?</span></a></li>
 <li><a href="#73"><i class="arg">pathName</i> <b class="cmd">item compare</b> <i class="arg">itemDesc1</i> <i class="arg">op</i> <i class="arg">itemDesc2</i></a></li>
 <li><a href="#74"><i class="arg">pathName</i> <b class="cmd">item complex</b> <i class="arg">itemDesc</i> <span class="opt">?<i class="arg">list...</i>?</span></a></li>
 <li><a href="#75"><i class="arg">pathName</i> <b class="cmd">item configure</b> <i class="arg">itemDesc</i> <span class="opt">?<i class="arg">option</i>?</span> <span class="opt">?<i class="arg">value</i>?</span> <span class="opt">?<i class="arg">option value ...</i>?</span></a></li>
@@ -450,6 +451,26 @@ Database Class:	<b class="optdbclass">ButtonThickness</b><br>
 <dd><p>Specifies the width of the outline and the plus or minus sign
 of the button to the left of an item
 in any of the forms acceptable to <b class="function">Tk_GetPixels</b>.</p></dd>
+<dt>Command-Line Switch:	<b class="option">-canvaspadx</b><br>
+Database Name:	<b class="optdbname">canvasPadX</b><br>
+Database Class:	<b class="optdbclass">CanvasPadX</b><br>
+</dt>
+<dd><p>Specifies the width of extra whitespace on the left and right edges of the canvas
+in any of the forms acceptable to <b class="function">Tk_GetPixels</b>.
+The canvas is the virtual sheet of paper that all the visible items are
+drawn onto, of which only a portion may be visible in the treectrl window.
+The option value may be a list of one or two values to specify padding for the two edges
+separately.  The default is 0.</p></dd>
+<dt>Command-Line Switch:	<b class="option">-canvaspady</b><br>
+Database Name:	<b class="optdbname">canvasPadY</b><br>
+Database Class:	<b class="optdbclass">CanvasPadY</b><br>
+</dt>
+<dd><p>Specifies the height of extra whitespace on the top and bottom edges of the canvas
+in any of the forms acceptable to <b class="function">Tk_GetPixels</b>.
+The canvas is the virtual sheet of paper that all the visible items are
+drawn onto, of which only a portion may be visible in the treectrl window.
+The option value may be a list of one or two values to specify padding for the two edges
+separately.  The default is 0.</p></dd>
 <dt>Command-Line Switch:	<b class="option">-columnprefix</b><br>
 Database Name:	<b class="optdbname">columnPrefix</b><br>
 Database Class:	<b class="optdbclass">ColumnPrefix</b><br>
@@ -522,6 +543,20 @@ Database Class:	<b class="optdbclass">Indent</b><br>
 <dd><p>Specifies the screen distance an item is indented relative to its parent item
 in any of the forms acceptable to <b class="function">Tk_GetPixels</b>.
 The default is 19 pixels.</p></dd>
+<dt>Command-Line Switch:	<b class="option">-itemgapx</b><br>
+Database Name:	<b class="optdbname">itemGapX</b><br>
+Database Class:	<b class="optdbclass">ItemGapX</b><br>
+</dt>
+<dd><p>Specifies the horizontal spacing between items
+in any of the forms acceptable to <b class="function">Tk_GetPixels</b>.
+The default is 0.</p></dd>
+<dt>Command-Line Switch:	<b class="option">-itemgapy</b><br>
+Database Name:	<b class="optdbname">itemGapY</b><br>
+Database Class:	<b class="optdbclass">ItemGapY</b><br>
+</dt>
+<dd><p>Specifies the vertical spacing between items
+in any of the forms acceptable to <b class="function">Tk_GetPixels</b>.
+The default is 0.</p></dd>
 <dt>Command-Line Switch:	<b class="option">-itemheight</b><br>
 Database Name:	<b class="optdbname">itemHeight</b><br>
 Database Class:	<b class="optdbclass">ItemHeight</b><br>
@@ -850,14 +885,18 @@ An empty string is returned if the display area has
 no height or width, which can be true for various reasons such as the window
 is too small, or the header is not displayed, or there aren't any locked
 columns.</p></dd>
-<dt><a name="4"><i class="arg">pathName</i> <b class="cmd">canvasx</b> <i class="arg">screenx</i></a></dt>
-<dd><p>Given a window x-coordinate in the treectrl <i class="arg">screenx</i>,
-this command returns the treectrl x-coordinate
-that is displayed at that location.</p></dd>
-<dt><a name="5"><i class="arg">pathName</i> <b class="cmd">canvasy</b> <i class="arg">screeny</i></a></dt>
-<dd><p>Given a window y-coordinate in the treectrl <i class="arg">screeny</i>,
-this command returns the treectrl y-coordinate
-that is displayed at that location.</p></dd>
+<dt><a name="4"><i class="arg">pathName</i> <b class="cmd">canvasx</b> <i class="arg">windowx</i></a></dt>
+<dd><p>Translates the given window x-coordinate <i class="arg">windowx</i> in the treectrl
+to canvas coordinate space.  The canvas is the virtual sheet of paper
+that all the visible items are drawn onto, of which only a portion may be
+visible in the treectrl window.  The <b class="cmd">marquee</b> command expects canvas
+coordinates.</p></dd>
+<dt><a name="5"><i class="arg">pathName</i> <b class="cmd">canvasy</b> <i class="arg">windowy</i></a></dt>
+<dd><p>Translates the given window y-coordinate <i class="arg">windowy</i> in the treectrl
+to canvas coordinate space.  The canvas is the virtual sheet of paper
+that all the visible items are drawn onto, of which only a portion may be
+visible in the treectrl window.  The <b class="cmd">marquee</b> command expects canvas
+coordinates.</p></dd>
 <dt><a name="6"><i class="arg">pathName</i> <b class="cmd">cget</b> <i class="arg">option</i></a></dt>
 <dd><p>Returns the current value of the configuration option given
 by <i class="arg">option</i>.
@@ -1282,11 +1321,19 @@ modifies the given gradient option(s) to have the given value(s);
 in this case the command returns an empty string.</p>
 <p>The following options are supported (see <b class="cmd">gradient create</b> for the meaning of each option):</p>
 <dl class="options">
+<dt><b class="option"><b class="option">-bottom</b></b> <i class="arg">coordSpec</i></dt>
+<dd></dd>
+<dt><b class="option"><b class="option">-left</b></b> <i class="arg">coordSpec</i></dt>
+<dd></dd>
 <dt><b class="option"><b class="option">-orient</b></b> <i class="arg">direction</i></dt>
+<dd></dd>
+<dt><b class="option"><b class="option">-right</b></b> <i class="arg">coordSpec</i></dt>
 <dd></dd>
 <dt><b class="option"><b class="option">-steps</b></b> <i class="arg">stepCount</i></dt>
 <dd></dd>
 <dt><b class="option"><b class="option">-stops</b></b> <i class="arg">stopsList</i></dt>
+<dd></dd>
+<dt><b class="option"><b class="option">-top</b></b> <i class="arg">coordSpec</i></dt>
 <dd></dd>
 </dl></dd>
 <dt><a name="60"><i class="arg">pathName</i> <b class="cmd">gradient create</b> <i class="arg">name</i> <span class="opt">?<i class="arg">option value ...</i>?</span></a></dt>
@@ -1294,10 +1341,25 @@ in this case the command returns an empty string.</p>
 not used by another gradient created by this treectrl widget.</p>
 <p>The following options are supported:</p>
 <dl class="options">
+<dt><b class="option"><b class="option">-bottom</b></b> <i class="arg">coordSpec</i></dt>
+<dd><p>Specifies the bottom edge of the gradient brush.  If this option is specified as
+an empty string (the default), the gradient brush's bottom edge is the same as
+that of whatever rectangle is being painted using the gradient.
+See <span class="sectref"><a href="#section22">GRADIENT COORDINATES</a></span> for details on gradient brush coordinates.</p></dd>
+<dt><b class="option"><b class="option">-left</b></b> <i class="arg">coordSpec</i></dt>
+<dd><p>Specifies the left edge of the gradient brush.  If this option is specified as
+an empty string (the default), the gradient brush's left edge is the same as
+that of whatever rectangle is being painted using the gradient.
+See <span class="sectref"><a href="#section22">GRADIENT COORDINATES</a></span> for details on gradient brush coordinates.</p></dd>
 <dt><b class="option"><b class="option">-orient</b></b> <i class="arg">direction</i></dt>
 <dd><p>This option specifies the direction a linear gradient changes color in.
 Must be either <b class="const">horizontal</b> (the default)
 or <b class="const">vertical</b> or an abbreviation of one of these.</p></dd>
+<dt><b class="option"><b class="option">-right</b></b> <i class="arg">coordSpec</i></dt>
+<dd><p>Specifies the right edge of the gradient brush.  If this option is specified as
+an empty string (the default), the gradient brush's right edge is the same as
+that of whatever rectangle is being painted using the gradient.
+See <span class="sectref"><a href="#section22">GRADIENT COORDINATES</a></span> for details on gradient brush coordinates.</p></dd>
 <dt><b class="option"><b class="option">-steps</b></b> <i class="arg">stepCount</i></dt>
 <dd><p>Specifies the number of bands of color drawn for each color stop described by
 the <b class="option">-stops</b> option.  The default value is 1, the maximum is 25.
@@ -1313,12 +1375,17 @@ has the following form:</p>
 distance from the start of the gradient where the <i class="arg">color</i> begins.
 Each <i class="arg">color</i> is a Tk color name or description.
 Each optional <i class="arg">opacity</i> is a floating point number from 0.0 to 1.0
-specifying how transparent the gradient is.
-If <i class="arg">stopsList</i> is non-empty there must be at least two stops specified, and
+specifying how transparent the gradient is.</p>
+<p>If <i class="arg">stopsList</i> is non-empty there must be at least two stops specified, and
 the first offset must be 0.0 and the last offset must be 1.0.  Any other
 stop offsets must be listed in increasing order.
 Specifying opacity has no effect if gradients are drawn using Tk API calls.
 See <span class="sectref"><a href="#section21">GRADIENTS</a></span> for more on this.</p></dd>
+<dt><b class="option"><b class="option">-top</b></b> <i class="arg">coordSpec</i></dt>
+<dd><p>Specifies the top edge of the gradient brush.  If this option is specified as
+an empty string (the default), the gradient brush's top edge is the same as
+that of whatever rectangle is being painted using the gradient.
+See <span class="sectref"><a href="#section22">GRADIENT COORDINATES</a></span> for details on gradient brush coordinates.</p></dd>
 </dl></dd>
 <dt><a name="61"><i class="arg">pathName</i> <b class="cmd">gradient delete</b> <span class="opt">?<i class="arg">name ...</i>?</span></a></dt>
 <dd><p>Deletes each gradient specified by <i class="arg">name</i>.  If the gradient is still being
@@ -1394,7 +1461,7 @@ values accepted by the <b class="cmd">item configure</b> command.</p></dd>
 <dd><p>Returns a list containing the item ids of all children
 of the item specified by <i class="arg">itemDesc</i> in the correct order from
 the first child to the last child.</p></dd>
-<dt><a name="72"><i class="arg">pathName</i> <b class="cmd">item collapse</b> <i class="arg">itemDesc</i> <span class="opt">?<b class="option">-recurse</b>?</span> <span class="opt">?<b class="option">-recurse</b>?</span></a></dt>
+<dt><a name="72"><i class="arg">pathName</i> <b class="cmd">item collapse</b> <i class="arg">itemDesc</i> <span class="opt">?<b class="option">-animate</b>?</span> <span class="opt">?<b class="option">-recurse</b>?</span></a></dt>
 <dd><p>Switches off the <b class="const">open</b> state of the item(s) described by <i class="arg">itemDesc</i>.
 If an item has descendants, then they are no longer displayed.
 If an item is already closed, then this command has no effect on that item.
@@ -2670,7 +2737,7 @@ if specified.</p></dd>
 <div id="section7" class="section"><h2><a name="section7">COLUMN DESCRIPTION</a></h2>
 <p>Many of the commands and options for a treectrl take as an argument a
 description of which column to operate on.
-See the <span class="sectref"><a href="#section22">EXAMPLES</a></span> section for examples.
+See the <span class="sectref"><a href="#section23">EXAMPLES</a></span> section for examples.
 The initial part of a column description must begin with one of the following terms:</p>
 <dl class="definitions">
 <dt><i class="arg">id</i></dt>
@@ -3384,7 +3451,7 @@ and &lt;Selection&gt;, new dynamic events can be created by using the
 <dt><b class="const">&lt;ColumnDrag-end&gt;</b></dt>
 <dd><p>Generated whenever the user drag-and-drops a column header. The library scripts
 do not actually move a dragged column. You must bind to the receive event to
-move the column. See <span class="sectref"><a href="#section22">EXAMPLES</a></span>.</p>
+move the column. See <span class="sectref"><a href="#section23">EXAMPLES</a></span>.</p>
 <dl class="options">
 <dt><b class="option">%C</b></dt>
 <dd><p>The column that was dragged</p></dd>
@@ -3521,6 +3588,9 @@ check that the display's color depth is at least 15 or 16 by calling the
 <li><p>Gradients are fully opaque when XFillRectangle() is used to draw them (see below).
 This means the <b class="option">opacity</b> value of each color stop is ignored.  Keep that
 in mind if your application is cross-platform.</p></li>
+<li><p>Rounded rectangles cannot be filled with a gradient when XFillRectangle() is
+used to draw gradients (see below).  Instead, the rounded rectangle is filled
+with the gradient's first <b class="option">-stops</b> color.</p></li>
 </ol>
 <p>Gradients may be used in the following places:</p>
 <ol class="enumerated">
@@ -3531,6 +3601,7 @@ in mind if your application is cross-platform.</p></li>
 <p>On Microsoft Windows, GDI+ is used where it is available (gdiplus.dll is
 dynamically loaded at run-time).
 On Mac OS X, CoreGraphics is used to draw gradients.
+With the Gtk+ build of treectrl, libcairo is used to draw gradients.
 When native gradient support is available, all the talk below
 about <b class="option">-steps</b> can safely be ignored.</p>
 <p>When no native support for gradients is available, gradients
@@ -3551,7 +3622,36 @@ to the height or width of the gradient being drawn.  So if you have a rect eleme
 gradients with steps X stops greater than the height or width of the rectangle
 being drawn, because then colors will overlap.</p>
 </div>
-<div id="section22" class="section"><h2><a name="section22">EXAMPLES</a></h2>
+<div id="section22" class="section"><h2><a name="section22">GRADIENT COORDINATES</a></h2>
+<p>By default, a gradient brush is exactly the same size as whatever rectangle
+is being painted.  For example, if a column's <b class="option">-itembackground</b> option
+specifies a gradient name, then the background of an item is painted with all
+the colors of the gradient.  So a vertical gradient from blue to green will
+start blue at the top and end with green at the bottom of every item.</p>
+<p>By specifying any of the <b class="option">-bottom</b>, <b class="option">-left</b>, <b class="option">-right</b> or
+<b class="option">-top</b> gradient options the size of the gradient brush does not need
+to match that of the rectangle being painted.  These options can be used to
+make a gradient appear to span across the entire width or height of the treectrl
+window, or across the entire canvas, for example.  The format of each of these
+options is a list of 2 values {value coordType}, where <i class="arg">value</i> is a
+floating point number (usually from 0.0 to 1.0) and <i class="arg">coordType</i> is one
+of <b class="const">canvas</b> or <b class="const">content</b>.</p>
+<p>There is no point specifying <b class="option">-left</b> or <b class="option">-right</b> if the gradient
+is vertical, since the gradient's colors are constant horizontally, so changing
+the horizontal size of the brush won't change the appearance of the gradient.
+The same reasoning applies for the <b class="option">-top</b> and <b class="option">-bottom</b> options
+for a horizontal gradient.</p>
+<pre class="example">
+package require treectrl
+set T [treectrl .t -itemheight 20 -showheader no]
+$T gradient api 1.0
+$T gradient create G1 -orient vertical -top {0.0 canvas} -bottom {1.0 canvas} \
+	-stops {{0.0 blue} {0.5 green} {1.0 red}} -steps 25
+$T column create -expand yes -itembackground G1
+pack $T -expand yes -fill both
+</pre>
+</div>
+<div id="section23" class="section"><h2><a name="section23">EXAMPLES</a></h2>
 <p>Get the unique identifier for the leftmost visible column:</p>
 <pre class="example">
 set id [$T column index &quot;first visible&quot;]

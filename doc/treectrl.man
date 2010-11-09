@@ -119,6 +119,22 @@ Specifies the width of the outline and the plus or minus sign
 of the button to the left of an item
 in any of the forms acceptable to [fun Tk_GetPixels].
 
+[tkoption_def -canvaspadx canvasPadX CanvasPadX]
+Specifies the width of extra whitespace on the left and right edges of the canvas
+in any of the forms acceptable to [fun Tk_GetPixels].
+The canvas is the virtual sheet of paper that all the visible items are
+drawn onto, of which only a portion may be visible in the treectrl window.
+The option value may be a list of one or two values to specify padding for the two edges
+separately.  The default is 0.
+
+[tkoption_def -canvaspady canvasPadY CanvasPadY]
+Specifies the height of extra whitespace on the top and bottom edges of the canvas
+in any of the forms acceptable to [fun Tk_GetPixels].
+The canvas is the virtual sheet of paper that all the visible items are
+drawn onto, of which only a portion may be visible in the treectrl window.
+The option value may be a list of one or two values to specify padding for the two edges
+separately.  The default is 0.
+
 [tkoption_def -columnprefix columnPrefix ColumnPrefix]
 Specifies an ascii string that changes the way column ids are reported and
 processed. If this option is a non-empty string, the usual integer value
@@ -174,6 +190,16 @@ not request any size at all.
 Specifies the screen distance an item is indented relative to its parent item
 in any of the forms acceptable to [fun Tk_GetPixels].
 The default is 19 pixels.
+
+[tkoption_def -itemgapx itemGapX ItemGapX]
+Specifies the horizontal spacing between items
+in any of the forms acceptable to [fun Tk_GetPixels].
+The default is 0.
+
+[tkoption_def -itemgapy itemGapY ItemGapY]
+Specifies the vertical spacing between items
+in any of the forms acceptable to [fun Tk_GetPixels].
+The default is 0.
 
 [tkoption_def -itemheight itemHeight ItemHeight]
 Specifies a fixed height for every item
@@ -463,15 +489,19 @@ no height or width, which can be true for various reasons such as the window
 is too small, or the header is not displayed, or there aren't any locked
 columns.
 
-[call [arg pathName] [cmd canvasx] [arg screenx]]
-Given a window x-coordinate in the treectrl [arg screenx],
-this command returns the treectrl x-coordinate
-that is displayed at that location.
+[call [arg pathName] [cmd canvasx] [arg windowx]]
+Translates the given window x-coordinate [arg windowx] in the treectrl
+to canvas coordinate space.  The canvas is the virtual sheet of paper
+that all the visible items are drawn onto, of which only a portion may be
+visible in the treectrl window.  The [cmd marquee] command expects canvas
+coordinates.
 
-[call [arg pathName] [cmd canvasy] [arg screeny]]
-Given a window y-coordinate in the treectrl [arg screeny],
-this command returns the treectrl y-coordinate
-that is displayed at that location.
+[call [arg pathName] [cmd canvasy] [arg windowy]]
+Translates the given window y-coordinate [arg windowy] in the treectrl
+to canvas coordinate space.  The canvas is the virtual sheet of paper
+that all the visible items are drawn onto, of which only a portion may be
+visible in the treectrl window.  The [cmd marquee] command expects canvas
+coordinates.
 
 [call [arg pathName] [cmd cget] [arg option]]
 Returns the current value of the configuration option given
@@ -993,9 +1023,13 @@ in this case the command returns an empty string.
 [para]
 The following options are supported (see [cmd "gradient create"] for the meaning of each option):
 [list_begin options]
+[opt_def [option -bottom] [arg coordSpec]]
+[opt_def [option -left] [arg coordSpec]]
 [opt_def [option -orient] [arg direction]]
+[opt_def [option -right] [arg coordSpec]]
 [opt_def [option -steps] [arg stepCount]]
 [opt_def [option -stops] [arg stopsList]]
+[opt_def [option -top] [arg coordSpec]]
 [list_end]
 
 
@@ -1006,10 +1040,28 @@ not used by another gradient created by this treectrl widget.
 The following options are supported:
 [list_begin options]
 
+[opt_def [option -bottom] [arg coordSpec]]
+Specifies the bottom edge of the gradient brush.  If this option is specified as
+an empty string (the default), the gradient brush's bottom edge is the same as
+that of whatever rectangle is being painted using the gradient.
+See [sectref {GRADIENT COORDINATES}] for details on gradient brush coordinates.
+
+[opt_def [option -left] [arg coordSpec]]
+Specifies the left edge of the gradient brush.  If this option is specified as
+an empty string (the default), the gradient brush's left edge is the same as
+that of whatever rectangle is being painted using the gradient.
+See [sectref {GRADIENT COORDINATES}] for details on gradient brush coordinates.
+
 [opt_def [option -orient] [arg direction]]
 This option specifies the direction a linear gradient changes color in.
 Must be either [const horizontal] (the default)
 or [const vertical] or an abbreviation of one of these.
+
+[opt_def [option -right] [arg coordSpec]]
+Specifies the right edge of the gradient brush.  If this option is specified as
+an empty string (the default), the gradient brush's right edge is the same as
+that of whatever rectangle is being painted using the gradient.
+See [sectref {GRADIENT COORDINATES}] for details on gradient brush coordinates.
 
 [opt_def [option -steps] [arg stepCount]]
 Specifies the number of bands of color drawn for each color stop described by
@@ -1028,12 +1080,18 @@ distance from the start of the gradient where the [arg color] begins.
 Each [arg color] is a Tk color name or description.
 Each optional [arg opacity] is a floating point number from 0.0 to 1.0
 specifying how transparent the gradient is.
-
+[para]
 If [arg stopsList] is non-empty there must be at least two stops specified, and
 the first offset must be 0.0 and the last offset must be 1.0.  Any other
 stop offsets must be listed in increasing order.
 Specifying opacity has no effect if gradients are drawn using Tk API calls.
 See [sectref {GRADIENTS}] for more on this.
+
+[opt_def [option -top] [arg coordSpec]]
+Specifies the top edge of the gradient brush.  If this option is specified as
+an empty string (the default), the gradient brush's top edge is the same as
+that of whatever rectangle is being painted using the gradient.
+See [sectref {GRADIENT COORDINATES}] for details on gradient brush coordinates.
 
 [list_end]
 
@@ -1133,7 +1191,7 @@ Returns a list containing the item ids of all children
 of the item specified by [arg itemDesc] in the correct order from
 the first child to the last child.
 
-[call [arg pathName] [cmd {item collapse}] [arg itemDesc] [opt [option -recurse]] [opt [option -recurse]]]
+[call [arg pathName] [cmd {item collapse}] [arg itemDesc] [opt [option -animate]] [opt [option -recurse]]]
 Switches off the [const open] state of the item(s) described by [arg itemDesc].
 If an item has descendants, then they are no longer displayed.
 If an item is already closed, then this command has no effect on that item.
@@ -3676,6 +3734,10 @@ check that the display's color depth is at least 15 or 16 by calling the
 Gradients are fully opaque when XFillRectangle() is used to draw them (see below).
 This means the [option opacity] value of each color stop is ignored.  Keep that
 in mind if your application is cross-platform.
+[enum]
+Rounded rectangles cannot be filled with a gradient when XFillRectangle() is
+used to draw gradients (see below).  Instead, the rounded rectangle is filled
+with the gradient's first [option -stops] color.
 [list_end]
 
 Gradients may be used in the following places:
@@ -3692,6 +3754,7 @@ The -itembackground option of columns.
 On Microsoft Windows, GDI+ is used where it is available (gdiplus.dll is
 dynamically loaded at run-time).
 On Mac OS X, CoreGraphics is used to draw gradients.
+With the Gtk+ build of treectrl, libcairo is used to draw gradients.
 When native gradient support is available, all the talk below
 about [option -steps] can safely be ignored.
 [para]
@@ -3712,6 +3775,40 @@ to the height or width of the gradient being drawn.  So if you have a rect eleme
 18 pixels tall, use a vertical gradient that has steps X stops=18.  Avoid using
 gradients with steps X stops greater than the height or width of the rectangle
 being drawn, because then colors will overlap.
+
+[section {GRADIENT COORDINATES}]
+
+By default, a gradient brush is exactly the same size as whatever rectangle
+is being painted.  For example, if a column's [option -itembackground] option
+specifies a gradient name, then the background of an item is painted with all
+the colors of the gradient.  So a vertical gradient from blue to green will
+start blue at the top and end with green at the bottom of every item.
+[para]
+By specifying any of the [option -bottom], [option -left], [option -right] or
+[option -top] gradient options the size of the gradient brush does not need
+to match that of the rectangle being painted.  These options can be used to
+make a gradient appear to span across the entire width or height of the treectrl
+window, or across the entire canvas, for example.  The format of each of these
+options is a list of 2 values {value coordType}, where [arg value] is a
+floating point number (usually from 0.0 to 1.0) and [arg coordType] is one
+of [const canvas] or [const content].
+[para]
+There is no point specifying [option -left] or [option -right] if the gradient
+is vertical, since the gradient's colors are constant horizontally, so changing
+the horizontal size of the brush won't change the appearance of the gradient.
+The same reasoning applies for the [option -top] and [option -bottom] options
+for a horizontal gradient.
+[para]
+[example_begin]
+package require treectrl
+set T [lb]treectrl .t -itemheight 20 -showheader no[rb]
+$T gradient api 1.0
+$T gradient create G1 -orient vertical -top {0.0 canvas} -bottom {1.0 canvas} \
+	-stops {{0.0 blue} {0.5 green} {1.0 red}} -steps 25
+$T column create -expand yes -itembackground G1
+pack $T -expand yes -fill both
+[example_end]
+
 
 [section EXAMPLES]
 

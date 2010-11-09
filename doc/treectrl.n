@@ -250,9 +250,9 @@ package require \fBtreectrl  2.2.10\fR
 .sp
 \fIpathName\fR \fBbbox\fR ?\fIarea\fR?
 .sp
-\fIpathName\fR \fBcanvasx\fR \fIscreenx\fR
+\fIpathName\fR \fBcanvasx\fR \fIwindowx\fR
 .sp
-\fIpathName\fR \fBcanvasy\fR \fIscreeny\fR
+\fIpathName\fR \fBcanvasy\fR \fIwindowy\fR
 .sp
 \fIpathName\fR \fBcget\fR \fIoption\fR
 .sp
@@ -386,7 +386,7 @@ package require \fBtreectrl  2.2.10\fR
 .sp
 \fIpathName\fR \fBitem children\fR \fIitemDesc\fR
 .sp
-\fIpathName\fR \fBitem collapse\fR \fIitemDesc\fR ?\fB-recurse\fR? ?\fB-recurse\fR?
+\fIpathName\fR \fBitem collapse\fR \fIitemDesc\fR ?\fB-animate\fR? ?\fB-recurse\fR?
 .sp
 \fIpathName\fR \fBitem compare\fR \fIitemDesc1\fR \fIop\fR \fIitemDesc2\fR
 .sp
@@ -773,6 +773,36 @@ in any of the forms acceptable to \fBTk_GetPixels\fR.
 .LP
 .nf
 .ta 6c
+Command-Line Switch:	\fB-canvaspadx\fR
+Database Name:	\fBcanvasPadX\fR
+Database Class:	\fBCanvasPadX\fR
+
+.fi
+.IP
+Specifies the width of extra whitespace on the left and right edges of the canvas
+in any of the forms acceptable to \fBTk_GetPixels\fR.
+The canvas is the virtual sheet of paper that all the visible items are
+drawn onto, of which only a portion may be visible in the treectrl window.
+The option value may be a list of one or two values to specify padding for the two edges
+separately.  The default is 0.
+.LP
+.nf
+.ta 6c
+Command-Line Switch:	\fB-canvaspady\fR
+Database Name:	\fBcanvasPadY\fR
+Database Class:	\fBCanvasPadY\fR
+
+.fi
+.IP
+Specifies the height of extra whitespace on the top and bottom edges of the canvas
+in any of the forms acceptable to \fBTk_GetPixels\fR.
+The canvas is the virtual sheet of paper that all the visible items are
+drawn onto, of which only a portion may be visible in the treectrl window.
+The option value may be a list of one or two values to specify padding for the two edges
+separately.  The default is 0.
+.LP
+.nf
+.ta 6c
 Command-Line Switch:	\fB-columnprefix\fR
 Database Name:	\fBcolumnPrefix\fR
 Database Class:	\fBColumnPrefix\fR
@@ -882,6 +912,30 @@ Database Class:	\fBIndent\fR
 Specifies the screen distance an item is indented relative to its parent item
 in any of the forms acceptable to \fBTk_GetPixels\fR.
 The default is 19 pixels.
+.LP
+.nf
+.ta 6c
+Command-Line Switch:	\fB-itemgapx\fR
+Database Name:	\fBitemGapX\fR
+Database Class:	\fBItemGapX\fR
+
+.fi
+.IP
+Specifies the horizontal spacing between items
+in any of the forms acceptable to \fBTk_GetPixels\fR.
+The default is 0.
+.LP
+.nf
+.ta 6c
+Command-Line Switch:	\fB-itemgapy\fR
+Database Name:	\fBitemGapY\fR
+Database Class:	\fBItemGapY\fR
+
+.fi
+.IP
+Specifies the vertical spacing between items
+in any of the forms acceptable to \fBTk_GetPixels\fR.
+The default is 0.
 .LP
 .nf
 .ta 6c
@@ -1369,15 +1423,19 @@ no height or width, which can be true for various reasons such as the window
 is too small, or the header is not displayed, or there aren't any locked
 columns.
 .TP
-\fIpathName\fR \fBcanvasx\fR \fIscreenx\fR
-Given a window x-coordinate in the treectrl \fIscreenx\fR,
-this command returns the treectrl x-coordinate
-that is displayed at that location.
+\fIpathName\fR \fBcanvasx\fR \fIwindowx\fR
+Translates the given window x-coordinate \fIwindowx\fR in the treectrl
+to canvas coordinate space.  The canvas is the virtual sheet of paper
+that all the visible items are drawn onto, of which only a portion may be
+visible in the treectrl window.  The \fBmarquee\fR command expects canvas
+coordinates.
 .TP
-\fIpathName\fR \fBcanvasy\fR \fIscreeny\fR
-Given a window y-coordinate in the treectrl \fIscreeny\fR,
-this command returns the treectrl y-coordinate
-that is displayed at that location.
+\fIpathName\fR \fBcanvasy\fR \fIwindowy\fR
+Translates the given window y-coordinate \fIwindowy\fR in the treectrl
+to canvas coordinate space.  The canvas is the virtual sheet of paper
+that all the visible items are drawn onto, of which only a portion may be
+visible in the treectrl window.  The \fBmarquee\fR command expects canvas
+coordinates.
 .TP
 \fIpathName\fR \fBcget\fR \fIoption\fR
 Returns the current value of the configuration option given
@@ -1882,11 +1940,19 @@ in this case the command returns an empty string.
 The following options are supported (see \fBgradient create\fR for the meaning of each option):
 .RS
 .TP
+\fB\fB-bottom\fR\fR \fIcoordSpec\fR
+.TP
+\fB\fB-left\fR\fR \fIcoordSpec\fR
+.TP
 \fB\fB-orient\fR\fR \fIdirection\fR
+.TP
+\fB\fB-right\fR\fR \fIcoordSpec\fR
 .TP
 \fB\fB-steps\fR\fR \fIstepCount\fR
 .TP
 \fB\fB-stops\fR\fR \fIstopsList\fR
+.TP
+\fB\fB-top\fR\fR \fIcoordSpec\fR
 .RE
 .TP
 \fIpathName\fR \fBgradient create\fR \fIname\fR ?\fIoption value ...\fR?
@@ -1896,10 +1962,28 @@ not used by another gradient created by this treectrl widget.
 The following options are supported:
 .RS
 .TP
+\fB\fB-bottom\fR\fR \fIcoordSpec\fR
+Specifies the bottom edge of the gradient brush.  If this option is specified as
+an empty string (the default), the gradient brush's bottom edge is the same as
+that of whatever rectangle is being painted using the gradient.
+See \fBGRADIENT COORDINATES\fR for details on gradient brush coordinates.
+.TP
+\fB\fB-left\fR\fR \fIcoordSpec\fR
+Specifies the left edge of the gradient brush.  If this option is specified as
+an empty string (the default), the gradient brush's left edge is the same as
+that of whatever rectangle is being painted using the gradient.
+See \fBGRADIENT COORDINATES\fR for details on gradient brush coordinates.
+.TP
 \fB\fB-orient\fR\fR \fIdirection\fR
 This option specifies the direction a linear gradient changes color in.
 Must be either \fBhorizontal\fR (the default)
 or \fBvertical\fR or an abbreviation of one of these.
+.TP
+\fB\fB-right\fR\fR \fIcoordSpec\fR
+Specifies the right edge of the gradient brush.  If this option is specified as
+an empty string (the default), the gradient brush's right edge is the same as
+that of whatever rectangle is being painted using the gradient.
+See \fBGRADIENT COORDINATES\fR for details on gradient brush coordinates.
 .TP
 \fB\fB-steps\fR\fR \fIstepCount\fR
 Specifies the number of bands of color drawn for each color stop described by
@@ -1920,11 +2004,18 @@ distance from the start of the gradient where the \fIcolor\fR begins.
 Each \fIcolor\fR is a Tk color name or description.
 Each optional \fIopacity\fR is a floating point number from 0.0 to 1.0
 specifying how transparent the gradient is.
+.sp
 If \fIstopsList\fR is non-empty there must be at least two stops specified, and
 the first offset must be 0.0 and the last offset must be 1.0.  Any other
 stop offsets must be listed in increasing order.
 Specifying opacity has no effect if gradients are drawn using Tk API calls.
 See \fBGRADIENTS\fR for more on this.
+.TP
+\fB\fB-top\fR\fR \fIcoordSpec\fR
+Specifies the top edge of the gradient brush.  If this option is specified as
+an empty string (the default), the gradient brush's top edge is the same as
+that of whatever rectangle is being painted using the gradient.
+See \fBGRADIENT COORDINATES\fR for details on gradient brush coordinates.
 .RE
 .TP
 \fIpathName\fR \fBgradient delete\fR ?\fIname ...\fR?
@@ -2016,7 +2107,7 @@ Returns a list containing the item ids of all children
 of the item specified by \fIitemDesc\fR in the correct order from
 the first child to the last child.
 .TP
-\fIpathName\fR \fBitem collapse\fR \fIitemDesc\fR ?\fB-recurse\fR? ?\fB-recurse\fR?
+\fIpathName\fR \fBitem collapse\fR \fIitemDesc\fR ?\fB-animate\fR? ?\fB-recurse\fR?
 Switches off the \fBopen\fR state of the item(s) described by \fIitemDesc\fR.
 If an item has descendants, then they are no longer displayed.
 If an item is already closed, then this command has no effect on that item.
@@ -4539,6 +4630,10 @@ check that the display's color depth is at least 15 or 16 by calling the
 Gradients are fully opaque when XFillRectangle() is used to draw them (see below).
 This means the \fBopacity\fR value of each color stop is ignored.  Keep that
 in mind if your application is cross-platform.
+.IP [5]
+Rounded rectangles cannot be filled with a gradient when XFillRectangle() is
+used to draw gradients (see below).  Instead, the rounded rectangle is filled
+with the gradient's first \fB-stops\fR color.
 .PP
 Gradients may be used in the following places:
 .IP [1]
@@ -4552,6 +4647,7 @@ The -itembackground option of columns.
 On Microsoft Windows, GDI+ is used where it is available (gdiplus.dll is
 dynamically loaded at run-time).
 On Mac OS X, CoreGraphics is used to draw gradients.
+With the Gtk+ build of treectrl, libcairo is used to draw gradients.
 When native gradient support is available, all the talk below
 about \fB-steps\fR can safely be ignored.
 .PP
@@ -4574,6 +4670,39 @@ to the height or width of the gradient being drawn.  So if you have a rect eleme
 18 pixels tall, use a vertical gradient that has steps X stops=18.  Avoid using
 gradients with steps X stops greater than the height or width of the rectangle
 being drawn, because then colors will overlap.
+.SH "GRADIENT COORDINATES"
+By default, a gradient brush is exactly the same size as whatever rectangle
+is being painted.  For example, if a column's \fB-itembackground\fR option
+specifies a gradient name, then the background of an item is painted with all
+the colors of the gradient.  So a vertical gradient from blue to green will
+start blue at the top and end with green at the bottom of every item.
+.PP
+By specifying any of the \fB-bottom\fR, \fB-left\fR, \fB-right\fR or
+\fB-top\fR gradient options the size of the gradient brush does not need
+to match that of the rectangle being painted.  These options can be used to
+make a gradient appear to span across the entire width or height of the treectrl
+window, or across the entire canvas, for example.  The format of each of these
+options is a list of 2 values {value coordType}, where \fIvalue\fR is a
+floating point number (usually from 0.0 to 1.0) and \fIcoordType\fR is one
+of \fBcanvas\fR or \fBcontent\fR.
+.PP
+There is no point specifying \fB-left\fR or \fB-right\fR if the gradient
+is vertical, since the gradient's colors are constant horizontally, so changing
+the horizontal size of the brush won't change the appearance of the gradient.
+The same reasoning applies for the \fB-top\fR and \fB-bottom\fR options
+for a horizontal gradient.
+.PP
+.nf
+
+package require treectrl
+set T [treectrl .t -itemheight 20 -showheader no]
+$T gradient api 1.0
+$T gradient create G1 -orient vertical -top {0.0 canvas} -bottom {1.0 canvas} \\
+	-stops {{0.0 blue} {0.5 green} {1.0 red}} -steps 25
+$T column create -expand yes -itembackground G1
+pack $T -expand yes -fill both
+
+.fi
 .SH EXAMPLES
 Get the unique identifier for the leftmost visible column:
 .nf
