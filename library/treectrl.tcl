@@ -674,8 +674,8 @@ proc ::TreeCtrl::ButtonPress1 {w x y} {
 
     # If the initial mouse-click is in a locked column, restrict scrolling
     # to the vertical.
-    scan [$w contentbox] "%d %d %d %d" x1 y1 x2 y2
-    if {$x >= $x1 && $x < $x2} {
+    set count [scan [$w contentbox] "%d %d %d %d" x1 y1 x2 y2]
+    if {$count != -1 && $x >= $x1 && $x < $x2} {
 	set Priv(autoscan,direction,$w) xy
     } else {
 	set Priv(autoscan,direction,$w) y
@@ -1151,7 +1151,12 @@ proc ::TreeCtrl::BeginToggle {w item} {
 
 proc ::TreeCtrl::AutoScanCheck {w x y} {
     variable Priv
-    scan [$w contentbox] "%d %d %d %d" x1 y1 x2 y2
+    # Could have clicked in locked column
+    if {[scan [$w contentbox] "%d %d %d %d" x1 y1 x2 y2] == -1} {
+	if {[scan [$w bbox left] "%d %d %d %d" x1 y1 x2 y2] == -1} {
+	    scan [$w bbox right] "%d %d %d %d" x1 y1 x2 y2
+	}
+    }
     set margin [winfo pixels $w [$w cget -scrollmargin]]
     if {![info exists Priv(autoscan,direction,$w)]} {
 	set Priv(autoscan,direction,$w) xy
