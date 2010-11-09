@@ -1223,6 +1223,87 @@ test item-22.7 {-button: set auto abbreviation} -body {
     .t item cget foo -button
 } -result {auto}
 
+test item-23.1 {compare: missing args} -body {
+    .t item compare
+} -returnCodes error  -result {wrong # args: should be ".t item compare item1 op item2"}
+
+test item-23.2 {compare: unknown operator} -body {
+    .t item compare root foo root
+} -returnCodes error -result {bad comparison operator "foo": must be <, <=, ==, >=, >, or !=}
+
+test item-23.3 {compare: unknown item} -body {
+    .t item compare root foo bar
+} -returnCodes error -result {item "bar" doesn't exist}
+
+test item-23.4 {compare: same item} -body {
+    set result {}
+    foreach op {< <= == >= > !=} {
+	lappend result [.t item compare root $op root]
+    }
+    set result
+} -result {0 1 1 1 0 0}
+
+test item-23.5 {compare: different items} -setup {
+    .t item delete all
+    .t item create -tags item1 -parent root
+    .t item create -tags item2 -parent root
+} -body {
+    set result {}
+    foreach op {< <= == >= > !=} {
+	lappend result [.t item compare item1 $op item2]
+    }
+    set result
+} -result {1 1 0 0 0 1}
+
+test item-23.6 {compare: different items} -setup {
+    .t item delete all
+    .t item create -tags item1 -parent root
+    .t item create -tags item2 -parent root
+} -body {
+    set result {}
+    foreach op {< <= == >= > !=} {
+	lappend result [.t item compare item2 $op item1]
+    }
+    set result
+} -result {0 0 0 1 1 1}
+
+test item-23.7 {compare: uncommon ancestor, LT} -setup {
+    .t item delete all
+    .t item create -tags item1 ; # no parent
+    .t item create -tags item2 ; # no parent
+} -body {
+    .t item compare item1 < item2
+} -returnCodes error -result {item 1 and item 2 don't share a common ancestor}
+
+test item-23.8 {compare: uncommon ancestor, GT} -body {
+    .t item compare item1 > item2
+} -returnCodes error -result {item 1 and item 2 don't share a common ancestor}
+
+test item-23.9 {compare: uncommon ancestor, EQ or NE} -body {
+    .t item compare item1 == item2
+    .t item compare item1 != item2
+} -result {1}
+
+test item-24.1 {buttonstate: missing args} -body {
+    .t item buttonstate
+} -returnCodes error -result {wrong # args: should be ".t item buttonstate item ?state?"}
+
+test item-24.2 {buttonstate: unknown item} -body {
+    .t item buttonstate foo
+} -returnCodes error -result {item "foo" doesn't exist}
+
+test item-24.3 {buttonstate: current state} -body {
+    .t item buttonstate root
+} -result {normal}
+
+test item-24.4 {buttonstate: unknown state} -body {
+    .t item buttonstate root foo
+} -returnCodes error -result {bad state "foo": must be active, normal, or pressed}
+
+test item-24.5 {buttonstate: set state} -body {
+    .t item buttonstate root active
+} -result {active}
+
 test item-99.1 {some needed cleanup} -body {
     destroy .t
 } -result {}

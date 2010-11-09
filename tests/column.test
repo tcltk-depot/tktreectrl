@@ -76,7 +76,7 @@ test column-2.3 {column bbox: tree doesn't show headers} -body {
 test column-2.4 {column bbox} -body {
     .t configure -showheader 1
     .t column bbox 0
-} -result {0 3 482 7}
+} -result {2 2 484 6}
 
 test column-2.5 {column bbox: tail column not allowed} -body {
     .t column bbox tail
@@ -223,7 +223,7 @@ test column-3.26a {column configure/cget: 2 element -imagepadx/y} -body {
 
 test column-3.27 {column configure: invalid -itembackground} -body {
     .t column configure column1 -itembackground no
-} -returnCodes error -result {unknown color name "no"}
+} -returnCodes error -result {unknown color or gradient name "no"}
 
 test column-3.28 {column configure/cget: simple -itembackground} -body {
     .t column configure column1 -itembackground blue
@@ -232,7 +232,7 @@ test column-3.28 {column configure/cget: simple -itembackground} -body {
 
 test column-3.29 {column configure: invalid -itembackground list} -body {
     .t column configure column1 -itembackground {blue selected green active}
-} -returnCodes error -result {unknown color name "selected"}
+} -returnCodes error -result {unknown color or gradient name "selected"}
 
 test column-3.30 {column configure/cget: -itembackground list} -body {
     .t column configure column1 -itembackground {blue green magenta red}

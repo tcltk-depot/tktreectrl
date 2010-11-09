@@ -561,7 +561,7 @@ test treectrl-12.1 {contentbox: too many args} -body {
 
 test treectrl-12.2 {contentbox} -body {
     .t contentbox
-} -result {3 3 203 203}
+} -result {2 2 202 202}
 
 test treectrl-12.3 {contentbox: simple double check with borders} -body {
     expr {[lindex [.t contentbox] 0] \
