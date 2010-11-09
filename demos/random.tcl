@@ -86,7 +86,7 @@ proc DemoRandom {} {
     # Create items and assign styles
     #
 
-    set clicks [clock clicks]
+    TimerStart
     $T item configure root -button auto
     set items [$T item create -count [expr {$::RandomN - 1}] -button auto]
     set added root
@@ -105,9 +105,9 @@ proc DemoRandom {} {
 	    $T item firstchild $itemj $itemi
 	}
     }
-    puts "created $::RandomN-1 items in [expr [clock clicks] - $clicks] clicks"
+    puts "created $::RandomN-1 items in [TimerStop] seconds"
 
-    set clicks [clock clicks]
+    TimerStart
     lappend items [$T item id root]
     foreach item $items {
 	set numChildren [$T item numchildren $item]
@@ -125,7 +125,7 @@ proc DemoRandom {} {
 		colDepth elemTxtAny -text "[$T depth $item]"
 	}
     }
-    puts "configured $::RandomN items in [expr [clock clicks] - $clicks] clicks"
+    puts "configured $::RandomN items in [TimerStop] seconds"
 
     bind DemoRandom <Double-ButtonPress-1> {
 	TreeCtrl::DoubleButton1 %W %x %y

@@ -556,7 +556,8 @@ proc UpdateIdentifyWindow {T x y} {
     set wText $w.text
     $wText configure -state normal
     $wText delete 1.0 end
-    $wText insert end x= tagBold "$x  " {} y= tagBold $y\n
+    set nearest [$T item id [list nearest $x $y]]
+    $wText insert end "x=" tagBold "$x  " {} "y=" tagBold "$y  " {} "nearest=" tagBold $nearest\n
     foreach {key val} [$T identify $x $y] {
 	$wText insert end $key tagBold " $val "
     }
@@ -1369,16 +1370,29 @@ proc InitDemoList {} {
 
 InitDemoList
 
-proc ClicksToSeconds {clicks} {
-    return [format "%.2g" [expr {$clicks / 1000000.0}]]
+proc TimerStart {} {
+    if {[info tclversion] < 8.5} {
+	return [set ::gStartTime [clock clicks -milliseconds]]
+    }
+    return [set ::gStartTime [clock microseconds]]
+}
+
+proc TimerStop {{startTime ""}} {
+    if {[info tclversion] < 8.5} {
+	set endTime [clock clicks -milliseconds]
+	if {$startTime eq ""} { set startTime $::gStartTime }
+	return [format "%.2g" [expr {($endTime - $startTime) / 1000.0}]]
+    }
+    set endTime [clock microseconds]
+    if {$startTime eq ""} { set startTime $::gStartTime }
+    return [format "%.2g" [expr {($endTime - $startTime) / 1000000.0}]]
 }
 
 proc DemoSet {cmd file} {
     DemoClear
-    set clicks [clock clicks]
+    TimerStart
     uplevel #0 $cmd
-    set clicks [expr {[clock clicks] - $clicks}]
-    dbwin "set list in [ClicksToSeconds $clicks] seconds ($clicks clicks)\n"
+    dbwin "set list in [TimerStop] seconds\n"
     [DemoList] xview moveto 0
     [DemoList] yview moveto 0
     update
@@ -1644,7 +1658,8 @@ proc DemoClear {} {
 	-showrootlines yes -minitemheight 0 -borderwidth [expr {$::tileFull ? 0 : 6}] \
 	-highlightthickness [expr {$::tileFull ? 0 : 3}] -usetheme yes -cursor {} \
 	-itemwidth 0 -itemwidthequal no -itemwidthmultiple 0 \
-	-font [.f4.t cget -font]
+	-font [.f4.t cget -font] -canvaspadx 0 -canvaspady 0 \
+	-itemgapx 0 -itemgapy 0
 
     switch -- [$T theme platform] {
 	aqua -

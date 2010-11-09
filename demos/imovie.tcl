@@ -15,6 +15,9 @@ proc DemoIMovie {} {
 	-selectmode browse -orient horizontal -wrap window \
 	-showheader no -background #dcdcdc
 
+    $T configure -canvaspadx 8 -canvaspady 8 \
+	-itemgapx 8 -itemgapy 8
+
     #
     # Create columns
     #
@@ -26,8 +29,8 @@ proc DemoIMovie {} {
     switch -- $::thisPlatform {
 	macintosh -
 	macosx {
-	    set font1 {Geneva 9}
-	    set font2 {Geneva 10}
+	    set font1 {Geneva 10}
+	    set font2 {Geneva 11}
 	}
 	unix {
 	    set font1 {Helvetica 12}
@@ -56,12 +59,12 @@ proc DemoIMovie {} {
 
     set S [$T style create STYLE -orient vertical]
     $T style elements $S {elemShadow elemRect elemTime elemImg elemName}
-    $T style layout $S elemShadow -detach yes -padx {1 2} -pady {1 2} -iexpand xy
+    $T style layout $S elemShadow -detach yes -padx {1 0} -pady {1 0} -iexpand xy
     $T style layout $S elemTime -padx {2 0}
     $T style layout $S elemImg -pady {0 1}
     $T style layout $S elemName -expand we -ipady {0 2} -padx {0 3} -squeeze x
     $T style layout $S elemRect -union {elemTime elemImg elemName} \
-	-ipadx 6 -padx {0 3} -pady {0 3}
+	-ipadx 6 -padx {0 1} -pady {0 1}
 
     # Set default item style
     $T column configure C0 -itemstyle $S

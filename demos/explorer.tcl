@@ -25,44 +25,44 @@ proc DemoExplorerAux {scriptDir scriptFile {scriptFollowup ""}} {
 
     set T [DemoList]
 
-    set clicks [clock clicks]
+    TimerStart
     set globDirs [glob -nocomplain -types d -dir $Dir *]
-    set clickGlobDirs [expr {[clock clicks] - $clicks}]
+    set secondsGlobDirs [TimerStop]
 
-    set clicks [clock clicks]
+    TimerStart
     set list [lsort -dictionary $globDirs]
-    set clickSortDirs [expr {[clock clicks] - $clicks}]
+    set secondsSortDirs [TimerStop]
 
     if {[file dirname $Dir] ne $Dir} {
 	lappend globDirs ".."
 	set list [concat ".." $list]
     }
 
-    set clicks [clock clicks]
+    TimerStart
     foreach file $list $scriptDir
-    set clickAddDirs [expr {[clock clicks] - $clicks}]
+    set secondsAddDirs [TimerStop]
 
     $T item tag add "root children" directory
 
-    set clicks [clock clicks]
+    TimerStart
     set globFiles [glob -nocomplain -types f -dir $Dir *]
-    set clickGlobFiles [expr {[clock clicks] - $clicks}]
+    set secondsGlobFiles [TimerStop]
 
-    set clicks [clock clicks]
+    TimerStart
     set list [lsort -dictionary $globFiles]
-    set clickSortFiles [expr {[clock clicks] - $clicks}]
+    set secondsSortFiles [TimerStop]
 
-    set clicks [clock clicks]
+    TimerStart
     foreach file $list $scriptFile
-    set clickAddFiles [expr {[clock clicks] - $clicks}]
+    set secondsAddFiles [TimerStop]
 
-    set gd [ClicksToSeconds $clickGlobDirs]
-    set sd [ClicksToSeconds $clickSortDirs]
-    set ad [ClicksToSeconds $clickAddDirs]
-    set gf [ClicksToSeconds $clickGlobFiles]
-    set sf [ClicksToSeconds $clickSortFiles]
-    set af [ClicksToSeconds $clickAddFiles]
-    puts "dirs([llength $globDirs]) glob/sort/add $gd/$sd/$ad    files([llength $globFiles]) glob/sort/add $gf/$sf/$af"
+    set gd $secondsGlobDirs
+    set sd $secondsSortDirs
+    set ad $secondsAddDirs
+    set gf $secondsGlobFiles
+    set sf $secondsSortFiles
+    set af $secondsAddFiles
+    puts "dirs([llength $globDirs]) glob/sort/add $gd/$sd/$ad\nfiles([llength $globFiles]) glob/sort/add $gf/$sf/$af"
 
     set ::TreeCtrl::Priv(DirCnt,$T) [llength $globDirs]
 
@@ -754,16 +754,13 @@ proc DragStyleInit {} {
 # Configure the marquee for a modern transparent selection rectangle
 # where transparent gradients are supported.
 proc ConfigTransparentMarquee {T} {
-    if {!$::NativeGradients}  return
+    if {!$::NativeGradients} return
     if {![$T gradient native]} return
     if {[winfo depth $T] < 15} return
-    if {[Platform windows]} {
-	set outline SystemHighlight
-	set stops [list [list 0.0 SystemHighlight 0.3] [list 1.0 SystemHighlight 0.3]]
-    } else {
-	set outline gray
-	set stops [list [list 0.0 gray 0.3] [list 1.0 gray 0.3]]
-    }
+
+    set outline #3399ff
+    set stops [list [list 0.0 #3399ff 0.3] [list 1.0 #3399ff 0.3]]
+
     $T gradient api 1.0
     $T gradient create G_marquee -stops $stops
     $T marquee configure -fill G_marquee -outline $outline
@@ -1093,8 +1090,10 @@ proc DemoExplorerLargeIconsWin7 {} {
 
     $T configure -showroot no -showbuttons no -showlines no \
 	-selectmode extended -wrap window -orient horizontal \
-	-itemwidth 75 -showheader no \
+	-itemwidth 74 -showheader no \
 	-scrollmargin 16 -xscrolldelay "500 50" -yscrolldelay "500 50"
+
+    $T configure -canvaspadx {15 0} -canvaspady {6 0} -itemgapx 1 -itemgapy 1
 
     InitPics big-*
 
@@ -1157,7 +1156,7 @@ proc DemoExplorerLargeIconsWin7 {} {
     set S [$T style create STYLE -orient vertical]
     $T style elements $S {elemRectGradient elemRectOutline elemImg elemTxt}
     $T style layout $S elemRectGradient -union {elemImg elemTxt} -iexpand we
-    $T style layout $S elemRectOutline -union elemRectGradient -padx {0 1} -pady {0 1} -ipadx 2 -ipady 2
+    $T style layout $S elemRectOutline -union elemRectGradient -ipadx 2 -ipady 2
     $T style layout $S elemImg -expand we
     $T style layout $S elemTxt -pady {4 0} -squeeze x -expand we
 

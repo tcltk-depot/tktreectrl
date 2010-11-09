@@ -42,9 +42,18 @@ proc DemoSpan {} {
 	    -outline gray70
 	if {[winfo depth .] >= 16} {
 	    lassign [winfo rgb . $color] r g b
-	    set r [expr {int(min(65535,$r * 1.3))}]
-	    set g [expr {int(min(65535,$g * 1.3))}]
-	    set b [expr {int(min(65535,$b * 1.3))}]
+	    # Can't use min() on 8.4
+	    set r [expr {int($r * 1.3)}]
+	    if {$r > 65535} { set r 65535 }
+	    set g [expr {int($g * 1.3)}]
+	    if {$g > 65535} { set g 65535 }
+	    set b [expr {int($b * 1.3)}]
+	    if {$b > 65535} { set b 65535 }
+
+	    #set r [expr {int(min(65535,$r * 1.3))}]
+	    #set g [expr {int(min(65535,$g * 1.3))}]
+	    #set b [expr {int(min(65535,$b * 1.3))}]
+
 	    set color2 [format "#%04x%04x%04x" $r $g $b]
 	    $T gradient api 1.0
 	    $T gradient create g$i -steps 16 \
