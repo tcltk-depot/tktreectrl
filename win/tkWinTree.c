@@ -1375,7 +1375,8 @@ TreeTheme_DrawHeaderArrow(
 				/* by TreeTheme_GetArrowSize(). */ 
     )
 {
-#if 1
+#define THEME_ARROW 0
+#if THEME_ARROW==0
     XColor *color;
     GC gc;
     int i;
@@ -1446,7 +1447,7 @@ TreeTheme_DrawHeaderArrow(
 
     TkWinReleaseDrawableDC(drawable, hDC, &dcState);
     return TCL_OK;
-#endif /* 0 */
+#endif /* THEME_ARROW==1 */
 }
 
 /*
@@ -1658,12 +1659,67 @@ TreeTheme_GetArrowSize(
     int *heightPtr		/* Returned height of arrow. */
     )
 {
+#if THEME_ARROW==0
     if (!appThemeData->themeEnabled || !procs)
 	return TCL_ERROR;
 
     *widthPtr = 9;
     *heightPtr = 5;
+
     return TCL_OK;
+#else
+    TreeThemeData themeData = tree->themeData;
+    HTHEME hTheme;
+    HDC hDC;
+    TkWinDCState dcState;
+    HRESULT hr;
+    SIZE size;
+    int iPartId, iStateId;
+
+    if (!appThemeData->themeEnabled || !procs)
+	return TCL_ERROR;
+
+    hTheme = themeData->hThemeTREEVIEW;
+    if (!hTheme)
+	return TCL_ERROR;
+
+    iPartId = HP_HEADERSORTARROW;
+    iStateId = up ? HSAS_SORTEDUP : HSAS_SORTEDDOWN;
+
+#if 0 /* Always returns FALSE */
+    if (!procs->IsThemePartDefined(
+	hTheme,
+	iPartId,
+	iStateId)) {
+	return TCL_ERROR;
+    }
+#endif
+
+    hDC = TkWinGetDrawableDC(tree->display, drawable, &dcState);
+
+    hr = procs->GetThemePartSize(
+	hTheme,
+	hDC,
+	iPartId,
+	iStateId,
+	NULL,
+	TS_DRAW,
+	&size
+    );
+
+    TkWinReleaseDrawableDC(drawable, hDC, &dcState);
+
+    if (hr != S_OK)
+	return TCL_ERROR;
+
+    if ((size.cx <= 1) && (size.cy <= 1))
+	return TCL_ERROR;
+
+    *widthPtr = size.cx;
+    *heightPtr = size.cy;
+
+    return TCL_OK;
+#endif /* THEME_ARROW==1 */
 }
 
 /*
@@ -2319,6 +2375,7 @@ static struct
     GpStatus (WINGDIPAPI *_GdipDeleteGraphics)(GpGraphics*);
     GpStatus (WINGDIPAPI *_GdipDrawPath)(GpGraphics*,GpPen*,GpPath*);
     GpStatus (WINGDIPAPI *_GdipFillPath)(GpGraphics*,GpBrush*,GpPath*);
+    GpStatus (WINGDIPAPI *_GdipSetClipPath)(GpGraphics*,GpPath*,CombineMode);
     GpStatus (WINGDIPAPI *_GdipSetClipRectI)(GpGraphics*,INT,INT,INT,INT,CombineMode);
     GpStatus (WINGDIPAPI *_GdipSetSmoothingMode)(GpGraphics*,SmoothingMode);
 
@@ -2387,6 +2444,7 @@ LoadGdiplus(void)
 	    && LOADPROC(GdipDeleteGraphics)
 	    && LOADPROC(GdipDrawPath)
 	    && LOADPROC(GdipFillPath)
+	    && LOADPROC(GdipSetClipPath)
 	    && LOADPROC(GdipSetClipRectI)
 	    && LOADPROC(GdipSetSmoothingMode)
 	    && LOADPROC(GdipCreatePath)
@@ -2972,6 +3030,7 @@ Tree_FillRoundRect(
 	, 1
 #endif
     );
+
     DllExports._GdipFillPath(graphics, brush, path);
 
 #ifdef ROUND_RECT_SYMMETRY_HACK
@@ -3043,6 +3102,7 @@ TreeGradient_FillRoundRect(
 	, 0
 #endif
     );
+
     DllExports._GdipFillPath(graphics, lineGradient, path);
 
     DllExports._GdipDeleteBrush(lineGradient);

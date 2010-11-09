@@ -2126,6 +2126,9 @@ static void DisplayProcRect(TreeElementArgs *args)
 #endif
     TreeColor *tc;
     TreeRectangle tr;
+#if GRAD_COORDS
+    TreeRectangle trBrush;
+#endif
     XColor *color;
     int open = 0;
     int outlineWidth = 0;
@@ -2189,7 +2192,22 @@ static void DisplayProcRect(TreeElementArgs *args)
 	tr.x = x, tr.y = y, tr.width = width, tr.height = height;
 	TREECOLOR_FOR_STATE(tc, fill, state)
 	if (tc != NULL) {
+#if GRAD_COORDS
+	    if (tc->gradient != NULL) {
+		TreeRectangle trPaint = tr;
+		trPaint.x += tree->drawableXOrigin;
+		trPaint.y += tree->drawableYOrigin;
+		(void) TreeGradient_GetBrushBounds(tree, tc->gradient, &trPaint,
+		    &trBrush);
+		trBrush.x -= tree->drawableXOrigin;
+		trBrush.y -= tree->drawableYOrigin;
+	    } else {
+		trBrush = tr;
+	    }
+	    TreeColor_FillRoundRect(tree, args->display.td, tc, trBrush, tr, rx, ry, open);
+#else
 	    TreeColor_FillRoundRect(tree, args->display.td, tc, tr, tr, rx, ry, open);
+#endif
 	}
 	COLOR_FOR_STATE(color, outline, state)
 	if ((color != NULL) && (outlineWidth > 0) && (open != RECT_OPEN_WNES)) {
@@ -2203,7 +2221,22 @@ static void DisplayProcRect(TreeElementArgs *args)
     TREECOLOR_FOR_STATE(tc, fill, state)
     if (tc != NULL) {
 	tr.x = x, tr.y = y, tr.width = width, tr.height = height;
+#if GRAD_COORDS
+	if (tc->gradient != NULL) {
+	    TreeRectangle trPaint = tr;
+	    trPaint.x += tree->drawableXOrigin;
+	    trPaint.y += tree->drawableYOrigin;
+	    (void) TreeGradient_GetBrushBounds(tree, tc->gradient, &trPaint,
+		&trBrush);
+	    trBrush.x -= tree->drawableXOrigin;
+	    trBrush.y -= tree->drawableYOrigin;
+	} else {
+	    trBrush = tr;
+	}
+	TreeColor_FillRect(tree, args->display.td, NULL, tc, trBrush, tr);
+#else
 	TreeColor_FillRect(tree, args->display.td, NULL, tc, tr, tr);
+#endif
     }
 
     TREECOLOR_FOR_STATE(tc, outline, state)

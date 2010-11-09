@@ -5861,12 +5861,30 @@ Tree_FreeColor(
     }
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeColor_ToObj --
+ *
+ *	Returns the Tcl_Obj representation of a TreeColor.
+ *
+ * Results:
+ *	The returned representation is bogus, ensure any TreeColor
+ *	options store the object representation.
+ *
+ * Side effects:
+ *	Creates a new Tcl_Obj.
+ *
+ *----------------------------------------------------------------------
+ */
+
 Tcl_Obj *
 TreeColor_ToObj(
     TreeCtrl *tree,		/* Widget info. */
     TreeColor *tc		/* Color to get Tcl_Obj rep of */
     )
 {
+    /* FIXME */
     return Tcl_NewStringObj("insert tree color rep here", -1);
 }
 
@@ -6012,7 +6030,11 @@ Tk_ObjCustomOption TreeCtrlCO_treecolor =
 /* *** Borrowed some gradient code from TkPath *** */
 
 static GradientStop *
-NewGradientStop(double offset, XColor *color, double opacity)
+NewGradientStop(
+    double offset,
+    XColor *color,
+    double opacity
+    )
 {
     GradientStop *stopPtr;
     
@@ -6024,7 +6046,10 @@ NewGradientStop(double offset, XColor *color, double opacity)
     return stopPtr;
 }
 
-static GradientStopArray *NewGradientStopArray(int nstops)
+static GradientStopArray *
+NewGradientStopArray(
+    int nstops
+    )
 {
     GradientStopArray *stopArrPtr;
     GradientStop **stops;
@@ -6041,7 +6066,10 @@ static GradientStopArray *NewGradientStopArray(int nstops)
 }
 
 static void
-FreeAllStops(GradientStop **stops, int nstops)
+FreeAllStops(
+    GradientStop **stops,
+    int nstops
+    )
 {
     int i;
     for (i = 0; i < nstops; i++) {
@@ -6054,7 +6082,9 @@ FreeAllStops(GradientStop **stops, int nstops)
 }
 
 static void
-FreeStopArray(GradientStopArray *stopArrPtr)
+FreeStopArray(
+    GradientStopArray *stopArrPtr
+    )
 {
     if (stopArrPtr != NULL) {
         FreeAllStops(stopArrPtr->stops, stopArrPtr->nstops);
@@ -6066,7 +6096,8 @@ FreeStopArray(GradientStopArray *stopArrPtr)
  * The stops are a list of stop lists where each stop list is:
  *		{offset color ?opacity?}
  */
-static int StopsSet(
+static int
+StopsSet(
     ClientData clientData,
     Tcl_Interp *interp,		/* Current interp; may be used for errors. */
     Tk_Window tkwin,		/* Window for which option is being set. */
@@ -6077,7 +6108,8 @@ static int StopsSet(
     int internalOffset,		/* Offset within *recordPtr at which the
 				 internal value is to be stored. */
     char *oldInternalPtr,	/* Pointer to storage for the old value. */
-    int flags)			/* Flags for the option, set Tk_SetOptions. */
+    int flags			/* Flags for the option, set Tk_SetOptions. */
+    )
 {
     char *internalPtr;
     int i, nstops, stopLen;
@@ -6180,15 +6212,18 @@ StopsRestore(
     ClientData clientData,
     Tk_Window tkwin,
     char *internalPtr,		/* Pointer to storage for value. */
-    char *oldInternalPtr)	/* Pointer to old value. */
+    char *oldInternalPtr	/* Pointer to old value. */
+    )
 {
     *(GradientStopArray **)internalPtr = *(GradientStopArray **)oldInternalPtr;
 }
 
-static void StopsFree(
+static void
+StopsFree(
     ClientData clientData,
     Tk_Window tkwin,
-    char *internalPtr)
+    char *internalPtr
+    )
 {
     if (*((char **) internalPtr) != NULL) {
         FreeStopArray(*(GradientStopArray **)internalPtr);
@@ -6205,20 +6240,257 @@ static Tk_ObjCustomOption stopsCO =
     (ClientData) NULL
 };
 
+#if GRAD_COORDS
+
+typedef enum {
+    GCT_CANVAS = 0,
+    GCT_COLUMN,
+    GCT_CONTENT,
+    GCT_ITEM
+} GradientCoordType;
+
+static const char *coordTypeNames[] = {
+    "canvas", "column", "content", "item", NULL
+};
+
+struct GradientCoord {
+    GradientCoordType type;
+    float value;
+};
+
+static int
+GradientCoordSet(
+    ClientData clientData,
+    Tcl_Interp *interp,		/* Current interp; may be used for errors. */
+    Tk_Window tkwin,		/* Window for which option is being set. */
+    Tcl_Obj **value,		/* Pointer to the pointer to the value object.
+				 * We use a pointer to the pointer because
+				 * we may need to return a value (NULL). */
+    char *recordPtr,		/* Pointer to storage for the widget record. */
+    int internalOffset,		/* Offset within *recordPtr at which the
+				 internal value is to be stored. */
+    char *oldInternalPtr,	/* Pointer to storage for the old value. */
+    int flags			/* Flags for the option, set Tk_SetOptions. */
+    )
+{
+    char *internalPtr;
+    int objEmpty = 0;
+    Tcl_Obj *valuePtr;
+    Tcl_Obj **objv;
+    int objc;
+    double coordValue;
+    GradientCoordType coordType;
+    GradientCoord *new = NULL;
+    
+    valuePtr = *value;
+    if (internalOffset >= 0)
+	internalPtr = recordPtr + internalOffset;
+    else
+	internalPtr = NULL;
+    objEmpty = ObjectIsEmpty(valuePtr);
+
+    if ((flags & TK_OPTION_NULL_OK) && objEmpty) {
+        valuePtr = NULL;
+    } else {
+        if (Tcl_ListObjGetElements(interp, valuePtr, &objc, &objv) != TCL_OK) {
+            return TCL_ERROR;
+        }
+        if (objc != 2) {
+	    FormatResult(interp, "expected {offset coordType} list");
+	    return TCL_ERROR;
+        }
+        if (Tcl_GetIndexFromObj(interp, objv[1], coordTypeNames,
+	    "coordinate type", 0, (int *) &coordType) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (Tcl_GetDoubleFromObj(interp, objv[0], &coordValue) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	new = (GradientCoord *) ckalloc(sizeof(GradientCoord));
+	new->type = coordType;
+	new->value = (float) coordValue;
+    }
+    if (internalPtr != NULL) {
+        *((GradientCoord **) oldInternalPtr) = *((GradientCoord **) internalPtr);
+        *((GradientCoord **) internalPtr) = new;
+    }
+    return TCL_OK;
+}
+
+static void
+GradientCoordRestore(
+    ClientData clientData,
+    Tk_Window tkwin,
+    char *internalPtr,		/* Pointer to storage for value. */
+    char *oldInternalPtr)	/* Pointer to old value. */
+{
+    *(GradientCoord **)internalPtr = *(GradientCoord **)oldInternalPtr;
+}
+
+static void
+GradientCoordFree(
+    ClientData clientData,
+    Tk_Window tkwin,
+    char *internalPtr)
+{
+    if (*((char **) internalPtr) != NULL) {
+        ckfree(*(char **)internalPtr);
+    }    
+}
+
+static Tk_ObjCustomOption gradientCoordCO = 
+{
+    "coordinate",
+    GradientCoordSet,
+    NULL,
+    GradientCoordRestore,
+    GradientCoordFree,
+    (ClientData) NULL
+};
+
+int
+TreeGradient_GetBrushBounds(
+    TreeCtrl *tree,
+    TreeGradient gradient,
+    const TreeRectangle *trPaint,
+    TreeRectangle *trBrush
+    )
+{
+    int contentWidth = Tree_BorderRight(tree) - Tree_BorderLeft(tree);
+    int contentHeight = Tree_BorderBottom(tree) - Tree_HeaderBottom(tree);
+    int canvasWidth = MAX(Tree_CanvasWidth(tree), contentWidth);
+    int canvasHeight = MAX(Tree_CanvasHeight(tree), contentHeight);
+    int x1, y1, x2, y2;
+    GradientCoord *gcrd;
+
+    x1 = trPaint->x;
+    y1 = trPaint->y;
+    x2 = trPaint->x + trPaint->width;
+    y2 = trPaint->y + trPaint->height;
+
+    if ((gcrd = gradient->left) != NULL) {
+	switch (gcrd->type) {
+	    case GCT_CANVAS:
+		x1 = canvasWidth * gcrd->value;
+		break;
+	    case GCT_COLUMN:
+		break;
+	    case GCT_CONTENT:
+		x1 = Tree_BorderLeft(tree) + contentWidth * gcrd->value + tree->xOrigin; /* Window -> Canvas */
+		break;
+	    case GCT_ITEM:
+		break;
+	}
+    }
+    if ((gcrd = gradient->right) != NULL) {
+	switch (gcrd->type) {
+	    case GCT_CANVAS:
+		x2 = canvasWidth * gcrd->value;
+		break;
+	    case GCT_COLUMN:
+		break;
+	    case GCT_CONTENT:
+		x2 = Tree_BorderLeft(tree) + contentWidth * gcrd->value + tree->xOrigin; /* Window -> Canvas */
+		break;
+	    case GCT_ITEM:
+		break;
+	}
+    }
+    if ((gcrd = gradient->top) != NULL) {
+	switch (gcrd->type) {
+	    case GCT_CANVAS:
+		y1 = canvasHeight * gcrd->value;
+		break;
+	    case GCT_COLUMN:
+		break;
+	    case GCT_CONTENT:
+		y1 = Tree_ContentTop(tree) + contentHeight * gcrd->value + tree->yOrigin; /* Window -> Canvas */
+		break;
+	    case GCT_ITEM:
+		break;
+	}
+    }
+    if ((gcrd = gradient->bottom) != NULL) {
+	switch (gcrd->type) {
+	    case GCT_CANVAS:
+		y2 = canvasHeight * gcrd->value;
+		break;
+	    case GCT_COLUMN:
+		break;
+	    case GCT_CONTENT:
+		y2 = Tree_ContentTop(tree) + contentHeight * gcrd->value + tree->yOrigin; /* Window -> Canvas */
+		break;
+	    case GCT_ITEM:
+		break;
+	}
+    }
+
+    trBrush->x = x1;
+    trBrush->y = y1;
+    trBrush->width = x2 - x1;
+    trBrush->height = y2 - y1;
+
+    return trBrush->width > 0 && trBrush->height > 0;
+}
+
+void
+TreeGradient_IsRelativeToCanvas(
+    TreeGradient gradient,
+    int *relX,
+    int *relY
+    )
+{
+    (*relX) = (*relY) = 1;
+	
+    if (gradient->vertical == 0 &&
+	    ((gradient->left != NULL &&
+	    gradient->left->type == GCT_CONTENT) ||
+	    (gradient->right != NULL &&
+	    gradient->right->type == GCT_CONTENT)))
+	(*relX) = 0;
+
+    if (gradient->vertical==1 &&
+	    ((gradient->top != NULL &&
+	    gradient->top->type == GCT_CONTENT) ||
+	    (gradient->bottom != NULL &&
+	    gradient->bottom->type == GCT_CONTENT)))
+	(*relY) = 0;
+}
+
+#endif /* GRAD_COORDS */
+
 #define GRAD_CONF_STOPS 0x0001
 #define GRAD_CONF_STEPS 0x0002
 
 static char *orientStringTable[] = { "horizontal", "vertical", (char *) NULL };
 
 static Tk_OptionSpec gradientOptionSpecs[] = {
+#if GRAD_COORDS
+    {TK_OPTION_CUSTOM, "-bottom", NULL, NULL, NULL,
+	Tk_Offset(TreeGradient_, bottomObj),
+        Tk_Offset(TreeGradient_, bottom),
+	TK_OPTION_NULL_OK, (ClientData) &gradientCoordCO, 0},
+    {TK_OPTION_CUSTOM, "-left", NULL, NULL, NULL,
+	Tk_Offset(TreeGradient_, leftObj),
+        Tk_Offset(TreeGradient_, left),
+	TK_OPTION_NULL_OK, (ClientData) &gradientCoordCO, 0},
+    {TK_OPTION_CUSTOM, "-right", NULL, NULL, NULL,
+	Tk_Offset(TreeGradient_, rightObj),
+        Tk_Offset(TreeGradient_, right),
+	TK_OPTION_NULL_OK, (ClientData) &gradientCoordCO, 0},
+    {TK_OPTION_CUSTOM, "-top", NULL, NULL, NULL,
+	Tk_Offset(TreeGradient_, topObj),
+        Tk_Offset(TreeGradient_, top),
+	TK_OPTION_NULL_OK, (ClientData) &gradientCoordCO, 0},
+#endif
     {TK_OPTION_STRING_TABLE, "-orient", (char *) NULL, (char *) NULL,
 	"horizontal", -1, Tk_Offset(TreeGradient_, vertical),
 	0, (ClientData) orientStringTable, 0},
     {TK_OPTION_INT, "-steps", (char *) NULL, (char *) NULL,
-     "1", -1, Tk_Offset(TreeGradient_, steps),
-     0, (ClientData) NULL, GRAD_CONF_STEPS},
-    {TK_OPTION_CUSTOM, "-stops", NULL, NULL,
-	NULL, Tk_Offset(TreeGradient_, stopsObj),
+	"1", -1, Tk_Offset(TreeGradient_, steps),
+	0, (ClientData) NULL, GRAD_CONF_STEPS},
+    {TK_OPTION_CUSTOM, "-stops", NULL, NULL, NULL,
+	Tk_Offset(TreeGradient_, stopsObj),
         Tk_Offset(TreeGradient_, stopArrPtr),
 	TK_OPTION_NULL_OK, (ClientData) &stopsCO, GRAD_CONF_STOPS},
     {TK_OPTION_END, (char *) NULL, (char *) NULL, (char *) NULL,
@@ -6287,46 +6559,85 @@ Gradient_ToObj(
     return Tcl_NewStringObj(gradient->name, -1);
 }
 
-#undef CLAMP
-#define CLAMP(a,b,c) (((a)<(b))?(b):(((a)>(c))?(c):(a)))
+/*
+ *----------------------------------------------------------------------
+ *
+ * CalcStepColors --
+ *
+ *	Calculates the colors between (and including) 2 color stops.
+ *	These colors are only used when native gradients aren't
+ *	supported.
+ *
+ * Results:
+ *	'stepColors' is filled in with exactly 'step's XColors.
+ *
+ * Side effects:
+ *	Colors are allocated.
+ *
+ *----------------------------------------------------------------------
+ */
 
 static void
 CalcStepColors(
     TreeCtrl *tree,		/* Widget info. */
-    GradientStop *stop1,
-    GradientStop *stop2,
-    XColor *stepColors[],
-    int steps
+    GradientStop *stop1,	/* The first color stop. */
+    GradientStop *stop2,	/* The second color stop. */
+    XColor *stepColors[],	/* Returned colors. */
+    int steps			/* Number of colors to allocate. */
     )
 {
     int i;
     XColor *c1 = stop1->color, *c2 = stop2->color;
 
     if (steps == 1) {
-	stepColors[0] = Tk_GetColorByValue(tree->tkwin, stop1->offset > 0 ? stop2->color : stop1->color);
+	stepColors[0] = Tk_GetColorByValue(tree->tkwin,
+		(stop1->offset > 0) ? stop2->color : stop1->color);
 	return;
     }
+
+#undef CLAMP
+#define CLAMP(a,b,c) (((a)<(b))?(b):(((a)>(c))?(c):(a)))
 
     for (i = 1; i <= steps; i++) {
 	XColor pref;
 	int range, increment;
-	double factor = (i-1) * 1.0f/(steps-1);
+	double factor = (i - 1) * 1.0f / (steps - 1);
 
 	range = (c2->red - c1->red);
 	increment = (int)(range * factor);
-	pref.red = CLAMP(c1->red + increment,0,USHRT_MAX);
+	pref.red = CLAMP(c1->red + increment, 0, USHRT_MAX);
 
 	range = (c2->green - c1->green);
 	increment = (int)(range * factor);
-	pref.green = CLAMP(c1->green + increment,0,USHRT_MAX);
+	pref.green = CLAMP(c1->green + increment, 0, USHRT_MAX);
 
 	range = (c2->blue - c1->blue);
 	increment = (int)(range * factor);
-	pref.blue = CLAMP(c1->blue + increment,0,USHRT_MAX);
+	pref.blue = CLAMP(c1->blue + increment, 0, USHRT_MAX);
 
-	stepColors[i-1] = Tk_GetColorByValue(tree->tkwin, &pref);
+	stepColors[i - 1] = Tk_GetColorByValue(tree->tkwin, &pref);
     }
+#undef CLAMP
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Gradient_CalcStepColors --
+ *
+ *	Calculates the entire list of step colors.
+ *	These colors are only used when native gradients aren't
+ *	supported.
+ *
+ * Results:
+ *	The TreeGradient.stepColors array is written with exactly
+ *	#steps X #stops XColors.
+ *
+ * Side effects:
+ *	Colors are allocated.
+ *
+ *----------------------------------------------------------------------
+ */
 
 #ifdef TREECTRL_DEBUG
 int sameXColor(XColor *c1, XColor *c2)
@@ -6349,7 +6660,8 @@ Gradient_CalcStepColors(
 	step1 = (int)floor(stop1->offset * (gradient->nStepColors));
 	step2 = (int)floor(stop2->offset * (gradient->nStepColors))-1;
 /*dbwin("CalcStepColors %g -> %g steps=%d-%d\n", stop1->offset,stop2->offset,step1,step2);*/
-	CalcStepColors(tree, stop1, stop2, gradient->stepColors+step1, step2-step1+1);
+	CalcStepColors(tree, stop1, stop2, gradient->stepColors + step1,
+		step2 - step1 + 1);
    }
 #ifdef TREECTRL_DEBUG
     if (!sameXColor(gradient->stepColors[0], gradient->stopArrPtr->stops[0]->color))
@@ -6565,6 +6877,10 @@ TreeGradient_Release(
     TreeGradient gradient	/* Gradient token. */
     )
 {
+#ifdef TREECTRL_DEBUG
+    if (gradient->refCount <= 0)
+	panic("TreeGradient_Release: refCount <= 0");
+#endif
     gradient->refCount--;
     if ((gradient->refCount == 0) && (gradient->deletePending != 0)) {
 	Gradient_FreeResources(tree, gradient, 1);
@@ -7043,7 +7359,7 @@ TreeGradient_FillRoundRectX11(
  */
 
 void
-TreeGradient_FillRectX11(
+_TreeGradient_FillRectX11(
     TreeCtrl *tree,		/* Widget info. */
     TreeDrawable td,		/* Where to draw. */
     TreeClip *clip,		/* Clipping area or NULL. */
@@ -7087,6 +7403,97 @@ TreeGradient_FillRectX11(
 	    }
 	}
     }
+}
+
+void
+TreeGradient_FillRectX11(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeDrawable td,		/* Where to draw. */
+    TreeClip *clip,		/* Clipping area or NULL. */
+    TreeGradient gradient,	/* Gradient token. */
+    TreeRectangle trBrush,	/* Brush bounds. */
+    TreeRectangle tr		/* Rectangle to paint. */
+    )
+{
+    TreeRectangle trSub;
+    int oldX = trBrush.x, oldY = trBrush.y;
+
+    if (trBrush.height < 1 || trBrush.width < 1) return;
+    if (tr.height < 1 || tr.width < 1) return;
+
+    /* This implements tiling of the gradient brush */
+
+#if 1
+    while (tr.x < trBrush.x)
+	trBrush.x -= trBrush.width;
+    while (tr.x >= trBrush.x + trBrush.width)
+	trBrush.x += trBrush.width;
+    while (tr.y < trBrush.y)
+	trBrush.y -= trBrush.height;
+    while (tr.y >= trBrush.y + trBrush.height)
+	trBrush.y += trBrush.height;
+    oldX = trBrush.x, oldY = trBrush.y;
+    while (trBrush.x < tr.x + tr.width) {
+	trBrush.y = oldY;
+	while (trBrush.y < tr.y + tr.height) {
+	    Tree_IntersectRect(&trSub, &trBrush, &tr);
+	    _TreeGradient_FillRectX11(tree, td, clip, gradient,
+		trBrush, trSub);
+	    trBrush.y += trBrush.height;
+	}
+	trBrush.x += trBrush.width;
+    }
+#else
+    _TreeGradient_FillRectX11(tree, td, clip, gradient,
+	trBrush, tr);
+
+    /* Tile above */
+    while (tr.y < trBrush.y) {
+	trSub.x = tr.x;
+	trSub.width = tr.width;
+	trSub.y = MAX(tr.y, trBrush.y - trBrush.height);
+	trSub.height = MIN(trBrush.y - tr.y, trBrush.height);
+	trBrush.y -= trBrush.height;
+	_TreeGradient_FillRectX11(tree, td, clip, gradient,
+	    trBrush, trSub);
+    }
+    trBrush.y = oldY;
+
+    /* Tile below */
+    while (tr.y + tr.height > trBrush.y + trBrush.height) {
+	trSub.x = tr.x;
+	trSub.width = tr.width;
+	trSub.y = trBrush.y + trBrush.height;
+	trSub.height = MIN(tr.y + tr.height - trBrush.y, trBrush.height);
+	trBrush.y = trSub.y;
+	_TreeGradient_FillRectX11(tree, td, clip, gradient,
+	    trBrush, trSub);
+    }
+    trBrush.y = oldY;
+
+    /* Tile to the left */
+    while (tr.x < trBrush.x) {
+	trSub.x = MAX(tr.x, trBrush.x - trBrush.width);
+	trSub.width = MIN(trBrush.x - tr.x, trBrush.width);
+	trSub.y = tr.y;
+	trSub.height = tr.height;
+	trBrush.x -= trBrush.width;
+	_TreeGradient_FillRectX11(tree, td, clip, gradient,
+	    trBrush, trSub);
+    }
+    trBrush.x = oldX;
+
+    /* Tile to the right */
+    while (tr.x + tr.width > trBrush.x + trBrush.width) {
+	trSub.x = trBrush.x + trBrush.width;
+	trSub.width = MIN(tr.x + tr.width - trBrush.x, trBrush.width);
+	trSub.y = tr.y;
+	trSub.height = tr.height;
+	trBrush.x = trSub.x;
+	_TreeGradient_FillRectX11(tree, td, clip, gradient,
+	    trBrush, trSub);
+    }
+#endif
 }
 
 /*
@@ -7174,8 +7581,9 @@ TreeColor_FillRect(
 {
     if (tc == NULL)
 	return;
-    if (tc->gradient != NULL)
+    if (tc->gradient != NULL) {
 	TreeGradient_FillRect(tree, td, clip, tc->gradient, trBrush, tr);
+    }
     if (tc->color != NULL) {
 	GC gc = Tk_GCForColor(tc->color, td.drawable);
 	Tree_FillRectangle(tree, td, clip, gc, tr);
@@ -7239,8 +7647,8 @@ TreeColor_FillRoundRect(
     TreeCtrl *tree,		/* Widget info. */
     TreeDrawable td,		/* Where to draw. */
     TreeColor *tc,		/* Color info. */
-    TreeRectangle tr,		/* Rectangle to paint. */
     TreeRectangle trBrush,	/* Brush bounds. */
+    TreeRectangle tr,		/* Rectangle to paint. */
     int rx, int ry,		/* Corner radius */
     int open			/* RECT_OPEN_x flags */
     )

@@ -29,6 +29,22 @@
 #   endif
 #endif
 
+/*
+ * Macros used to cast between pointers and integers (e.g. when storing an int
+ * in ClientData), on 64-bit architectures they avoid gcc warning about "cast
+ * to/from pointer from/to integer of different size".
+ */
+
+#if !defined(INT2PTR) && !defined(PTR2INT)
+#   if defined(HAVE_INTPTR_T) || defined(intptr_t)
+#	define INT2PTR(p) ((void *)(intptr_t)(p))
+#	define PTR2INT(p) ((int)(intptr_t)(p))
+#   else
+#	define INT2PTR(p) ((void *)(p))
+#	define PTR2INT(p) ((int)(p))
+#   endif
+#endif
+
 #ifdef PLATFORM_SDL
 #undef WIN32
 #endif
@@ -59,6 +75,7 @@ MODULE_SCOPE void dbwin_add_interp(Tcl_Interp *interp);
 #define DEPRECATED
 /* #define DRAG_PIXMAP */
 /* #define DRAGIMAGE_STYLE */ /* Use an item style as the dragimage instead of XOR rectangles. */
+#define GRAD_COORDS 1
 
 typedef struct TreeCtrl TreeCtrl;
 typedef struct TreeColumn_ *TreeColumn;
@@ -914,6 +931,10 @@ MODULE_SCOPE void TreeDisplay_GetReadyForTrouble(TreeCtrl *tree, int *requestsPt
 MODULE_SCOPE int TreeDisplay_WasThereTrouble(TreeCtrl *tree, int requests);
 MODULE_SCOPE void Tree_InvalidateArea(TreeCtrl *tree, int x1, int y1, int x2, int y2);
 MODULE_SCOPE void Tree_InvalidateItemArea(TreeCtrl *tree, int x1, int y1, int x2, int y2);
+#if GRAD_COORDS
+MODULE_SCOPE void Tree_InvalidateItemOnScrollX(TreeCtrl *tree, TreeItem item);
+MODULE_SCOPE void Tree_InvalidateItemOnScrollY(TreeCtrl *tree, TreeItem item);
+#endif
 MODULE_SCOPE void Tree_InvalidateRegion(TreeCtrl *tree, TkRegion region);
 MODULE_SCOPE void Tree_RedrawArea(TreeCtrl *tree, int x1, int y1, int x2, int y2);
 MODULE_SCOPE void Tree_ExposeArea(TreeCtrl *tree, int x1, int y1, int x2, int y2);
@@ -1265,6 +1286,10 @@ MODULE_SCOPE TreeGradient PerStateGradient_ForState(TreeCtrl *tree, PerStateInfo
 #define TREECTRL_GRADIENT_API_MAJOR 1
 #define TREECTRL_GRADIENT_API_MINOR 0
 
+#if GRAD_COORDS
+typedef struct GradientCoord GradientCoord;
+#endif
+
 /*
  * Records for gradient fills.
  * We need a separate GradientStopArray to simplify option parsing.
@@ -1294,6 +1319,10 @@ typedef struct TreeGradient_
     int steps;			/* -steps */
     int nStepColors;		/* length of stepColors */
     XColor **stepColors;	/* calculated from color1,color2,steps */
+#if GRAD_COORDS
+    GradientCoord *left, *right, *top, *bottom;
+    Tcl_Obj *leftObj, *rightObj, *topObj, *bottomObj;
+#endif
 } TreeGradient_;
 
 MODULE_SCOPE void TreeGradient_Init(TreeCtrl *tree);
@@ -1303,6 +1332,14 @@ MODULE_SCOPE int TreeGradient_FromObj(TreeCtrl *tree, Tcl_Obj *objPtr, TreeGradi
 MODULE_SCOPE void TreeGradient_Release(TreeCtrl *tree, TreeGradient gradient);
 MODULE_SCOPE int TreeGradient_IsOpaque(TreeCtrl *tree, TreeGradient gradient);
 MODULE_SCOPE int Tree_HasNativeGradients(TreeCtrl *tree);
+
+#if GRAD_COORDS
+MODULE_SCOPE int TreeGradient_GetBrushBounds(TreeCtrl *tree,
+    TreeGradient gradient, const TreeRectangle *trPaint,
+    TreeRectangle *trBrush);
+MODULE_SCOPE void TreeGradient_IsRelativeToCanvas(TreeGradient gradient,
+    int *relX, int *relY);
+#endif
 
 /*****/
 

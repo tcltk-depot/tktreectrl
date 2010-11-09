@@ -3719,18 +3719,44 @@ ItemDrawBackground(
     TreeColor *tc;
 
     /*
-    * FIXME: If the background image is non-transparent, there is no
-    * need to erase first.
-    */
+     * FIXME: If the background image is non-transparent, there is no
+     * need to erase first.
+     */
     tc = TreeColumn_BackgroundColor(treeColumn, index);
     if (tc != NULL) {
 	TreeRectangle tr;
+#if GRAD_COORDS
+	TreeRectangle trBrush;
+#endif
 	tr.x = x, tr.y = y, tr.width = width, tr.height = height;
 	if (!TreeColor_IsOpaque(tree, tc)) {
 	    GC gc = Tk_3DBorderGC(tree->tkwin, tree->border, TK_3D_FLAT_GC);
 	    XFillRectangle(tree->display, td.drawable, gc, x, y, width, height);
 	}
+#if GRAD_COORDS
+	if (tc->gradient != NULL) {
+	    TreeRectangle trPaint = tr;
+	    int relX, relY;
+
+	    trPaint.x += tree->drawableXOrigin;
+	    trPaint.y += tree->drawableYOrigin;
+	    (void) TreeGradient_GetBrushBounds(tree, tc->gradient, &trPaint,
+		&trBrush);
+	    trBrush.x -= tree->drawableXOrigin;
+	    trBrush.y -= tree->drawableYOrigin;
+
+	    TreeGradient_IsRelativeToCanvas(tc->gradient, &relX, &relY);
+	    if (relX == 0)
+		Tree_InvalidateItemOnScrollX(tree, item);
+	    if (relY == 0)
+		Tree_InvalidateItemOnScrollY(tree, item);
+	} else {
+	    trBrush = tr;
+	}
+	TreeColor_FillRect(tree, td, NULL, tc, trBrush, tr);
+#else
 	TreeColor_FillRect(tree, td, NULL, tc, tr, tr);
+#endif
     } else {
 	GC gc = Tk_3DBorderGC(tree->tkwin, tree->border, TK_3D_FLAT_GC);
 	XFillRectangle(tree->display, td.drawable, gc, x, y, width, height);
@@ -4454,7 +4480,8 @@ TreeItem_DrawButton(
 	int bw, bh;
 	int buttonState = item->state;
 
-	/* FIXME: These may conflict with [state define] states */
+	/* FIXME: These may overwrite [state define] states */
+	buttonState &= ~ITEM_FLAGS_BUTTONSTATE;
 	if (item->flags & ITEM_FLAG_BUTTONSTATE_ACTIVE)
 	    buttonState |= BUTTON_STATE_ACTIVE;
 	if (item->flags & ITEM_FLAG_BUTTONSTATE_PRESSED)

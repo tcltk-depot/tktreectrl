@@ -83,6 +83,11 @@ struct DItem
     int height;			/* Current height. */
     DItemArea area;		/* COLUMN_LOCK_NONE. */
     DItemArea left, right;	/* COLUMN_LOCK_LEFT, COLUMN_LOCK_RIGHT. */
+#if GRAD_COORDS
+#define DITEM_INVALIDATE_ON_SCROLL_X 0x0001
+#define DITEM_INVALIDATE_ON_SCROLL_Y 0x0002
+    int flags;
+#endif
     int oldX, oldY;		/* Where it was last drawn, window coords. */
     Range *range;		/* Range the TreeItem is in. */
     int index;			/* Used for alternating background colors. */
@@ -2151,6 +2156,7 @@ Tree_HitTest(
     if (x >= Tree_ContentRight(tree)) {
 	return TREE_AREA_RIGHT;
     }
+    /* Left-locked columns are drawn over the non-locked. */
     if (x < Tree_ContentLeft(tree)) {
 	return TREE_AREA_LEFT;
     }
@@ -3151,6 +3157,8 @@ UpdateDInfoForRange(
 		case BG_MODE_ROW: index = rItem->index; break;
 	    }
 
+	    y = C2Wy(range->offset.y + rItem->offset);
+
 	    dItem = (DItem *) TreeItem_GetDInfo(tree, item);
 
 	    /* Re-use a previously allocated DItem */
@@ -3166,6 +3174,16 @@ UpdateDInfoForRange(
 		else if (dInfo->flags & DINFO_INVALIDATE)
 		    area->flags |= DITEM_DIRTY | DITEM_ALL_DIRTY;
 
+#if GRAD_COORDS
+		else if ((dItem->flags & DITEM_INVALIDATE_ON_SCROLL_X)
+			&& (x != dItem->oldX))
+		    area->flags |= DITEM_DIRTY | DITEM_ALL_DIRTY;
+
+		else if ((dItem->flags & DITEM_INVALIDATE_ON_SCROLL_Y)
+			&& (y != dItem->oldY))
+		    area->flags |= DITEM_DIRTY | DITEM_ALL_DIRTY;
+#endif
+
 		/* The range may have changed size */
 		else if ((area->width != range->totalWidth) ||
 			(dItem->height != rItem->size))
@@ -3180,7 +3198,7 @@ UpdateDInfoForRange(
 		/* We don't copy items horizontally to their new position,
 		 * except for horizontal scrolling which moves the whole
 		 * range */
-		else if (x != dItem->oldX + (dInfo->xOrigin - tree->xOrigin))
+		else if (x - dItem->oldX != dInfo->xOrigin - tree->xOrigin)
 		    area->flags |= DITEM_DIRTY | DITEM_ALL_DIRTY;
 
 		/* If we are displaying dotted lines and the item has moved
@@ -3208,7 +3226,7 @@ UpdateDInfoForRange(
 	    }
 
 	    area->x = x;
-	    dItem->y = C2Wy(range->offset.y + rItem->offset);
+	    dItem->y = y;
 	    area->width = Range_TotalWidth(tree, range);
 	    dItem->height = rItem->size;
 	    dItem->range = range;
@@ -3262,6 +3280,8 @@ UpdateDInfoForRange(
 		case BG_MODE_ROW: index = range->index; break;
 	    }
 
+	    x = C2Wx(range->offset.x + rItem->offset);
+
 	    dItem = (DItem *) TreeItem_GetDInfo(tree, item);
 
 	    /* Re-use a previously allocated DItem */
@@ -3277,6 +3297,16 @@ UpdateDInfoForRange(
 		else if (dInfo->flags & DINFO_INVALIDATE)
 		    area->flags |= DITEM_DIRTY | DITEM_ALL_DIRTY;
 
+#if GRAD_COORDS
+		else if ((dItem->flags & DITEM_INVALIDATE_ON_SCROLL_X)
+			&& (x != dItem->oldX))
+		    area->flags |= DITEM_DIRTY | DITEM_ALL_DIRTY;
+
+		else if ((dItem->flags & DITEM_INVALIDATE_ON_SCROLL_Y)
+			&& (y != dItem->oldY))
+		    area->flags |= DITEM_DIRTY | DITEM_ALL_DIRTY;
+#endif
+
 		/* The range may have changed size */
 		else if ((area->width != rItem->size) ||
 			(dItem->height != range->totalHeight))
@@ -3290,7 +3320,7 @@ UpdateDInfoForRange(
 
 		/* We don't copy items vertically to their new position,
 		 * except for vertical scrolling which moves the whole range */
-		else if (y != dItem->oldY + (dInfo->yOrigin - tree->yOrigin))
+		else if (y - dItem->oldY != dInfo->yOrigin - tree->yOrigin)
 		    area->flags |= DITEM_DIRTY | DITEM_ALL_DIRTY;
 
 		/* If we are displaying dotted lines and the item has moved
@@ -3316,7 +3346,7 @@ UpdateDInfoForRange(
 		area = &dItem->area;
 	    }
 
-	    area->x = C2Wx(range->offset.x + rItem->offset);
+	    area->x = x;
 	    dItem->y = y;
 	    area->width = rItem->size;
 	    dItem->height = Range_TotalHeight(tree, range);
@@ -3945,6 +3975,7 @@ DItemAllDirty(
  *	Perform scrolling by copying the pixels of items from the
  *	previous display position to the current position. Any areas
  *	of items copied over by the moved items are marked dirty.
+ *	This is called when -orient=vertical.
  *
  * Results:
  *	The number of items whose pixels were copied.
@@ -4386,6 +4417,7 @@ ScrollVerticalSimple(
  *	Perform scrolling by copying the pixels of items from the
  *	previous display position to the current position. Any areas
  *	of items copied over by the moved items are marked dirty.
+ *	This is called when -orient=horizontal.
  *
  * Results:
  *	The number of items whose pixels were copied.
@@ -5382,6 +5414,9 @@ DrawColumnBackground(
 	rowBox.width = bounds->width;
 	rowBox.height = rItem ? rItem->size : height;
 	if (Tree_IntersectRect(&drawBox, &rowBox, &dirtyBox)) {
+#if GRAD_COORDS
+	    TreeRectangle trBrush;
+#endif
 	    if (rItem != NULL) {
 		index = GetItemBgIndex(tree, rItem);
 	    }
@@ -5395,7 +5430,21 @@ DrawColumnBackground(
 		    XFillRectangle(tree->display, td.drawable, backgroundGC,
 			drawBox.x, drawBox.y, drawBox.width, drawBox.height);
 		}
+#if GRAD_COORDS
+		if (tc->gradient != NULL) {
+		    rowBox.x += tree->xOrigin;
+		    rowBox.y += tree->yOrigin;
+		    (void) TreeGradient_GetBrushBounds(tree, tc->gradient,
+			&rowBox, &trBrush);
+		    trBrush.x -= tree->xOrigin;
+		    trBrush.y -= tree->yOrigin;
+		} else {
+		    trBrush = rowBox;
+		}
+		TreeColor_FillRect(tree, td, NULL, tc, trBrush, drawBox);
+#else
 		TreeColor_FillRect(tree, td, NULL, tc, rowBox, drawBox);
+#endif
 	    }
 	}
 	if (rItem != NULL && rItem == rItem->range->last) {
@@ -5869,6 +5918,9 @@ DisplayDItem(
     }
 
     area->flags &= ~(DITEM_DIRTY | DITEM_ALL_DIRTY);
+#if GRAD_COORDS
+    dItem->flags &= ~(DITEM_INVALIDATE_ON_SCROLL_X | DITEM_INVALIDATE_ON_SCROLL_Y);
+#endif
 
     if (left < bounds[0])
 	left = bounds[0];
@@ -8208,6 +8260,36 @@ Tree_InvalidateItemArea(
 	y2 = Tree_ContentBottom(tree);
     Tree_InvalidateArea(tree, x1, y1, x2, y2);
 }
+
+#if GRAD_COORDS
+void
+Tree_InvalidateItemOnScrollX(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeItem item
+    )
+{
+    DItem *dItem = (DItem *) TreeItem_GetDInfo(tree, item);
+
+    if ((dItem == NULL) || DItemAllDirty(tree, dItem))
+	return;
+
+    dItem->flags |= DITEM_INVALIDATE_ON_SCROLL_X;
+}
+
+void
+Tree_InvalidateItemOnScrollY(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeItem item
+    )
+{
+    DItem *dItem = (DItem *) TreeItem_GetDInfo(tree, item);
+
+    if ((dItem == NULL) || DItemAllDirty(tree, dItem))
+	return;
+
+    dItem->flags |= DITEM_INVALIDATE_ON_SCROLL_Y;
+}
+#endif /* GRAD_COORDS */
 
 /*
  *--------------------------------------------------------------
