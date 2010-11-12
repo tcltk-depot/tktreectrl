@@ -1048,6 +1048,15 @@ Each of these options specifies one edge of the gradient brush.
 If the option is specified as an empty string (the default), the gradient brush's
 edge is the same as that of whatever rectangle is being painted using the gradient.
 See [sectref {GRADIENT COORDINATES}] for details on gradient brush coordinates.
+[para]
+The format of each of these options is a list of 2 or more values {value coordType ?arg ...?},
+where [arg value] is a floating point number (usually from 0.0 to 1.0) and
+[arg coordType] is one of [const area], [const canvas], [const column]
+or [const item].  The [const area] keyword must be followed by one of the same
+area names that the [cmd bbox] command accepts.  The [const column] keyword may
+be followed by a column description specifying exactly one column.  The
+[const item] keyword may be followed by an item description specifying exactly
+one item.
 
 [opt_def [option -orient] [arg direction]]
 This option specifies the direction a linear gradient changes color in.
@@ -3773,10 +3782,7 @@ By specifying any of the [option -bottom], [option -left], [option -right] or
 [option -top] gradient options the size of the gradient brush does not need
 to match that of the rectangle being painted.  These options can be used to
 make a gradient appear to span across the entire width or height of the treectrl
-window, or across the entire canvas, for example.  The format of each of these
-options is a list of 2 values {value coordType}, where [arg value] is a
-floating point number (usually from 0.0 to 1.0) and [arg coordType] is one
-of [const canvas] or [const content].
+window, or across the entire canvas, for example.
 [para]
 There is no point specifying [option -left] or [option -right] if the gradient
 is vertical, since the gradient's colors are constant horizontally, so changing

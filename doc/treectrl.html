@@ -1342,24 +1342,28 @@ not used by another gradient created by this treectrl widget.</p>
 <p>The following options are supported:</p>
 <dl class="options">
 <dt><b class="option"><b class="option">-bottom</b></b> <i class="arg">coordSpec</i></dt>
-<dd><p>Specifies the bottom edge of the gradient brush.  If this option is specified as
-an empty string (the default), the gradient brush's bottom edge is the same as
-that of whatever rectangle is being painted using the gradient.
-See <span class="sectref"><a href="#section22">GRADIENT COORDINATES</a></span> for details on gradient brush coordinates.</p></dd>
+<dd></dd>
 <dt><b class="option"><b class="option">-left</b></b> <i class="arg">coordSpec</i></dt>
-<dd><p>Specifies the left edge of the gradient brush.  If this option is specified as
-an empty string (the default), the gradient brush's left edge is the same as
-that of whatever rectangle is being painted using the gradient.
-See <span class="sectref"><a href="#section22">GRADIENT COORDINATES</a></span> for details on gradient brush coordinates.</p></dd>
+<dd></dd>
+<dt><b class="option"><b class="option">-right</b></b> <i class="arg">coordSpec</i></dt>
+<dd></dd>
+<dt><b class="option"><b class="option">-top</b></b> <i class="arg">coordSpec</i></dt>
+<dd><p>Each of these options specifies one edge of the gradient brush.
+If the option is specified as an empty string (the default), the gradient brush's
+edge is the same as that of whatever rectangle is being painted using the gradient.
+See <span class="sectref"><a href="#section22">GRADIENT COORDINATES</a></span> for details on gradient brush coordinates.</p>
+<p>The format of each of these options is a list of 2 or more values {value coordType ?arg ...?},
+where <i class="arg">value</i> is a floating point number (usually from 0.0 to 1.0) and
+<i class="arg">coordType</i> is one of <b class="const">area</b>, <b class="const">canvas</b>, <b class="const">column</b>
+or <b class="const">item</b>.  The <b class="const">area</b> keyword must be followed by one of the same
+area names that the <b class="cmd">bbox</b> command accepts.  The <b class="const">column</b> keyword may
+be followed by a column description specifying exactly one column.  The
+<b class="const">item</b> keyword may be followed by an item description specifying exactly
+one item.</p></dd>
 <dt><b class="option"><b class="option">-orient</b></b> <i class="arg">direction</i></dt>
 <dd><p>This option specifies the direction a linear gradient changes color in.
 Must be either <b class="const">horizontal</b> (the default)
 or <b class="const">vertical</b> or an abbreviation of one of these.</p></dd>
-<dt><b class="option"><b class="option">-right</b></b> <i class="arg">coordSpec</i></dt>
-<dd><p>Specifies the right edge of the gradient brush.  If this option is specified as
-an empty string (the default), the gradient brush's right edge is the same as
-that of whatever rectangle is being painted using the gradient.
-See <span class="sectref"><a href="#section22">GRADIENT COORDINATES</a></span> for details on gradient brush coordinates.</p></dd>
 <dt><b class="option"><b class="option">-steps</b></b> <i class="arg">stepCount</i></dt>
 <dd><p>Specifies the number of bands of color drawn for each color stop described by
 the <b class="option">-stops</b> option.  The default value is 1, the maximum is 25.
@@ -1381,11 +1385,6 @@ the first offset must be 0.0 and the last offset must be 1.0.  Any other
 stop offsets must be listed in increasing order.
 Specifying opacity has no effect if gradients are drawn using Tk API calls.
 See <span class="sectref"><a href="#section21">GRADIENTS</a></span> for more on this.</p></dd>
-<dt><b class="option"><b class="option">-top</b></b> <i class="arg">coordSpec</i></dt>
-<dd><p>Specifies the top edge of the gradient brush.  If this option is specified as
-an empty string (the default), the gradient brush's top edge is the same as
-that of whatever rectangle is being painted using the gradient.
-See <span class="sectref"><a href="#section22">GRADIENT COORDINATES</a></span> for details on gradient brush coordinates.</p></dd>
 </dl></dd>
 <dt><a name="61"><i class="arg">pathName</i> <b class="cmd">gradient delete</b> <span class="opt">?<i class="arg">name ...</i>?</span></a></dt>
 <dd><p>Deletes each gradient specified by <i class="arg">name</i>.  If the gradient is still being
@@ -3632,10 +3631,7 @@ start blue at the top and end with green at the bottom of every item.</p>
 <b class="option">-top</b> gradient options the size of the gradient brush does not need
 to match that of the rectangle being painted.  These options can be used to
 make a gradient appear to span across the entire width or height of the treectrl
-window, or across the entire canvas, for example.  The format of each of these
-options is a list of 2 values {value coordType}, where <i class="arg">value</i> is a
-floating point number (usually from 0.0 to 1.0) and <i class="arg">coordType</i> is one
-of <b class="const">canvas</b> or <b class="const">content</b>.</p>
+window, or across the entire canvas, for example.</p>
 <p>There is no point specifying <b class="option">-left</b> or <b class="option">-right</b> if the gradient
 is vertical, since the gradient's colors are constant horizontally, so changing
 the horizontal size of the brush won't change the appearance of the gradient.

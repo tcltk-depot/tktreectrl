@@ -800,16 +800,19 @@ Tree_FillRectangle(
 /*** Themes ***/
 
 #include <uxtheme.h>
+#ifdef __MINGW32__
 #include <tmschema.h>
+#else
+#include <vsstyle.h>
+#endif
 #include <shlwapi.h>
 #include <basetyps.h> /* MingW32 */
 
 #ifdef __MINGW32__
+/* vsstyle.h */
 #define TVP_HOTGLYPH 4
 #define HGLPS_CLOSED 1
 #define HGLPS_OPENED 2
-#else
-#include <vsstyle.h>
 #endif
 
 #ifndef TMT_CONTENTMARGINS
@@ -2314,7 +2317,8 @@ typedef enum GpStatus {
 } GpStatus;
 typedef enum GpWrapMode
 {
-    WrapModeTile
+    WrapModeTile = 0, /* repeat */
+    WrapModeTileFlipXY = 3, /* reflect */
 } GpWrapMode;
 typedef enum LinearGradientMode
 {

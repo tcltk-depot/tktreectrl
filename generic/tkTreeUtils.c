@@ -6532,7 +6532,7 @@ GetGradientBrushCoordX(
 	case GCT_AREA: {
 	    int x1, y1, x2, y2;
 	    if (Tree_AreaBbox(tree, gcrd->area, &x1, &y1, &x2, &y2) == TRUE) {
-		(*xPtr) = x1 + (x2 - x1) * gcrd->value;
+		(*xPtr) = (int) (x1 + (x2 - x1) * gcrd->value);
 		(*xPtr) += tree->xOrigin; /* Window -> Canvas */
 		return 1;
 	    }
@@ -6541,7 +6541,7 @@ GetGradientBrushCoordX(
 
 	case GCT_CANVAS: {
 	    int canvasWidth = MAX(Tree_CanvasWidth(tree), Tree_ContentWidth(tree));
-	    (*xPtr) = canvasWidth * gcrd->value;
+	    (*xPtr) = (int) (canvasWidth * gcrd->value);
 	    return 1;
 	}
 
@@ -6561,7 +6561,7 @@ GetGradientBrushCoordX(
 			    frac = 1.0;
 			x = TreeColumn_Offset(column);
 			w = TreeColumn_UseWidth(column);
-			(*xPtr) = x + w * (1.0 - frac);
+			(*xPtr) = (int) (x + w * (1.0 - frac));
 			return 1;
 		    }
 		} else if (gcrd->value > 1.0) {
@@ -6573,14 +6573,14 @@ GetGradientBrushCoordX(
 			    frac = 1.0;
 			x = TreeColumn_Offset(column);
 			w = TreeColumn_UseWidth(column);
-			(*xPtr) = x + w * frac;
+			(*xPtr) = (int) (x + w * frac);
 			return 1;
 		    }
 		} else {
 		    if (TreeColumn_Visible(column)) {
 			x = TreeColumn_Offset(column);
 			w = TreeColumn_UseWidth(column);
-			(*xPtr) = x + w * gcrd->value;
+			(*xPtr) = (int) (x + w * gcrd->value);
 			return 1;
 		    }
 		}
@@ -6616,7 +6616,7 @@ GetGradientBrushCoordX(
 			double tmp, frac;
 			if (clip || (frac = modf(-gcrd->value, &tmp)) == 0.0)
 			    frac = 1.0;
-			(*xPtr) = x + w * (1.0 - frac);
+			(*xPtr) = (int) (x + w * (1.0 - frac));
 			return 1;
 		    }
 		} else if (gcrd->value > 1.0) {
@@ -6635,12 +6635,12 @@ GetGradientBrushCoordX(
 			double tmp, frac;
 			if (clip || (frac = modf(gcrd->value, &tmp)) == 0.0)
 			    frac = 1.0;
-			(*xPtr) = x + w * frac;
+			(*xPtr) = (int) (x + w * frac);
 			return 1;
 		    }
 		} else if (Tree_ItemBbox(tree, item, lock,
 			&x, &y, &w, &h) != -1) {
-		    (*xPtr) = x + w * gcrd->value;
+		    (*xPtr) = (int) (x + w * gcrd->value);
 		    return 1;
 		}
 	    }
@@ -6668,7 +6668,7 @@ GetGradientBrushCoordY(
 	case GCT_AREA: {
 	    int x1, y1, x2, y2;
 	    if (Tree_AreaBbox(tree, gcrd->area, &x1, &y1, &x2, &y2) == TRUE) {
-		(*yPtr) = y1 + (y2 - y1) * gcrd->value;
+		(*yPtr) = (int) (y1 + (y2 - y1) * gcrd->value);
 		(*yPtr) += tree->yOrigin; /* Window -> Canvas */
 		return 1;
 	    }
@@ -6677,7 +6677,7 @@ GetGradientBrushCoordY(
 
 	case GCT_CANVAS: {
 	    int canvasHeight = MAX(Tree_CanvasHeight(tree), Tree_ContentHeight(tree));
-	    (*yPtr) = canvasHeight * gcrd->value;
+	    (*yPtr) = (int) (canvasHeight * gcrd->value);
 	    return 1;
 	}
 
@@ -6714,7 +6714,7 @@ GetGradientBrushCoordY(
 			double tmp, frac;
 			if (clip || (frac = modf(-gcrd->value, &tmp)) == 0.0)
 			    frac = 1.0;
-			(*yPtr) = y + h * (1.0 - frac);
+			(*yPtr) = (int) (y + h * (1.0 - frac));
 			return 1;
 		    }
 		} else if (gcrd->value > 1.0) {
@@ -6733,12 +6733,12 @@ GetGradientBrushCoordY(
 			double tmp, frac;
 			if (clip || (frac = modf(gcrd->value, &tmp)) == 0.0)
 			    frac = 1.0;
-			(*yPtr) = y + h * frac;
+			(*yPtr) = (int) (y + h * frac);
 			return 1;
 		    }
 		} else if (Tree_ItemBbox(tree, item, lock,
 			&x, &y, &w, &h) != -1) {
-		    (*yPtr) = y + h * gcrd->value;
+		    (*yPtr) = (int) (y + h * gcrd->value);
 		    return 1;
 		}
 	    }

@@ -97,19 +97,19 @@ Column 1 has a vertical gradient as tall as the content area.  The colors\
 Column 2 has a vertical gradient as tall as the canvas.  The first stop color\
     begins at the top of the first item and the last stop color ends at the\
     bottom of the last item.\n    \
-    G_C2 G_C2 -top {0.0 canvas} -bottom {1.0 canvas}\n
+    G_C2 -top {0.0 canvas} -bottom {1.0 canvas}\n
 Column 3 has a horizontal gradient with unspecified bounds, so the gradient\
     is as wide as the column.\n    \
-    G_C0 G_C3 -left {} -right {}\n
+    G_C3 -left {} -right {}\n
 Column 4 has a horizontal gradient as wide as the content area.  The colors\
     remain 'locked in place' as the list is scrolled left and right, and\
     resizing the window changes the part of the gradient in that column.\n    \
-    G_C1 -top {0.0 area content} -bottom {1.0 area content}\n
+    G_C4 -left {0.0 area content} -right {1.0 area content}\n
 Column 5 has a horizontal gradient as wide as the canvas.  The first stop color\
     begins at the left edge of the first column and the last stop color ends at the\
-    right edge of the last column.  If the window is wider than the items then
+    right edge of the last column.  If the window is wider than the items then\
     the gradient ends at the window border.\n    \
-    G_C2 G_C2 -top {0.0 canvas} -bottom {1.0 canvas}"
+    G_C5 -left {0.0 canvas} -right {1.0 canvas}"
 
 
     for {set i 0} {$i < 25} {incr i} {

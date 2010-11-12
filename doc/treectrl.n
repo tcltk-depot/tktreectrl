@@ -1963,27 +1963,30 @@ The following options are supported:
 .RS
 .TP
 \fB\fB-bottom\fR\fR \fIcoordSpec\fR
-Specifies the bottom edge of the gradient brush.  If this option is specified as
-an empty string (the default), the gradient brush's bottom edge is the same as
-that of whatever rectangle is being painted using the gradient.
-See \fBGRADIENT COORDINATES\fR for details on gradient brush coordinates.
 .TP
 \fB\fB-left\fR\fR \fIcoordSpec\fR
-Specifies the left edge of the gradient brush.  If this option is specified as
-an empty string (the default), the gradient brush's left edge is the same as
-that of whatever rectangle is being painted using the gradient.
+.TP
+\fB\fB-right\fR\fR \fIcoordSpec\fR
+.TP
+\fB\fB-top\fR\fR \fIcoordSpec\fR
+Each of these options specifies one edge of the gradient brush.
+If the option is specified as an empty string (the default), the gradient brush's
+edge is the same as that of whatever rectangle is being painted using the gradient.
 See \fBGRADIENT COORDINATES\fR for details on gradient brush coordinates.
+.sp
+The format of each of these options is a list of 2 or more values {value coordType ?arg ...?},
+where \fIvalue\fR is a floating point number (usually from 0.0 to 1.0) and
+\fIcoordType\fR is one of \fBarea\fR, \fBcanvas\fR, \fBcolumn\fR
+or \fBitem\fR.  The \fBarea\fR keyword must be followed by one of the same
+area names that the \fBbbox\fR command accepts.  The \fBcolumn\fR keyword may
+be followed by a column description specifying exactly one column.  The
+\fBitem\fR keyword may be followed by an item description specifying exactly
+one item.
 .TP
 \fB\fB-orient\fR\fR \fIdirection\fR
 This option specifies the direction a linear gradient changes color in.
 Must be either \fBhorizontal\fR (the default)
 or \fBvertical\fR or an abbreviation of one of these.
-.TP
-\fB\fB-right\fR\fR \fIcoordSpec\fR
-Specifies the right edge of the gradient brush.  If this option is specified as
-an empty string (the default), the gradient brush's right edge is the same as
-that of whatever rectangle is being painted using the gradient.
-See \fBGRADIENT COORDINATES\fR for details on gradient brush coordinates.
 .TP
 \fB\fB-steps\fR\fR \fIstepCount\fR
 Specifies the number of bands of color drawn for each color stop described by
@@ -2010,12 +2013,6 @@ the first offset must be 0.0 and the last offset must be 1.0.  Any other
 stop offsets must be listed in increasing order.
 Specifying opacity has no effect if gradients are drawn using Tk API calls.
 See \fBGRADIENTS\fR for more on this.
-.TP
-\fB\fB-top\fR\fR \fIcoordSpec\fR
-Specifies the top edge of the gradient brush.  If this option is specified as
-an empty string (the default), the gradient brush's top edge is the same as
-that of whatever rectangle is being painted using the gradient.
-See \fBGRADIENT COORDINATES\fR for details on gradient brush coordinates.
 .RE
 .TP
 \fIpathName\fR \fBgradient delete\fR ?\fIname ...\fR?
@@ -4681,10 +4678,7 @@ By specifying any of the \fB-bottom\fR, \fB-left\fR, \fB-right\fR or
 \fB-top\fR gradient options the size of the gradient brush does not need
 to match that of the rectangle being painted.  These options can be used to
 make a gradient appear to span across the entire width or height of the treectrl
-window, or across the entire canvas, for example.  The format of each of these
-options is a list of 2 values {value coordType}, where \fIvalue\fR is a
-floating point number (usually from 0.0 to 1.0) and \fIcoordType\fR is one
-of \fBcanvas\fR or \fBcontent\fR.
+window, or across the entire canvas, for example.
 .PP
 There is no point specifying \fB-left\fR or \fB-right\fR if the gradient
 is vertical, since the gradient's colors are constant horizontally, so changing

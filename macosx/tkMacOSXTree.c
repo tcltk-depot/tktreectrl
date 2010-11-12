@@ -1804,6 +1804,9 @@ ShadeEvaluate(
     float par = *in;
     float f1, f2;
 
+    /* For a repeating pattern, clamp *in to 0-1 */
+    par = par - floor(par);
+    
     /* Find the two stops for this point. Tricky! */
     while ((i < nstops) && (data->offset[i] < par)) {
         i++;
@@ -1927,12 +1930,14 @@ MakeLinearGradientShading(
     CGContextRef context,
     TreeGradient gradient,	/* Gradient token. */
     TreeRectangle trBrush,	/* Brush bounds. */
+    TreeRectangle tr,		/* Rectangle to paint. */
     MacShading *ms
     )
 {
     int i;
     CGFunctionCallbacks callbacks;
     CGPoint start, end;
+    CGFloat input_value_range[2] = {0.f, 1.f};
 
     ms->data.nstops = gradient->stopArrPtr->nstops;
     for (i = 0; i < gradient->stopArrPtr->nstops; i++) {
@@ -1956,14 +1961,6 @@ MakeLinearGradientShading(
     ms->colorSpaceRef = CGBitmapContextGetColorSpace(context);
     CGColorSpaceRetain(ms->colorSpaceRef);
 
-    callbacks.version = 0;
-    callbacks.evaluate = ShadeEvaluate;
-    callbacks.releaseInfo = ShadeRelease;
-    ms->function = CGFunctionCreate((void *) &ms->data,
-	1, kValidDomain,
-	4, kValidRange,
-	&callbacks);
-
     if (gradient->vertical) {
 	start = CGPointMake(trBrush.x, trBrush.y);
 	end = CGPointMake(trBrush.x, trBrush.y + trBrush.height);
@@ -1971,6 +1968,30 @@ MakeLinearGradientShading(
 	start = CGPointMake(trBrush.x, trBrush.y);
 	end = CGPointMake(trBrush.x + trBrush.width, trBrush.y);
     }
+
+    /* Repeating pattern */
+    if (gradient->vertical) {
+	CGFloat dy = trBrush.height;
+	input_value_range[0] = MIN((tr.y - trBrush.y) / dy, 0.0f);
+	input_value_range[1] = MAX(((tr.y + tr.height) - trBrush.y) / dy, 1.0f);
+	end.y = start.y + dy * input_value_range[1];
+	start.y += dy * input_value_range[0];
+    } else {
+	CGFloat dx = trBrush.width;
+	input_value_range[0] = MIN((tr.x - trBrush.x) / dx, 0.0f);
+	input_value_range[1] = MAX(((tr.x + tr.width) - trBrush.x) / dx, 1.0f);
+	end.x = start.x + dx * input_value_range[1];
+	start.x += dx * input_value_range[0];
+    }
+    
+    callbacks.version = 0;
+    callbacks.evaluate = ShadeEvaluate;
+    callbacks.releaseInfo = ShadeRelease;
+    ms->function = CGFunctionCreate((void *) &ms->data,
+	1, input_value_range/*kValidDomain*/,
+	4, kValidRange,
+	&callbacks);
+
     ms->shading = CGShadingCreateAxial(ms->colorSpaceRef, start, end,
 	ms->function, 1, 1);
 
@@ -2038,7 +2059,7 @@ TreeGradient_FillRect(
 	return;
     }
 
-    shading = MakeLinearGradientShading(context, gradient, trBrush, &ms);
+    shading = MakeLinearGradientShading(context, gradient, trBrush, tr, &ms);
     if (shading) {
 
 	/* Must clip to the area to be painted otherwise the entire context
@@ -2198,7 +2219,7 @@ TreeGradient_FillRoundRect(
 	return;
     }
 
-    shading = MakeLinearGradientShading(context, gradient, trBrush, &ms);
+    shading = MakeLinearGradientShading(context, gradient, trBrush, tr, &ms);
     if (shading) {
 
 	CGContextBeginPath(context);

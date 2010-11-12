@@ -2362,9 +2362,9 @@ errorExit:
 
     x1 = trBrush.x, y1 = trBrush.y;
     if (gradient->vertical) {
-	x2 = x1, y2 = y1 + trBrush.height;
+	x2 = x1, y2 = y1 + trBrush.height - 1;
     } else {
-	x2 = x1 + trBrush.width, y2 = y1;
+	x2 = x1 + trBrush.width - 1, y2 = y1;
     }
     pattern = cairo_pattern_create_linear(x1, y1, x2, y2);
     if  (pattern == NULL)
@@ -2379,6 +2379,7 @@ errorExit:
 	    BlueDoubleFromXColorPtr(stop->color),
 	    stop->opacity);
     }
+    cairo_pattern_set_extend(pattern, CAIRO_EXTEND_REPEAT);
     cairo_set_source(c, pattern);
     cairo_rectangle(c, tr.x, tr.y, tr.width, tr.height);
     cairo_fill(c);
@@ -2524,9 +2525,9 @@ errorExit:
 
     x1 = trBrush.x, y1 = trBrush.y;
     if (gradient->vertical) {
-	x2 = x1, y2 = y1 + trBrush.height;
+	x2 = x1, y2 = y1 + trBrush.height - 1;
     } else {
-	x2 = x1 + trBrush.width, y2 = y1;
+	x2 = x1 + trBrush.width - 1, y2 = y1;
     }
     pattern = cairo_pattern_create_linear(x1, y1, x2, y2);
     if  (pattern == NULL)
@@ -2541,6 +2542,7 @@ errorExit:
 	    BlueDoubleFromXColorPtr(stop->color),
 	    stop->opacity);
     }
+    cairo_pattern_set_extend(pattern, CAIRO_EXTEND_REPEAT);
     cairo_set_source(c, pattern);
 
     /* http://cairographics.org/cookbook/roundedrectangles/ */
