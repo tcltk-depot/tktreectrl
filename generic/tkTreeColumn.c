@@ -4000,6 +4000,9 @@ TreeColumnCmd(
 		    column = tree->columns;
 		    while (column != NULL) {
 			TreeDisplay_ColumnDeleted(tree, column);
+#if GRAD_COORDS
+			TreeGradient_ColumnDeleted(tree, column);
+#endif
 			column = Column_Free(column);
 		    }
 		    tree->columnTail->index = 0;
@@ -4035,6 +4038,9 @@ TreeColumnCmd(
 		}
 
 		TreeDisplay_ColumnDeleted(tree, column);
+#if GRAD_COORDS
+		TreeGradient_ColumnDeleted(tree, column);
+#endif
 
 		/* Unlink. */
 		prev = column->prev;

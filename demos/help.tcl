@@ -21,6 +21,8 @@ proc DemoHelpContents {} {
     $T configure -showroot no -showbuttons no -showlines no -itemheight $height \
 	-selectmode browse
 
+    $T configure -canvaspadx {4 0} -canvaspady {2 0}
+
     InitPics help-*
 
     #

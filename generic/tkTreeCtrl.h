@@ -513,6 +513,9 @@ MODULE_SCOPE void Tree_RemoveFromSelection(TreeCtrl *tree, TreeItem item);
 MODULE_SCOPE void Tree_PreserveItems(TreeCtrl *tree);
 MODULE_SCOPE void Tree_ReleaseItems(TreeCtrl *tree);
 
+MODULE_SCOPE int TreeArea_FromObj(TreeCtrl *tree, Tcl_Obj *objPtr,
+    int *areaPtr);
+
 #define STATE_OP_ON	0
 #define STATE_OP_OFF	1
 #define STATE_OP_TOGGLE	2
@@ -694,6 +697,8 @@ typedef struct StyleDrawArgs StyleDrawArgs;
 struct StyleDrawArgs
 {
     TreeCtrl *tree;
+    TreeColumn column; /* needed for gradients */
+    TreeItem item; /* needed for gradients */
     TreeStyle style;
     int indent;
     int x;
@@ -1327,8 +1332,10 @@ typedef struct TreeGradient_
 
 MODULE_SCOPE void TreeGradient_Init(TreeCtrl *tree);
 MODULE_SCOPE void TreeGradient_Free(TreeCtrl *tree);
-MODULE_SCOPE int TreeGradientCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]);
-MODULE_SCOPE int TreeGradient_FromObj(TreeCtrl *tree, Tcl_Obj *objPtr, TreeGradient *gradientPtr);
+MODULE_SCOPE int TreeGradientCmd(ClientData clientData, Tcl_Interp *interp,
+    int objc, Tcl_Obj *CONST objv[]);
+MODULE_SCOPE int TreeGradient_FromObj(TreeCtrl *tree, Tcl_Obj *objPtr,
+    TreeGradient *gradientPtr);
 MODULE_SCOPE void TreeGradient_Release(TreeCtrl *tree, TreeGradient gradient);
 MODULE_SCOPE int TreeGradient_IsOpaque(TreeCtrl *tree, TreeGradient gradient);
 MODULE_SCOPE int Tree_HasNativeGradients(TreeCtrl *tree);
@@ -1336,9 +1343,12 @@ MODULE_SCOPE int Tree_HasNativeGradients(TreeCtrl *tree);
 #if GRAD_COORDS
 MODULE_SCOPE int TreeGradient_GetBrushBounds(TreeCtrl *tree,
     TreeGradient gradient, const TreeRectangle *trPaint,
-    TreeRectangle *trBrush);
+    TreeRectangle *trBrush, TreeColumn column, TreeItem item);
 MODULE_SCOPE void TreeGradient_IsRelativeToCanvas(TreeGradient gradient,
     int *relX, int *relY);
+MODULE_SCOPE void TreeGradient_ColumnDeleted(TreeCtrl *tree,
+    TreeColumn column);
+MODULE_SCOPE void TreeGradient_ItemDeleted(TreeCtrl *tree, TreeItem item);
 #endif
 
 /*****/
@@ -1348,6 +1358,7 @@ typedef enum  {
     TREE_CLIP_RECT,
     TREE_CLIP_AREA
 } TreeClipType;
+
 typedef struct {
     TreeClipType type;
     TkRegion region;

@@ -2198,9 +2198,18 @@ static void DisplayProcRect(TreeElementArgs *args)
 		trPaint.x += tree->drawableXOrigin;
 		trPaint.y += tree->drawableYOrigin;
 		(void) TreeGradient_GetBrushBounds(tree, tc->gradient, &trPaint,
-		    &trBrush);
+		    &trBrush, args->display.column, args->display.item);
 		trBrush.x -= tree->drawableXOrigin;
 		trBrush.y -= tree->drawableYOrigin;
+
+		if (args->display.item != NULL) {
+		    int relX, relY;
+		    TreeGradient_IsRelativeToCanvas(tc->gradient, &relX, &relY);
+		    if (relX == 0)
+			Tree_InvalidateItemOnScrollX(tree, args->display.item);
+		    if (relY == 0)
+			Tree_InvalidateItemOnScrollY(tree, args->display.item);
+		}
 	    } else {
 		trBrush = tr;
 	    }
@@ -2227,9 +2236,18 @@ static void DisplayProcRect(TreeElementArgs *args)
 	    trPaint.x += tree->drawableXOrigin;
 	    trPaint.y += tree->drawableYOrigin;
 	    (void) TreeGradient_GetBrushBounds(tree, tc->gradient, &trPaint,
-		&trBrush);
+		&trBrush, args->display.column, args->display.item);
 	    trBrush.x -= tree->drawableXOrigin;
 	    trBrush.y -= tree->drawableYOrigin;
+
+	    if (args->display.item != NULL) {
+		int relX, relY;
+		TreeGradient_IsRelativeToCanvas(tc->gradient, &relX, &relY);
+		if (relX == 0)
+		    Tree_InvalidateItemOnScrollX(tree, args->display.item);
+		if (relY == 0)
+		    Tree_InvalidateItemOnScrollY(tree, args->display.item);
+	    }
 	} else {
 	    trBrush = tr;
 	}
@@ -4441,6 +4459,12 @@ int TreeCtrl_RegisterElementType(Tcl_Interp *interp, TreeElementType *newTypePtr
 }
 
 static TreeCtrlStubs stubs = {
+#ifdef TREECTRL_DEBUG
+    sizeof(TreeCtrl),
+    sizeof(TreeCtrlStubs),
+    sizeof(TreeElement),
+    sizeof(TreeElementArgs),
+#endif
     TreeCtrl_RegisterElementType,
     Tree_RedrawElement,
     Tree_ElementIterateBegin,

@@ -22,6 +22,8 @@ proc DemoOutlookFolders {} {
 	-showroot yes -showrootbutton no -showbuttons yes \
 	-showlines [ShouldShowLines $T]
 
+    $T configure -canvaspadx {4 0} -canvaspady {2 0}
+
     #
     # Create columns
     #

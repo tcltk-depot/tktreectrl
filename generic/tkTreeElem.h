@@ -44,6 +44,8 @@ struct TreeElementArgs
 	TreeDrawable td;
 	Drawable drawable;
 	int bounds[4];
+	TreeColumn column; /* needed for gradients */
+	TreeItem item; /* needed for gradients */
     } display;
     struct {
 	int fixedWidth;
@@ -137,6 +139,12 @@ MODULE_SCOPE int TreeCtrl_RegisterElementType(Tcl_Interp *interp, TreeElementTyp
 typedef struct TreeCtrlStubs TreeCtrlStubs;
 struct TreeCtrlStubs
 {
+#ifdef TREECTRL_DEBUG
+    int sizeofTreeCtrl;
+    int sizeofTreeCtrlStubs;
+    int sizeofTreeElement;
+    int sizeofTreeElementArgs;
+#endif
     int (*TreeCtrl_RegisterElementType)(Tcl_Interp *interp,
 		TreeElementType *typePtr);
     void (*Tree_RedrawElement)(TreeCtrl *tree, TreeItem item,

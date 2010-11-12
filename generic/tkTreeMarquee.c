@@ -324,8 +324,27 @@ TreeMarquee_Draw(
 	tr.y = 0 - tree->yOrigin + MIN(marquee->y1, marquee->y2);
 	tr.height = abs(marquee->y1 - marquee->y2) + 1;
 	clip.type = TREE_CLIP_AREA, clip.area = TREE_AREA_CONTENT;
-	if (marquee->fillColorPtr)
+	if (marquee->fillColorPtr) {
+#if GRAD_COORDS
+	    TreeRectangle trBrush;
+	    if (marquee->fillColorPtr->gradient != NULL) {
+		TreeRectangle trPaint = tr;
+
+		trPaint.x += tree->xOrigin;
+		trPaint.y += tree->yOrigin;
+		(void) TreeGradient_GetBrushBounds(tree,
+		    marquee->fillColorPtr->gradient, &trPaint,
+		    &trBrush, (TreeColumn) NULL, (TreeItem) NULL);
+		trBrush.x -= tree->xOrigin;
+		trBrush.y -= tree->yOrigin;
+	    } else {
+		trBrush = tr;
+	    }
+	    TreeColor_FillRect(tree, td, &clip, marquee->fillColorPtr, trBrush, tr);
+#else
 	    TreeColor_FillRect(tree, td, &clip, marquee->fillColorPtr, tr, tr);
+#endif
+	}
 	if (marquee->outlineColorPtr && marquee->outlineWidth > 0)
 	    TreeColor_DrawRect(tree, td, &clip, marquee->outlineColorPtr, tr,
 		marquee->outlineWidth, 0);

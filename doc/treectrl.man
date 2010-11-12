@@ -1041,27 +1041,18 @@ The following options are supported:
 [list_begin options]
 
 [opt_def [option -bottom] [arg coordSpec]]
-Specifies the bottom edge of the gradient brush.  If this option is specified as
-an empty string (the default), the gradient brush's bottom edge is the same as
-that of whatever rectangle is being painted using the gradient.
-See [sectref {GRADIENT COORDINATES}] for details on gradient brush coordinates.
-
 [opt_def [option -left] [arg coordSpec]]
-Specifies the left edge of the gradient brush.  If this option is specified as
-an empty string (the default), the gradient brush's left edge is the same as
-that of whatever rectangle is being painted using the gradient.
+[opt_def [option -right] [arg coordSpec]]
+[opt_def [option -top] [arg coordSpec]]
+Each of these options specifies one edge of the gradient brush.
+If the option is specified as an empty string (the default), the gradient brush's
+edge is the same as that of whatever rectangle is being painted using the gradient.
 See [sectref {GRADIENT COORDINATES}] for details on gradient brush coordinates.
 
 [opt_def [option -orient] [arg direction]]
 This option specifies the direction a linear gradient changes color in.
 Must be either [const horizontal] (the default)
 or [const vertical] or an abbreviation of one of these.
-
-[opt_def [option -right] [arg coordSpec]]
-Specifies the right edge of the gradient brush.  If this option is specified as
-an empty string (the default), the gradient brush's right edge is the same as
-that of whatever rectangle is being painted using the gradient.
-See [sectref {GRADIENT COORDINATES}] for details on gradient brush coordinates.
 
 [opt_def [option -steps] [arg stepCount]]
 Specifies the number of bands of color drawn for each color stop described by
@@ -1086,12 +1077,6 @@ the first offset must be 0.0 and the last offset must be 1.0.  Any other
 stop offsets must be listed in increasing order.
 Specifying opacity has no effect if gradients are drawn using Tk API calls.
 See [sectref {GRADIENTS}] for more on this.
-
-[opt_def [option -top] [arg coordSpec]]
-Specifies the top edge of the gradient brush.  If this option is specified as
-an empty string (the default), the gradient brush's top edge is the same as
-that of whatever rectangle is being painted using the gradient.
-See [sectref {GRADIENT COORDINATES}] for details on gradient brush coordinates.
 
 [list_end]
 

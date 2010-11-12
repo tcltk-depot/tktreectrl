@@ -15,6 +15,8 @@ proc DemoBitmaps {} {
 	-selectmode browse -orient horizontal -wrap "5 items" \
 	-showheader no -backgroundimage sky
 
+    $T configure -canvaspadx 6 -canvaspady 6 -itemgapx 4 -itemgapy 4
+
     #
     # Create columns
     #

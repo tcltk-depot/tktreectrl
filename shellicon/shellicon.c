@@ -786,6 +786,17 @@ FileIconInit(TRUE);
     if (stubs == NULL)
 	return TCL_ERROR;
 
+#ifdef TREECTRL_DEBUG
+    if (sizeof(TreeCtrl) != stubs->sizeofTreeCtrl ||
+	    sizeof(TreeCtrlStubs) != stubs->sizeofTreeCtrlStubs ||
+	    sizeof(TreeElement) != stubs->sizeofTreeElement ||
+	    sizeof(TreeElementArgs) != stubs->sizeofTreeElementArgs) {
+	Tcl_SetResult(interp, "probably forgot to recompile shellicon",
+		TCL_VOLATILE);
+	return TCL_ERROR;
+    }
+#endif
+
     /* Initialize the options table */
     BooleanCO_Init(shellIconOptionSpecs, "-addoverlays");
     BooleanCO_Init(shellIconOptionSpecs, "-useimagelist");

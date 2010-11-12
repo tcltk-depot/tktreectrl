@@ -275,6 +275,8 @@ foreach file {
     column-lock
     explorer
     firefox
+    gradients
+    gradients2
     help
     imovie
     layout
@@ -1355,7 +1357,9 @@ proc InitDemoList {} {
 	"Big List" DemoBigList biglist.tcl \
 	"Column Spanning" DemoSpan span.tcl \
 	"My Computer" DemoMyComputer mycomputer.tcl \
-	"Column Locking" DemoColumnLock column-lock.tcl
+	"Column Locking" DemoColumnLock column-lock.tcl \
+	"Gradients" DemoGradients gradients.tcl \
+	"Gradients II" DemoGradients2 gradients2.tcl \
 	] {
 	set item [$t item create]
 	$t item lastchild root $item
@@ -1657,7 +1661,7 @@ proc DemoClear {} {
 	-indent 19 -backgroundimage "" -showrootchildbuttons yes \
 	-showrootlines yes -minitemheight 0 -borderwidth [expr {$::tileFull ? 0 : 6}] \
 	-highlightthickness [expr {$::tileFull ? 0 : 3}] -usetheme yes -cursor {} \
-	-itemwidth 0 -itemwidthequal no -itemwidthmultiple 0 \
+	-itemwidth {} -itemwidthequal no -itemwidthmultiple {} \
 	-font [.f4.t cget -font] -canvaspadx 0 -canvaspady 0 \
 	-itemgapx 0 -itemgapy 0
 

@@ -2338,6 +2338,13 @@ TreeGradient_FillRect(
     cairo_pattern_t *pattern;
     int x1, y1, x2, y2, i;
 
+    if (gradient->stopArrPtr == NULL || gradient->stopArrPtr->nstops < 2)
+	return;
+
+    /* Draw nothing if the brush is zero-sized. */
+    if (trBrush.width <= 0 || trBrush.height <= 0)
+	return;
+
     if (IsGtkUnavailable() || !tree->nativeGradients) {
 errorExit:
 	TreeGradient_FillRectX11(tree, td, clip, gradient, trBrush, tr);
@@ -2492,6 +2499,13 @@ TreeGradient_FillRoundRect(
     cairo_surface_t *surface;
     cairo_pattern_t *pattern;
     int x1, y1, x2, y2, i, x, y, w, h, c1, c2;
+
+    if (gradient->stopArrPtr == NULL || gradient->stopArrPtr->nstops < 2)
+	return;
+
+    /* Draw nothing if the brush is zero-sized. */
+    if (trBrush.width <= 0 || trBrush.height <= 0)
+	return;
 
     if (IsGtkUnavailable() || !tree->nativeGradients) {
 errorExit:

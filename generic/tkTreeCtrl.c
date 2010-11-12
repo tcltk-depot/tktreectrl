@@ -491,6 +491,43 @@ TreeObjCmd(
     return TCL_OK;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeArea_FromObj --
+ *
+ *	Get a TREE_AREA_xxx constant from a Tcl_Obj string rep.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TreeArea_FromObj(
+    TreeCtrl *tree,		/* Widget info. */
+    Tcl_Obj *objPtr,		/* Object whose string rep is used. */
+    int *areaPtr		/* Returned TREE_AREA_xxx constant. */
+    )
+{
+    static CONST char *areaName[] = { "content", "header", "left",
+	    "right", (char *) NULL };
+    static CONST int area[4] = { TREE_AREA_CONTENT, TREE_AREA_HEADER,
+	    TREE_AREA_LEFT, TREE_AREA_RIGHT };
+    int index;
+
+    if (Tcl_GetIndexFromObj(tree->interp, objPtr, areaName, "area", 0,
+	    &index) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    (*areaPtr) = area[index];
+    return TCL_OK;
+}
+
 #define W2Cx(x) ((x) + tree->xOrigin)
 #define C2Wx(x) ((x) - tree->xOrigin)
 #define C2Ox(x) ((x) - Tree_ContentLeft(tree))
@@ -634,6 +671,21 @@ static int TreeWidgetCmd(
 
 	/* .t bbox ?area? */
 	case COMMAND_BBOX: {
+#if 1
+	    int x1, y1, x2, y2;
+
+	    if (objc > 3) {
+		Tcl_WrongNumArgs(interp, 2, objv, "?area?");
+		goto error;
+	    }
+	    if (objc == 3) {
+		int area;
+		if (TreeArea_FromObj(tree, objv[2], &area) != TCL_OK) {
+		    goto error;
+		}
+		if (!Tree_AreaBbox(tree, area, &x1, &y1, &x2, &y2))
+		    break;
+#else
 	    static CONST char *areaName[] = { "content", "header", "left",
 		    "right", (char *) NULL };
 	    int x1, y1, x2, y2;
@@ -651,6 +703,7 @@ static int TreeWidgetCmd(
 		}
 		if (!Tree_AreaBbox(tree, area[index], &x1, &y1, &x2, &y2))
 		    break;
+#endif
 	    } else {
 		x1 = 0;
 		y1 = 0;

@@ -6243,19 +6243,22 @@ static Tk_ObjCustomOption stopsCO =
 #if GRAD_COORDS
 
 typedef enum {
-    GCT_CANVAS = 0,
+    GCT_AREA = 0,
+    GCT_CANVAS,
     GCT_COLUMN,
-    GCT_CONTENT,
     GCT_ITEM
 } GradientCoordType;
 
 static const char *coordTypeNames[] = {
-    "canvas", "column", "content", "item", NULL
+    "area", "canvas", "column", "item", NULL
 };
 
 struct GradientCoord {
     GradientCoordType type;
     float value;
+    TreeColumn column; /* optional arg to GCT_COLUMN */
+    TreeItem item; /* optional arg to GCT_ITEM */
+    int area; /* required arg to GCT_AREA */
 };
 
 static int
@@ -6273,6 +6276,7 @@ GradientCoordSet(
     int flags			/* Flags for the option, set Tk_SetOptions. */
     )
 {
+    TreeCtrl *tree = (TreeCtrl *) ((TkWindow *) tkwin)->instanceData;
     char *internalPtr;
     int objEmpty = 0;
     Tcl_Obj *valuePtr;
@@ -6281,6 +6285,9 @@ GradientCoordSet(
     double coordValue;
     GradientCoordType coordType;
     GradientCoord *new = NULL;
+    TreeColumn column = NULL;
+    TreeItem item = NULL;
+    int area = TREE_AREA_NONE;
     
     valuePtr = *value;
     if (internalOffset >= 0)
@@ -6295,8 +6302,8 @@ GradientCoordSet(
         if (Tcl_ListObjGetElements(interp, valuePtr, &objc, &objv) != TCL_OK) {
             return TCL_ERROR;
         }
-        if (objc != 2) {
-	    FormatResult(interp, "expected {offset coordType} list");
+        if (objc < 2) {
+	    FormatResult(interp, "expected list {offset coordType ?arg ...?}");
 	    return TCL_ERROR;
         }
         if (Tcl_GetIndexFromObj(interp, objv[1], coordTypeNames,
@@ -6306,9 +6313,41 @@ GradientCoordSet(
 	if (Tcl_GetDoubleFromObj(interp, objv[0], &coordValue) != TCL_OK) {
 	    return TCL_ERROR;
 	}
+	if (coordType == GCT_AREA) {
+	    if (objc != 3) {
+		FormatResult(interp, "wrong # args after \"area\": must be 1");
+		return TCL_ERROR;
+	    }
+	    if (TreeArea_FromObj(tree, objv[2], &area) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	}
+	if (coordType == GCT_COLUMN && objc > 2) {
+	    if (objc > 3) {
+		FormatResult(interp, "wrong # args after \"column\": must be 0 or 1");
+		return TCL_ERROR;
+	    }
+	    if (TreeColumn_FromObj(tree, objv[2], &column, CFO_NOT_NULL)
+		    != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	}
+	if (coordType == GCT_ITEM && objc > 2) {
+	    if (objc > 3) {
+		FormatResult(interp, "wrong # args after \"item\": must be 0 or 1");
+		return TCL_ERROR;
+	    }
+	    if (TreeItem_FromObj(tree, objv[2], &item, IFO_NOT_NULL)
+		    != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	}
 	new = (GradientCoord *) ckalloc(sizeof(GradientCoord));
 	new->type = coordType;
 	new->value = (float) coordValue;
+	new->column = column;
+	new->item = item;
+	new->area = area;
     }
     if (internalPtr != NULL) {
         *((GradientCoord **) oldInternalPtr) = *((GradientCoord **) internalPtr);
@@ -6348,82 +6387,406 @@ static Tk_ObjCustomOption gradientCoordCO =
     (ClientData) NULL
 };
 
-int
-TreeGradient_GetBrushBounds(
-    TreeCtrl *tree,
-    TreeGradient gradient,
-    const TreeRectangle *trPaint,
-    TreeRectangle *trBrush
+/*
+ *--------------------------------------------------------------
+ *
+ * TreeGradient_ColumnDeleted --
+ *
+ *	Removes any reference to a column from the coordinates of
+ *	all gradients.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *--------------------------------------------------------------
+ */
+
+void
+TreeGradient_ColumnDeleted(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeColumn column		/* Column about to be deleted. */
     )
 {
-    int contentWidth = Tree_BorderRight(tree) - Tree_BorderLeft(tree);
-    int contentHeight = Tree_BorderBottom(tree) - Tree_HeaderBottom(tree);
-    int canvasWidth = MAX(Tree_CanvasWidth(tree), contentWidth);
-    int canvasHeight = MAX(Tree_CanvasHeight(tree), contentHeight);
+    Tcl_HashEntry *hPtr;
+    Tcl_HashSearch search;
+    TreeGradient gradient;
+
+    hPtr = Tcl_FirstHashEntry(&tree->gradientHash, &search);
+    while (hPtr != NULL) {
+	gradient = (TreeGradient) Tcl_GetHashValue(hPtr);
+
+#define CHECK_GCOORD(GCRD,OBJ) \
+	if ((GCRD != NULL) && (GCRD->column == column)) { \
+	    ckfree((char *) GCRD); \
+	    Tcl_DecrRefCount(OBJ); \
+	    GCRD = NULL; \
+	    OBJ = NULL; \
+	}
+	CHECK_GCOORD(gradient->left,   gradient->leftObj);
+	CHECK_GCOORD(gradient->right,  gradient->rightObj);
+	CHECK_GCOORD(gradient->top,    gradient->topObj);
+	CHECK_GCOORD(gradient->bottom, gradient->bottomObj);
+#undef CHECK_GCOORD
+
+	hPtr = Tcl_NextHashEntry(&search);
+    }
+}
+
+/*
+ *--------------------------------------------------------------
+ *
+ * TreeGradient_ItemDeleted --
+ *
+ *	Removes any reference to an item from the coordinates of
+ *	all gradients.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *--------------------------------------------------------------
+ */
+
+void
+TreeGradient_ItemDeleted(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeItem item		/* Item about to be deleted. */
+    )
+{
+    Tcl_HashEntry *hPtr;
+    Tcl_HashSearch search;
+    TreeGradient gradient;
+
+    hPtr = Tcl_FirstHashEntry(&tree->gradientHash, &search);
+    while (hPtr != NULL) {
+	gradient = (TreeGradient) Tcl_GetHashValue(hPtr);
+
+#define CHECK_GCOORD(GCRD,OBJ) \
+	if ((GCRD != NULL) && (GCRD->item == item)) { \
+	    ckfree((char *) GCRD); \
+	    Tcl_DecrRefCount(OBJ); \
+	    GCRD = NULL; \
+	    OBJ = NULL; \
+	}
+	CHECK_GCOORD(gradient->left,   gradient->leftObj);
+	CHECK_GCOORD(gradient->right,  gradient->rightObj);
+	CHECK_GCOORD(gradient->top,    gradient->topObj);
+	CHECK_GCOORD(gradient->bottom, gradient->bottomObj);
+#undef CHECK_GCOORD
+
+	hPtr = Tcl_NextHashEntry(&search);
+    }
+}
+
+static TreeColumn
+FindNthVisibleColumn(
+    TreeCtrl *tree,
+    TreeColumn column,
+    int *n
+    )
+{
+    int index = TreeColumn_Index(column);
+    TreeColumn column2 = column, column3 = column;
+
+    if ((*n) > 0) {
+	while ((*n) > 0 && ++index < tree->columnCount) {
+	    column3 = TreeColumn_Next(column3);
+	    if (TreeColumn_Visible(column3)) {
+		column2 = column3;
+		(*n) -= 1;
+	    }
+	}
+    } else {
+	while ((*n) < 0 && --index >= 0) {
+	    column3 = TreeColumn_Prev(column3);
+	    if (TreeColumn_Visible(column3)) {
+		column2 = column3;
+		(*n) += 1;
+	    }
+	}
+    }
+    return column2;
+}
+
+static int
+GetGradientBrushCoordX(
+    TreeCtrl *tree,			/* Widget Info. */
+    GradientCoord *gcrd,		/* Left or right coordinate. */
+    TreeColumn column,			/* Column or NULL. */
+    TreeItem item,			/* Item or NULL. */
+    int *xPtr				/* Returned canvas coordinate.
+					 * Will remain unchanged if the
+					 * gradient coordinate cannot be
+					 * resolved. */
+    )
+{
+    if (gcrd == NULL)
+	return 0;
+
+    switch (gcrd->type) {
+	case GCT_AREA: {
+	    int x1, y1, x2, y2;
+	    if (Tree_AreaBbox(tree, gcrd->area, &x1, &y1, &x2, &y2) == TRUE) {
+		(*xPtr) = x1 + (x2 - x1) * gcrd->value;
+		(*xPtr) += tree->xOrigin; /* Window -> Canvas */
+		return 1;
+	    }
+	    break;
+	}
+
+	case GCT_CANVAS: {
+	    int canvasWidth = MAX(Tree_CanvasWidth(tree), Tree_ContentWidth(tree));
+	    (*xPtr) = canvasWidth * gcrd->value;
+	    return 1;
+	}
+
+/* FIXME: if item != NULL then make column offset relative to item */
+	case GCT_COLUMN:
+	    if (gcrd->column != NULL)
+		column = gcrd->column;
+	    if (column != NULL) {
+		int x, w;
+		if (gcrd->value < 0.0) {
+		    int n = (int) ceil(-gcrd->value);
+		    n = -n; /* backwards */
+		    column = FindNthVisibleColumn(tree, column, &n);
+		    if (TreeColumn_Visible(column)) {
+			double tmp, frac;
+			if ((n < 0) || (frac = modf(-gcrd->value, &tmp)) == 0.0)
+			    frac = 1.0;
+			x = TreeColumn_Offset(column);
+			w = TreeColumn_UseWidth(column);
+			(*xPtr) = x + w * (1.0 - frac);
+			return 1;
+		    }
+		} else if (gcrd->value > 1.0) {
+		    int n = (int) ceil(gcrd->value - 1.0);
+		    column = FindNthVisibleColumn(tree, column, &n);
+		    if (TreeColumn_Visible(column)) {
+			double tmp, frac;
+			if ((n > 0) || (frac = modf(gcrd->value, &tmp)) == 0.0)
+			    frac = 1.0;
+			x = TreeColumn_Offset(column);
+			w = TreeColumn_UseWidth(column);
+			(*xPtr) = x + w * frac;
+			return 1;
+		    }
+		} else {
+		    if (TreeColumn_Visible(column)) {
+			x = TreeColumn_Offset(column);
+			w = TreeColumn_UseWidth(column);
+			(*xPtr) = x + w * gcrd->value;
+			return 1;
+		    }
+		}
+	    }
+	    break;
+
+	case GCT_ITEM:
+	    if (gcrd->item != NULL)
+		item = gcrd->item;
+	    if (item != NULL) {
+		int x, y, w, h, lock;
+		if (tree->columnCountVis > 0)
+		    lock = COLUMN_LOCK_NONE;
+		else if (tree->columnCountVisLeft > 0)
+		    lock = COLUMN_LOCK_LEFT;
+		else if (tree->columnCountVisRight > 0)
+		    lock = COLUMN_LOCK_RIGHT;
+		else
+		    break; /* not possible else wouldn't be drawing */
+		if (gcrd->value < 0.0) {
+		    int clip = 0, row, col, row2, col2;
+		    if (Tree_ItemToRNC(tree, item, &row, &col) == TCL_OK) {
+			int n = (int) ceil(-gcrd->value);
+			TreeItem item2 = Tree_RNCToItem(tree, row, col - n);
+			(void) Tree_ItemToRNC(tree, item2, &row2, &col2);
+			if (row2 == row)
+			    item = item2; /* there is an item to the left */
+			if (row2 != row || col2 != col - n)
+			    clip = 1; /* no item 'n' columns to the left */
+		    }
+		    if (Tree_ItemBbox(tree, item, lock,
+			    &x, &y, &w, &h) != -1) {
+			double tmp, frac;
+			if (clip || (frac = modf(-gcrd->value, &tmp)) == 0.0)
+			    frac = 1.0;
+			(*xPtr) = x + w * (1.0 - frac);
+			return 1;
+		    }
+		} else if (gcrd->value > 1.0) {
+		    int clip = 0, row, col, row2, col2;
+		    if (Tree_ItemToRNC(tree, item, &row, &col) == TCL_OK) {
+			int n = (int) ceil(gcrd->value - 1.0);
+			TreeItem item2 = Tree_RNCToItem(tree, row, col + n);
+			(void) Tree_ItemToRNC(tree, item2, &row2, &col2);
+			if (row2 == row)
+			    item = item2; /* there is an item to the right */
+			if (row2 != row || col2 != col + n)
+			    clip = 1; /* no item 'n' columns to the right */
+		    }
+		    if (Tree_ItemBbox(tree, item, lock,
+			    &x, &y, &w, &h) != -1) {
+			double tmp, frac;
+			if (clip || (frac = modf(gcrd->value, &tmp)) == 0.0)
+			    frac = 1.0;
+			(*xPtr) = x + w * frac;
+			return 1;
+		    }
+		} else if (Tree_ItemBbox(tree, item, lock,
+			&x, &y, &w, &h) != -1) {
+		    (*xPtr) = x + w * gcrd->value;
+		    return 1;
+		}
+	    }
+	    break;
+    }
+    return 0;
+}
+
+static int
+GetGradientBrushCoordY(
+    TreeCtrl *tree,			/* Widget Info. */
+    GradientCoord *gcrd,		/* Top or bottom coordinate. */
+    TreeColumn column,			/* Column or NULL. */
+    TreeItem item,			/* Item or NULL. */
+    int *yPtr				/* Returned canvas coordinate.
+					 * Will remain unchanged if the
+					 * gradient coordinate cannot be
+					 * resolved. */
+    )
+{
+    if (gcrd == NULL)
+	return 0;
+
+    switch (gcrd->type) {
+	case GCT_AREA: {
+	    int x1, y1, x2, y2;
+	    if (Tree_AreaBbox(tree, gcrd->area, &x1, &y1, &x2, &y2) == TRUE) {
+		(*yPtr) = y1 + (y2 - y1) * gcrd->value;
+		(*yPtr) += tree->yOrigin; /* Window -> Canvas */
+		return 1;
+	    }
+	    break;
+	}
+
+	case GCT_CANVAS: {
+	    int canvasHeight = MAX(Tree_CanvasHeight(tree), Tree_ContentHeight(tree));
+	    (*yPtr) = canvasHeight * gcrd->value;
+	    return 1;
+	}
+
+	case GCT_COLUMN:
+	    /* Can't think of any use for this */
+	    break;
+
+	case GCT_ITEM:
+	    if (gcrd->item != NULL)
+		item = gcrd->item;
+	    if (item != NULL) {
+		int x, y, w, h, lock;
+		if (tree->columnCountVis > 0)
+		    lock = COLUMN_LOCK_NONE;
+		else if (tree->columnCountVisLeft > 0)
+		    lock = COLUMN_LOCK_LEFT;
+		else if (tree->columnCountVisRight > 0)
+		    lock = COLUMN_LOCK_RIGHT;
+		else
+		    break; /* not possible else wouldn't be drawing */
+		if (gcrd->value < 0.0) {
+		    int clip = 0, row, col, row2, col2;
+		    if (Tree_ItemToRNC(tree, item, &row, &col) == TCL_OK) {
+			int n = (int) ceil(-gcrd->value);
+			TreeItem item2 = Tree_RNCToItem(tree, row - n, col);
+			(void) Tree_ItemToRNC(tree, item2, &row2, &col2);
+			if (col2 == col)
+			    item = item2; /* there is an item above */
+			if (row2 != row - n || col2 != col)
+			    clip = 1; /* no item 'n' rows above */
+		    }
+		    if (Tree_ItemBbox(tree, item, lock,
+			    &x, &y, &w, &h) != -1) {
+			double tmp, frac;
+			if (clip || (frac = modf(-gcrd->value, &tmp)) == 0.0)
+			    frac = 1.0;
+			(*yPtr) = y + h * (1.0 - frac);
+			return 1;
+		    }
+		} else if (gcrd->value > 1.0) {
+		    int clip = 0, row, col, row2, col2;
+		    if (Tree_ItemToRNC(tree, item, &row, &col) == TCL_OK) {
+			int n = (int) ceil(gcrd->value - 1.0);
+			TreeItem item2 = Tree_RNCToItem(tree, row + n, col);
+			(void) Tree_ItemToRNC(tree, item2, &row2, &col2);
+			if (col2 == col)
+			    item = item2; /* there is an item below */
+			if (row2 != row + n || col2 != col)
+			    clip = 1; /* no item 'n' rows below */
+		    }
+		    if (Tree_ItemBbox(tree, item, lock,
+			    &x, &y, &w, &h) != -1) {
+			double tmp, frac;
+			if (clip || (frac = modf(gcrd->value, &tmp)) == 0.0)
+			    frac = 1.0;
+			(*yPtr) = y + h * frac;
+			return 1;
+		    }
+		} else if (Tree_ItemBbox(tree, item, lock,
+			&x, &y, &w, &h) != -1) {
+		    (*yPtr) = y + h * gcrd->value;
+		    return 1;
+		}
+	    }
+	    break;
+    }
+    return 0;
+}
+
+/*
+ *--------------------------------------------------------------
+ *
+ * TreeGradient_GetBrushBounds --
+ *
+ *	Returns the bounds of the brush that should be used to
+ *	draw a gradient.
+ *
+ * Results:
+ *	Return 1 if the brush size is non-empty, 0 otherwise.
+ *
+ * Side effects:
+ *	May recalculate item/column layout info if it is out-of-date.
+ *
+ *--------------------------------------------------------------
+ */
+
+int
+TreeGradient_GetBrushBounds(
+    TreeCtrl *tree,			/* Widget Info. */
+    TreeGradient gradient,		/* Gradient token. */
+    const TreeRectangle *trPaint,	/* Area to paint, canvas coords. */
+    TreeRectangle *trBrush,		/* Returned brush bounds. */
+    TreeColumn column,			/* Column or NULL. */
+    TreeItem item			/* Item or NULL. */
+    )
+{
     int x1, y1, x2, y2;
-    GradientCoord *gcrd;
 
     x1 = trPaint->x;
     y1 = trPaint->y;
     x2 = trPaint->x + trPaint->width;
     y2 = trPaint->y + trPaint->height;
 
-    if ((gcrd = gradient->left) != NULL) {
-	switch (gcrd->type) {
-	    case GCT_CANVAS:
-		x1 = canvasWidth * gcrd->value;
-		break;
-	    case GCT_COLUMN:
-		break;
-	    case GCT_CONTENT:
-		x1 = Tree_BorderLeft(tree) + contentWidth * gcrd->value + tree->xOrigin; /* Window -> Canvas */
-		break;
-	    case GCT_ITEM:
-		break;
-	}
-    }
-    if ((gcrd = gradient->right) != NULL) {
-	switch (gcrd->type) {
-	    case GCT_CANVAS:
-		x2 = canvasWidth * gcrd->value;
-		break;
-	    case GCT_COLUMN:
-		break;
-	    case GCT_CONTENT:
-		x2 = Tree_BorderLeft(tree) + contentWidth * gcrd->value + tree->xOrigin; /* Window -> Canvas */
-		break;
-	    case GCT_ITEM:
-		break;
-	}
-    }
-    if ((gcrd = gradient->top) != NULL) {
-	switch (gcrd->type) {
-	    case GCT_CANVAS:
-		y1 = canvasHeight * gcrd->value;
-		break;
-	    case GCT_COLUMN:
-		break;
-	    case GCT_CONTENT:
-		y1 = Tree_ContentTop(tree) + contentHeight * gcrd->value + tree->yOrigin; /* Window -> Canvas */
-		break;
-	    case GCT_ITEM:
-		break;
-	}
-    }
-    if ((gcrd = gradient->bottom) != NULL) {
-	switch (gcrd->type) {
-	    case GCT_CANVAS:
-		y2 = canvasHeight * gcrd->value;
-		break;
-	    case GCT_COLUMN:
-		break;
-	    case GCT_CONTENT:
-		y2 = Tree_ContentTop(tree) + contentHeight * gcrd->value + tree->yOrigin; /* Window -> Canvas */
-		break;
-	    case GCT_ITEM:
-		break;
-	}
-    }
+    /* FIXME: If an item's or column's visibility changes, may need to redraw */
+
+   (void) GetGradientBrushCoordX(tree, gradient->left, column, item, &x1);
+   (void) GetGradientBrushCoordX(tree, gradient->right, column, item, &x2);
+   (void) GetGradientBrushCoordY(tree, gradient->top, column, item, &y1);
+   (void) GetGradientBrushCoordY(tree, gradient->bottom, column, item, &y2);
 
     trBrush->x = x1;
     trBrush->y = y1;
@@ -6444,16 +6807,16 @@ TreeGradient_IsRelativeToCanvas(
 	
     if (gradient->vertical == 0 &&
 	    ((gradient->left != NULL &&
-	    gradient->left->type == GCT_CONTENT) ||
+	    gradient->left->type == GCT_AREA) ||
 	    (gradient->right != NULL &&
-	    gradient->right->type == GCT_CONTENT)))
+	    gradient->right->type == GCT_AREA)))
 	(*relX) = 0;
 
     if (gradient->vertical==1 &&
 	    ((gradient->top != NULL &&
-	    gradient->top->type == GCT_CONTENT) ||
+	    gradient->top->type == GCT_AREA) ||
 	    (gradient->bottom != NULL &&
-	    gradient->bottom->type == GCT_CONTENT)))
+	    gradient->bottom->type == GCT_AREA)))
 	(*relY) = 0;
 }
 

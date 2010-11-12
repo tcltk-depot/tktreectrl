@@ -69,6 +69,7 @@ typedef struct DItemArea {
     int dirty[4];		/* Dirty area in item coords. */
 #define DITEM_DIRTY 0x0001
 #define DITEM_ALL_DIRTY 0x0002
+#define DITEM_DRAWN 0x0004
     int flags;
 } DItemArea;
 
@@ -296,7 +297,7 @@ Range_Redo(
     int fixedWidth = -1, stepWidth = -1;
     int wrapCount = 0, wrapPixels = 0;
     int count, pixels, rItemCount = 0;
-    int rangeIndex = 0, itemIndex;
+    int rangeIndex = 0, rItemIndex;
     int *canvasPad;
 
     if (tree->debug.enable && tree->debug.display)
@@ -360,7 +361,7 @@ Range_Redo(
 	count = 0;
 	canvasPad = tree->vertical ? tree->canvasPadY : tree->canvasPadX;
 	pixels = 0;
-	itemIndex = 0;
+	rItemIndex = 0;
 	while (1) {
 	    rItem = dInfo->rItem + rItemCount;
 	    if (rItemCount >= dInfo->rItemMax)
@@ -370,7 +371,7 @@ Range_Redo(
 	    TreeItem_SetRInfo(tree, item, (TreeItemRInfo) rItem);
 	    rItem->item = item;
 	    rItem->range = range;
-	    rItem->index = itemIndex;
+	    rItem->index = rItemIndex;
 	    rItem->gap.x = rItem->gap.y = 0;
 
 	    /* Range must be <= this number of pixels */
@@ -415,7 +416,7 @@ Range_Redo(
 		    }
 
 		    /* Ensure at least one item is in this Range */
-		    if (itemIndex == 0) {
+		    if (rItemIndex == 0) {
 
 			if (tree->vertical) {
 			    rItem->gap.y = tree->itemGapY;
@@ -442,7 +443,7 @@ Range_Redo(
 		pixels += rItem->size;
 	    }
 	    range->last = rItem;
-	    itemIndex++;
+	    rItemIndex++;
 	    rItemCount++;
 	    if (++count == wrapCount)
 		break;
@@ -512,7 +513,7 @@ freeRanges:
 	range = dInfo->rangeLock;
 
 	pixels = 0;
-	itemIndex = 0;
+	rItemIndex = 0;
 	rItem = dInfo->rItem;
 	item = tree->root;
 	if (!TreeItem_ReallyVisible(tree, item))
@@ -529,7 +530,7 @@ freeRanges:
 		rItem->gap.y = 0;
 	    }
 	    pixels += rItem->gap.y;
-	    rItem->index = itemIndex++;
+	    rItem->index = rItemIndex++;
 	    TreeItem_SetRInfo(tree, item, (TreeItemRInfo) rItem);
 	    pixels += rItem->size;
 	    rItem++;
@@ -2273,9 +2274,14 @@ Tree_ItemLARB(
 				 * FALSE for below/right. */
     )
 {
+#if 1
+    RItem *rItem;
+    Range *range;
+#else
     RItem *rItem, *rItem2;
     Range *range;
     int i, l, u;
+#endif
 
     if (!TreeItem_ReallyVisible(tree, item) || (tree->columnCountVis < 1))
 	return NULL;
@@ -2295,12 +2301,16 @@ Tree_ItemLARB(
 	return rItem->item;
     }
     else {
-	/* Find the previous range */
 	range = prev ? rItem->range->prev : rItem->range->next;
 	if (range == NULL)
 	    return NULL;
 
 	/* Find item with same index */
+#if 1
+	if (range->last->index < rItem->index)
+	    return NULL;
+	return (range->first + rItem->index)->item;
+#else
 	/* Binary search */
 	l = 0;
 	u = range->last->index;
@@ -2314,6 +2324,7 @@ Tree_ItemLARB(
 	    else
 		l = i + 1;
 	}
+#endif
     }
     return NULL;
 }
@@ -2378,9 +2389,14 @@ Tree_ItemFL(
     )
 {
     TreeDInfo dInfo = tree->dInfo;
+#if 1
+    RItem *rItem;
+    Range *range;
+#else
     RItem *rItem, *rItem2;
     Range *range;
     int i, l, u;
+#endif
 
     if (!TreeItem_ReallyVisible(tree, item) || (tree->columnCountVis < 1)) {
 	return NULL;
@@ -2398,6 +2414,10 @@ Tree_ItemFL(
 	    if (range == rItem->range)
 		return item;
 
+#if 1
+	    if (range->last->index >= rItem->index)
+		return (range->first + rItem->index)->item;
+#else
 	    /* Find item with same index */
 	    /* Binary search */
 	    l = 0;
@@ -2412,6 +2432,7 @@ Tree_ItemFL(
 		else
 		    l = i + 1;
 	    }
+#endif
 
 	    range = first ? range->next : range->prev;
 	}
@@ -2518,7 +2539,9 @@ Tree_RNCToItem(
     TreeDInfo dInfo = tree->dInfo;
     Range *range;
     RItem *rItem;
+#if 0
     int i, l, u;
+#endif
 
     Range_RedoIfNeeded(tree);
     range = dInfo->rangeFirst;
@@ -2536,6 +2559,9 @@ Tree_RNCToItem(
 	rItem = range->last;
 	if (row > rItem->index)
 	    row = rItem->index;
+#if 1
+	return (range->first + row)->item;
+#else
 	/* Binary search */
 	l = 0;
 	u = range->last->index;
@@ -2549,6 +2575,7 @@ Tree_RNCToItem(
 	    else
 		l = i + 1;
 	}
+#endif
     }
     else {
 	if (row > dInfo->rangeLast->index)
@@ -2558,6 +2585,9 @@ Tree_RNCToItem(
 	rItem = range->last;
 	if (col > rItem->index)
 	    col = rItem->index;
+#if 1
+	return (range->first + col)->item;
+#else
 	/* Binary search */
 	l = 0;
 	u = range->last->index;
@@ -2571,6 +2601,7 @@ Tree_RNCToItem(
 	    else
 		l = i + 1;
 	}
+#endif
     }
     return rItem->item;
 }
@@ -3955,8 +3986,19 @@ DItemAllDirty(
     DItem *dItem
     )
 {
+#if 1
+    if ((dItem->area.flags & DITEM_DRAWN) &&
+	    !(dItem->area.flags & DITEM_ALL_DIRTY))
+	return 0;
+    if ((dItem->left.flags & DITEM_DRAWN) &&
+	    !(dItem->left.flags & DITEM_ALL_DIRTY))
+	return 0;
+    if ((dItem->right.flags & DITEM_DRAWN) &&
+	    !(dItem->right.flags & DITEM_ALL_DIRTY))
+	return 0;
+#else
     TreeDInfo dInfo = tree->dInfo;
-    
+
     if ((!dInfo->empty && dInfo->rangeFirstD != NULL) &&
 	    !(dItem->area.flags & DITEM_ALL_DIRTY))
 	return 0;
@@ -3964,6 +4006,7 @@ DItemAllDirty(
 	return 0;
     if (!dInfo->emptyR && !(dItem->right.flags & DITEM_ALL_DIRTY))
 	return 0;
+#endif
     return 1;
 }
 
@@ -5426,23 +5469,29 @@ DrawColumnBackground(
 		XFillRectangle(tree->display, td.drawable, gc,
 		    drawBox.x, drawBox.y, drawBox.width, drawBox.height);
 	    } else {
-		if (!TreeColor_IsOpaque(tree ,tc)) {
-		    XFillRectangle(tree->display, td.drawable, backgroundGC,
-			drawBox.x, drawBox.y, drawBox.width, drawBox.height);
-		}
 #if GRAD_COORDS
 		if (tc->gradient != NULL) {
 		    rowBox.x += tree->xOrigin;
 		    rowBox.y += tree->yOrigin;
 		    (void) TreeGradient_GetBrushBounds(tree, tc->gradient,
-			&rowBox, &trBrush);
+			&rowBox, &trBrush, treeColumn, (TreeItem) NULL);
 		    trBrush.x -= tree->xOrigin;
 		    trBrush.y -= tree->yOrigin;
 		} else {
 		    trBrush = rowBox;
 		}
+		if (!TreeColor_IsOpaque(tree ,tc)
+			|| (trBrush.width <= 0)
+			|| (trBrush.height <= 0)) {
+		    XFillRectangle(tree->display, td.drawable, backgroundGC,
+			drawBox.x, drawBox.y, drawBox.width, drawBox.height);
+		}
 		TreeColor_FillRect(tree, td, NULL, tc, trBrush, drawBox);
 #else
+		if (!TreeColor_IsOpaque(tree ,tc)) {
+		    XFillRectangle(tree->display, td.drawable, backgroundGC,
+			drawBox.x, drawBox.y, drawBox.width, drawBox.height);
+		}
 		TreeColor_FillRect(tree, td, NULL, tc, rowBox, drawBox);
 #endif
 	    }
@@ -5918,6 +5967,7 @@ DisplayDItem(
     }
 
     area->flags &= ~(DITEM_DIRTY | DITEM_ALL_DIRTY);
+    area->flags |= DITEM_DRAWN;
 #if GRAD_COORDS
     dItem->flags &= ~(DITEM_INVALIDATE_ON_SCROLL_X | DITEM_INVALIDATE_ON_SCROLL_Y);
 #endif
@@ -6711,6 +6761,8 @@ displayRetry:
 		    drawn += DisplayDItem(tree, dItem, &dItem->area,
 			    COLUMN_LOCK_NONE, dInfo->bounds, tpixmap, tdrawable);
 		}
+	    } else {
+		dItem->area.flags &= ~DITEM_DRAWN;
 	    }
 	    if (!dInfo->emptyL) {
 		tree->drawableXOrigin = tree->xOrigin;
@@ -6727,6 +6779,8 @@ displayRetry:
 		    drawn += DisplayDItem(tree, dItem, &dItem->left, COLUMN_LOCK_LEFT,
 			    dInfo->boundsL, tpixmap, tdrawable);
 		}
+	    } else {
+		dItem->left.flags &= ~DITEM_DRAWN;
 	    }
 	    if (!dInfo->emptyR) {
 		tree->drawableXOrigin = tree->xOrigin;
@@ -6743,6 +6797,8 @@ displayRetry:
 		    drawn += DisplayDItem(tree, dItem, &dItem->right, COLUMN_LOCK_RIGHT,
 			    dInfo->boundsR, tpixmap, tdrawable);
 		}
+	    } else {
+		dItem->right.flags &= ~DITEM_DRAWN;
 	    }
 	    numDraw += drawn ? 1 : 0;
 
@@ -8067,7 +8123,7 @@ Tree_InvalidateArea(
 
     dItem = dInfo->dItem;
     while (dItem != NULL) {
-	if ((!dInfo->empty && dInfo->rangeFirstD != NULL) &&
+	if ((!dInfo->empty && (dItem->area.flags & DITEM_DRAWN)/*dInfo->rangeFirstD != NULL*/) &&
 		!(dItem->area.flags & DITEM_ALL_DIRTY) &&
 		(x2 > dItem->area.x) && (x1 < dItem->area.x + dItem->area.width) &&
 		(y2 > dItem->y) && (y1 < dItem->y + dItem->height)) {
@@ -8155,7 +8211,7 @@ Tree_InvalidateRegion(
 
     dItem = dInfo->dItem;
     while (dItem != NULL) {
-	if ((!dInfo->empty && dInfo->rangeFirstD != NULL) && !(dItem->area.flags & DITEM_ALL_DIRTY)) {
+	if ((!dInfo->empty && (dItem->area.flags & DITEM_DRAWN)/*dInfo->rangeFirstD != NULL*/) && !(dItem->area.flags & DITEM_ALL_DIRTY)) {
 	    rect.x = dItem->area.x;
 	    rect.y = dItem->y;
 	    rect.width = dItem->area.width;

@@ -839,6 +839,253 @@ test treectrl-18.9 {-defaultstyle: deleting column does not update -defaultstyle
     .t cget -defaultstyle
 } -result {a b {} d {} c}
 
+test treectrl-19.1 {gradient: missing args} -body {
+    .t gradient
+} -returnCodes error -result {wrong # args: should be ".t gradient command ?arg arg ...?"}
+
+test treectrl-19.2 {gradient api: too many args} -body {
+    .t gradient api foo bar
+} -returnCodes error -result {wrong # args: should be ".t gradient api ?version?"}
+
+test treectrl-19.3 {gradient: unknown command} -body {
+    .t gradient foo
+} -returnCodes error -result {bad command "foo": must be *} -match glob
+
+test treectrl-19.4 {gradient api: unspecified} -body {
+    .t gradient api
+} -result {{available 1.0} {current unspecified}}
+
+test treectrl-19.5 {gradient api: NaN} -body {
+    .t gradient api foo
+} -returnCodes error -result {expected api version string but got "foo"}
+
+test treectrl-19.6 {gradient api: invalid} -body {
+    .t gradient api 1.1
+} -returnCodes error -result {invalid api version "1.1"}
+
+test treectrl-19.7 {gradient create: api not specified} -body {
+    .t gradient create G1
+} -returnCodes error -result {you must call the 'api' command before calling 'create'}
+
+test treectrl-19.8 {gradient api: valid} -body {
+    .t gradient api 1.0
+} -result {}
+
+test treectrl-19.9 {gradient create: missing args} -body {
+    .t gradient create
+} -returnCodes error -result {wrong # args: should be ".t gradient create name ?option value ...?"}
+
+test treectrl-19.10 {gradient create: empty gradient name} -body {
+    .t gradient create ""
+} -returnCodes error -result {invalid gradient name ""}
+
+test treectrl-19.11 {gradient create: valid name} -body {
+    .t gradient create G1
+} -result {G1}
+
+test treectrl-19.12 {gradient create: duplicate name} -body {
+    .t gradient create G1
+} -returnCodes error -result {gradient "G1" already exists}
+
+test treectrl-19.13 {gradient create: missing argument option} -body {
+    .t gradient create G2 -stops
+} -returnCodes error -result {value for "-stops" missing}
+
+test treectrl-19.14 {gradient create: unknown option} -body {
+    .t gradient create G2 -foo
+} -returnCodes error -result {unknown option "-foo"}
+
+test treectrl-19.15 {gradient configure: missing args} -body {
+    .t gradient configure
+} -returnCodes error -result {wrong # args: should be ".t gradient configure name ?option? ?value option value ...?"}
+
+test treectrl-19.16 {gradient configure: unknown gradient} -body {
+    .t gradient configure foo
+} -returnCodes error -result {gradient "foo" doesn't exist}
+
+test treectrl-19.17 {gradient configure -steps: default} -body {
+    .t gradient configure G1 -steps
+} -result {-steps {} {} 1 1}
+
+test treectrl-19.18 {gradient configure -steps: invalid} -body {
+    .t gradient configure G1 -steps foo
+} -returnCodes error -result {expected integer but got "foo"}
+
+test treectrl-19.19 {gradient configure -steps: out of bounds} -body {
+    .t gradient configure G1 -steps 0
+} -returnCodes error -result {steps must be >= 1 and <= 25}
+
+test treectrl-19.20 {gradient configure -steps: out of bounds} -body {
+    .t gradient configure G1 -steps 100
+} -returnCodes error -result {steps must be >= 1 and <= 25}
+
+test treectrl-19.21 {gradient configure -steps: valid, lower limit} -body {
+    .t gradient configure G1 -steps 1
+} -result {}
+
+test treectrl-19.22 {gradient configure -steps: valid, upper limit} -body {
+    .t gradient configure G1 -steps 25
+} -result {}
+
+test treectrl-19.23 {gradient configure -stops: invalid} -body {
+    .t gradient configure G1 -stops foo
+} -returnCodes error -result {at least 2 stops required, 1 given}
+
+test treectrl-19.24 {gradient configure -stops: invalid} -body {
+    .t gradient configure G1 -stops {foo bar}
+} -returnCodes error -result {stop list not {offset color ?opacity?}}
+
+test treectrl-19.25 {gradient configure -stops: 0.0 must be first} -body {
+    .t gradient configure G1 -stops {{1.0 foo} {2.0 bar}}
+} -returnCodes error -result {first stop offset must be 0.0, got 1}
+
+test treectrl-19.26 {gradient configure -stops: unknown color} -body {
+    .t gradient configure G1 -stops {{0.0 foo} {2.0 bar}}
+} -returnCodes error -result {unknown color name "foo"}
+
+test treectrl-19.27 {gradient configure -stops: 1.0 must be last} -body {
+    .t gradient configure G1 -stops {{0.0 blue} {0.5 bar}}
+} -returnCodes error -result {last stop offset must be 1.0, got 0.5}
+
+test treectrl-19.28 {gradient configure -stops: must be ordered} -body {
+    .t gradient configure G1 -stops {{0.0 red} {0.5 green} {0.4 yellow} {1.0 blue}}
+} -returnCodes error -result {stop offsets must be ordered}
+
+test treectrl-20.1 {gradient coords: default} -body {
+    .t gradient configure G1 -left
+} -result {-left {} {} {} {}}
+
+test treectrl-20.2 {gradient coords: invalid} -body {
+    .t gradient configure G1 -left foo
+} -returnCodes error -result {expected list {offset coordType ?arg ...?}}
+
+test treectrl-20.3 {gradient coords: invalid} -body {
+    .t gradient configure G1 -left {a b}
+} -returnCodes error -result {bad coordinate type "b": must be *} -match glob
+
+test treectrl-20.4 {gradient coords: invalid} -body {
+    .t gradient configure G1 -left {a item}
+} -returnCodes error -result {expected floating-point number but got "a"}
+
+test treectrl-20.5 {gradient coords, area: missing arg} -body {
+    .t gradient configure G1 -left {0.5 area}
+} -returnCodes error -result {wrong # args after "area": must be 1}
+
+test treectrl-20.6 {gradient coords, area: too many args} -body {
+    .t gradient configure G1 -left {0.5 area a b}
+} -returnCodes error -result {wrong # args after "area": must be 1}
+
+test treectrl-20.7 {gradient coords, area: unknown area} -body {
+    .t gradient configure G1 -left {0.5 area foo}
+} -returnCodes error -result {bad area "foo": must be *} -match glob
+
+test treectrl-20.8 {gradient coords, area: valid} -body {
+    .t gradient configure G1 -left {0.5 area content}
+} -result {}
+
+test treectrl-20.9 {gradient coords, column: too many args} -body {
+    .t gradient configure G1 -left {0.5 column a b}
+} -returnCodes error -result {wrong # args after "column": must be 0 or 1}
+
+test treectrl-20.10 {gradient coords, column: invalid column} -body {
+    .t gradient configure G1 -left {0.5 column foo}
+} -returnCodes error -result {column "foo" doesn't exist}
+
+test treectrl-20.11 {gradient coords, column: valid w/o column} -body {
+    .t gradient configure G1 -left {0.5 column}
+} -result {}
+
+test treectrl-20.12 {gradient coords, column: valid w/ column} -body {
+    .t gradient configure G1 -left {0.5 column first}
+} -result {}
+
+test treectrl-20.13 {gradient coords, column: delete a column} -setup {
+    .t column create -tags C1
+    .t gradient configure G1 -left {0.5 column C1}
+} -body {
+    .t column delete C1
+    .t gradient cget G1 -left
+} -result {}
+
+test treectrl-20.20 {gradient coords, item: too many args} -body {
+    .t gradient configure G1 -left {0.5 item a b}
+} -returnCodes error -result {wrong # args after "item": must be 0 or 1}
+
+test treectrl-20.21 {gradient coords, item: invalid item} -body {
+    .t gradient configure G1 -left {0.5 item foo}
+} -returnCodes error -result {item "foo" doesn't exist}
+
+test treectrl-20.22 {gradient coords, item: valid w/o item} -body {
+    .t gradient configure G1 -left {0.5 item}
+} -result {}
+
+test treectrl-20.23 {gradient coords, item: valid w/ item} -body {
+    .t gradient configure G1 -left {0.5 item first}
+} -result {}
+
+test treectrl-20.24 {gradient coords, item: delete an item} -setup {
+    .t item create -tags I1
+    .t gradient configure G1 -left {0.5 item I1}
+} -body {
+    .t item delete I1
+    .t gradient cget G1 -left
+} -result {}
+
+test treectrl-21.1 {gradient delete: no args} -body {
+    .t gradient delete
+} -result {}
+
+test treectrl-21.2 {gradient delete: unknown gradient} -body {
+    .t gradient delete foo
+} -returnCodes error -result {gradient "foo" doesn't exist}
+
+test treectrl-21.3 {gradient delete: success} -body {
+    set result [.t gradient names]
+    .t gradient delete G1
+    lappend result [.t gradient names]
+} -result {G1 {}}
+
+test treectrl-21.4 {gradient delete: in use} -setup {
+    .t gradient create G1
+    .t column create -tags C1 -itembackground G1
+} -body {
+    set result [.t gradient names]
+    .t gradient delete G1
+    lappend result [.t gradient names]
+    lappend result [.t column cget C1 -itembackground]
+} -result {G1 {} G1}
+
+test treectrl-21.5 {gradient delete: deleted gradient recreated} -body {
+    .t gradient create G1
+    .t gradient names
+} -result {G1}
+
+test treectrl-21.6 {gradient delete: deleted gradient no longer referenced} -setup {
+    .t gradient delete G1
+    .t column configure C1 -itembackground {}
+} -body {
+    # now the gradient is freed
+} -result {}
+
+test treectrl-22.1 {gradient native: no args} -body {
+    string is boolean -strict [.t gradient native]
+} -result {1}
+
+test treectrl-22.2 {gradient native: too many args} -body {
+    .t gradient native foo bar
+} -returnCodes error -result {wrong # args: should be ".t gradient native ?preference?"}
+
+test treectrl-22.3 {gradient native: result doesn't change} -body {
+    set r1 [.t gradient native]
+    .t gradient native [expr {!$r1}]
+    set r2 [.t gradient native]
+    expr {$r1 eq $r2}
+} -result {1}
+
+test treectrl-99.1 {some needed cleanup} -body {
+    destroy .t
+} -result {}
+
 # cleanup
 image delete emptyImg
 ::tcltest::cleanupTests

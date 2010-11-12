@@ -2715,6 +2715,7 @@ TreeItem_Delete(
 
     TreeItem_RemoveFromParent(tree, item);
     TreeDisplay_ItemDeleted(tree, item);
+    TreeGradient_ItemDeleted(tree, item);
     TreeTheme_ItemDeleted(tree, item);
     Tree_RemoveItem(tree, item);
     TreeItem_FreeResources(tree, item);
@@ -3729,10 +3730,6 @@ ItemDrawBackground(
 	TreeRectangle trBrush;
 #endif
 	tr.x = x, tr.y = y, tr.width = width, tr.height = height;
-	if (!TreeColor_IsOpaque(tree, tc)) {
-	    GC gc = Tk_3DBorderGC(tree->tkwin, tree->border, TK_3D_FLAT_GC);
-	    XFillRectangle(tree->display, td.drawable, gc, x, y, width, height);
-	}
 #if GRAD_COORDS
 	if (tc->gradient != NULL) {
 	    TreeRectangle trPaint = tr;
@@ -3741,7 +3738,7 @@ ItemDrawBackground(
 	    trPaint.x += tree->drawableXOrigin;
 	    trPaint.y += tree->drawableYOrigin;
 	    (void) TreeGradient_GetBrushBounds(tree, tc->gradient, &trPaint,
-		&trBrush);
+		&trBrush, treeColumn, item);
 	    trBrush.x -= tree->drawableXOrigin;
 	    trBrush.y -= tree->drawableYOrigin;
 
@@ -3753,8 +3750,17 @@ ItemDrawBackground(
 	} else {
 	    trBrush = tr;
 	}
+	if (!TreeColor_IsOpaque(tree, tc)
+		|| (trBrush.width <= 0) || (trBrush.height <= 0)) {
+	    GC gc = Tk_3DBorderGC(tree->tkwin, tree->border, TK_3D_FLAT_GC);
+	    XFillRectangle(tree->display, td.drawable, gc, x, y, width, height);
+	}
 	TreeColor_FillRect(tree, td, NULL, tc, trBrush, tr);
 #else
+	if (!TreeColor_IsOpaque(tree, tc)) {
+	    GC gc = Tk_3DBorderGC(tree->tkwin, tree->border, TK_3D_FLAT_GC);
+	    XFillRectangle(tree->display, td.drawable, gc, x, y, width, height);
+	}
 	TreeColor_FillRect(tree, td, NULL, tc, tr, tr);
 #endif
     } else {
@@ -4103,6 +4109,7 @@ TreeItem_WalkSpans(
     spanCount = Item_GetSpans(tree, item, treeColumn, spans);
 
     drawArgs.tree = tree;
+    drawArgs.item = item; /* needed for gradients */
     drawArgs.td.drawable = None;
 
     totalWidth = 0;
@@ -4139,6 +4146,7 @@ TreeItem_WalkSpans(
 	drawArgs.width = columnWidth;
 	drawArgs.height = height;
 	drawArgs.justify = TreeColumn_ItemJustify(treeColumn);
+	drawArgs.column = treeColumn; /* needed for gradients */
 	if ((*proc)(tree, item, &spans[spanIndex], &drawArgs, clientData))
 	    break;
 
@@ -8364,7 +8372,8 @@ errorExit:
  *----------------------------------------------------------------------
  */
 
-int TreeItem_Debug(
+int
+TreeItem_Debug(
     TreeCtrl *tree,		/* Widget info. */
     TreeItem item		/* Item token. */
     )

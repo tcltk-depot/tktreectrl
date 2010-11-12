@@ -2020,6 +2020,13 @@ TreeGradient_FillRect(
     CGShadingRef shading;
     CGRect r;
 
+    if (gradient->stopArrPtr == NULL || gradient->stopArrPtr->nstops < 2)
+	return;
+
+    /* Draw nothing if the brush is zero-sized. */
+    if (trBrush.width <= 0 || trBrush.height <= 0)
+	return;
+
     if (!(macDraw->flags & TK_IS_PIXMAP) || !tree->nativeGradients) {
 	TreeGradient_FillRectX11(tree, td, clip, gradient, trBrush, tr);
 	return;
@@ -2170,6 +2177,13 @@ TreeGradient_FillRoundRect(
     MacShading ms;
     CGContextRef context;
     CGShadingRef shading;
+
+    if (gradient->stopArrPtr == NULL || gradient->stopArrPtr->nstops < 2)
+	return;
+
+    /* Draw nothing if the brush is zero-sized. */
+    if (trBrush.width <= 0 || trBrush.height <= 0)
+	return;
 
     if (!(macDraw->flags & TK_IS_PIXMAP) || !tree->nativeGradients) {
 	TreeGradient_FillRoundRectX11(tree, td, NULL, gradient, trBrush, tr,

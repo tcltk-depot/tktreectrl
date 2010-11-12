@@ -2789,6 +2789,8 @@ void TreeStyle_Draw(
     args.state = drawArgs->state;
     args.display.td = drawArgs->td;
     args.display.drawable = drawArgs->td.drawable;
+    args.display.column = drawArgs->column; /* needed for gradients */
+    args.display.item = drawArgs->item; /* needed for gradients */
 
     for (i = 0; i < masterStyle->numElements; i++) {
 	struct Layout *layout = &layouts[i];
