@@ -189,8 +189,6 @@ if {$tile} {
     set scrollbarCmd ::scrollbar
 }
 
-set UseGradient 1
-
 option add *TreeCtrl.useTheme 1
 option add *TreeCtrl.Background white
 #option add *TreeCtrl.itemPrefix item
@@ -1014,6 +1012,22 @@ proc MakeListPopup {T} {
         -command {$Popup(T) configure -backgroundimage ""}
     $m2 add radiobutton -label sky -variable Popup(bgimg) -value sky \
         -command {$Popup(T) configure -backgroundimage $Popup(bgimg)}
+    $m2 add separator
+    set m3 [menu $m2.mBgImgAnchor -tearoff no]
+    foreach anchor {nw n ne w center e sw s se} {
+	$m3 add radiobutton -label $anchor -variable Popup(bgimganchor) \
+	    -value $anchor \
+	    -command {$Popup(T) configure -bgimageanchor $Popup(bgimganchor)}
+    }
+    $m2 add cascade -label "Anchor" -menu $m3
+    $m2 add checkbutton -label "Scroll X" -variable Popup(bgimgscrollx) \
+	-onvalue x -offvalue "" -command {$Popup(T) configure -bgimagescroll $Popup(bgimgscrollx)$Popup(bgimgscrolly)}
+    $m2 add checkbutton -label "Scroll Y" -variable Popup(bgimgscrolly) \
+	-onvalue y -offvalue "" -command {$Popup(T) configure -bgimagescroll $Popup(bgimgscrollx)$Popup(bgimgscrolly)}
+    $m2 add checkbutton -label "Tile X" -variable Popup(bgimgtilex) \
+	-onvalue x -offvalue "" -command {$Popup(T) configure -bgimagetile $Popup(bgimgtilex)$Popup(bgimgtiley)}
+    $m2 add checkbutton -label "Tile Y" -variable Popup(bgimgtiley) \
+	-onvalue y -offvalue "" -command {$Popup(T) configure -bgimagetile $Popup(bgimgtilex)$Popup(bgimgtiley)}
     $m add cascade -label "Background Image" -menu $m2
 
     set m2 [menu $m.mBgMode -tearoff no]
@@ -1244,6 +1258,11 @@ proc ShowPopup {T x y X Y} {
 	set Popup(debug,$option) [$T debug cget -$option]
     }
     set Popup(bgimg) [$T cget -backgroundimage]
+    set Popup(bgimganchor) [$T cget -bgimageanchor]
+    set Popup(bgimgscrollx) [string trim [$T cget -bgimagescroll] y]
+    set Popup(bgimgscrolly) [string trim [$T cget -bgimagescroll] x]
+    set Popup(bgimgtilex) [string trim [$T cget -bgimagetile] y]
+    set Popup(bgimgtiley) [string trim [$T cget -bgimagetile] x]
     if {$Popup(bgimg) eq ""} { set Popup(bgimg) none }
     set Popup(bgmode) [$T cget -backgroundmode]
     set Popup(buttontracking) [$T cget -buttontracking]
@@ -1646,14 +1665,26 @@ proc DemoClear {} {
     $T marquee configure -fill {} -outline {} -outlinewidth 1
 
     # Delete gradients
-    if {$::UseGradient} {
-	eval $T gradient delete [$T gradient names]
-    }
+    eval $T gradient delete [$T gradient names]
 
     $T item configure root -button no -wrap no
     $T item expand root
 
     # Restore some happy defaults to the demo list
+if 1 {
+    foreach spec [$T configure] {
+	if {[llength $spec] == 2} continue
+	lassign $spec name x y default current
+	$T configure $name $default
+    }
+    $T configure -background white
+    $T configure -borderwidth [expr {$::tileFull ? 0 : 6}]
+    $T configure -columnresizemode realtime
+    $T configure -font DemoFont
+    $T configure -highlightthickness [expr {$::tileFull ? 0 : 3}]
+    $T configure -relief ridge
+    $T configure -usetheme yes
+} else {
     $T configure -orient vertical -wrap "" -xscrollincrement 0 \
 	-yscrollincrement 0 -itemheight 0 -showheader yes \
 	-background white -scrollmargin 0 -xscrolldelay 50 -yscrolldelay 50 \
@@ -1664,7 +1695,7 @@ proc DemoClear {} {
 	-itemwidth {} -itemwidthequal no -itemwidthmultiple {} \
 	-font [.f4.t cget -font] -canvaspadx 0 -canvaspady 0 \
 	-itemgapx 0 -itemgapy 0
-
+}
     switch -- [$T theme platform] {
 	aqua -
 	gtk {
@@ -1681,6 +1712,7 @@ proc DemoClear {} {
 
     # Restore defaults to the tail column
     foreach spec [$T column configure tail] {
+	if {[llength $spec] == 2} continue
 	lassign $spec name x y default current
 	$T column configure tail $name $default
     }

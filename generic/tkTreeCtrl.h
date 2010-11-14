@@ -76,6 +76,7 @@ MODULE_SCOPE void dbwin_add_interp(Tcl_Interp *interp);
 /* #define DRAG_PIXMAP */
 /* #define DRAGIMAGE_STYLE */ /* Use an item style as the dragimage instead of XOR rectangles. */
 #define GRAD_COORDS 1
+#define BGIMAGEOPT 1
 
 typedef struct TreeCtrl TreeCtrl;
 typedef struct TreeColumn_ *TreeColumn;
@@ -303,6 +304,17 @@ struct TreeCtrl
     PerStateInfo buttonImage;	/* -buttonimage */
     PerStateInfo buttonBitmap;	/* -buttonbitmap */
     char *backgroundImageString; /* -backgroundimage */
+#if BGIMAGEOPT
+    Tk_Anchor bgImageAnchor;	/* -bgimageanchor */
+#define BGIMG_SCROLL_X 0x01
+#define BGIMG_SCROLL_Y 0x02
+    char *bgImageScrollString;	/* -bgimagescroll */
+    int bgImageScroll;		/* -bgimagescroll */
+#define BGIMG_TILE_X 0x01
+#define BGIMG_TILE_Y 0x02
+    char *bgImageTileString;	/* -bgimagetile */
+    int bgImageTile;		/* -bgimagetile */
+#endif
     int useIndent;		/* MAX of open/closed button width and
 				 * indent */
 #define BG_MODE_COLUMN 0
@@ -950,8 +962,25 @@ MODULE_SCOPE void TreeColumnProxy_Undisplay(TreeCtrl *tree);
 MODULE_SCOPE void TreeColumnProxy_Display(TreeCtrl *tree);
 MODULE_SCOPE void TreeRowProxy_Undisplay(TreeCtrl *tree);
 MODULE_SCOPE void TreeRowProxy_Display(TreeCtrl *tree);
+#if BGIMAGEOPT
+MODULE_SCOPE int Tree_DrawTiledImage(TreeCtrl *tree, TreeDrawable td,
+    Tk_Image image, TreeRectangle tr, int xOffset, int yOffset,
+    int tileX, int tileY);
+#else
 MODULE_SCOPE void Tree_DrawTiledImage(TreeCtrl *tree, Drawable drawable, Tk_Image image, 
     int x1, int y1, int x2, int y2, int xOffset, int yOffset);
+#endif
+
+#if BGIMAGEOPT
+int
+Tree_DrawBgImage(
+    TreeCtrl *tree,
+    TreeDrawable td,
+    TreeRectangle tr,
+    int xOrigin,
+    int yOrigin
+    );
+#endif
 
 MODULE_SCOPE int Tree_IntersectRect(TreeRectangle *resultPtr,
     CONST TreeRectangle *r1, CONST TreeRectangle *r2);

@@ -416,6 +416,29 @@ well as item visibility.
 When <b class="const">order</b> or <b class="const">ordervisible</b> is specified,
 the background color is chosen based on the result of the <b class="cmd">item order</b>
 command, regardless of the layout of items.</p></dd>
+<dt>Command-Line Switch:	<b class="option">-bgimageanchor</b><br>
+Database Name:	<b class="optdbname">bgImageAnchor</b><br>
+Database Class:	<b class="optdbclass">BgImageAnchor</b><br>
+</dt>
+<dd><p>Specifies how the background image should be aligned in any of the forms
+acceptable to <b class="function">Tk_GetAnchor</b>.  Must be one of the values
+<b class="const">n</b>, <b class="const">ne</b>, <b class="const">e</b>, <b class="const">se</b>, <b class="const">s</b>, <b class="const">sw</b>,
+<b class="const">w</b>, <b class="const">nw</b>, or <b class="const">center</b>.  The default is <b class="const">nw</b>.</p></dd>
+<dt>Command-Line Switch:	<b class="option">-bgimagescroll</b><br>
+Database Name:	<b class="optdbname">bgImageScroll</b><br>
+Database Class:	<b class="optdbclass">BgImageScroll</b><br>
+</dt>
+<dd><p>Specifies whether the background image scrolls along with the items or whether it
+remains locked in place relative to the edges of the window.
+The value must be a string that contains zero or more of the characters
+<b class="const">x</b> or <b class="const">y</b>.  The default is <b class="const">xy</b>.</p></dd>
+<dt>Command-Line Switch:	<b class="option">-bgimagetile</b><br>
+Database Name:	<b class="optdbname">bgImageTile</b><br>
+Database Class:	<b class="optdbclass">BgImageTile</b><br>
+</dt>
+<dd><p>Specifies whether the background image is tiled along the x and/or y axes.
+The value must be a string that contains zero or more of the characters
+<b class="const">x</b> or <b class="const">y</b>.  The default is <b class="const">xy</b>.</p></dd>
 <dt>Command-Line Switch:	<b class="option">-buttonbitmap</b><br>
 Database Name:	<b class="optdbname">buttonBitmap</b><br>
 Database Class:	<b class="optdbclass">ButtonBitmap</b><br>
@@ -459,8 +482,8 @@ Database Class:	<b class="optdbclass">CanvasPadX</b><br>
 in any of the forms acceptable to <b class="function">Tk_GetPixels</b>.
 The canvas is the virtual sheet of paper that all the visible items are
 drawn onto, of which only a portion may be visible in the treectrl window.
-The option value may be a list of one or two values to specify padding for the two edges
-separately.  The default is 0.</p></dd>
+The option value may be a list of one or two screen distances to specify padding
+for the two edges separately.  The default is 0.</p></dd>
 <dt>Command-Line Switch:	<b class="option">-canvaspady</b><br>
 Database Name:	<b class="optdbname">canvasPadY</b><br>
 Database Class:	<b class="optdbclass">CanvasPadY</b><br>
@@ -469,8 +492,8 @@ Database Class:	<b class="optdbclass">CanvasPadY</b><br>
 in any of the forms acceptable to <b class="function">Tk_GetPixels</b>.
 The canvas is the virtual sheet of paper that all the visible items are
 drawn onto, of which only a portion may be visible in the treectrl window.
-The option value may be a list of one or two values to specify padding for the two edges
-separately.  The default is 0.</p></dd>
+The option value may be a list of one or two screen distances to specify padding
+for the two edges separately.  The default is 0.</p></dd>
 <dt>Command-Line Switch:	<b class="option">-columnprefix</b><br>
 Database Name:	<b class="optdbname">columnPrefix</b><br>
 Database Class:	<b class="optdbclass">ColumnPrefix</b><br>

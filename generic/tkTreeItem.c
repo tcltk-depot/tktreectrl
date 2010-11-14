@@ -3768,9 +3768,15 @@ ItemDrawBackground(
 	XFillRectangle(tree->display, td.drawable, gc, x, y, width, height);
     }
     if (tree->backgroundImage != NULL) {
+#if BGIMAGEOPT
+	TreeRectangle tr;
+	tr.x = x, tr.y = y, tr.width = width, tr.height = height;
+	Tree_DrawBgImage(tree, td, tr, tree->drawableXOrigin, tree->drawableYOrigin);
+#else
 	Tree_DrawTiledImage(tree, td.drawable, tree->backgroundImage, x, y, 
 		x + width, y + height,
 		tree->drawableXOrigin, tree->drawableYOrigin);
+#endif
     }
 }
 

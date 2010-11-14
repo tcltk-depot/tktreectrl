@@ -77,26 +77,33 @@ static Tk_OptionSpec optionSpecs[] = {
      "backgroundMode", "BackgroundMode",
      "row", -1, Tk_Offset(TreeCtrl, backgroundMode),
      0, (ClientData) bgModeST, TREE_CONF_REDISPLAY},
-    {TK_OPTION_STRING_TABLE, "-columnresizemode",
-     "columnResizeMode", "ColumnResizeMode",
-     "proxy", -1, Tk_Offset(TreeCtrl, columnResizeMode),
-     0, (ClientData) columnResizeModeST, 0},
     {TK_OPTION_SYNONYM, "-bd", (char *) NULL, (char *) NULL,
      (char *) NULL, 0, -1, 0, (ClientData) "-borderwidth"},
     {TK_OPTION_SYNONYM, "-bg", (char *) NULL, (char *) NULL,
      (char *) NULL, 0, -1, 0, (ClientData) "-background"},
+#if BGIMAGEOPT
+    {TK_OPTION_ANCHOR, "-bgimageanchor", "bgImageAnchor", "BgImageAnchor",
+     "nw", -1, Tk_Offset(TreeCtrl, bgImageAnchor),
+     0, (ClientData) NULL, TREE_CONF_REDISPLAY},
+    {TK_OPTION_STRING, "-bgimagescroll", "bgImageScroll", "BgImageScroll",
+     "xy", -1, Tk_Offset(TreeCtrl, bgImageScrollString),
+     0, (ClientData) NULL, TREE_CONF_REDISPLAY},
+    {TK_OPTION_STRING, "-bgimagetile", "bgImageTile", "BgImageTile",
+     "xy", -1, Tk_Offset(TreeCtrl, bgImageTileString),
+     0, (ClientData) NULL, TREE_CONF_REDISPLAY},
+#endif
     {TK_OPTION_PIXELS, "-borderwidth", "borderWidth", "BorderWidth",
      DEF_LISTBOX_BORDER_WIDTH, Tk_Offset(TreeCtrl, borderWidthObj),
      Tk_Offset(TreeCtrl, borderWidth),
      0, (ClientData) NULL, TREE_CONF_BORDERS | TREE_CONF_RELAYOUT},
-    {TK_OPTION_COLOR, "-buttoncolor", "buttonColor", "ButtonColor",
-     "#808080", -1, Tk_Offset(TreeCtrl, buttonColor),
-     0, (ClientData) NULL, TREE_CONF_BUTTON | TREE_CONF_REDISPLAY},
     {TK_OPTION_CUSTOM, "-buttonbitmap", "buttonBitmap", "ButtonBitmap",
      (char *) NULL,
      Tk_Offset(TreeCtrl, buttonBitmap.obj), Tk_Offset(TreeCtrl, buttonBitmap),
      TK_OPTION_NULL_OK, (ClientData) NULL,
      TREE_CONF_BUTTON | TREE_CONF_BUTBMP | TREE_CONF_RELAYOUT},
+    {TK_OPTION_COLOR, "-buttoncolor", "buttonColor", "ButtonColor",
+     "#808080", -1, Tk_Offset(TreeCtrl, buttonColor),
+     0, (ClientData) NULL, TREE_CONF_BUTTON | TREE_CONF_REDISPLAY},
     {TK_OPTION_CUSTOM, "-buttonimage", "buttonImage", "ButtonImage",
      (char *) NULL,
      Tk_Offset(TreeCtrl, buttonImage.obj), Tk_Offset(TreeCtrl, buttonImage),
@@ -129,6 +136,10 @@ static Tk_OptionSpec optionSpecs[] = {
      (char *) NULL, Tk_Offset(TreeCtrl, columnProxy.xObj),
      Tk_Offset(TreeCtrl, columnProxy.x),
      TK_OPTION_NULL_OK, (ClientData) NULL, TREE_CONF_PROXY},
+    {TK_OPTION_STRING_TABLE, "-columnresizemode",
+     "columnResizeMode", "ColumnResizeMode",
+     "proxy", -1, Tk_Offset(TreeCtrl, columnResizeMode),
+     0, (ClientData) columnResizeModeST, 0},
     {TK_OPTION_BOOLEAN, "-columntagexpr", "columnTagExpr", "ColumnTagExpr",
      "1", -1, Tk_Offset(TreeCtrl, columnTagExpr),
      0, (ClientData) NULL, 0},
@@ -251,9 +262,6 @@ static Tk_OptionSpec optionSpecs[] = {
     {TK_OPTION_BOOLEAN, "-showlines", "showLines",
      "ShowLines", "1", -1, Tk_Offset(TreeCtrl, showLines),
      0, (ClientData) NULL, TREE_CONF_RELAYOUT},
-    {TK_OPTION_BOOLEAN, "-showrootlines", "showRootLines",
-     "ShowRootLines", "1", -1, Tk_Offset(TreeCtrl, showRootLines),
-     0, (ClientData) NULL, TREE_CONF_RELAYOUT},
     {TK_OPTION_BOOLEAN, "-showroot", "showRoot",
      "ShowRoot", "1", -1, Tk_Offset(TreeCtrl, showRoot),
      0, (ClientData) NULL, TREE_CONF_RELAYOUT},
@@ -262,6 +270,9 @@ static Tk_OptionSpec optionSpecs[] = {
      0, (ClientData) NULL, TREE_CONF_RELAYOUT},
     {TK_OPTION_BOOLEAN, "-showrootchildbuttons", "showRootChildButtons",
      "ShowRootChildButtons", "1", -1, Tk_Offset(TreeCtrl, showRootChildButtons),
+     0, (ClientData) NULL, TREE_CONF_RELAYOUT},
+    {TK_OPTION_BOOLEAN, "-showrootlines", "showRootLines",
+     "ShowRootLines", "1", -1, Tk_Offset(TreeCtrl, showRootLines),
      0, (ClientData) NULL, TREE_CONF_RELAYOUT},
     {TK_OPTION_STRING, "-takefocus", "takeFocus", "TakeFocus",
      DEF_LISTBOX_TAKE_FOCUS, -1, Tk_Offset(TreeCtrl, takeFocus),
@@ -1290,6 +1301,10 @@ TreeConfigure(
 #endif
     saved.wrapMode = TREE_WRAP_NONE;
     saved.wrapArg = 0;
+#if BGIMAGEOPT
+    saved.bgImageScroll = tree->bgImageScroll;
+    saved.bgImageTile = tree->bgImageTile;
+#endif
 
     for (error = 0; error <= 1; error++) {
 	if (error == 0) {
@@ -1352,6 +1367,65 @@ TreeConfigure(
 		    maskFree |= TREE_CONF_BG_IMAGE;
 		}
 	    }
+
+#if BGIMAGEOPT
+	    {
+		const char *s = tree->bgImageScrollString;
+		int i, bogus = 0;
+		tree->bgImageScroll = 0;
+		for (i = 0; s[i] != '\0'; i++) {
+		    switch (s[i]) {
+			case 'x': case 'X':
+			    tree->bgImageScroll |= BGIMG_SCROLL_X;
+			    break;
+			case 'y': case 'Y':
+			    tree->bgImageScroll |= BGIMG_SCROLL_Y;
+			    break;
+			default: {
+			    Tcl_ResetResult(tree->interp);
+			    Tcl_AppendResult(tree->interp, "bad scroll value \"",
+				s, "\": must be a string ",
+				"containing zero or more of x and y",
+				(char *) NULL);
+			    bogus = 1;
+			    break;
+			}
+		    }
+		    if (bogus)
+			break;
+		}
+		if (bogus)
+		    continue;
+	    }
+	    {
+		const char *s = tree->bgImageTileString;
+		int i, bogus = 0;
+		tree->bgImageTile = 0;
+		for (i = 0; s[i] != '\0'; i++) {
+		    switch (s[i]) {
+			case 'x': case 'X':
+			    tree->bgImageTile |= BGIMG_TILE_X;
+			    break;
+			case 'y': case 'Y':
+			    tree->bgImageTile |= BGIMG_TILE_Y;
+			    break;
+			default: {
+			    Tcl_ResetResult(tree->interp);
+			    Tcl_AppendResult(tree->interp, "bad tile value \"",
+				s, "\": must be a string ",
+				"containing zero or more of x and y",
+				(char *) NULL);
+			    bogus = 1;
+			    break;
+			}
+		    }
+		    if (bogus)
+			break;
+		}
+		if (bogus)
+		    continue;
+	    }
+#endif
 
 #ifdef DEPRECATED
 	    if (mask & TREE_CONF_DEFSTYLE) {
@@ -1486,6 +1560,10 @@ badWrap:
 		tree->wrapMode = saved.wrapMode;
 		tree->wrapArg = saved.wrapArg;
 	    }
+#if BGIMAGEOPT
+	    tree->bgImageScroll = saved.bgImageScroll;
+	    tree->bgImageTile = saved.bgImageTile;
+#endif
 
 	    Tcl_SetObjResult(interp, errorResult);
 	    Tcl_DecrRefCount(errorResult);

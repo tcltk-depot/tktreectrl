@@ -1746,8 +1746,16 @@ static void DisplayProcImage(TreeElementArgs *args)
     else if ((eitM != NULL) && (*eitM != -1))
 	tiled = *eitM;
     if (tiled) {
+#if BGIMAGEOPT
+	TreeRectangle tr;
+	tr.x = x, tr.y = y;
+	tr.width = args->display.width, tr.height = args->display.height;
+	Tree_DrawTiledImage(tree, args->display.td, image, tr,
+	    -x, -y, TRUE, TRUE);
+#else
 	Tree_DrawTiledImage(tree, args->display.drawable, image, x, y,
 	    x + args->display.width, y + args->display.height, -x, -y);
+#endif
 	return;
     }
 

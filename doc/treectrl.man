@@ -74,6 +74,7 @@ See the [cmd option] manual entry for details on the standard options.
 
 [section {WIDGET SPECIFIC OPTIONS}]
 [list_begin tkoptions]
+
 [tkoption_def -backgroundimage backgroundImage BackgroundImage]
 Specifies the name of an image to draw as the list background. The image is
 tiled horizontally and vertically to fill the content area of the list. If
@@ -93,6 +94,23 @@ well as item visibility.
 When [const order] or [const ordervisible] is specified,
 the background color is chosen based on the result of the [cmd {item order}]
 command, regardless of the layout of items.
+
+[tkoption_def -bgimageanchor bgImageAnchor BgImageAnchor]
+Specifies how the background image should be aligned in any of the forms
+acceptable to [fun Tk_GetAnchor].  Must be one of the values
+[const n], [const ne], [const e], [const se], [const s], [const sw],
+[const w], [const nw], or [const center].  The default is [const nw].
+
+[tkoption_def -bgimagescroll bgImageScroll BgImageScroll]
+Specifies whether the background image scrolls along with the items or whether it
+remains locked in place relative to the edges of the window.
+The value must be a string that contains zero or more of the characters
+[const x] or [const y].  The default is [const xy].
+
+[tkoption_def -bgimagetile bgImageTile BgImageTile]
+Specifies whether the background image is tiled along the x and/or y axes.
+The value must be a string that contains zero or more of the characters
+[const x] or [const y].  The default is [const xy].
 
 [tkoption_def -buttonbitmap buttonBitmap ButtonBitmap]
 Specifies the bitmap to be used as the expand/collapse button to the left of
@@ -124,16 +142,16 @@ Specifies the width of extra whitespace on the left and right edges of the canva
 in any of the forms acceptable to [fun Tk_GetPixels].
 The canvas is the virtual sheet of paper that all the visible items are
 drawn onto, of which only a portion may be visible in the treectrl window.
-The option value may be a list of one or two values to specify padding for the two edges
-separately.  The default is 0.
+The option value may be a list of one or two screen distances to specify padding
+for the two edges separately.  The default is 0.
 
 [tkoption_def -canvaspady canvasPadY CanvasPadY]
 Specifies the height of extra whitespace on the top and bottom edges of the canvas
 in any of the forms acceptable to [fun Tk_GetPixels].
 The canvas is the virtual sheet of paper that all the visible items are
 drawn onto, of which only a portion may be visible in the treectrl window.
-The option value may be a list of one or two values to specify padding for the two edges
-separately.  The default is 0.
+The option value may be a list of one or two screen distances to specify padding
+for the two edges separately.  The default is 0.
 
 [tkoption_def -columnprefix columnPrefix ColumnPrefix]
 Specifies an ascii string that changes the way column ids are reported and

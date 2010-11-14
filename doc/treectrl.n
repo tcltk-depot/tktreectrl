@@ -713,6 +713,44 @@ command, regardless of the layout of items.
 .LP
 .nf
 .ta 6c
+Command-Line Switch:	\fB-bgimageanchor\fR
+Database Name:	\fBbgImageAnchor\fR
+Database Class:	\fBBgImageAnchor\fR
+
+.fi
+.IP
+Specifies how the background image should be aligned in any of the forms
+acceptable to \fBTk_GetAnchor\fR.  Must be one of the values
+\fBn\fR, \fBne\fR, \fBe\fR, \fBse\fR, \fBs\fR, \fBsw\fR,
+\fBw\fR, \fBnw\fR, or \fBcenter\fR.  The default is \fBnw\fR.
+.LP
+.nf
+.ta 6c
+Command-Line Switch:	\fB-bgimagescroll\fR
+Database Name:	\fBbgImageScroll\fR
+Database Class:	\fBBgImageScroll\fR
+
+.fi
+.IP
+Specifies whether the background image scrolls along with the items or whether it
+remains locked in place relative to the edges of the window.
+The value must be a string that contains zero or more of the characters
+\fBx\fR or \fBy\fR.  The default is \fBxy\fR.
+.LP
+.nf
+.ta 6c
+Command-Line Switch:	\fB-bgimagetile\fR
+Database Name:	\fBbgImageTile\fR
+Database Class:	\fBBgImageTile\fR
+
+.fi
+.IP
+Specifies whether the background image is tiled along the x and/or y axes.
+The value must be a string that contains zero or more of the characters
+\fBx\fR or \fBy\fR.  The default is \fBxy\fR.
+.LP
+.nf
+.ta 6c
 Command-Line Switch:	\fB-buttonbitmap\fR
 Database Name:	\fBbuttonBitmap\fR
 Database Class:	\fBButtonBitmap\fR
@@ -783,8 +821,8 @@ Specifies the width of extra whitespace on the left and right edges of the canva
 in any of the forms acceptable to \fBTk_GetPixels\fR.
 The canvas is the virtual sheet of paper that all the visible items are
 drawn onto, of which only a portion may be visible in the treectrl window.
-The option value may be a list of one or two values to specify padding for the two edges
-separately.  The default is 0.
+The option value may be a list of one or two screen distances to specify padding
+for the two edges separately.  The default is 0.
 .LP
 .nf
 .ta 6c
@@ -798,8 +836,8 @@ Specifies the height of extra whitespace on the top and bottom edges of the canv
 in any of the forms acceptable to \fBTk_GetPixels\fR.
 The canvas is the virtual sheet of paper that all the visible items are
 drawn onto, of which only a portion may be visible in the treectrl window.
-The option value may be a list of one or two values to specify padding for the two edges
-separately.  The default is 0.
+The option value may be a list of one or two screen distances to specify padding
+for the two edges separately.  The default is 0.
 .LP
 .nf
 .ta 6c

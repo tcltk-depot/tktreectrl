@@ -22,6 +22,7 @@
 
 #define COMPLEX_WHITESPACE
 #define REDRAW_RGN
+#define CACHE_BG_IMG 0
 
 typedef struct TreeColumnDInfo_ TreeColumnDInfo_;
 typedef struct TreeDInfo_ TreeDInfo_;
@@ -163,10 +164,21 @@ struct TreeDInfo_
 #endif /* REDRAW_RGN */
     int overlays;		/* TRUE if the dragimage|marquee|proxy
 				 * were drawn in non-XOR mode. */
+#if CACHE_BG_IMG
+    TreeDrawable pixmapBgImg;
+#endif
 };
 
 #ifdef COMPLEX_WHITESPACE
 static int ComplexWhitespace(TreeCtrl *tree);
+#endif
+
+#if BGIMAGEOPT
+static int
+CalcBgImageBounds(
+    TreeCtrl *tree,
+    TreeRectangle *trImage
+    );
 #endif
 
 /*========*/
@@ -3158,12 +3170,26 @@ UpdateDInfoForRange(
     int maxX, maxY;
     int index, indexVis;
     int bgImgWidth, bgImgHeight;
+#if BGIMAGEOPT
+    int bgImgX, bgImgY, oldBgImgX, oldBgImgY;
+#endif
 
-    if (tree->backgroundImage != NULL)
+    if (tree->backgroundImage != NULL) {
+#if BGIMAGEOPT
+	TreeRectangle trImage;
+	(void) CalcBgImageBounds(tree, &trImage);
+	bgImgX = oldBgImgX = trImage.x, bgImgY = oldBgImgY = trImage.y;
+	if (!(tree->bgImageScroll & BGIMG_SCROLL_X))
+	    oldBgImgX += (dInfo->xOrigin - tree->xOrigin);
+	if (!(tree->bgImageScroll & BGIMG_SCROLL_Y))
+	    oldBgImgY += (dInfo->yOrigin - tree->yOrigin);
+#endif
 	Tk_SizeOfImage(tree->backgroundImage, &bgImgWidth, &bgImgHeight);
+    }
 
     maxX = Tree_ContentRight(tree);
     maxY = Tree_ContentBottom(tree);
+
 
     /* Top-to-bottom */
     if (tree->vertical) {
@@ -3244,10 +3270,22 @@ UpdateDInfoForRange(
 
 		/* We can't copy the item to its new position unless it
 		 * has the same part of the background image behind it */
+#if BGIMAGEOPT
+		else if ((tree->backgroundImage != NULL) &&
+		    (dInfo->xOrigin != tree->xOrigin) &&
+		    !(tree->bgImageScroll & BGIMG_SCROLL_X))
+		    area->flags |= DITEM_DIRTY | DITEM_ALL_DIRTY;
+
+		else if ((tree->backgroundImage != NULL) &&
+			(((DW2Cy(dItem->oldY) - oldBgImgY) % bgImgHeight) !=
+			((W2Cy(y) - bgImgY)% bgImgHeight)))
+		    area->flags |= DITEM_DIRTY | DITEM_ALL_DIRTY;
+#else
 		else if ((tree->backgroundImage != NULL) &&
 			((DW2Cy(dItem->oldY) % bgImgHeight) !=
 			(W2Cy(y) % bgImgHeight)))
 		    area->flags |= DITEM_DIRTY | DITEM_ALL_DIRTY;
+#endif
 	    }
 
 	    /* Make a new DItem */
@@ -3365,10 +3403,22 @@ UpdateDInfoForRange(
 
 		/* We can't copy the item to its new position unless it
 		 * has the same part of the background image behind it */
+#if BGIMAGEOPT
+		else if ((tree->backgroundImage != NULL) &&
+		    (dInfo->yOrigin != tree->yOrigin) &&
+		    !(tree->bgImageScroll & BGIMG_SCROLL_Y))
+		    area->flags |= DITEM_DIRTY | DITEM_ALL_DIRTY;
+
+		else if ((tree->backgroundImage != NULL) &&
+			(((DW2Cx(dItem->oldX) - oldBgImgX) % bgImgWidth) !=
+			((W2Cx(x) - bgImgX)% bgImgWidth)))
+		    area->flags |= DITEM_DIRTY | DITEM_ALL_DIRTY;
+#else
 		else if ((tree->backgroundImage != NULL) &&
 			((DW2Cx(dItem->oldX) % bgImgWidth) !=
 				(W2Cx(x) % bgImgWidth)))
 		    area->flags |= DITEM_DIRTY | DITEM_ALL_DIRTY;
+#endif
 	    }
 
 	    /* Make a new DItem */
@@ -4415,7 +4465,6 @@ ScrollVerticalSimple(
 	dirtyMin = minY + height;
 	dirtyMax = maxY;
     }
-
 
     if (tree->doubleBuffer == DOUBLEBUFFER_WINDOW) {
 	XCopyArea(tree->display, dInfo->pixmapW.drawable,
@@ -5647,7 +5696,7 @@ DrawWhitespace(
     )
 {
     TreeDInfo dInfo = tree->dInfo;
-    int x, y, minX, minY, maxX, maxY;
+    int minX, minY, maxX, maxY;
     int top, bottom;
     int height, index;
     TreeRectangle columnBox;
@@ -5670,9 +5719,6 @@ DrawWhitespace(
 	GC gc = Tk_3DBorderGC(tree->tkwin, tree->border, TK_3D_FLAT_GC);
 	Tree_FillRegion(tree->display, td.drawable, gc, dirtyRgn);
     }
-
-    x = 0 - tree->xOrigin;
-    y = 0 - tree->yOrigin;
 
     top = MAX(C2Wy(Tree_CanvasHeight(tree))
 	- tree->canvasPadY[PAD_BOTTOM_RIGHT]
@@ -5802,8 +5848,8 @@ DrawWhitespace(
 	}
     }
 
-    top = MAX(y + 0, Tree_ContentTop(tree));
-    bottom = MAX(y + tree->canvasPadY[0], Tree_ContentTop(tree));
+    top = MAX(C2Wy(0), Tree_ContentTop(tree));
+    bottom = MAX(C2Wy(tree->canvasPadY[PAD_TOP_LEFT]), Tree_ContentTop(tree));
     if (top < bottom) {
 #ifndef ITEMBG_ABOVE
 	GC gc = Tk_3DBorderGC(tree->tkwin, tree->border, TK_3D_FLAT_GC);
@@ -5875,6 +5921,76 @@ DrawWhitespace(
  *----------------------------------------------------------------------
  */
 
+#if BGIMAGEOPT
+static Pixmap
+DisplayGetPixmap(
+    TreeCtrl *tree,
+    TreeDrawable *dPixmap,
+    int width,
+    int height
+    );
+int
+Tree_DrawTiledImage(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeDrawable td,		/* Where to draw. */
+    Tk_Image image,		/* The image to draw. */
+    TreeRectangle tr,		/* Area to paint, may not be filled. */
+    int xOffset, int yOffset,	/* X and Y coord of where to start tiling. */
+    int tileX, int tileY	/* Axes to tile along. */
+    )
+{
+    int imgWidth, imgHeight;
+    TreeRectangle trImage, trPaint;
+    int drawn = 0;
+#if CACHE_BG_IMG
+    Pixmap pixmap;
+#endif
+
+    Tk_SizeOfImage(image, &imgWidth, &imgHeight);
+    if (imgWidth <= 0 || imgHeight <= 0)
+	return 0;
+
+#if CACHE_BG_IMG
+    if (tree->dInfo->pixmapBgImg.drawable == None) {
+	pixmap = DisplayGetPixmap(tree,
+	    &tree->dInfo->pixmapBgImg, imgWidth, imgHeight);
+	Tk_RedrawImage(image, 0, 0, imgWidth, imgHeight, pixmap, 0, 0);
+    }
+    pixmap = tree->dInfo->pixmapBgImg.drawable;
+#endif
+
+    while (tileX && xOffset > tr.x)
+	xOffset -= imgWidth;
+    while (tileY && yOffset > tr.y)
+	yOffset -= imgHeight;
+
+    trImage.x = xOffset, trImage.y = yOffset;
+    trImage.width = imgWidth, trImage.height = imgHeight;
+
+    do {
+	do {
+	    if (Tree_IntersectRect(&trPaint, &trImage, &tr)) {
+#if CACHE_BG_IMG
+		XCopyArea(tree->display, pixmap, td.drawable, tree->copyGC,
+			trPaint.x - trImage.x,
+			trPaint.y - trImage.y, trPaint.width, trPaint.height,
+			trPaint.x, trPaint.y);
+#else
+		Tk_RedrawImage(image, trPaint.x - trImage.x,
+		    trPaint.y - trImage.y, trPaint.width, trPaint.height,
+		    td.drawable, trPaint.x, trPaint.y);
+#endif
+		drawn = 1;
+	    }
+	    trImage.y += trImage.height;
+	} while (tileY && trImage.y < tr.y + tr.height);
+	trImage.x += trImage.width;
+	trImage.y = yOffset;
+    } while (tileX && trImage.x < tr.x + tr.width);
+
+    return drawn;
+}
+#else
 void
 Tree_DrawTiledImage(
     TreeCtrl *tree,		/* Widget info. */
@@ -5895,7 +6011,8 @@ Tree_DrawTiledImage(
     Tk_SizeOfImage(image, &imgWidth, &imgHeight);
 
     /* xOffset can be < 0  for left-locked columns. */
-    if (xOffset < 0) xOffset = imgWidth + xOffset % imgWidth;
+    if (xOffset < 0)
+	xOffset = imgWidth + xOffset % imgWidth;
 
     srcX = (x1 + xOffset) % imgWidth;
     dstX = x1;
@@ -5923,6 +6040,94 @@ Tree_DrawTiledImage(
 	dstX += srcW;
     };
 }
+#endif /* not BGIMAGEOPT */
+
+#if BGIMAGEOPT
+static int
+CalcBgImageBounds(
+    TreeCtrl *tree,
+    TreeRectangle *trImage
+    )
+{
+    int x1, y1, x2, y2;
+    int imgWidth, imgHeight;
+
+    if (tree->bgImageScroll & BGIMG_SCROLL_X) {
+	x1 = 0;
+	x2 = MAX(Tree_CanvasWidth(tree), Tree_ContentWidth(tree));
+    } else {
+	x1 = W2Cx(Tree_ContentLeft(tree));
+	x2 = x1 + Tree_ContentWidth(tree);
+    }
+    if (tree->bgImageScroll & BGIMG_SCROLL_Y) {
+	y1 = 0;
+	y2 = MAX(Tree_CanvasHeight(tree), Tree_ContentHeight(tree));
+    } else {
+	y1 = W2Cy(Tree_ContentTop(tree));
+	y2 = y1 + Tree_ContentHeight(tree);
+    }
+
+    Tk_SizeOfImage(tree->backgroundImage, &imgWidth, &imgHeight);
+
+    switch (tree->bgImageAnchor) {
+	case TK_ANCHOR_NW:
+	case TK_ANCHOR_W:
+	case TK_ANCHOR_SW:
+	    break;
+	case TK_ANCHOR_N:
+	case TK_ANCHOR_CENTER:
+	case TK_ANCHOR_S:
+	    x1 = x1 + (x2 - x1) / 2 - imgWidth / 2;
+	    break;
+	case TK_ANCHOR_NE:
+	case TK_ANCHOR_E:
+	case TK_ANCHOR_SE:
+	    x1 = x2 - imgWidth;
+	    break;
+    }
+
+    switch (tree->bgImageAnchor) {
+	case TK_ANCHOR_NW:
+	case TK_ANCHOR_N:
+	case TK_ANCHOR_NE:
+	    break;
+	case TK_ANCHOR_W:
+	case TK_ANCHOR_CENTER:
+	case TK_ANCHOR_E:
+	    y1 = y1 + (y2 - y1) / 2 - imgHeight / 2;
+	    break;
+	case TK_ANCHOR_SW:
+	case TK_ANCHOR_S:
+	case TK_ANCHOR_SE:
+	    y1 = y2 - imgHeight;
+	    break;
+    }
+
+    trImage->x = x1, trImage->y = y1;
+    trImage->width = /*(tree->bgImageTile & BGIMG_TILE_X) ? (x2 - x1) :*/ imgWidth;
+    trImage->height = /*(tree->bgImageTile & BGIMG_TILE_Y) ? (y2 - y1) :*/ imgHeight;
+    return 1;
+}
+
+int
+Tree_DrawBgImage(
+    TreeCtrl *tree,
+    TreeDrawable td,
+    TreeRectangle tr,
+    int xOrigin,
+    int yOrigin
+    )
+{
+    TreeRectangle trImage;
+
+    (void) CalcBgImageBounds(tree, &trImage);
+
+    return Tree_DrawTiledImage(tree, td, tree->backgroundImage, tr,
+	trImage.x - xOrigin, trImage.y - yOrigin,
+	(tree->bgImageTile & BGIMG_TILE_X) != 0,
+	(tree->bgImageTile & BGIMG_TILE_Y) != 0);
+}
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -6604,13 +6809,26 @@ displayRetry:
 	dInfo->flags &= ~DINFO_DRAW_WHITESPACE;
     }
 
+    didScrollX = dInfo->xOrigin != tree->xOrigin;
+    didScrollY = dInfo->yOrigin != tree->yOrigin;
+
+    dInfo->xOrigin = tree->xOrigin;
+    dInfo->yOrigin = tree->yOrigin;
+
+    dInfo->flags &= ~(DINFO_REDRAW_PENDING);
+
     if (tree->backgroundImage != NULL) {
 	wsRgnNew = CalcWhiteSpaceRegion(tree);
 
 	/* If we scrolled, redraw entire whitespace area */
-	if (dInfo->xOrigin != tree->xOrigin ||
-		dInfo->yOrigin != tree->yOrigin) {
+#if BGIMAGEOPT
+	if ((didScrollX /*&& (tree->bgImageScroll & BGIMG_SCROLL_X)*/) ||
+		(didScrollY /*&& (tree->bgImageScroll & BGIMG_SCROLL_Y)*/)) {
 	    wsRgnDif = wsRgnNew;
+#else
+	if (didScrollX || didScrollY) {
+	    wsRgnDif = wsRgnNew;
+#endif
 	} else {
 	    wsRgnDif = Tree_GetRegion(tree);
 	    TkSubtractRegion(wsRgnNew, dInfo->wsRgn, wsRgnDif);
@@ -6627,26 +6845,33 @@ displayRetry:
 		DisplayDelay(tree);
 	    }
 
-	    /* FIXME: only if backgroundImage is transparent */
+	    /* FIXME: only if backgroundImage is transparent or doesn't tile. */
 	    Tree_OffsetRegion(wsRgnDif, -wsBox.x, -wsBox.y);
 	    Tree_FillRegion(tree->display, pixmap, gc, wsRgnDif);
 	    Tree_OffsetRegion(wsRgnDif, wsBox.x, wsBox.y);
 
-/*	    tree->drawableXOrigin = tree->xOrigin + wsBox.x;
-	    tree->drawableYOrigin = tree->yOrigin + wsBox.y;*/
+#if BGIMAGEOPT
+	    {
+		TreeDrawable tdPixmap;
+		TreeRectangle trPaint = wsBox;
+		trPaint.x = trPaint.y = 0;
 
+		tdPixmap.drawable = pixmap;
+		tdPixmap.width = wsBox.width;
+		tdPixmap.height = wsBox.height;
+		Tree_DrawBgImage(tree, tdPixmap, trPaint,
+		    W2Cx(wsBox.x), W2Cy(wsBox.y));
+	    }
+#else
 	    Tree_DrawTiledImage(tree, pixmap, tree->backgroundImage,
 		    0, 0, wsBox.width, wsBox.height,
 		    W2Cx(wsBox.x), W2Cy(wsBox.y));
-
-	    TkSetRegion(tree->display, tree->copyGC, wsRgnNew);
-/*			XSetClipOrigin(tree->display, tree->copyGC, 0,
-			0);*/
+#endif
+	    TkSetRegion(tree->display, tree->copyGC, wsRgnDif);
 	    XCopyArea(tree->display, pixmap, drawable, tree->copyGC,
 		    0, 0, wsBox.width, wsBox.height,
 		    wsBox.x, wsBox.y);
 	    XSetClipMask(tree->display, tree->copyGC, None);
-/*			XSetClipOrigin(tree->display, tree->copyGC, 0, 0);*/
 
 	    Tk_FreePixmap(tree->display, pixmap);
 
@@ -6663,15 +6888,6 @@ displayRetry:
 	Tree_FreeRegion(tree, dInfo->wsRgn);
 	dInfo->wsRgn = wsRgnNew;
     }
-
-    didScrollX = dInfo->xOrigin != tree->xOrigin;
-    didScrollY = dInfo->yOrigin != tree->yOrigin;
-
-    dInfo->xOrigin = tree->xOrigin;
-    dInfo->yOrigin = tree->yOrigin;
-
-    /* Does this need to be here? */
-    dInfo->flags &= ~(DINFO_REDRAW_PENDING);
 
     if (tree->backgroundImage == NULL) {
 	/* Calculate the current whitespace region, subtract the old whitespace
