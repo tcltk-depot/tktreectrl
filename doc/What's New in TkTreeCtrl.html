@@ -1,5 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<html><head><!-- $Id$ -->
+<html><head>
+<!-- $Id$ -->
 
 
 
@@ -11,8 +12,300 @@
 
 
   <meta content="Tim Baker" name="author"></head><body>
+<h1>What's New in TkTreeCtrl 2.3</h1>
+<h2>Column Configuration Options</h2>
+<table style="text-align: left; width: 100%;" border="1" cellpadding="2" cellspacing="2">
+<tbody><tr><th style="background-color: rgb(255, 255, 204); width: 50%;">Usage Changed<br>
+</th><th style="background-color: rgb(204, 255, 255);">How it changed<br>
+</th></tr><tr>
+      <td style="vertical-align: top;">-textcolor<br>
+      </td>
+      <td style="vertical-align: top;">This is now a per-state option, just like the -background option, <span style="color: red;">which may be incompatible</span>.&nbsp;
+If you previously specified a Tk color name with a space in it, such as
+"light blue", then you will need to make the value a proper list:<br>
+      <pre>$T column configure $C -textcolor [list "light blue"]</pre>
+When this option is unspecified (the default), the system theme can
+specify the color.&nbsp; Currently that behavior is only used with the
+Gtk+ build of treectrl.<br>
+      </td>
+    </tr>
+</tbody>
+</table>
+<h2>Item Command</h2>
+<table style="text-align: left; width: 100%;" border="1" cellpadding="2" cellspacing="2">
+<tbody><tr><th style="background-color: rgb(255, 255, 204); width: 50%;">New<br>
+</th><th style="background-color: rgb(204, 255, 255);">Comment</th></tr><tr>
+      <td style="vertical-align: top;">buttonstate<br>
+      </td>
+      <td style="vertical-align: top;">The value of this option can be <span style="font-weight: bold;">active</span>, <span style="font-weight: bold;">normal</span> or <span style="font-weight: bold;">pressed</span>.&nbsp;
+This is used to change the appearance of the expand/collapse
+buttons.&nbsp; On Gtk+ the buttons change appearance when the mouse
+pointer is over them and when they are clicked.&nbsp; On Mac OS X the
+buttons change appearance when they are clicked.&nbsp; On MS Windows
+the buttons change appearance when the mouse pointer is over them, but
+only when the Explorer theme is used (see the new <span style="font-weight: bold;">theme setwindowtheme</span> command).<br>
+      </td>
+    </tr>
+    <tr>
+<th style="background-color: rgb(255, 255, 204); width: 50%;">Arguments Changed<br>
+</th><th style="background-color: rgb(204, 255, 255);">What changed<br>
+</th></tr>
+    <tr>
+      <td style="vertical-align: top;">collapse<br>
+expand<br>
+toggle<br>
+      </td>
+      <td style="vertical-align: top;">A new option <span style="font-weight: bold;">-animate</span>
+was added to support animated disclosure triangles on Gtk+ and Mac OS
+X.&nbsp; The library scripts pass the -animate option when clicking in
+a button, but not when toggling items using the keyboard.<br>
+      </td>
+    </tr>
+</tbody>
+</table>
+<h2>Marquee Configuration Options</h2>
+<table style="text-align: left; width: 100%;" border="1" cellpadding="2" cellspacing="2">
+<tbody><tr><th style="background-color: rgb(255, 255, 204); width: 50%;">New</th><th style="background-color: rgb(204, 255, 255);">Comment</th></tr><tr>
+      <td style="vertical-align: top;">-fill<br>
+      </td>
+      <td style="vertical-align: top;">Specifies the fill color for the
+selection rectangle.&nbsp; The value can be a Tk color or a gradient
+name or an empty string (the default).&nbsp; When this option isn't an
+empty string the dotted outline is not drawn.&nbsp; By specifying the
+name of a semi-transparent gradient a modern-looking selection
+rectangle can be achieved.<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">-outline<br>
+      </td>
+      <td style="vertical-align: top;">Specifies the outline color for
+the selection rectangle.&nbsp; The value can be a Tk color or the empty
+string which is the default.&nbsp; When this option isn't an empty
+string the dotted outline is not drawn.<br>
+      </td>
+    </tr>
+</tbody>
+</table>
+<h2>Style Layout Options</h2>
+<table style="text-align: left; width: 100%;" border="1" cellpadding="2" cellspacing="2">
+<tbody><tr><th style="background-color: rgb(255, 255, 204); width: 50%;">Behavior Changed<br>
+</th><th style="background-color: rgb(204, 255, 255);">What changed<br>
+</th></tr><tr>
+      <td style="vertical-align: top;">-union<br>
+      </td>
+      <td style="vertical-align: top;">Previously, nesting <span style="font-weight: bold;">-union</span> elements had undefined behavior.&nbsp; Now it is ok to include an element with -union layout in another element's -union list.<br>
+      </td>
+    </tr>
+</tbody>
+</table>
+<h2><span style="font-weight: bold;"></span>TreeCtrl Configuration Options</h2>
 
+
+
+
+  
+
+    
+<table style="text-align: left; width: 100%;" border="1" cellpadding="2" cellspacing="2">
+<tbody><tr>
+
+      <th style="background-color: rgb(255, 255, 204); width: 50%;">New</th>
+
+      <th style="background-color: rgb(204, 255, 255);">Comment</th>
+
+    </tr>
+
+    <tr>
+
+      <td>-bgimageanchor</td>
+
+      <td>Controls
+the alignment of the -backgroundimage.&nbsp; The value is a standard Tk
+anchor position such as "nw", "se" or "center", etc.&nbsp; The image is
+aligned to the content area when the image doesn't scroll, otherwise
+the image is aligned to the canvas.&nbsp; The default is "nw".<br>
+</td></tr><tr>
+      <td style="vertical-align: top;">-bgimagescroll<br>
+      </td>
+      <td style="vertical-align: top;">Controls whether the
+-backgroundimage scrolls along with the items or remains locked in
+place.&nbsp; The value can be an emptry string for no scrolling, "x"
+for horizontal scrolling only, "y" for vertical scrolling only, or "xy"
+(the default) for scrolling in both directions.<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">-bgimagetile<br>
+      </td>
+      <td style="vertical-align: top;">Controls whether the
+-backgroundimage is tiled along the x and y axes.&nbsp; The value can
+be "", "x", "y" or "xy" (the default).<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">-buttontracking<br>
+      </td>
+      <td style="vertical-align: top;">On Mac OS X and Gtk+ the
+expand/collapse buttons don't toggle when they are clicked, only when
+the mouse button is released over them, like regular pushbuttons.&nbsp;
+The value of this option is a boolean; when true the buttons toggle
+when the mouse button is released, when false the buttons toggle when
+clicked.&nbsp; The default is false.<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">-canvaspadx<br>
+-canvaspady<br>
+      </td>
+      <td style="vertical-align: top;">These options allow whitespace
+margins around the edges of the canvas.&nbsp; This is useful for 2D
+views where you don't want the items to butt against the window
+borders.&nbsp; The value of each option is a list of one or two screen
+distances specifying the width of the left/right margins and the height
+of the top/bottom margins respectively.<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">-itemgapx<br>
+-itemgapy<br>
+      </td>
+      <td style="vertical-align: top;">These options allow whitespace gaps between adjacent items.&nbsp;
+This is useful for 2D views such as an icon view in a file browser or
+an image thumbnail list.&nbsp; The value of each option is a screen
+distance defaulting to zero.<br>
+      </td>
+    </tr>
+</tbody>
+</table>
+<h2>TreeCtrl Command</h2>
+
+
+
+
+  
+
+    
+<table style="text-align: left; width: 100%;" border="1" cellpadding="2" cellspacing="2">
+<tbody><tr>
+
+      <th style="background-color: rgb(255, 255, 204); width: 50%;">New</th>
+
+      <th style="background-color: rgb(204, 255, 255);">Comment</th>
+
+    </tr>
+
+    <tr>
+
+      <td>gradient</td>
+
+      <td>Linear
+gradients!&nbsp; There are a number of issues when using gradients, see
+the relevant sections in the manual page for more info.<br>
+</td></tr><tr>
+      <td style="vertical-align: top;">theme<br>
+      </td>
+      <td style="vertical-align: top; font-weight: bold;"><span style="font-weight: normal;">The <span style="font-weight: bold;">theme platform</span> command returns the API used to draw themed parts of the treectrl.</span><br>
+      <ul>
+        <li><span style="font-weight: normal;">On Mac OS X the result
+is always <span style="font-weight: bold;">aqua</span>.</span></li>
+        <li><span style="font-weight: normal;">On MS Windows the result is <span style="font-weight: bold;">visualstyles</span> if the
+uxtheme.dll was loaded and visual themes are in use, otherwise <span style="font-weight: bold;">X11</span> is
+returned to indicate the Tk Xlib calls are drawing the themed parts.</span></li>
+        <li><span style="font-weight: normal;">On Unix systems the result is <span style="font-weight: bold;">gtk</span> if the Gtk+ version of treectrl
+was built, otherwise <span style="font-weight: bold;">X11</span> is returned.</span></li>
+      </ul>
+      <span style="font-weight: normal;">MS Windows only: The <span style="font-weight: bold;">theme setwindowtheme</span> command takes the name of an application whose theme should be used.&nbsp; Call:<br>
+      </span>
+      <pre><span style="font-weight: normal;">$T theme setwindowtheme "Explorer"</span></pre>
+      <pre><span style="font-weight: normal;"></span></pre>
+      <span style="font-weight: normal;">on Windows 7 and the disclosure triangles of the Explorer file browser will be used rather than +/- buttons.<br>
+      </span></td>
+    </tr>
+</tbody>
+</table>
+<h2>Gtk+ Theme</h2>
+<ul>
+  <li>Pass <span style="font-weight: bold;">--enable-gtk</span>=yes to
+configure to build a Gtk+ version of treectrl.&nbsp; This requires
+proper pkg-config setup for the gtk+-2.0 and gdk-pixbuf-xlib-2.0
+libraries.</li>
+  <li>Leave the column option <span style="font-weight: bold;">-textcolor</span>={} so the theme colors will be used for column header labels.<br>
+  </li>
+  <li>Set the new widget option <span style="font-weight: bold;">-buttontracking</span>=yes for native behavior when clicking buttons.<br>
+  </li>
+  <li>BUG: Currently the theme does not change when the system theme changes.<br>
+  </li>
+</ul>
+<h2>Rect Element</h2>
+<ul>
+  <li>Rounded rectangles can be drawn using the new <span style="font-weight: bold;">rect</span> element configuration options <span style="font-weight: bold;">-rx</span> and <span style="font-weight: bold;">-ry</span>.&nbsp;
+These options specify the radius of the corners as screen
+distances.&nbsp; The values are restricted to a maximum of half the
+width or height of the rectangle when being displayed.</li>
+  <li>The <span style="font-weight: bold;">-open</span> option is now
+per-state.&nbsp; See the "Outlook Express (Newsgroup)" demo where the
+active outline of the selection rectangle appears to span across
+columns.&nbsp; In previous versions that required 3 different states.<br>
+  </li>
+</ul>
+<h2>Build Changes</h2>
+<ul>
+  <li>Added macosx/ unix/ and win/ subdirectories with platform-specific code in each.<br>
+  </li>
+  <li>The <span style="font-weight: bold;">--enable-cocoa</span>
+configure option was removed when building on Mac OS X.&nbsp; Instead
+the configure script determines whether Tk was built using the Cocoa
+API by examining the TK_LIBS variable.</li>
+  <li>Cross-compiling on a Unix host using the MingW toolchain should
+work out-of-the-box now.&nbsp; If the --host configure option contains
+"mingw32" then TEA_PLATFORM is set to "windows".</li>
+  <li>The 'make clean' target does a better job cleaning what it
+should.&nbsp; It doesn't remove the .manifest file generated by
+configure (make distclean does that), only the linker-generated
+.manifest when building with MSVC is removed.&nbsp; Resource file
+objects are cleaned as well.</li>
+  <li>Various tweaks were made to allow building using the Visual Studio 2008 compiler.<br>
+  </li>
+  <li>Updated to TEA 3.9.</li>
+</ul>
+<h2>Shellicon Package</h2>
+<ul>
+  <li>The shellicon package is used to display native file and folder icons on MS Windows.&nbsp; It was updated with a new option <span style="font-weight: bold;">-useselected</span>.&nbsp; The value of <span style="font-weight: bold;">-useselected</span> may be <span style="font-weight: bold;">always</span>, <span style="font-weight: bold;">auto</span> or <span style="font-weight: bold;">never</span> to control whether the selected version of an icon should be drawn.&nbsp; The default is <span style="font-weight: bold;">auto</span> meaning draw the selected icon if the item is selected.</li>
+</ul>
+<h2>Demo Changes</h2>
+<ul>
+  <li>Added "Explorer (Details, Win7)" and "Explorer (Large Icons,
+Win7)" demos which very closely match the appearance and behavior of
+the Windows 7 file explorer.&nbsp; These demos use gradients, rounded
+rectangles and the new -canvaspadx, -canvaspady, -itemgapx and
+-itemgapy options.</li>
+  <li>New demos "Gradients" and "Gradients II" demostrate and describe various gradient options.<br>
+  </li>
+  <li>The "Column Spanning" demo uses gradients.</li>
+  <li>Use ::tk::mac::iconBitmap where available for native filesystem icons on Mac OS X.<br>
+  </li>
+  <li>Fixed bug with increasing/decreasing font size if the font size was negative (i.e. on X11).<br>
+  </li>
+</ul>
+<h2>Bug Fixes</h2>
+<ul>
+  <li>Fixed non-themed expand/collapse buttons being one pixel too large on Mac OS X.</li>
+  <li>Fixed dotted line and dotted rectangle drawing on Mac OS X.</li>
+  <li>Fixed the column option -<span style="font-weight: bold;">arrowpady</span> being broken for -arrowimage, -arrowbitmap and when themed arrows were drawn. It only worked when the X11 fallback was used.</li>
+  <li>Fix "Bug 3104147 - Error after widget was destroyed".&nbsp; Various [after] callbacks did not check that the treectrl still existed.</li>
+  <li>Fix "Bug 3104148 - column "202" doesn't exist".&nbsp; Check that the previously-highlighted column exists before configuring its state in MotionInHeader.</li>
+  <li>Fixed &lt;Left&gt; and &lt;Right&gt; arrow keys not moving to adjacent items when some items had -<span style="font-weight: bold;">wrap</span>=true.</li>
+  <li>Fixed error with autoscanning when the content area was completely obscurred by locked columns.</li>
+  <li>Fixed the ordering of some entries in the treectrl option table.<br>
+  </li>
+</ul>
+
+
+
+<hr style="width: 100%; height: 2px;">
 <h1>What's New in TkTreeCtrl 2.2.10</h1>
+
 
 <h2>TreeCtrl Configuration Options</h2>
 

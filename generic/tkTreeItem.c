@@ -3718,18 +3718,37 @@ ItemDrawBackground(
     )
 {
     TreeColor *tc;
+    TreeClip clip, *clipPtr = &clip;
+    TreeRectangle tr;
+
+#if USE_ITEM_PIXMAP == 0
+    clip.type = TREE_CLIP_AREA;
+    switch (TreeColumn_Lock(treeColumn)) {
+	case COLUMN_LOCK_LEFT:
+	    clip.area = TREE_AREA_LEFT;
+	    break;
+	case COLUMN_LOCK_NONE:
+	    clip.area = TREE_AREA_CONTENT;
+	    break;
+	case COLUMN_LOCK_RIGHT:
+	    clip.area = TREE_AREA_RIGHT;
+	    break;
+    }
+#else
+    clipPtr = NULL;
+#endif
+
+    tr.x = x, tr.y = y, tr.width = width, tr.height = height;
 
     /*
-     * FIXME: If the background image is non-transparent, there is no
-     * need to erase first.
+     * FIXME: If the -backgroundimage is being drawn and is non-transparent,
+     * there is no need to erase first (unless it doesn't tile!).
      */
     tc = TreeColumn_BackgroundColor(treeColumn, index);
     if (tc != NULL) {
-	TreeRectangle tr;
 #if GRAD_COORDS
 	TreeRectangle trBrush;
 #endif
-	tr.x = x, tr.y = y, tr.width = width, tr.height = height;
 #if GRAD_COORDS
 	if (tc->gradient != NULL) {
 	    TreeRectangle trPaint = tr;
@@ -3753,9 +3772,9 @@ ItemDrawBackground(
 	if (!TreeColor_IsOpaque(tree, tc)
 		|| (trBrush.width <= 0) || (trBrush.height <= 0)) {
 	    GC gc = Tk_3DBorderGC(tree->tkwin, tree->border, TK_3D_FLAT_GC);
-	    XFillRectangle(tree->display, td.drawable, gc, x, y, width, height);
+	    Tree_FillRectangle(tree, td, clipPtr, gc, tr);
 	}
-	TreeColor_FillRect(tree, td, NULL, tc, trBrush, tr);
+	TreeColor_FillRect(tree, td, clipPtr, tc, trBrush, tr);
 #else
 	if (!TreeColor_IsOpaque(tree, tc)) {
 	    GC gc = Tk_3DBorderGC(tree->tkwin, tree->border, TK_3D_FLAT_GC);
@@ -3765,12 +3784,10 @@ ItemDrawBackground(
 #endif
     } else {
 	GC gc = Tk_3DBorderGC(tree->tkwin, tree->border, TK_3D_FLAT_GC);
-	XFillRectangle(tree->display, td.drawable, gc, x, y, width, height);
+	Tree_FillRectangle(tree, td, clipPtr, gc, tr);
     }
     if (tree->backgroundImage != NULL) {
 #if BGIMAGEOPT
-	TreeRectangle tr;
-	tr.x = x, tr.y = y, tr.width = width, tr.height = height;
 	Tree_DrawBgImage(tree, td, tr, tree->drawableXOrigin, tree->drawableYOrigin);
 #else
 	Tree_DrawTiledImage(tree, td.drawable, tree->backgroundImage, x, y, 
@@ -4105,10 +4122,8 @@ TreeItem_WalkSpans(
 	    break;
     }
 
-    if (!Tree_AreaBbox(tree, area, &drawArgs.bounds[0], &drawArgs.bounds[1],
-	    &drawArgs.bounds[2], &drawArgs.bounds[3])) {
-	drawArgs.bounds[0] = drawArgs.bounds[1] =
-	drawArgs.bounds[2] = drawArgs.bounds[3] = 0;
+    if (!Tree_AreaBbox(tree, area, &drawArgs.bounds)) {
+	TreeRect_SetXYWH(drawArgs.bounds, 0, 0, 0, 0);
     }
 
     STATIC_ALLOC(spans, SpanInfo, columnCount);
@@ -4365,17 +4380,19 @@ TreeItem_DrawLines(
 	    bottom = lineTop + tree->lineThickness;
 
 	if (tree->lineStyle == LINE_STYLE_DOT) {
-	    for (i = 0; i < tree->lineThickness; i++)
+	    for (i = 0; i < tree->lineThickness; i++) {
 		Tree_VDotLine(tree, td.drawable, tree->lineGC,
 			lineLeft + i,
 			top,
 			bottom);
-	} else
+	    }
+	} else {
 	    XFillRectangle(tree->display, td.drawable, tree->lineGC,
 		    lineLeft,
 		    top,
 		    tree->lineThickness,
 		    bottom - top);
+	}
 
 	/* Don't overlap horizontal line */
 	vert = tree->lineThickness;
@@ -4384,17 +4401,19 @@ TreeItem_DrawLines(
     /* Horizontal line to self */
     if (hasPrev || hasNext) {
 	if (tree->lineStyle == LINE_STYLE_DOT) {
-	    for (i = 0; i < tree->lineThickness; i++)
+	    for (i = 0; i < tree->lineThickness; i++) {
 		Tree_HDotLine(tree, td.drawable, tree->lineGC,
 			lineLeft + vert,
 			lineTop + i,
 			x /* + tree->columnTreeLeft */ + indent);
-	} else
+	    }
+	} else {
 	    XFillRectangle(tree->display, td.drawable, tree->lineGC,
 		    lineLeft + vert,
 		    lineTop,
 		    left + tree->useIndent - (lineLeft + vert),
 		    tree->lineThickness);
+	}
     }
 
     /* Vertical lines from ancestors to their next siblings */
@@ -4414,17 +4433,19 @@ TreeItem_DrawLines(
 
 	if (item != NULL) {
 	    if (tree->lineStyle == LINE_STYLE_DOT) {
-		for (i = 0; i < tree->lineThickness; i++)
+		for (i = 0; i < tree->lineThickness; i++) {
 		    Tree_VDotLine(tree, td.drawable, tree->lineGC,
 			    lineLeft + i,
 			    y,
 			    y + height);
-	    } else
+		}
+	    } else {
 		XFillRectangle(tree->display, td.drawable, tree->lineGC,
 			lineLeft,
 			y,
 			tree->lineThickness,
 			height);
+	    }
 	}
     }
 }
@@ -4503,7 +4524,7 @@ TreeItem_DrawButton(
 
 	if (TreeTheme_GetButtonSize(tree, td.drawable,
 		(buttonState & STATE_OPEN) != 0, &bw, &bh) == TCL_OK) {
-	    if (TreeTheme_DrawButton(tree, td.drawable, item, buttonState,
+	    if (TreeTheme_DrawButton(tree, td, item, buttonState,
 		    left + (tree->useIndent - bw) / 2, y + (height - bh) / 2,
 		    bw, bh) == TCL_OK) {
 		return;
@@ -4585,8 +4606,8 @@ SpanWalkProc_UpdateWindowPositions(
     StyleDrawArgs drawArgsCopy;
     int requests;
 
-    if ((drawArgs->x >= drawArgs->bounds[2]) ||
-	    (drawArgs->x + drawArgs->width <= drawArgs->bounds[0]) ||
+    if ((drawArgs->x >= TreeRect_Right(drawArgs->bounds)) ||
+	    (drawArgs->x + drawArgs->width <= TreeRect_Left(drawArgs->bounds)) ||
 	    (drawArgs->style == NULL))
 	return 0;
 
@@ -4599,7 +4620,7 @@ SpanWalkProc_UpdateWindowPositions(
 	return 1;
 
     /* Stop walking if we went past the right edge of the display area. */
-    return drawArgs->x + drawArgs->width >= drawArgs->bounds[2];
+    return drawArgs->x + drawArgs->width >= TreeRect_Right(drawArgs->bounds);
 }
 
 /*
@@ -7477,13 +7498,12 @@ reqSameRoot:
 	}
 	/* T item bbox I ?C? ?E? */
 	case COMMAND_BBOX: {
-	    int x, y, w, h;
 	    int count;
 	    TreeColumn treeColumn;
 	    TreeRectangle rect;
 
 	    if (objc == 4) {
-		if (Tree_ItemBbox(tree, item, COLUMN_LOCK_NONE, &x, &y, &w, &h) < 0)
+		if (Tree_ItemBbox(tree, item, COLUMN_LOCK_NONE, &rect) < 0)
 		    break;
 	    } else {
 		if (TreeColumn_FromObj(tree, objv[4], &treeColumn,
@@ -7507,16 +7527,12 @@ reqSameRoot:
 		    break;
 		if (count == -1)
 		    goto errorExit;
-		x = rect.x;
-		y = rect.y;
-		w = rect.width;
-		h = rect.height;
 	    }
 	    FormatResult(interp, "%d %d %d %d",
-		    x - tree->xOrigin,
-		    y - tree->yOrigin,
-		    x - tree->xOrigin + w,
-		    y - tree->yOrigin + h);
+		    TreeRect_Left(rect) - tree->xOrigin,
+		    TreeRect_Top(rect) - tree->yOrigin,
+		    TreeRect_Left(rect) - tree->xOrigin + TreeRect_Width(rect),
+		    TreeRect_Top(rect) - tree->yOrigin + TreeRect_Height(rect));
 	    break;
 	}
 	/* T item buttonstate I ?state? */
@@ -8619,15 +8635,14 @@ TreeItem_Identify(
 				 * appended. */
     )
 {
-    int left, top, width, height;
+    TreeRectangle tr;
     struct {
 	int x;
 	int y;
 	char *buf;
     } clientData;
 
-    if (Tree_ItemBbox(tree, item, lock,
-	    &left, &top, &width, &height) < 0)
+    if (Tree_ItemBbox(tree, item, lock, &tr) < 0)
 	return;
 
     /* Tree_ItemBbox returns canvas coords. x/y are item coords. */
@@ -8636,7 +8651,7 @@ TreeItem_Identify(
     clientData.buf = buf;
 
     TreeItem_WalkSpans(tree, item, lock,
-	    0, 0, width, height,
+	    0, 0, TreeRect_Width(tr), TreeRect_Height(tr),
 	    SpanWalkProc_Identify, (ClientData) &clientData);
 }
 
@@ -8717,15 +8732,14 @@ TreeItem_Identify2(
     Tcl_Obj *listObj		/* Initialized list object. */
     )
 {
-    int left, top, width, height;
+    TreeRectangle tr;
     struct {
 	int x1; int y1;
 	int x2; int y2;
 	Tcl_Obj *listObj;
     } clientData;
 
-    if (Tree_ItemBbox(tree, item, COLUMN_LOCK_NONE,
-	    &left, &top, &width, &height) < 0)
+    if (Tree_ItemBbox(tree, item, COLUMN_LOCK_NONE, &tr) < 0)
 	return;
 
     /* Tree_ItemBbox returns canvas coords. x1 etc are canvas coords. */
@@ -8736,7 +8750,8 @@ TreeItem_Identify2(
     clientData.listObj = listObj;
 
     TreeItem_WalkSpans(tree, item, COLUMN_LOCK_NONE,
-	    left, top, width, height,
+	    TreeRect_Left(tr), TreeRect_Top(tr),
+	    TreeRect_Width(tr), TreeRect_Height(tr),
 	    SpanWalkProc_Identify2, (ClientData) &clientData);
 }
 
@@ -8855,7 +8870,7 @@ TreeItem_GetRects(
     TreeRectangle rects[]	/* Out: returned bounding boxes. */
     )
 {
-    int left, top, width, height;
+    TreeRectangle tr;
     int lock = TreeColumn_Lock(treeColumn);
     struct {
 	TreeColumn treeColumn;
@@ -8865,8 +8880,7 @@ TreeItem_GetRects(
 	int result;
     } clientData;
 
-    if (Tree_ItemBbox(tree, item, lock,
-	    &left, &top, &width, &height) < 0)
+    if (Tree_ItemBbox(tree, item, lock, &tr) < 0)
 	return 0;
 
     clientData.treeColumn = treeColumn;
@@ -8876,7 +8890,8 @@ TreeItem_GetRects(
     clientData.result = 0; /* -1 error, 0 no rects, 1+ success */
 
     TreeItem_WalkSpans(tree, item, lock,
-	    left, top, width, height,
+	    TreeRect_Left(tr), TreeRect_Top(tr),
+	    TreeRect_Width(tr), TreeRect_Height(tr),
 	    SpanWalkProc_GetRects, (ClientData) &clientData);
 
     return clientData.result;

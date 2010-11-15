@@ -608,18 +608,14 @@ TreeClip_ToGC(
     state->region = None;
 
     if (clip && clip->type == TREE_CLIP_RECT) {
-	state->region = Tree_GetRegion(tree);
-	Tree_SetRectRegion(state->region, &clip->tr);
+	state->region = Tree_GetRectRegion(tree, &clip->tr);
 	TkSetRegion(tree->display, gc, state->region);
     }
     if (clip && clip->type == TREE_CLIP_AREA) {
-	int x1, y1, x2, y2;
-	XRectangle xr;
-	if (Tree_AreaBbox(tree, clip->area, &x1, &y1, &x2, &y2) == 0)
+	TreeRectangle tr;
+	if (Tree_AreaBbox(tree, clip->area, &tr) == 0)
 	    return;
-	xr.x = x1, xr.y = y1, xr.width = x2 - x1, xr.height = y2 - y1;
-	state->region = Tree_GetRegion(tree);
-	TkUnionRectWithRegion(&xr, state->region, state->region);
+	state->region = Tree_GetRectRegion(tree, &tr);
 	TkSetRegion(tree->display, gc, state->region);
     }
     if (clip && clip->type == TREE_CLIP_REGION) {
@@ -633,7 +629,7 @@ TreeClip_FinishGC(
     )
 {
     XSetClipMask(state->tree->display, state->gc, None);
-    if (state->region != None)
+    if (state->region != None) /* only if TreeClip_ToGC allocated it */
 	Tree_FreeRegion(state->tree, state->region);
 }
 
@@ -669,6 +665,109 @@ Tree_FillRectangle(
     XFillRectangle(tree->display, td.drawable, gc, tr.x, tr.y, tr.width, tr.height);
     TreeClip_FinishGC(&clipState);
 }
+
+#if USE_ITEM_PIXMAP == 0
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tree_Draw3DRectangle --
+ *
+ *	Wrapper around Tk_Draw3DRectangle() because the clip region is
+ *	ignored on Win32.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Draws onto the specified drawable.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tree_Draw3DRectangle(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeDrawable td,		/* Where to draw. */
+    TreeClip *clip,		/* Clipping area or NULL. */
+    Tk_3DBorder border,		/* Token for border to draw. */
+    int x, int y, int width, int height,
+				/* Outside area of region in which border will
+				 * be drawn. */
+    int borderWidth,		/* Desired width for border, in pixels. */
+    int relief			/* Type of relief: TK_RELIEF_RAISED,
+				 * TK_RELIEF_SUNKEN, TK_RELIEF_GROOVE, etc. */
+    )
+{
+    TreeClipStateGC clipState[3];
+    GC gc[3];
+    int i;
+
+    gc[0] = Tk_3DBorderGC(tree->tkwin, border, TK_3D_LIGHT_GC);
+    gc[1] = Tk_3DBorderGC(tree->tkwin, border, TK_3D_DARK_GC);
+    gc[2] = Tk_3DBorderGC(tree->tkwin, border, TK_3D_FLAT_GC);
+
+    /* FIXME: will allocate 3 identical regions unless TREE_CLIP_REGION is used. */
+    for (i = 0; i < 3; i++)
+	TreeClip_ToGC(tree, clip, gc[i], &clipState[i]);
+
+    Tk_Draw3DRectangle(tree->tkwin, td.drawable, border, x, y, width, height,
+	borderWidth, relief);
+
+    for (i = 0; i < 3; i++)
+	TreeClip_FinishGC(&clipState[i]);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tree_Fill3DRectangle --
+ *
+ *	Wrapper around Tree_Fill3DRectangle() because the clip region is
+ *	ignored on Win32.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Draws onto the specified drawable.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tree_Fill3DRectangle(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeDrawable td,		/* Where to draw. */
+    TreeClip *clip,		/* Clipping area or NULL. */
+    Tk_3DBorder border,		/* Token for border to draw. */
+    int x, int y, int width, int height,
+				/* Outside area of rectangular region. */
+    int borderWidth,		/* Desired width for border, in pixels. Border
+				 * will be *inside* region. */
+    int relief			/* Indicates 3D effect: TK_RELIEF_FLAT,
+				 * TK_RELIEF_RAISED, or TK_RELIEF_SUNKEN. */
+    )
+{
+    TreeClipStateGC clipState[3];
+    GC gc[3];
+    int i;
+
+    gc[0] = Tk_3DBorderGC(tree->tkwin, border, TK_3D_LIGHT_GC);
+    gc[1] = Tk_3DBorderGC(tree->tkwin, border, TK_3D_DARK_GC);
+    gc[2] = Tk_3DBorderGC(tree->tkwin, border, TK_3D_FLAT_GC);
+
+    /* FIXME: will allocate 3 identical regions unless TREE_CLIP_REGION is used. */
+    for (i = 0; i < 3; i++)
+	TreeClip_ToGC(tree, clip, gc[i], &clipState[i]);
+
+    Tk_Fill3DRectangle(tree->tkwin, td.drawable, border, x, y, width, height,
+	borderWidth, relief);
+
+    for (i = 0; i < 3; i++)
+	TreeClip_FinishGC(&clipState[i]);
+}
+
+#endif /* USE_ITEM_PIXMAP == 0 */
 
 /*** Themes ***/
 
@@ -746,7 +845,7 @@ static TreeThemeAppData *appThemeData = NULL;
 int
 TreeTheme_DrawHeaderItem(
     TreeCtrl *tree,		/* Widget info. */
-    Drawable drawable,		/* Where to draw. */
+    TreeDrawable td,		/* Where to draw. */
     int state,			/* COLUMN_STATE_xxx flags. */
     int arrow,			/* COLUMN_ARROW_xxx flags. */
     int visIndex,		/* 0-based index in list of visible columns. */
@@ -799,7 +898,7 @@ TreeTheme_DrawHeaderItem(
 	g_object_unref(gdkPixmap);
 	goto ret_error;
     }
-    gdk_pixbuf_xlib_render_to_drawable(pixbuf, drawable, tree->copyGC,
+    gdk_pixbuf_xlib_render_to_drawable(pixbuf, td.drawable, tree->copyGC,
 	0, 0, x, y, width, height, XLIB_RGB_DITHER_NONE, 0, 0);
 
     gdk_pixbuf_unref(pixbuf);
@@ -860,7 +959,7 @@ TreeTheme_GetHeaderContentMargins(
 int
 TreeTheme_DrawHeaderArrow(
     TreeCtrl *tree,		/* Widget info. */
-    Drawable drawable,		/* Where to draw. */
+    TreeDrawable td,		/* Where to draw. */
     int state,			/* COLUMN_STATE_xxx flags. */
     int up,			/* TRUE if up arrow, FALSE otherwise. */
     int x, int y,		/* Bounds of arrow.  Width and */
@@ -876,18 +975,15 @@ TreeTheme_DrawHeaderArrow(
     GtkShadowType shadow_type;
     GtkArrowType effective_arrow_type = up ? GTK_ARROW_DOWN : GTK_ARROW_UP; /* INVERTED!!! */
     GdkPixmap *gdkPixmap;
-    GdkRectangle clipped;
+    TreeRectangle trClipped, trDrawable;
     GdkPixbuf *pixbuf;
 
     if (IsGtkUnavailable() || appThemeData->gtkArrow == NULL)
 	return TCL_ERROR;
 
-    clipped.x = x, clipped.y = y, clipped.width = width, clipped.height = height;
-    if (clipped.x < 0)
-	clipped.width += clipped.x, clipped.x = 0;
-    if (clipped.y < 0)
-	clipped.height += clipped.y, clipped.y = 0;
-    if (clipped.width < 1 || clipped.height < 1)
+    TreeRect_SetXYWH(trDrawable, 0, 0, td.width, td.height);
+    TreeRect_SetXYWH(trClipped, x, y, width, height);
+    if (TreeRect_Intersect(&trClipped, &trClipped, &trDrawable) == 0)
 	return TCL_OK;
 
     gdk_threads_enter(); /* +++ grab global mutex +++ */
@@ -924,9 +1020,9 @@ TreeTheme_DrawHeaderArrow(
     pixbuf = gdk_pixbuf_new(GDK_COLORSPACE_RGB, 1, 8, width, height);
     if (pixbuf == NULL)
 	goto ret_error;
-    pixbuf = gdk_pixbuf_xlib_get_from_drawable(pixbuf, drawable,
-	Tk_Colormap(tree->tkwin), Tk_Visual(tree->tkwin), clipped.x, clipped.y,
-	x < 0 ? -x : 0, y < 0 ? -y : 0, clipped.width, clipped.height);
+    pixbuf = gdk_pixbuf_xlib_get_from_drawable(pixbuf, td.drawable,
+	Tk_Colormap(tree->tkwin), Tk_Visual(tree->tkwin), trClipped.x, trClipped.y,
+	x < 0 ? -x : 0, y < 0 ? -y : 0, trClipped.width, trClipped.height);
     if (pixbuf == NULL)
 	goto ret_error;
     
@@ -952,7 +1048,7 @@ TreeTheme_DrawHeaderArrow(
 	g_object_unref(gdkPixmap);
 	goto ret_error;
     }
-    gdk_pixbuf_xlib_render_to_drawable(pixbuf, drawable, tree->copyGC,
+    gdk_pixbuf_xlib_render_to_drawable(pixbuf, td.drawable, tree->copyGC,
 	0, 0, x, y, width, height, XLIB_RGB_DITHER_MAX, 0, 0);
 
     gdk_pixbuf_unref(pixbuf);
@@ -985,7 +1081,7 @@ ret_error:
 int
 TreeTheme_DrawButton(
     TreeCtrl *tree,		/* Widget info. */
-    Drawable drawable,		/* Where to draw. */
+    TreeDrawable td,		/* Where to draw. */
     TreeItem item,		/* Needed for animating. */
     int state,			/* STATE_xxx | BUTTON_STATE_xxx flags. */
     int x, int y,		/* Bounds of the button.  Width and height */
@@ -1001,18 +1097,15 @@ TreeTheme_DrawButton(
     const gchar *detail = "treeview";
     GtkExpanderStyle expander_style = open ? GTK_EXPANDER_EXPANDED : GTK_EXPANDER_COLLAPSED;
     GdkPixmap *gdkPixmap;
-    GdkRectangle clipped;
+    TreeRectangle trClipped, trDrawable;
     GdkPixbuf *pixbuf;
 
     if (IsGtkUnavailable() || appThemeData->gtkTreeView == NULL)
 	return TCL_ERROR;
 
-    clipped.x = x, clipped.y = y, clipped.width = width, clipped.height = height;
-    if (clipped.x < 0)
-	clipped.width += clipped.x, clipped.x = 0;
-    if (clipped.y < 0)
-	clipped.height += clipped.y, clipped.y = 0;
-    if (clipped.width < 1 || clipped.height < 1)
+    TreeRect_SetXYWH(trDrawable, 0, 0, td.width, td.height);
+    TreeRect_SetXYWH(trClipped, x, y, width, height);
+    if (TreeRect_Intersect(&trClipped, &trClipped, &trDrawable) == 0)
 	return TCL_OK;
 
     if (state & BUTTON_STATE_ACTIVE)
@@ -1033,9 +1126,9 @@ TreeTheme_DrawButton(
     pixbuf = gdk_pixbuf_new(GDK_COLORSPACE_RGB, 1, 8, width, height);
     if (pixbuf == NULL)
 	goto ret_error;
-    pixbuf = gdk_pixbuf_xlib_get_from_drawable(pixbuf, drawable,
-	Tk_Colormap(tree->tkwin), Tk_Visual(tree->tkwin), clipped.x, clipped.y,
-	x < 0 ? -x : 0, y < 0 ? -y : 0, clipped.width, clipped.height);
+    pixbuf = gdk_pixbuf_xlib_get_from_drawable(pixbuf, td.drawable,
+	Tk_Colormap(tree->tkwin), Tk_Visual(tree->tkwin), trClipped.x, trClipped.y,
+	x < 0 ? -x : 0, y < 0 ? -y : 0, trClipped.width, trClipped.height);
     if (pixbuf == NULL)
 	goto ret_error;
     
@@ -1061,7 +1154,7 @@ TreeTheme_DrawButton(
 	g_object_unref(gdkPixmap);
 	goto ret_error;
     }
-    gdk_pixbuf_xlib_render_to_drawable(pixbuf, drawable, tree->copyGC,
+    gdk_pixbuf_xlib_render_to_drawable(pixbuf, td.drawable, tree->copyGC,
 	0, 0, x, y, width, height, XLIB_RGB_DITHER_MAX, 0, 0);
 
     gdk_pixbuf_unref(pixbuf);
@@ -2336,7 +2429,8 @@ TreeGradient_FillRect(
     cairo_t *c;
     cairo_surface_t *surface;
     cairo_pattern_t *pattern;
-    int x1, y1, x2, y2, i;
+    double x1, y1, x2, y2;
+    int i;
 
     if (gradient->stopArrPtr == NULL || gradient->stopArrPtr->nstops < 2)
 	return;
@@ -2362,9 +2456,9 @@ errorExit:
 
     x1 = trBrush.x, y1 = trBrush.y;
     if (gradient->vertical) {
-	x2 = x1, y2 = y1 + trBrush.height - 1;
+	x2 = x1, y2 = y1 + trBrush.height;
     } else {
-	x2 = x1 + trBrush.width - 1, y2 = y1;
+	x2 = x1 + trBrush.width, y2 = y1;
     }
     pattern = cairo_pattern_create_linear(x1, y1, x2, y2);
     if  (pattern == NULL)
@@ -2488,6 +2582,7 @@ void
 TreeGradient_FillRoundRect(
     TreeCtrl *tree,		/* Widget info. */
     TreeDrawable td,		/* Where to draw. */
+    TreeClip *clip,		/* Clipping area or NULL. */
     TreeGradient gradient,	/* Gradient token. */
     TreeRectangle trBrush,	/* Brush bounds. */
     TreeRectangle tr,		/* Where to draw. */
@@ -2499,7 +2594,10 @@ TreeGradient_FillRoundRect(
     cairo_t *c;
     cairo_surface_t *surface;
     cairo_pattern_t *pattern;
-    int x1, y1, x2, y2, i, x, y, w, h, c1, c2;
+    int x1, y1, x2, y2, i;
+#if 0
+    int x, y, w, h, c1, c2;
+#endif
 
     if (gradient->stopArrPtr == NULL || gradient->stopArrPtr->nstops < 2)
 	return;
@@ -2510,7 +2608,7 @@ TreeGradient_FillRoundRect(
 
     if (IsGtkUnavailable() || !tree->nativeGradients) {
 errorExit:
-	TreeGradient_FillRoundRectX11(tree, td, NULL, gradient, trBrush, tr, rx, ry, open);
+	TreeGradient_FillRoundRectX11(tree, td, clip, gradient, trBrush, tr, rx, ry, open);
 	return;
     }
 
@@ -2525,9 +2623,9 @@ errorExit:
 
     x1 = trBrush.x, y1 = trBrush.y;
     if (gradient->vertical) {
-	x2 = x1, y2 = y1 + trBrush.height - 1;
+	x2 = x1, y2 = y1 + trBrush.height;
     } else {
-	x2 = x1 + trBrush.width - 1, y2 = y1;
+	x2 = x1 + trBrush.width, y2 = y1;
     }
     pattern = cairo_pattern_create_linear(x1, y1, x2, y2);
     if  (pattern == NULL)
@@ -2579,6 +2677,7 @@ void
 Tree_DrawRoundRect(
     TreeCtrl *tree,		/* Widget info. */
     TreeDrawable td,		/* Where to draw. */
+    TreeClip *clip,		/* Clipping area or NULL. */
     XColor *xcolor,		/* Color. */
     TreeRectangle tr,		/* Where to draw. */
     int outlineWidth,
@@ -2588,13 +2687,14 @@ Tree_DrawRoundRect(
 {
     /* FIXME: Can use 'cairo' on Unix, but need to add it to configure + Make */
     GC gc = Tk_GCForColor(xcolor, Tk_WindowId(tree->tkwin));
-    Tree_DrawRoundRectX11(tree, td, gc, tr, outlineWidth, rx, ry, open);
+    Tree_DrawRoundRectX11(tree, td, clip, gc, tr, outlineWidth, rx, ry, open);
 }
 
 void
 Tree_FillRoundRect(
     TreeCtrl *tree,		/* Widget info. */
     TreeDrawable td,		/* Where to draw. */
+    TreeClip *clip,		/* Clipping area or NULL. */
     XColor *xcolor,		/* Color. */
     TreeRectangle tr,		/* Where to draw. */
     int rx, int ry,		/* Corner radius */
@@ -2603,7 +2703,7 @@ Tree_FillRoundRect(
 {
     /* FIXME: Can use 'cairo' on Unix, but need to add it to configure + Make */
     GC gc = Tk_GCForColor(xcolor, Tk_WindowId(tree->tkwin));
-    Tree_FillRoundRectX11(tree, td, gc, tr, rx, ry, open);
+    Tree_FillRoundRectX11(tree, td, clip, gc, tr, rx, ry, open);
 }
 
 int

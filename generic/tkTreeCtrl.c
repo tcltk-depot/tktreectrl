@@ -662,7 +662,7 @@ static int TreeWidgetCmd(
 		goto error;
 	    }
 	    if (item != tree->activeItem) {
-		int x, y, w, h;
+		TreeRectangle tr;
 
 		active = tree->activeItem;
 		TreeItem_ChangeState(tree, active, STATE_ACTIVE, 0);
@@ -671,9 +671,9 @@ static int TreeWidgetCmd(
 
 		/* FIXME: is it onscreen? */
 		/* FIXME: what if only lock columns displayed? */
-		if (Tree_ItemBbox(tree, item, COLUMN_LOCK_NONE, &x, &y, &w, &h) >= 0) {
-		    Tk_SetCaretPos(tree->tkwin, x - tree->xOrigin,
-			    y - tree->yOrigin, h);
+		if (Tree_ItemBbox(tree, item, COLUMN_LOCK_NONE, &tr) >= 0) {
+		    Tk_SetCaretPos(tree->tkwin, tr.x - tree->xOrigin,
+			    tr.y - tree->yOrigin, tr.height);
 		}
 		TreeNotify_ActiveItem(tree, active, item);
 	    }
@@ -682,8 +682,7 @@ static int TreeWidgetCmd(
 
 	/* .t bbox ?area? */
 	case COMMAND_BBOX: {
-#if 1
-	    int x1, y1, x2, y2;
+	    TreeRectangle tr;
 
 	    if (objc > 3) {
 		Tcl_WrongNumArgs(interp, 2, objv, "?area?");
@@ -694,34 +693,15 @@ static int TreeWidgetCmd(
 		if (TreeArea_FromObj(tree, objv[2], &area) != TCL_OK) {
 		    goto error;
 		}
-		if (!Tree_AreaBbox(tree, area, &x1, &y1, &x2, &y2))
+		if (!Tree_AreaBbox(tree, area, &tr))
 		    break;
-#else
-	    static CONST char *areaName[] = { "content", "header", "left",
-		    "right", (char *) NULL };
-	    int x1, y1, x2, y2;
-
-	    if (objc > 3) {
-		Tcl_WrongNumArgs(interp, 2, objv, "?area?");
-		goto error;
-	    }
-	    if (objc == 3) {
-		int area[4] = { TREE_AREA_CONTENT, TREE_AREA_HEADER,
-			TREE_AREA_LEFT, TREE_AREA_RIGHT };
-		if (Tcl_GetIndexFromObj(interp, objv[2], areaName, "area", 0,
-			&index) != TCL_OK) {
-		    goto error;
-		}
-		if (!Tree_AreaBbox(tree, area[index], &x1, &y1, &x2, &y2))
-		    break;
-#endif
 	    } else {
-		x1 = 0;
-		y1 = 0;
-		x2 = Tk_Width(tree->tkwin);
-		y2 = Tk_Height(tree->tkwin);
+		TreeRect_SetXYWH(tr, 0, 0, Tk_Width(tree->tkwin),
+			Tk_Height(tree->tkwin));
 	    }
-	    FormatResult(interp, "%d %d %d %d", x1, y1, x2, y2);
+	    FormatResult(interp, "%d %d %d %d",
+		    TreeRect_Left(tr), TreeRect_Top(tr),
+		    TreeRect_Right(tr), TreeRect_Bottom(tr));
 	    break;
 	}
 
@@ -785,14 +765,16 @@ static int TreeWidgetCmd(
 	}
 
 	case COMMAND_CONTENTBOX: {
-	    int x1, y1, x2, y2;
+	    TreeRectangle tr;
 
 	    if (objc != 2) {
 		Tcl_WrongNumArgs(interp, 2, objv, (char *) NULL);
 		goto error;
 	    }
-	    if (Tree_AreaBbox(tree, TREE_AREA_CONTENT, &x1, &y1, &x2, &y2)) {
-		FormatResult(interp, "%d %d %d %d", x1, y1, x2, y2);
+	    if (Tree_AreaBbox(tree, TREE_AREA_CONTENT, &tr)) {
+		FormatResult(interp, "%d %d %d %d",
+		    TreeRect_Left(tr), TreeRect_Top(tr),
+		    TreeRect_Right(tr), TreeRect_Bottom(tr));
 	    }
 	    break;
 	}
@@ -2317,6 +2299,7 @@ TreeSeeCmd(
     Tcl_Interp *interp = tree->interp;
     TreeItem item;
     TreeColumn treeColumn = NULL;
+    TreeRectangle tr;
     int x, y, w, h;
     int visWidth = Tree_ContentWidth(tree);
     int visHeight = Tree_ContentHeight(tree);
@@ -2386,8 +2369,13 @@ TreeSeeCmd(
     }
 
     /* Get the item bounds in canvas coords. */
-    if (Tree_ItemBbox(tree, item, COLUMN_LOCK_NONE, &x, &y, &w, &h) < 0)
+    if (Tree_ItemBbox(tree, item, COLUMN_LOCK_NONE, &tr) < 0)
 	return TCL_OK;
+
+    x = TreeRect_Left(tr);
+    y = TreeRect_Top(tr);
+    w = TreeRect_Width(tr);
+    h = TreeRect_Height(tr);
 
     if (treeColumn != NULL) {
 	x += TreeColumn_Offset(treeColumn);

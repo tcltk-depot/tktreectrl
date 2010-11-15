@@ -149,9 +149,10 @@ struct TreeDInfo_
     Tcl_HashTable itemVisHash;	/* Table of visible items */
     int requests;		/* Incremented for every call to
 				   Tree_EventuallyRedraw */
-    int bounds[4], empty;	/* Bounds of TREE_AREA_CONTENT */
-    int boundsL[4], emptyL;	/* Bounds of TREE_AREA_LEFT */
-    int boundsR[4], emptyR;	/* Bounds of TREE_AREA_RIGHT */
+    TreeRectangle bounds;	/* Bounds of TREE_AREA_CONTENT. */
+    TreeRectangle boundsL;	/* Bounds of TREE_AREA_LEFT. */
+    TreeRectangle boundsR;	/* Bounds of TREE_AREA_RIGHT. */
+    int empty, emptyL, emptyR;	/* Whether bounds above are zero-sized.*/
     int widthOfColumnsLeft;	/* Last seen Tree_WidthOfLeftColumns() */
     int widthOfColumnsRight;	/* Last seen Tree_WidthOfRightColumns() */
     Range *rangeLock;		/* If there is no Range for non-locked
@@ -469,12 +470,14 @@ Range_Redo(
 	 * we don't need to do it later in Range_TotalWidth/Height() */
 	if (wrapPixels > 0) {
 	    if (tree->vertical) {
+		/* Remove the gap from the last item in this range. */
 		if (range->last->gap.y > 0) {
 		    pixels -= range->last->gap.y;
 		    range->last->gap.y = 0;
 		}
 		range->totalHeight = pixels;
 	    } else {
+		/* Remove the gap from the last item in this range. */
 		if (range->last->gap.x > 0) {
 		    pixels -= range->last->gap.x;
 		    range->last->gap.x = 0;
@@ -923,20 +926,12 @@ Range_UnderPoint(
 
     if (nearest) {
 
-	int minX, minY, maxX, maxY;
-
-	if (!Tree_AreaBbox(tree, TREE_AREA_CONTENT, &minX, &minY, &maxX, &maxY))
-	    return NULL;
+	TreeRectangle tr;
 
 	/* Keep inside borders and header. Perhaps another flag needed. */
-	if (x < minX)
-	    x = minX;
-	if (x >= maxX)
-	    x = maxX - 1;
-	if (y < minY)
-	    y = minY;
-	if (y >= maxY)
-	    y = maxY - 1;
+	if (!Tree_AreaBbox(tree, TREE_AREA_CONTENT, &tr))
+	    return NULL;
+	TreeRect_ClipPoint(tr, &x, &y);
 
 	x = W2Cx(x);
 	y = W2Cy(y);
@@ -2076,10 +2071,7 @@ int
 Tree_AreaBbox(
     TreeCtrl *tree,
     int area,
-    int *x1_,
-    int *y1_,
-    int *x2_,
-    int *y2_
+    TreeRectangle *tr
     )
 {
     int x1 = 0, y1 = 0, x2 = 0, y2 = 0;
@@ -2127,10 +2119,7 @@ Tree_AreaBbox(
     if (y2 > Tree_BorderBottom(tree))
 	y2 = Tree_BorderBottom(tree);
 
-    *x1_ = x1;
-    *y1_ = y1;
-    *x2_ = x2;
-    *y2_ = y2;
+    TreeRect_SetXYXY(*tr, x1, y1, x2, y2);
     return (x2 > x1) && (y2 > y1);
 }
 
@@ -2202,9 +2191,8 @@ int
 Tree_ItemBbox(
     TreeCtrl *tree,		/* Widget info. */
     TreeItem item,		/* Item whose bbox is needed. */
-    int lock,
-    int *x, int *y,		/* Returned left and top. */
-    int *w, int *h		/* Returned width and height. */
+    int lock,			/* COLUMN_LOCK_xxx. */
+    TreeRectangle *tr		/* Returned bbox. */
     )
 {
     Range *range;
@@ -2223,20 +2211,22 @@ Tree_ItemBbox(
 	case COLUMN_LOCK_LEFT:
 	    if (tree->columnCountVisLeft == 0)
 		return -1;
-	    *x = W2Cx(Tree_BorderLeft(tree));
-	    *y = rItem->offset;
-	    *w = Tree_WidthOfLeftColumns(tree);
-	    *h = rItem->size;
+	    TreeRect_SetXYWH(*tr,
+		W2Cx(Tree_BorderLeft(tree)),
+		rItem->offset,
+		Tree_WidthOfLeftColumns(tree),
+		rItem->size);
 	    return 0;
 	case COLUMN_LOCK_NONE:
 	    break;
 	case COLUMN_LOCK_RIGHT:
 	    if (tree->columnCountVisRight == 0)
 		return -1;
-	    *x = W2Cx(Tree_ContentRight(tree));
-	    *y = rItem->offset;
-	    *w = Tree_WidthOfRightColumns(tree);
-	    *h = rItem->size;
+	    TreeRect_SetXYWH(*tr,
+		W2Cx(Tree_ContentRight(tree)),
+		rItem->offset,
+		Tree_WidthOfRightColumns(tree),
+		rItem->size);
 	    return 0;
     }
 
@@ -2245,16 +2235,18 @@ Tree_ItemBbox(
 
     range = rItem->range;
     if (tree->vertical) {
-	(*x) = range->offset.x;
-	(*w) = range->totalWidth;
-	(*y) = range->offset.y + rItem->offset;
-	(*h) = rItem->size;
+	TreeRect_SetXYWH(*tr,
+	    range->offset.x,
+	    range->offset.y + rItem->offset,
+	    range->totalWidth,
+	    rItem->size);
     }
     else {
-	(*x) = range->offset.x + rItem->offset;
-	(*w) = rItem->size;
-	(*y) = range->offset.y;
-	(*h) = range->totalHeight;
+	TreeRect_SetXYWH(*tr,
+	    range->offset.x + rItem->offset,
+	    range->offset.y,
+	    rItem->size,
+	    range->totalHeight);
     }
     return 0;
 }
@@ -2932,7 +2924,7 @@ GetOnScreenColumnsForItemAux(
     TreeCtrl *tree,		/* Widget info. */
     DItem *dItem,		/* Display info for an item. */
     DItemArea *area,		/* Layout info. */
-    int bounds[4],		/* TREE_AREA_xxx bounds. */
+    TreeRectangle bounds,	/* TREE_AREA_xxx bounds. */
     int lock,			/* Set of columns we care about. */
     TreeColumnList *columns	/* Initialized list to append to. */
     )
@@ -2940,8 +2932,8 @@ GetOnScreenColumnsForItemAux(
     int minX, maxX, columnIndex = 0, x = 0, i, width;
     TreeColumn column = NULL, column2;
 
-    minX = MAX(area->x, bounds[0]);
-    maxX = MIN(area->x + area->width, bounds[2]);
+    minX = MAX(area->x, TreeRect_Left(bounds));
+    maxX = MIN(area->x + area->width, TreeRect_Right(bounds));
 
     minX -= area->x;
     maxX -= area->x;
@@ -2957,7 +2949,6 @@ GetOnScreenColumnsForItemAux(
 	    column = tree->columnLockRight;
 	    break;
     }
-
 
     for (columnIndex = TreeColumn_Index(column);
 	    columnIndex < tree->columnCount; columnIndex++) {
@@ -3500,23 +3491,14 @@ Tree_UpdateDInfo(
     dInfo->rangeFirstD = dInfo->rangeLastD = NULL;
     dInfo->itemWidth = dInfo->itemHeight = 0;
 
-    dInfo->empty = !Tree_AreaBbox(tree, TREE_AREA_CONTENT,
-	&dInfo->bounds[0], &dInfo->bounds[1],
-	&dInfo->bounds[2], &dInfo->bounds[3]);
-    dInfo->emptyL = !Tree_AreaBbox(tree, TREE_AREA_LEFT,
-	&dInfo->boundsL[0], &dInfo->boundsL[1],
-	&dInfo->boundsL[2], &dInfo->boundsL[3]);
-    dInfo->emptyR = !Tree_AreaBbox(tree, TREE_AREA_RIGHT,
-	&dInfo->boundsR[0], &dInfo->boundsR[1],
-	&dInfo->boundsR[2], &dInfo->boundsR[3]);
+    dInfo->empty = !Tree_AreaBbox(tree, TREE_AREA_CONTENT, &dInfo->bounds);
+    dInfo->emptyL = !Tree_AreaBbox(tree, TREE_AREA_LEFT, &dInfo->boundsL);
+    dInfo->emptyR = !Tree_AreaBbox(tree, TREE_AREA_RIGHT, &dInfo->boundsR);
 
     if (dInfo->empty)
 	goto done;
 
-    minX = dInfo->bounds[0];
-    minY = dInfo->bounds[1];
-    maxX = dInfo->bounds[2];
-    maxY = dInfo->bounds[3];
+    TreeRect_XYXY(dInfo->bounds, &minX, &minY, &maxX, &maxY);
 
     range = dInfo->rangeFirst;
     if (tree->vertical) {
@@ -3984,7 +3966,8 @@ DblBufWinDirty(
 static void
 AddRgnToRedrawRgn(
     TreeCtrl *tree,
-    TkRegion rgn)
+    TkRegion rgn
+    )
 {
     TreeDInfo dInfo = tree->dInfo;
 
@@ -3997,7 +3980,8 @@ AddRectToRedrawRgn(
     int minX,
     int minY,
     int maxX,
-    int maxY)
+    int maxY
+    )
 {
     TkRegion rgn = Tree_GetRegion(tree);
     TreeRectangle rect;
@@ -4308,10 +4292,7 @@ ScrollHorizontalSimple(
     if (dInfo->empty)
 	return;
 
-    minX = dInfo->bounds[0];
-    minY = dInfo->bounds[1];
-    maxX = dInfo->bounds[2];
-    maxY = dInfo->bounds[3];
+    TreeRect_XYXY(dInfo->bounds, &minX, &minY, &maxX, &maxY);
 
     /* Update oldX */
     for (dItem = dInfo->dItem;
@@ -4374,14 +4355,8 @@ ScrollHorizontalSimple(
      * over. */
     {
 	TkRegion rgn;
-	TreeRectangle tr;
 
-	tr.x = dInfo->bounds[0];
-	tr.y = dInfo->bounds[1];
-	tr.width = dInfo->bounds[2] - tr.x;
-	tr.height = dInfo->bounds[3] - tr.y;
-	rgn = Tree_GetRectRegion(tree, &tr);
-
+	rgn = Tree_GetRectRegion(tree, &dInfo->bounds);
 	TkSubtractRegion(rgn, dInfo->wsRgn, rgn);
 	Tree_OffsetRegion(rgn, offset, 0);
 	TkSubtractRegion(dInfo->wsRgn, rgn, dInfo->wsRgn);
@@ -4433,10 +4408,7 @@ ScrollVerticalSimple(
     if (dInfo->empty)
 	return;
 
-    minX = dInfo->bounds[0];
-    minY = dInfo->bounds[1];
-    maxX = dInfo->bounds[2];
-    maxY = dInfo->bounds[3];
+    TreeRect_XYXY(dInfo->bounds, &minX, &minY, &maxX, &maxY);
 
     offset = dInfo->yOrigin - tree->yOrigin;
 
@@ -4486,14 +4458,8 @@ ScrollVerticalSimple(
      * over. */
     {
 	TkRegion rgn;
-	TreeRectangle tr;
 
-	tr.x = dInfo->bounds[0];
-	tr.y = dInfo->bounds[1];
-	tr.width = dInfo->bounds[2] - tr.x;
-	tr.height = dInfo->bounds[3] - tr.y;
-	rgn = Tree_GetRectRegion(tree, &tr);
-
+	rgn = Tree_GetRectRegion(tree, &dInfo->bounds);
 	TkSubtractRegion(rgn, dInfo->wsRgn, rgn);
 	Tree_OffsetRegion(rgn, 0, offset);
 	TkSubtractRegion(dInfo->wsRgn, rgn, dInfo->wsRgn);
@@ -4530,13 +4496,15 @@ ScrollHorizontalComplex(
     DItem *dItem, *dItem2;
     Range *range;
     TkRegion damageRgn;
+    TreeRectangle tr;
     int minX, minY, maxX, maxY;
     int oldX, oldY, width, height, offset;
     int x;
     int numCopy = 0;
 
-    if (!Tree_AreaBbox(tree, TREE_AREA_CONTENT, &minX, &minY, &maxX, &maxY))
+    if (!Tree_AreaBbox(tree, TREE_AREA_CONTENT, &tr))
 	return 0;
+    TreeRect_XYXY(tr, &minX, &minY, &maxX, &maxY);
 
     /* Try updating the display by copying items on the screen to their
      * new location */
@@ -5022,20 +4990,9 @@ CalcWhiteSpaceRegion(
 	TreeRectangle boundsRect, boundsRectL, boundsRectR;
 	DItem *dItem = dInfo->dItem;
 
-	boundsRect.x = dInfo->bounds[0];
-	boundsRect.y = dInfo->bounds[1];
-	boundsRect.width = dInfo->bounds[2] - dInfo->bounds[0];
-	boundsRect.height = dInfo->bounds[3] - dInfo->bounds[1];
-
-	boundsRectL.x = dInfo->boundsL[0];
-	boundsRectL.y = dInfo->boundsL[1];
-	boundsRectL.width = dInfo->boundsL[2] - dInfo->boundsL[0];
-	boundsRectL.height = dInfo->boundsL[3] - dInfo->boundsL[1];
-
-	boundsRectR.x = dInfo->boundsR[0];
-	boundsRectR.y = dInfo->boundsR[1];
-	boundsRectR.width = dInfo->boundsR[2] - dInfo->boundsR[0];
-	boundsRectR.height = dInfo->boundsR[3] - dInfo->boundsR[1];
+	boundsRect = dInfo->bounds;
+	boundsRectL = dInfo->boundsL;
+	boundsRectR = dInfo->boundsR;
 
 	while (dItem != NULL) {
 	    TreeRectangle tr;
@@ -5044,8 +5001,8 @@ CalcWhiteSpaceRegion(
 		tr.y = dItem->y;
 		tr.width = dItem->left.width;
 		tr.height = dItem->height;
-		Tree_IntersectRect(&tr, &tr, &boundsRectL);
-		TreeRectToXRect(tr, &rect);
+		TreeRect_Intersect(&tr, &tr, &boundsRectL);
+		TreeRect_ToXRect(tr, &rect);
 		TkUnionRectWithRegion(&rect, itemRgn, itemRgn);
 	    }
 	    if (!dInfo->emptyR) {
@@ -5053,8 +5010,8 @@ CalcWhiteSpaceRegion(
 		tr.y = dItem->y;
 		tr.width = dItem->right.width;
 		tr.height = dItem->height;
-		Tree_IntersectRect(&tr, &tr, &boundsRectR);
-		TreeRectToXRect(tr, &rect);
+		TreeRect_Intersect(&tr, &tr, &boundsRectR);
+		TreeRect_ToXRect(tr, &rect);
 		TkUnionRectWithRegion(&rect, itemRgn, itemRgn);
 	    }
 	    if (!dInfo->empty) {
@@ -5062,8 +5019,8 @@ CalcWhiteSpaceRegion(
 		tr.y = dItem->y;
 		tr.width = dItem->area.width;
 		tr.height = dItem->height;
-		Tree_IntersectRect(&tr, &tr, &boundsRect);
-		TreeRectToXRect(tr, &rect);
+		TreeRect_Intersect(&tr, &tr, &boundsRect);
+		TreeRect_ToXRect(tr, &rect);
 		TkUnionRectWithRegion(&rect, itemRgn, itemRgn);
 	    }
 	    dItem = dItem->next;
@@ -5077,10 +5034,7 @@ CalcWhiteSpaceRegion(
     if (!dInfo->emptyL) {
 	int pad1 = tree->canvasPadY[PAD_TOP_LEFT];
 	int pad2 = tree->canvasPadY[PAD_BOTTOM_RIGHT];
-	minX = dInfo->boundsL[0];
-	minY = dInfo->boundsL[1];
-	maxX = dInfo->boundsL[2];
-	maxY = dInfo->boundsL[3];
+	TreeRect_XYXY(dInfo->boundsL, &minX, &minY, &maxX, &maxY);
 	left = minX;
 	top = MAX(C2Wy(pad1), minY);
 	right = maxX;
@@ -5098,10 +5052,7 @@ CalcWhiteSpaceRegion(
     if (!dInfo->emptyR) {
 	int pad1 = tree->canvasPadY[PAD_TOP_LEFT];
 	int pad2 = tree->canvasPadY[PAD_BOTTOM_RIGHT];
-	minX = dInfo->boundsR[0];
-	minY = dInfo->boundsR[1];
-	maxX = dInfo->boundsR[2];
-	maxY = dInfo->boundsR[3];
+	TreeRect_XYXY(dInfo->boundsR, &minX, &minY, &maxX, &maxY);
 	left = minX;
 	top = MAX(C2Wy(pad1), minY);
 	right = maxX;
@@ -5117,10 +5068,7 @@ CalcWhiteSpaceRegion(
 
     /* Subtract area covered by items in unlocked columns */
     if (!dInfo->empty) {
-	minX = dInfo->bounds[0];
-	minY = dInfo->bounds[1];
-	maxX = dInfo->bounds[2];
-	maxY = dInfo->bounds[3];
+	TreeRect_XYXY(dInfo->bounds, &minX, &minY, &maxX, &maxY);
 	for (range = dInfo->rangeFirstD;
 	    range != NULL;
 	    range = range->next) {
@@ -5151,7 +5099,7 @@ CalcWhiteSpaceRegion(
 /*
  *--------------------------------------------------------------
  *
- * Tree_IntersectRect --
+ * TreeRect_Intersect --
  *
  *	Determine the area of overlap between two rectangles.
  *
@@ -5167,7 +5115,7 @@ CalcWhiteSpaceRegion(
  */
 
 int
-Tree_IntersectRect(
+TreeRect_Intersect(
     TreeRectangle *resultPtr,	/* Out: area of overlap. May be the same
 				 * as r1 or r2. */
     CONST TreeRectangle *r1,	/* First rectangle. */
@@ -5322,7 +5270,7 @@ DrawColumnBackgroundReverse(
 	rowBox.width = bounds->width;
 	rowBox.height = rItem ? rItem->size : height;
 	rowBox.y = bottom - rowBox.height;
-	if (Tree_IntersectRect(&drawBox, &rowBox, &dirtyBox)) {
+	if (TreeRect_Intersect(&drawBox, &rowBox, &dirtyBox)) {
 	    if (rItem != NULL) {
 		index = GetItemBgIndex(tree, rItem);
 	    }
@@ -5413,7 +5361,7 @@ DrawWhitespaceAboveItem(
 	columnBox.y = bounds[1];
 	columnBox.width = width;
 	columnBox.height = bottom - columnBox.y;
-	if (Tree_IntersectRect(&visBox, &boundsBox, &columnBox)) {
+	if (TreeRect_Intersect(&visBox, &boundsBox, &columnBox)) {
 	    Tree_SetRectRegion(columnRgn, &visBox);
 	    TkIntersectRegion(dirtyRgn, columnRgn, columnRgn);
 	    DrawColumnBackgroundReverse(tree, td, treeColumn,
@@ -5505,7 +5453,7 @@ DrawColumnBackground(
 	rowBox.y = top;
 	rowBox.width = bounds->width;
 	rowBox.height = rItem ? rItem->size : height;
-	if (Tree_IntersectRect(&drawBox, &rowBox, &dirtyBox)) {
+	if (TreeRect_Intersect(&drawBox, &rowBox, &dirtyBox)) {
 #if GRAD_COORDS
 	    TreeRectangle trBrush;
 #endif
@@ -5580,7 +5528,7 @@ DrawWhitespaceBelowItem(
     TreeCtrl *tree,		/* Widget info. */
     TreeDrawable td,		/* Where to draw. */
     int lock,			/* Which columns to draw. */
-    int bounds[4],		/* TREE_AREA_xxx bounds. */
+    TreeRectangle bounds,	/* TREE_AREA_xxx bounds. */
     int left,			/* Window coord of first column's left edge. */
     int top,			/* Window coord just below the last item. */
     TkRegion dirtyRgn,		/* Area of whitespace that needs painting. */
@@ -5605,10 +5553,7 @@ DrawWhitespaceBelowItem(
 	    break;
     }
 
-    boundsBox.x = bounds[0];
-    boundsBox.y = bounds[1];
-    boundsBox.width = bounds[2] - bounds[0];
-    boundsBox.height = bounds[3] - bounds[1];
+    boundsBox = bounds;
 
     for (i = TreeColumn_Index(treeColumn); i < tree->columnCount; i++) {
 	if (TreeColumn_Lock(treeColumn) != lock)
@@ -5619,8 +5564,8 @@ DrawWhitespaceBelowItem(
 	columnBox.x = left;
 	columnBox.y = top;
 	columnBox.width = width;
-	columnBox.height = bounds[3] - top;
-	if (Tree_IntersectRect(&visBox, &boundsBox, &columnBox)) {
+	columnBox.height = TreeRect_Bottom(bounds) - top;
+	if (TreeRect_Intersect(&visBox, &boundsBox, &columnBox)) {
 	    Tree_SetRectRegion(columnRgn, &visBox);
 	    TkIntersectRegion(dirtyRgn, columnRgn, columnRgn);
 	    DrawColumnBackground(tree, td, treeColumn,
@@ -5742,10 +5687,8 @@ DrawWhitespace(
     if (!dInfo->empty) {
 	int leftEdgeOfColumns = tree->canvasPadX[PAD_TOP_LEFT];
 	int rightEdgeOfColumns = tree->canvasPadX[PAD_TOP_LEFT] + Tree_WidthOfColumns(tree);
-	minX = dInfo->bounds[0];
-	minY = dInfo->bounds[1];
-	maxX = dInfo->bounds[2];
-	maxY = dInfo->bounds[3];
+
+	TreeRect_XYXY(dInfo->bounds, &minX, &minY, &maxX, &maxY);
 
 	/* Draw to the right of the items using the tail column's
 	 * -itembackground colors. The height of each row matches
@@ -5831,7 +5774,7 @@ DrawWhitespace(
 
 	/* Draw below the left columns. */
 	if (!dInfo->emptyL) {
-	    minX = dInfo->boundsL[0];
+	    minX = TreeRect_Left(dInfo->boundsL);
 	    DrawWhitespaceBelowItem(tree, td, COLUMN_LOCK_LEFT,
 		    dInfo->boundsL,
 		    minX, top, dirtyRgn, columnRgn,
@@ -5840,7 +5783,7 @@ DrawWhitespace(
 
 	/* Draw below the right columns. */
 	if (!dInfo->emptyR) {
-	    minX = dInfo->boundsR[0];
+	    minX = TreeRect_Left(dInfo->boundsR);
 	    DrawWhitespaceBelowItem(tree, td, COLUMN_LOCK_RIGHT,
 		    dInfo->boundsR,
 		    minX, top, dirtyRgn, columnRgn,
@@ -5882,7 +5825,7 @@ DrawWhitespace(
 
 	/* Draw above the left columns. */
 	if (!dInfo->emptyL) {
-	    minX = dInfo->boundsL[0];
+	    minX = TreeRect_Left(dInfo->boundsL);
 	    DrawWhitespaceAboveItem(tree, td, COLUMN_LOCK_LEFT,
 		    dInfo->boundsL,
 		    minX, bottom, dirtyRgn, columnRgn,
@@ -5891,7 +5834,7 @@ DrawWhitespace(
 
 	/* Draw above the right columns. */
 	if (!dInfo->emptyR) {
-	    minX = dInfo->boundsR[0];
+	    minX = TreeRect_Left(dInfo->boundsR);
 	    DrawWhitespaceAboveItem(tree, td, COLUMN_LOCK_RIGHT,
 		    dInfo->boundsR,
 		    minX, bottom, dirtyRgn, columnRgn,
@@ -5969,7 +5912,7 @@ Tree_DrawTiledImage(
 
     do {
 	do {
-	    if (Tree_IntersectRect(&trPaint, &trImage, &tr)) {
+	    if (TreeRect_Intersect(&trPaint, &trImage, &tr)) {
 #if CACHE_BG_IMG
 		XCopyArea(tree->display, pixmap, td.drawable, tree->copyGC,
 			trPaint.x - trImage.x,
@@ -6151,7 +6094,7 @@ DisplayDItem(
     DItem *dItem,		/* Display info for an item. */
     DItemArea *area,
     int lock,			/* Which set of columns. */
-    int bounds[4],		/* TREE_AREA_xxx bounds of drawing. */
+    TreeRectangle bounds,	/* TREE_AREA_xxx bounds of drawing. */
     TreeDrawable pixmap,	/* Where to draw. */
     TreeDrawable drawable	/* Where to copy to. */
     )
@@ -6177,14 +6120,14 @@ DisplayDItem(
     dItem->flags &= ~(DITEM_INVALIDATE_ON_SCROLL_X | DITEM_INVALIDATE_ON_SCROLL_Y);
 #endif
 
-    if (left < bounds[0])
-	left = bounds[0];
-    if (right > bounds[2])
-	right = bounds[2];
-    if (top < bounds[1])
-	top = bounds[1];
-    if (bottom > bounds[3])
-	bottom = bounds[3];
+    if (left < TreeRect_Left(bounds))
+	left = TreeRect_Left(bounds);
+    if (right > TreeRect_Right(bounds))
+	right = TreeRect_Right(bounds);
+    if (top < TreeRect_Top(bounds))
+	top = TreeRect_Top(bounds);
+    if (bottom > TreeRect_Bottom(bounds))
+	bottom = TreeRect_Bottom(bounds);
 
     if (right <= left || bottom <= top)
 	return 0;
@@ -6195,6 +6138,25 @@ DisplayDItem(
 	DisplayDelay(tree);
     }
 
+#if USE_ITEM_PIXMAP == 0
+    if (tree->doubleBuffer == DOUBLEBUFFER_WINDOW) {
+	DblBufWinDirty(tree, left, top, right, bottom);
+    }
+
+    /* The top-left corner of the drawable is at this
+    * point in the canvas */
+    tree->drawableXOrigin = tree->xOrigin;
+    tree->drawableYOrigin = tree->yOrigin;
+
+    TreeItem_Draw(tree, dItem->item,
+	    lock,
+	    area->x,
+	    dItem->y,
+	    area->width, dItem->height,
+	    drawable,
+	    left, right,
+	    dItem->index);
+#else
     if (tree->doubleBuffer != DOUBLEBUFFER_NONE) {
 
 	if (tree->doubleBuffer == DOUBLEBUFFER_WINDOW) {
@@ -6218,7 +6180,6 @@ DisplayDItem(
 		right - left, bottom - top,
 		left, top);
     } else {
-
 	/* The top-left corner of the drawable is at this
 	* point in the canvas */
 	tree->drawableXOrigin = tree->xOrigin;
@@ -6233,6 +6194,7 @@ DisplayDItem(
 		left, right,
 		dItem->index);
     }
+#endif
 
 #ifdef REDRAW_RGN
     AddRectToRedrawRgn(tree, left, top, right, bottom);
@@ -6460,7 +6422,7 @@ Tree_Display(
     int didScrollX = 0, didScrollY = 0;
     Drawable drawable;
     TreeDrawable tdrawable;
-    int minX, minY, maxX, maxY;
+    TreeRectangle tr;
     int count;
     int numCopy = 0, numDraw = 0;
     TkRegion wsRgnNew, wsRgnDif;
@@ -6768,15 +6730,18 @@ displayRetry:
 #endif /* REDRAW_RGN */
 
     if (dInfo->flags & DINFO_DRAW_HEADER) {
-	if (Tree_AreaBbox(tree, TREE_AREA_HEADER, &minX, &minY, &maxX, &maxY)) {
+	if (Tree_AreaBbox(tree, TREE_AREA_HEADER, &tr)) {
 	    if (tree->debug.enable && tree->debug.display && tree->debug.drawColor) {
 		XFillRectangle(tree->display, Tk_WindowId(tkwin),
-			tree->debug.gcDraw, minX, minY, maxX - minX, maxY - minY);
+			tree->debug.gcDraw,
+			TreeRect_Left(tr), TreeRect_Top(tr),
+			TreeRect_Width(tr), TreeRect_Height(tr));
 		DisplayDelay(tree);
 	    }
 	    Tree_DrawHeader(tree, tdrawable, C2Wx(0), Tree_HeaderTop(tree));
 	    if (tree->doubleBuffer == DOUBLEBUFFER_WINDOW) {
-		DblBufWinDirty(tree, minX, minY, maxX, maxY);
+		DblBufWinDirty(tree, TreeRect_Left(tr), TreeRect_Top(tr),
+		    TreeRect_Right(tr), TreeRect_Bottom(tr));
 	    }
 #ifdef REDRAW_RGN
 /*	    AddRectToRedrawRgn(tree, minX, minY, maxX, maxY); */
@@ -6950,6 +6915,7 @@ displayRetry:
     if (count > 0 || didScrollX || didScrollY) {
 	TreeDrawable tpixmap = tdrawable;
 
+#if USE_ITEM_PIXMAP == 1
 	if (count > 0 && tree->doubleBuffer != DOUBLEBUFFER_NONE) {
 	    /* Allocate pixmap for largest item */
 	    tpixmap.width = MIN(Tk_Width(tkwin), dInfo->itemWidth);
@@ -6957,6 +6923,7 @@ displayRetry:
 	    tpixmap.drawable = DisplayGetPixmap(tree, &dInfo->pixmapI,
 		tpixmap.width, tpixmap.height);
 	}
+#endif
 
 	for (dItem = dInfo->dItem;
 	     dItem != NULL;
@@ -8348,14 +8315,14 @@ Tree_InvalidateArea(
 	    dItem->area.flags |= DITEM_DIRTY;
 	}
 	if (!dInfo->emptyL && !(dItem->left.flags & DITEM_ALL_DIRTY) &&
-		(x2 > dInfo->boundsL[0]) && (x1 < dInfo->boundsL[2]) &&
+		(x2 > TreeRect_Left(dInfo->boundsL)) && (x1 < TreeRect_Right(dInfo->boundsL)) &&
 		(y2 > dItem->y) && (y1 < dItem->y + dItem->height)) {
 	    InvalidateDItemX(dItem, &dItem->left, dItem->left.x, x1, x2 - x1);
 	    InvalidateDItemY(dItem, &dItem->left, dItem->y, y1, y2 - y1);
 	    dItem->left.flags |= DITEM_DIRTY;
 	}
 	if (!dInfo->emptyR && !(dItem->right.flags & DITEM_ALL_DIRTY) &&
-		(x2 > dInfo->boundsR[0]) && (x1 < dInfo->boundsR[2]) &&
+		(x2 > TreeRect_Left(dInfo->boundsR)) && (x1 < TreeRect_Right(dInfo->boundsR)) &&
 		(y2 > dItem->y) && (y1 < dItem->y + dItem->height)) {
 	    InvalidateDItemX(dItem, &dItem->right, dItem->right.x, x1, x2 - x1);
 	    InvalidateDItemY(dItem, &dItem->right, dItem->y, y1, y2 - y1);
@@ -8409,7 +8376,6 @@ Tree_InvalidateRegion(
 {
     TreeDInfo dInfo = tree->dInfo;
     DItem *dItem;
-    int minX, minY, maxX, maxY;
     TreeRectangle rect;
     int x1, x2, y1, y2;
     TkRegion rgn;
@@ -8418,10 +8384,12 @@ Tree_InvalidateRegion(
     if (!rect.width || !rect.height)
 	return;
 
-    if (Tree_AreaBbox(tree, TREE_AREA_HEADER, &minX, &minY, &maxX, &maxY) && 
-	    TkRectInRegion(region, minX, minY, maxX - minX, maxY - minY)
-		!= RectangleOut)
+    if (Tree_AreaBbox(tree, TREE_AREA_HEADER, &rect) && 
+	    TkRectInRegion(region, TreeRect_Left(rect), TreeRect_Top(rect),
+		TreeRect_Width(rect), TreeRect_Height(rect))
+		!= RectangleOut) {
 	dInfo->flags |= DINFO_DRAW_HEADER;
+    }
 
     rgn = Tree_GetRegion(tree);
 
@@ -8821,14 +8789,14 @@ Tree_DumpDInfo(
 		dInfo->totalWidth, dInfo->totalHeight,
 		dInfo->flags, tree->vertical, tree->itemVisCount);
 	DStringAppendf(&dString, "    empty=%d bounds=%d,%d,%d,%d\n", dInfo->empty,
-		dInfo->bounds[0], dInfo->bounds[1],
-		dInfo->bounds[2], dInfo->bounds[3]);
+		dInfo->bounds.x, dInfo->bounds.y,
+		TreeRect_Right(dInfo->bounds), TreeRect_Bottom(dInfo->bounds));
 	DStringAppendf(&dString, "    emptyL=%d boundsL=%d,%d,%d,%d\n", dInfo->emptyL,
-		dInfo->boundsL[0], dInfo->boundsL[1],
-		dInfo->boundsL[2], dInfo->boundsL[3]);
+		dInfo->boundsL.x, dInfo->boundsL.y,
+		TreeRect_Right(dInfo->boundsL), TreeRect_Bottom(dInfo->boundsL));
 	DStringAppendf(&dString, "    emptyR=%d boundsR=%d,%d,%d,%d\n", dInfo->emptyR,
-		dInfo->boundsR[0], dInfo->boundsR[1],
-		dInfo->boundsR[2], dInfo->boundsR[3]);
+		dInfo->boundsR.x, dInfo->boundsR.y,
+		TreeRect_Right(dInfo->boundsR), TreeRect_Bottom(dInfo->boundsR));
 	dItem = dInfo->dItem;
 	while (dItem != NULL) {
 	    if (dItem->item == NULL) {

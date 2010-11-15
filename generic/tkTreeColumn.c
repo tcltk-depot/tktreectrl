@@ -4430,7 +4430,7 @@ Column_DrawArrow(
     }
 
     if (tree->useTheme) {
-	if (TreeTheme_DrawHeaderArrow(tree, td.drawable, column->state,
+	if (TreeTheme_DrawHeaderArrow(tree, td, column->state,
 	    column->arrow == COLUMN_ARROW_UP, x + layout.arrowLeft + sunken,
 	    arrowTop + sunken,
 	    layout.arrowWidth, layout.arrowHeight) == TCL_OK)
@@ -4548,7 +4548,7 @@ Column_Draw(
 	    width += tree->canvasPadX[PAD_TOP_LEFT];
 	}
 	if (tree->useTheme) {
-	    theme = TreeTheme_DrawHeaderItem(tree, td.drawable, column->state,
+	    theme = TreeTheme_DrawHeaderItem(tree, td, column->state,
 		    column->arrow, visIndex, x, y, width, height);
 	}
 	if (theme != TCL_OK) {
@@ -4981,7 +4981,7 @@ Tree_DrawHeader(
 	    Tk_Fill3DRectangle(tkwin, pixmap, tree->border,
 		    x, y, width, height, 0, TK_RELIEF_FLAT);
 	} else if (tree->useTheme &&
-	    (TreeTheme_DrawHeaderItem(tree, pixmap, 0, 0, tree->columnCountVis,
+	    (TreeTheme_DrawHeaderItem(tree, tp, 0, 0, tree->columnCountVis,
 		x, y, width, height) == TCL_OK)) {
 	} else {
 	    Tk_3DBorder border;

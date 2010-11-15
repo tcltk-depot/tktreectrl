@@ -370,14 +370,14 @@ Tree_SetEmptyRegion(
 TkRegion
 Tree_GetRectRegion(
     TreeCtrl *tree,		/* Widget info. */
-    TreeRectangle *rect		/* Rectangle */
+    const TreeRectangle *rect	/* Rectangle */
     )
 {
     XRectangle xr;
     TkRegion region;
 
     region = Tree_GetRegion(tree);
-    TreeRectToXRect(*rect, &xr);
+    TreeRect_ToXRect(*rect, &xr);
     TkUnionRectWithRegion(&xr, region, region);
     return region;
 }
@@ -401,12 +401,12 @@ Tree_GetRectRegion(
 void
 Tree_SetRectRegion(
     TkRegion region,		/* Region to modify. */
-    TreeRectangle *rect		/* Rectangle */
+    const TreeRectangle *rect	/* Rectangle */
     )
 {
     XRectangle xr;
     Tree_SetEmptyRegion(region);
-    TreeRectToXRect(*rect, &xr);
+    TreeRect_ToXRect(*rect, &xr);
     TkUnionRectWithRegion(&xr, region, region);
 }
 
@@ -434,7 +434,7 @@ Tree_GetRegionBounds(
 {
     XRectangle xr;
     TkClipBox(region, &xr);
-    XRectToTreeRect(xr, rect);
+    TreeRect_FromXRect(xr, rect);
 }
 
 /*
@@ -5540,6 +5540,7 @@ void
 Tree_DrawRoundRectX11(
     TreeCtrl *tree,		/* Widget info. */
     TreeDrawable td,		/* Where to draw. */
+    TreeClip *clip,		/* Clipping area or NULL. */
     GC gc,			/* Graphics context. */
     TreeRectangle tr,		/* Where to draw. */
     int outlineWidth,
@@ -5548,7 +5549,7 @@ Tree_DrawRoundRectX11(
     )
 {
     int x = tr.x, y = tr.y, width = tr.width, height = tr.height;
-    XRectangle rects[4], *pr = rects;
+    TreeRectangle rects[4], *pr = rects;
     int nrects = 0;
     int drawW = (open & RECT_OPEN_W) == 0;
     int drawN = (open & RECT_OPEN_N) == 0;
@@ -5593,9 +5594,8 @@ Tree_DrawRoundRectX11(
 	if (pr->width > 0 && pr->height > 0)
 	    pr++, nrects++;
     }
-    if (nrects > 0)
-	XFillRectangles(tree->display, td.drawable, gc,
-		rects, nrects);
+    for (i = 0; i < nrects; i++)
+	Tree_FillRectangle(tree, td, clip, gc, rects[i]);
 
     /* On Win32 the code below works, leaving a 1-pixel hole at each
      * corner.  But on X11 there is no hole. */
@@ -5605,34 +5605,34 @@ Tree_DrawRoundRectX11(
     width -= 1, height -= 1;
 
     if (drawW && drawN)
-	XDrawArc(tree->display, td.drawable, gc, x, y, rx*2, ry*2, 64*90, 64*90); /* top-left */
+	Tree_DrawArc(tree, td, clip, gc, x, y, rx*2, ry*2, 64*90, 64*90); /* top-left */
     if (drawW && drawS)
-	XDrawArc(tree->display, td.drawable, gc, x, y + height - ry*2, rx*2, ry*2, 64*180, 64*90); /* bottom-left */
+	Tree_DrawArc(tree, td, clip, gc, x, y + height - ry*2, rx*2, ry*2, 64*180, 64*90); /* bottom-left */
     if (drawE && drawN)
-	XDrawArc(tree->display, td.drawable, gc, x + width - rx*2, y, rx*2, ry*2, 64*0, 64*90); /* top-right */
+	Tree_DrawArc(tree, td, clip, gc, x + width - rx*2, y, rx*2, ry*2, 64*0, 64*90); /* top-right */
     if (drawE && drawS)
-	XDrawArc(tree->display, td.drawable, gc, x + width - rx*2, y + height - ry*2, rx*2, ry*2, 64*270, 64*90); /* bottom-right */
+	Tree_DrawArc(tree, td, clip, gc, x + width - rx*2, y + height - ry*2, rx*2, ry*2, 64*270, 64*90); /* bottom-right */
 
     for (i = 1; i < outlineWidth; i++) {
 	x += 1, width -= 2;
 	if (drawW && drawN)
-	    XDrawArc(tree->display, td.drawable, gc, x, y, rx*2, ry*2, 64*90, 64*90); /* top-left */
+	    Tree_DrawArc(tree, td, clip, gc, x, y, rx*2, ry*2, 64*90, 64*90); /* top-left */
 	if (drawW && drawS)
-	    XDrawArc(tree->display, td.drawable, gc, x, y + height - ry*2, rx*2, ry*2, 64*180, 64*90); /* bottom-left */
+	    Tree_DrawArc(tree, td, clip, gc, x, y + height - ry*2, rx*2, ry*2, 64*180, 64*90); /* bottom-left */
 	if (drawE && drawN)
-	    XDrawArc(tree->display, td.drawable, gc, x + width - rx*2, y, rx*2, ry*2, 64*0, 64*90); /* top-right */
+	    Tree_DrawArc(tree, td, clip, gc, x + width - rx*2, y, rx*2, ry*2, 64*0, 64*90); /* top-right */
 	if (drawE && drawS)
-	    XDrawArc(tree->display, td.drawable, gc, x + width - rx*2, y + height - ry*2, rx*2, ry*2, 64*270, 64*90); /* bottom-right */
+	    Tree_DrawArc(tree, td, clip, gc, x + width - rx*2, y + height - ry*2, rx*2, ry*2, 64*270, 64*90); /* bottom-right */
 
 	y += 1, height -= 2;
 	if (drawW && drawN)
-	    XDrawArc(tree->display, td.drawable, gc, x, y, rx*2, ry*2, 64*90, 64*90); /* top-left */
+	    Tree_DrawArc(tree, td, clip, gc, x, y, rx*2, ry*2, 64*90, 64*90); /* top-left */
 	if (drawW && drawS)
-	    XDrawArc(tree->display, td.drawable, gc, x, y + height - ry*2, rx*2, ry*2, 64*180, 64*90); /* bottom-left */
+	    Tree_DrawArc(tree, td, clip, gc, x, y + height - ry*2, rx*2, ry*2, 64*180, 64*90); /* bottom-left */
 	if (drawE && drawN)
-	    XDrawArc(tree->display, td.drawable, gc, x + width - rx*2, y, rx*2, ry*2, 64*0, 64*90); /* top-right */
+	    Tree_DrawArc(tree, td, clip, gc, x + width - rx*2, y, rx*2, ry*2, 64*0, 64*90); /* top-right */
 	if (drawE && drawS)
-	    XDrawArc(tree->display, td.drawable, gc, x + width - rx*2, y + height - ry*2, rx*2, ry*2, 64*270, 64*90); /* bottom-right */
+	    Tree_DrawArc(tree, td, clip, gc, x + width - rx*2, y + height - ry*2, rx*2, ry*2, 64*270, 64*90); /* bottom-right */
     }
 }
 
@@ -5656,28 +5656,30 @@ void
 Tree_FillRoundRectX11(
     TreeCtrl *tree,		/* Widget info. */
     TreeDrawable td,		/* Where to draw. */
+    TreeClip *clip,		/* Clipping area or NULL. */
     GC gc,			/* Graphics context. */
     TreeRectangle tr,		/* Rectangle to paint. */
     int rx, int ry,		/* Corner radius */
     int open			/* RECT_OPEN_x flags */
     )
 {
-    XRectangle rects[3], *rectp = rects;
+    TreeRectangle rects[3], *rectp = rects;
     int nrects = 0;
     int drawW = (open & RECT_OPEN_W) == 0;
     int drawN = (open & RECT_OPEN_N) == 0;
     int drawE = (open & RECT_OPEN_E) == 0;
     int drawS = (open & RECT_OPEN_S) == 0;
+    int i;
 
     tr.height -= 1, tr.width -= 1;
     if (drawW && drawN)
-	XFillArc(tree->display, td.drawable, gc, tr.x, tr.y, rx*2, ry*2, 64*90, 64*90); /* top-left */
+	Tree_FillArc(tree, td, clip, gc, tr.x, tr.y, rx*2, ry*2, 64*90, 64*90); /* top-left */
     if (drawW && drawS)
-	XFillArc(tree->display, td.drawable, gc, tr.x, tr.y + tr.height - ry*2, rx*2, ry*2, 64*180, 64*90); /* bottom-left */
+	Tree_FillArc(tree, td, clip, gc, tr.x, tr.y + tr.height - ry*2, rx*2, ry*2, 64*180, 64*90); /* bottom-left */
     if (drawE && drawN)
-	XFillArc(tree->display, td.drawable, gc, tr.x + tr.width - rx*2, tr.y, rx*2, ry*2, 64*0, 64*90); /* top-right */
+	Tree_FillArc(tree, td, clip, gc, tr.x + tr.width - rx*2, tr.y, rx*2, ry*2, 64*0, 64*90); /* top-right */
     if (drawE && drawS)
-	XFillArc(tree->display, td.drawable, gc, tr.x + tr.width - rx*2, tr.y + tr.height - ry*2, rx*2, ry*2, 64*270, 64*90); /* bottom-right */
+	Tree_FillArc(tree, td, clip, gc, tr.x + tr.width - rx*2, tr.y + tr.height - ry*2, rx*2, ry*2, 64*270, 64*90); /* bottom-right */
     tr.height += 1, tr.width += 1;
 
     /* Everything but left/right edges */
@@ -5718,9 +5720,8 @@ Tree_FillRoundRectX11(
 	rectp++;
     }
 
-    if (nrects > 0) {
-	XFillRectangles(tree->display, td.drawable, gc, rects, nrects);
-    }
+    for (i = 0; i < nrects; i++)
+	Tree_FillRectangle(tree, td, clip, gc, rects[i]);
 }
 
 /*****/
@@ -6530,9 +6531,9 @@ GetGradientBrushCoordX(
 
     switch (gcrd->type) {
 	case GCT_AREA: {
-	    int x1, y1, x2, y2;
-	    if (Tree_AreaBbox(tree, gcrd->area, &x1, &y1, &x2, &y2) == TRUE) {
-		(*xPtr) = (int) (x1 + (x2 - x1) * gcrd->value);
+	    TreeRectangle tr;
+	    if (Tree_AreaBbox(tree, gcrd->area, &tr) == TRUE) {
+		(*xPtr) = (int) (TreeRect_Left(tr) + TreeRect_Width(tr) * gcrd->value);
 		(*xPtr) += tree->xOrigin; /* Window -> Canvas */
 		return 1;
 	    }
@@ -6591,7 +6592,8 @@ GetGradientBrushCoordX(
 	    if (gcrd->item != NULL)
 		item = gcrd->item;
 	    if (item != NULL) {
-		int x, y, w, h, lock;
+		TreeRectangle tr;
+		int lock;
 		if (tree->columnCountVis > 0)
 		    lock = COLUMN_LOCK_NONE;
 		else if (tree->columnCountVisLeft > 0)
@@ -6611,12 +6613,11 @@ GetGradientBrushCoordX(
 			if (row2 != row || col2 != col - n)
 			    clip = 1; /* no item 'n' columns to the left */
 		    }
-		    if (Tree_ItemBbox(tree, item, lock,
-			    &x, &y, &w, &h) != -1) {
+		    if (Tree_ItemBbox(tree, item, lock, &tr) != -1) {
 			double tmp, frac;
 			if (clip || (frac = modf(-gcrd->value, &tmp)) == 0.0)
 			    frac = 1.0;
-			(*xPtr) = (int) (x + w * (1.0 - frac));
+			(*xPtr) = (int) (tr.x + tr.width * (1.0 - frac));
 			return 1;
 		    }
 		} else if (gcrd->value > 1.0) {
@@ -6630,17 +6631,15 @@ GetGradientBrushCoordX(
 			if (row2 != row || col2 != col + n)
 			    clip = 1; /* no item 'n' columns to the right */
 		    }
-		    if (Tree_ItemBbox(tree, item, lock,
-			    &x, &y, &w, &h) != -1) {
+		    if (Tree_ItemBbox(tree, item, lock, &tr) != -1) {
 			double tmp, frac;
 			if (clip || (frac = modf(gcrd->value, &tmp)) == 0.0)
 			    frac = 1.0;
-			(*xPtr) = (int) (x + w * frac);
+			(*xPtr) = (int) (tr.x + tr.width * frac);
 			return 1;
 		    }
-		} else if (Tree_ItemBbox(tree, item, lock,
-			&x, &y, &w, &h) != -1) {
-		    (*xPtr) = (int) (x + w * gcrd->value);
+		} else if (Tree_ItemBbox(tree, item, lock, &tr) != -1) {
+		    (*xPtr) = (int) (tr.x + tr.width * gcrd->value);
 		    return 1;
 		}
 	    }
@@ -6666,9 +6665,9 @@ GetGradientBrushCoordY(
 
     switch (gcrd->type) {
 	case GCT_AREA: {
-	    int x1, y1, x2, y2;
-	    if (Tree_AreaBbox(tree, gcrd->area, &x1, &y1, &x2, &y2) == TRUE) {
-		(*yPtr) = (int) (y1 + (y2 - y1) * gcrd->value);
+	    TreeRectangle tr;
+	    if (Tree_AreaBbox(tree, gcrd->area, &tr) == TRUE) {
+		(*yPtr) = (int) (TreeRect_Top(tr) + TreeRect_Height(tr) * gcrd->value);
 		(*yPtr) += tree->yOrigin; /* Window -> Canvas */
 		return 1;
 	    }
@@ -6689,7 +6688,8 @@ GetGradientBrushCoordY(
 	    if (gcrd->item != NULL)
 		item = gcrd->item;
 	    if (item != NULL) {
-		int x, y, w, h, lock;
+		TreeRectangle tr;
+		int lock;
 		if (tree->columnCountVis > 0)
 		    lock = COLUMN_LOCK_NONE;
 		else if (tree->columnCountVisLeft > 0)
@@ -6709,12 +6709,11 @@ GetGradientBrushCoordY(
 			if (row2 != row - n || col2 != col)
 			    clip = 1; /* no item 'n' rows above */
 		    }
-		    if (Tree_ItemBbox(tree, item, lock,
-			    &x, &y, &w, &h) != -1) {
+		    if (Tree_ItemBbox(tree, item, lock, &tr) != -1) {
 			double tmp, frac;
 			if (clip || (frac = modf(-gcrd->value, &tmp)) == 0.0)
 			    frac = 1.0;
-			(*yPtr) = (int) (y + h * (1.0 - frac));
+			(*yPtr) = (int) (tr.y + tr.height * (1.0 - frac));
 			return 1;
 		    }
 		} else if (gcrd->value > 1.0) {
@@ -6728,17 +6727,15 @@ GetGradientBrushCoordY(
 			if (row2 != row + n || col2 != col)
 			    clip = 1; /* no item 'n' rows below */
 		    }
-		    if (Tree_ItemBbox(tree, item, lock,
-			    &x, &y, &w, &h) != -1) {
+		    if (Tree_ItemBbox(tree, item, lock, &tr) != -1) {
 			double tmp, frac;
 			if (clip || (frac = modf(gcrd->value, &tmp)) == 0.0)
 			    frac = 1.0;
-			(*yPtr) = (int) (y + h * frac);
+			(*yPtr) = (int) (tr.y + tr.height * frac);
 			return 1;
 		    }
-		} else if (Tree_ItemBbox(tree, item, lock,
-			&x, &y, &w, &h) != -1) {
-		    (*yPtr) = (int) (y + h * gcrd->value);
+		} else if (Tree_ItemBbox(tree, item, lock, &tr) != -1) {
+		    (*yPtr) = (int) (tr.y + tr.height * gcrd->value);
 		    return 1;
 		}
 	    }
@@ -7701,7 +7698,7 @@ TreeGradient_FillRoundRectX11(
 	return;
 
     /* Use the first stop color */
-    Tree_FillRoundRect(tree, td, gradient->stopArrPtr->stops[0]->color,
+    Tree_FillRoundRect(tree, td, clip, gradient->stopArrPtr->stops[0]->color,
 	tr, rx, ry, open);
 }
 
@@ -7748,7 +7745,7 @@ _TreeGradient_FillRectX11(
 	    float y2 = trBrush.y + (i+1) * delta;
 	    trSub.y = (int)y1;
 	    trSub.height = (int)(ceil(y2) - floor(y1));
-	    if (Tree_IntersectRect(&trPaint, &trSub, &tr)) {
+	    if (TreeRect_Intersect(&trPaint, &trSub, &tr)) {
 		gc = Tk_GCForColor(gradient->stepColors[i], Tk_WindowId(tree->tkwin));
 		Tree_FillRectangle(tree, td, clip, gc, trPaint);
 	    }
@@ -7760,7 +7757,7 @@ _TreeGradient_FillRectX11(
 	    float x2 = trBrush.x + (i+1) * delta;
 	    trSub.x = (int)x1;
 	    trSub.width = (int)(ceil(x2) - floor(x1));
-	    if (Tree_IntersectRect(&trPaint, &trSub, &tr)) {
+	    if (TreeRect_Intersect(&trPaint, &trSub, &tr)) {
 		gc = Tk_GCForColor(gradient->stepColors[i], Tk_WindowId(tree->tkwin));
 		Tree_FillRectangle(tree, td, clip, gc, trPaint);
 	    }
@@ -7799,7 +7796,7 @@ TreeGradient_FillRectX11(
     while (trBrush.x < tr.x + tr.width) {
 	trBrush.y = oldY;
 	while (trBrush.y < tr.y + tr.height) {
-	    Tree_IntersectRect(&trSub, &trBrush, &tr);
+	    TreeRect_Intersect(&trSub, &trBrush, &tr);
 	    _TreeGradient_FillRectX11(tree, td, clip, gradient,
 		trBrush, trSub);
 	    trBrush.y += trBrush.height;
@@ -7973,6 +7970,7 @@ void
 TreeColor_DrawRoundRect(
     TreeCtrl *tree,		/* Widget info. */
     TreeDrawable td,		/* Where to draw. */
+    TreeClip *clip,		/* Clipping area or NULL. */
     TreeColor *tc,		/* Color info. */
     TreeRectangle tr,		/* Rectangle to outline. */
     int outlineWidth,		/* Width of outline. */
@@ -7985,7 +7983,8 @@ TreeColor_DrawRoundRect(
 /*    if (tc->gradient != NULL)
 	TreeGradient_DrawRoundRect(tree, td, tc->gradient, tr, rx, ry);*/
     if (tc->color != NULL) {
-	Tree_DrawRoundRect(tree, td, tc->color, tr, outlineWidth, rx, ry, open);
+	Tree_DrawRoundRect(tree, td, clip, tc->color, tr, outlineWidth,
+	    rx, ry, open);
     }
 }
 
@@ -8009,6 +8008,7 @@ void
 TreeColor_FillRoundRect(
     TreeCtrl *tree,		/* Widget info. */
     TreeDrawable td,		/* Where to draw. */
+    TreeClip *clip,		/* Clipping area or NULL. */
     TreeColor *tc,		/* Color info. */
     TreeRectangle trBrush,	/* Brush bounds. */
     TreeRectangle tr,		/* Rectangle to paint. */
@@ -8019,9 +8019,10 @@ TreeColor_FillRoundRect(
     if (tc == NULL)
 	return;
     if (tc->gradient != NULL)
-	TreeGradient_FillRoundRect(tree, td, tc->gradient, trBrush, tr, rx, ry, open);
+	TreeGradient_FillRoundRect(tree, td, clip, tc->gradient, trBrush, tr,
+	    rx, ry, open);
     if (tc->color != NULL) {
-	Tree_FillRoundRect(tree, td, tc->color, tr, rx, ry, open);
+	Tree_FillRoundRect(tree, td, clip, tc->color, tr, rx, ry, open);
     }
 }
 

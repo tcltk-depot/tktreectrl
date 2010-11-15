@@ -1078,6 +1078,9 @@ static void DisplayProcBorder(TreeElementArgs *args)
     Tk_3DBorder border;
     int relief, filled = FALSE;
     int thickness = 0;
+#if USE_ITEM_PIXMAP == 0
+    TreeClip clip;
+#endif
 
 #ifdef DEPRECATED
     BOOLEAN_FOR_STATE(draw, draw, state)
@@ -1118,6 +1121,22 @@ static void DisplayProcBorder(TreeElementArgs *args)
 	TRUE, TRUE,
 	&x, &y, &width, &height);
 
+#if USE_ITEM_PIXMAP == 0
+    /* Using a region instead of a rect because of how Tree_Fill3DRectangle
+     * and Tree_Draw3DRectangle are implemented. */
+    clip.type = TREE_CLIP_REGION;
+    clip.region = Tree_GetRectRegion(tree, &args->display.bounds);
+
+    if (filled) {
+	Tree_Fill3DRectangle(tree, args->display.td, &clip, border,
+		x, y, width, height, thickness, relief);
+    } else if (thickness > 0) {
+	Tree_Draw3DRectangle(tree, args->display.td, &clip, border,
+		x, y, width, height, thickness, relief);
+    }
+
+    Tree_FreeRegion(tree, clip.region);
+#else
     if (filled) {
 	Tk_Fill3DRectangle(tree->tkwin, args->display.drawable, border,
 		x, y, width, height, thickness, relief);
@@ -1125,6 +1144,7 @@ static void DisplayProcBorder(TreeElementArgs *args)
 	Tk_Draw3DRectangle(tree->tkwin, args->display.drawable, border,
 		x, y, width, height, thickness, relief);
     }
+#endif
 }
 
 static void NeededProcBorder(TreeElementArgs *args)
@@ -2137,6 +2157,7 @@ static void DisplayProcRect(TreeElementArgs *args)
 #if GRAD_COORDS
     TreeRectangle trBrush;
 #endif
+    TreeClip clip, *clipPtr = &clip;
     XColor *color;
     int open = 0;
     int outlineWidth = 0;
@@ -2188,6 +2209,15 @@ static void DisplayProcRect(TreeElementArgs *args)
 	TRUE, TRUE,
 	&x, &y, &width, &height);
 
+    tr.x = x, tr.y = y, tr.width = width, tr.height = height;
+
+#if USE_ITEM_PIXMAP == 0
+    clip.type = TREE_CLIP_RECT;
+    clip.tr = args->display.bounds;
+#else
+    clipPtr = NULL;
+#endif
+
     if (rx < 1 && ry < 1)
 	rx = ry = 0;
     else if (ry < 1)
@@ -2197,7 +2227,6 @@ static void DisplayProcRect(TreeElementArgs *args)
     rx = MIN(rx, width/2);
     ry = MIN(ry, height/2);
     if (rx >= 1 && ry >= 1) {
-	tr.x = x, tr.y = y, tr.width = width, tr.height = height;
 	TREECOLOR_FOR_STATE(tc, fill, state)
 	if (tc != NULL) {
 #if GRAD_COORDS
@@ -2221,14 +2250,14 @@ static void DisplayProcRect(TreeElementArgs *args)
 	    } else {
 		trBrush = tr;
 	    }
-	    TreeColor_FillRoundRect(tree, args->display.td, tc, trBrush, tr, rx, ry, open);
+	    TreeColor_FillRoundRect(tree, args->display.td, clipPtr, tc, trBrush, tr, rx, ry, open);
 #else
-	    TreeColor_FillRoundRect(tree, args->display.td, tc, tr, tr, rx, ry, open);
+	    TreeColor_FillRoundRect(tree, args->display.td, clipPtr, tc, tr, tr, rx, ry, open);
 #endif
 	}
 	COLOR_FOR_STATE(color, outline, state)
 	if ((color != NULL) && (outlineWidth > 0) && (open != RECT_OPEN_WNES)) {
-	    Tree_DrawRoundRect(tree, args->display.td, color, tr,
+	    Tree_DrawRoundRect(tree, args->display.td, clipPtr, color, tr,
 		outlineWidth, rx, ry, open);
 	}
 	/* TODO: active outline */
@@ -2259,16 +2288,16 @@ static void DisplayProcRect(TreeElementArgs *args)
 	} else {
 	    trBrush = tr;
 	}
-	TreeColor_FillRect(tree, args->display.td, NULL, tc, trBrush, tr);
+	TreeColor_FillRect(tree, args->display.td, clipPtr, tc, trBrush, tr);
 #else
-	TreeColor_FillRect(tree, args->display.td, NULL, tc, tr, tr);
+	TreeColor_FillRect(tree, args->display.td, clipPtr, tc, tr, tr);
 #endif
     }
 
     TREECOLOR_FOR_STATE(tc, outline, state)
     if ((tc != NULL) && (outlineWidth > 0) && (open != RECT_OPEN_WNES)) {
 	tr.x = x, tr.y = y, tr.width = width, tr.height = height;
-	TreeColor_DrawRect(tree, args->display.td, NULL, tc, tr,
+	TreeColor_DrawRect(tree, args->display.td, clipPtr, tc, tr,
 	    outlineWidth, open);
     }
 
@@ -3283,6 +3312,9 @@ static void DisplayProcText(TreeElementArgs *args)
     ElementTextStyle *ets, *etsM = NULL;
     int underline = TEXT_UNDERLINE_EMPTYVAL;
 #endif
+#if USE_ITEM_PIXMAP == 0
+    TreeRectangle trClip, trElem;
+#endif
 
 #ifdef DEPRECATED
     draw = DO_BooleanForState(tree, elem, DOID_TEXT_DRAW, state);
@@ -3348,6 +3380,17 @@ static void DisplayProcText(TreeElementArgs *args)
 	    args->display.width, args->display.height,
 	    FALSE, FALSE,
 	    &x, &y, &width, &height);
+#if USE_ITEM_PIXMAP == 0
+	/* Use clipping if text is larger than the display area. */
+	trElem.x = x, trElem.y = y, trElem.width = args->display.width,
+	    trElem.height = args->display.height;
+	if (TreeRect_Intersect(&trClip, &trElem, &args->display.bounds)) {
+	    clipRgn = Tree_GetRectRegion(tree, &trClip);
+	    TkSetRegion(tree->display, gc, clipRgn);
+	} else {
+	    return;
+	}
+#else
 	/* Use clipping if text is larger than the display area. */
 	if (pixelsForText > args->display.width || height > args->display.height) {
 	    XRectangle rect;
@@ -3359,6 +3402,7 @@ static void DisplayProcText(TreeElementArgs *args)
 	    TkUnionRectWithRegion(&rect, clipRgn, clipRgn);
 	    TkSetRegion(tree->display, gc, clipRgn);
 	}
+#endif
 	TextLayout_Draw(tree->display, args->display.drawable, gc,
 		layout, x, y, 0, -1, underline);
 	if (clipRgn != NULL) {
@@ -3383,6 +3427,17 @@ static void DisplayProcText(TreeElementArgs *args)
 	args->display.width, args->display.height,
 	FALSE, FALSE,
 	&x, &y, &width, &height);
+#if USE_ITEM_PIXMAP == 0
+    /* Use clipping if text is larger than the display area. */
+    trElem.x = x, trElem.y = y, trElem.width = args->display.width,
+	trElem.height = args->display.height;
+    if (TreeRect_Intersect(&trClip, &trElem, &args->display.bounds)) {
+	clipRgn = Tree_GetRectRegion(tree, &trClip);
+	TkSetRegion(tree->display, gc, clipRgn);
+    } else {
+	return;
+    }
+#else
     /* Use clipping if text is larger than the display area. */
     if (pixelsForText > args->display.width || height > args->display.height) {
 	XRectangle rect;
@@ -3394,6 +3449,7 @@ static void DisplayProcText(TreeElementArgs *args)
 	TkUnionRectWithRegion(&rect, clipRgn, clipRgn);
 	TkSetRegion(tree->display, gc, clipRgn);
     }
+#endif
     if (bytesThatFit != textLen) {
 	char staticStr[256], *buf = staticStr;
 	int bufLen = abs(bytesThatFit);
@@ -4152,10 +4208,7 @@ static void DisplayProcWindow(TreeElementArgs *args)
     if (height > args->display.height)
 	height = args->display.height;
 
-    minX = args->display.bounds[0];
-    minY = args->display.bounds[1];
-    maxX = args->display.bounds[2];
-    maxY = args->display.bounds[3];
+    TreeRect_XYXY(args->display.bounds, &minX, &minY, &maxX, &maxY);
 
     /*
      * If the window is completely out of the visible area of the treectrl

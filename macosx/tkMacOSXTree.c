@@ -783,13 +783,10 @@ TreeClip_ToGC(
 	TkSetRegion(tree->display, gc, state->region);
     }
     if (clip && clip->type == TREE_CLIP_AREA) {
-	int x1, y1, x2, y2;
-	XRectangle xr;
-	if (Tree_AreaBbox(tree, clip->area, &x1, &y1, &x2, &y2) == 0)
+	TreeRectangle tr;
+	if (Tree_AreaBbox(tree, clip->area, &tr) == 0)
 	    return;
-	xr.x = x1, xr.y = y1, xr.width = x2 - x1, xr.height = y2 - y1;
-	state->region = Tree_GetRegion(tree);
-	TkUnionRectWithRegion(&xr, state->region, state->region);
+	state->region = Tree_GetRectRegion(tree, &tr);
 	TkSetRegion(tree->display, gc, state->region);
     }
     if (clip && clip->type == TREE_CLIP_REGION) {
@@ -900,7 +897,7 @@ GetThemeButtonDrawInfo(
 int
 TreeTheme_DrawHeaderItem(
     TreeCtrl *tree,		/* Widget info. */
-    Drawable drawable,		/* Where to draw. */
+    TreeDrawable td,		/* Where to draw. */
     int state,			/* COLUMN_STATE_xxx flags. */
     int arrow,			/* COLUMN_ARROW_xxx flags. */
     int visIndex,		/* 0-based index in list of visible columns. */
@@ -908,7 +905,7 @@ TreeTheme_DrawHeaderItem(
     int width, int height	/* Bounds of the header. */
     )
 {
-    MacDrawable *macDraw = (MacDrawable *) drawable;
+    MacDrawable *macDraw = (MacDrawable *) td.drawable;
     CGRect bounds;
     HIThemeButtonDrawInfo info;
     MacContextSetup dc;
@@ -923,7 +920,7 @@ TreeTheme_DrawHeaderItem(
     info = GetThemeButtonDrawInfo(tree, state, arrow);
 
     tr.x = x, tr.y = y, tr.width = width, tr.height = height;
-    context = TreeMacOSX_GetContext(tree, drawable, tr, &dc);
+    context = TreeMacOSX_GetContext(tree, td.drawable, tr, &dc);
     if (context == NULL)
 	return TCL_ERROR;
 
@@ -1048,7 +1045,7 @@ TreeTheme_GetHeaderContentMargins(
 int
 TreeTheme_DrawHeaderArrow(
     TreeCtrl *tree,		/* Widget info. */
-    Drawable drawable,		/* Where to draw. */
+    TreeDrawable td,		/* Where to draw. */
     int state,			/* COLUMN_STATE_xxx flags. */
     int up,			/* TRUE if up arrow, FALSE otherwise. */
     int x, int y,		/* Bounds of arrow.  Width and */
@@ -1079,7 +1076,7 @@ TreeTheme_DrawHeaderArrow(
 int
 TreeTheme_DrawButton(
     TreeCtrl *tree,		/* Widget info. */
-    Drawable drawable,		/* Where to draw. */
+    TreeDrawable td,		/* Where to draw. */
     TreeItem item,		/* Needed for animating. */
     int state,			/* STATE_xxx | BUTTON_STATE_xxx flags. */
     int x, int y,		/* Bounds of the button.  Width and height */
@@ -1089,7 +1086,7 @@ TreeTheme_DrawButton(
 {
     int open = (state & STATE_OPEN) != 0;
     int pressed = (state & BUTTON_STATE_PRESSED) != 0;
-    MacDrawable *macDraw = (MacDrawable *) drawable;
+    MacDrawable *macDraw = (MacDrawable *) td.drawable;
     CGRect bounds;
     HIThemeButtonDrawInfo info;
     MacContextSetup dc;
@@ -1112,7 +1109,7 @@ TreeTheme_DrawButton(
     info.adornment = kThemeAdornmentDrawIndicatorOnly;
 
     tr.x = x, tr.y = y, tr.width = width, tr.height = height;
-    context = TreeMacOSX_GetContext(tree, drawable, tr, &dc);
+    context = TreeMacOSX_GetContext(tree, td.drawable, tr, &dc);
     if (context == NULL)
 	return TCL_ERROR;
 
@@ -2186,6 +2183,7 @@ void
 TreeGradient_FillRoundRect(
     TreeCtrl *tree,		/* Widget info. */
     TreeDrawable td,		/* Where to draw. */
+    TreeClip *clip,		/* Clipping area or NULL. */
     TreeGradient gradient,	/* Gradient token. */
     TreeRectangle trBrush,	/* Brush bounds. */
     TreeRectangle tr,		/* Where to draw. */
@@ -2207,14 +2205,14 @@ TreeGradient_FillRoundRect(
 	return;
 
     if (!(macDraw->flags & TK_IS_PIXMAP) || !tree->nativeGradients) {
-	TreeGradient_FillRoundRectX11(tree, td, NULL, gradient, trBrush, tr,
+	TreeGradient_FillRoundRectX11(tree, td, clip, gradient, trBrush, tr,
 	    rx, ry, open);
 	return;
     }
 
     context = TreeMacOSX_GetContext(tree, td.drawable, tr, &dc);
     if (context == NULL) {
-	TreeGradient_FillRoundRectX11(tree, td, NULL, gradient, trBrush, tr,
+	TreeGradient_FillRoundRectX11(tree, td, clip, gradient, trBrush, tr,
 	    rx, ry, open);
 	return;
     }
@@ -2343,6 +2341,7 @@ void
 Tree_DrawRoundRect(
     TreeCtrl *tree,		/* Widget info. */
     TreeDrawable td,		/* Where to draw. */
+    TreeClip *clip,		/* Clipping area or NULL. */
     XColor *xcolor,		/* Color. */
     TreeRectangle tr,		/* Where to draw. */
     int outlineWidth,
@@ -2357,14 +2356,14 @@ Tree_DrawRoundRect(
 
     if (!(macDraw->flags & TK_IS_PIXMAP) || !tree->nativeGradients) {
 	GC gc = Tk_GCForColor(xcolor, Tk_WindowId(tree->tkwin));
-	Tree_DrawRoundRectX11(tree, td, gc, tr, outlineWidth, rx, ry, open);
+	Tree_DrawRoundRectX11(tree, td, clip, gc, tr, outlineWidth, rx, ry, open);
 	return;
     }
 
     context = TreeMacOSX_GetContext(tree, td.drawable, tr, &dc);
     if (context == NULL) {
 	GC gc = Tk_GCForColor(xcolor, Tk_WindowId(tree->tkwin));
-	Tree_DrawRoundRectX11(tree, td, gc, tr, outlineWidth, rx, ry, open);
+	Tree_DrawRoundRectX11(tree, td, clip, gc, tr, outlineWidth, rx, ry, open);
 	return;
     }
 
@@ -2397,7 +2396,7 @@ Tree_DrawRoundRect(
     TreeMacOSX_ReleaseContext(tree, &dc);
 #else
     GC gc = Tk_GCForColor(xcolor, Tk_WindowId(tree->tkwin));
-    Tree_DrawRoundRectX11(tree, td, gc, tr, outlineWidth, rx, ry, open);
+    Tree_DrawRoundRectX11(tree, td, clip, gc, tr, outlineWidth, rx, ry, open);
 #endif
 }
 
@@ -2405,6 +2404,7 @@ void
 Tree_FillRoundRect(
     TreeCtrl *tree,		/* Widget info. */
     TreeDrawable td,		/* Where to draw. */
+    TreeClip *clip,		/* Clipping area or NULL. */
     XColor *xcolor,		/* Color. */
     TreeRectangle tr,		/* Where to draw. */
     int rx, int ry,		/* Corner radius */
@@ -2412,7 +2412,7 @@ Tree_FillRoundRect(
     )
 {
     GC gc = Tk_GCForColor(xcolor, Tk_WindowId(tree->tkwin));
-    Tree_FillRoundRectX11(tree, td, gc, tr, rx, ry, open);
+    Tree_FillRoundRectX11(tree, td, clip, gc, tr, rx, ry, open);
 }
 
 int

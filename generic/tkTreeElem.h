@@ -43,7 +43,7 @@ struct TreeElementArgs
 	int sticky;
 	TreeDrawable td;
 	Drawable drawable;
-	int bounds[4];
+	TreeRectangle bounds;
 	TreeColumn column; /* needed for gradients */
 	TreeItem item; /* needed for gradients */
     } display;

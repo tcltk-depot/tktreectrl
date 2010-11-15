@@ -2736,14 +2736,15 @@ TreeStyle_UseHeight(
  *----------------------------------------------------------------------
  */
 
-void TreeStyle_Draw(
+void
+TreeStyle_Draw(
     StyleDrawArgs *drawArgs	/* Various args. */
     )
 {
     IStyle *style = (IStyle *) drawArgs->style;
     MStyle *masterStyle = style->master;
     TreeCtrl *tree = drawArgs->tree;
-    int *bounds = drawArgs->bounds;
+    TreeRectangle bounds;
     TreeElementArgs args;
     int i, x, y, minWidth, minHeight;
     struct Layout staticLayouts[STATIC_SIZE], *layouts = staticLayouts;
@@ -2770,10 +2771,8 @@ void TreeStyle_Draw(
      * the item-column(s) and inside the header/borders. */
     x = drawArgs->x + tree->drawableXOrigin - tree->xOrigin;
     y = drawArgs->y + tree->drawableYOrigin - tree->yOrigin;
-    args.display.bounds[0] = MAX(bounds[0], x);
-    args.display.bounds[1] = MAX(bounds[1], y);
-    args.display.bounds[2] = MIN(bounds[2], x + drawArgs->width);
-    args.display.bounds[3] = MIN(bounds[3], y + drawArgs->height);
+    TreeRect_SetXYWH(bounds, x, y, drawArgs->width, drawArgs->height);
+    TreeRect_Intersect(&args.display.bounds, &bounds, &drawArgs->bounds);
 
     /* We never lay out the style at less than the minimum size */
     if (drawArgs->width < minWidth + drawArgs->indent)
@@ -2934,7 +2933,7 @@ TreeStyle_UpdateWindowPositions(
     IStyle *style = (IStyle *) drawArgs->style;
     MStyle *masterStyle = style->master;
     TreeCtrl *tree = drawArgs->tree;
-    int *bounds = drawArgs->bounds;
+    TreeRectangle bounds;
     TreeElementArgs args;
     int i, x, y, minWidth, minHeight;
     struct Layout staticLayouts[STATIC_SIZE], *layouts = staticLayouts;
@@ -2967,10 +2966,8 @@ TreeStyle_UpdateWindowPositions(
      * the item-column(s) and inside the header/borders. */
     x = drawArgs->x + tree->drawableXOrigin - tree->xOrigin;
     y = drawArgs->y + tree->drawableYOrigin - tree->yOrigin;
-    args.display.bounds[0] = MAX(bounds[0], x);
-    args.display.bounds[1] = MAX(bounds[1], y);
-    args.display.bounds[2] = MIN(bounds[2], x + drawArgs->width);
-    args.display.bounds[3] = MIN(bounds[3], y + drawArgs->height);
+    TreeRect_SetXYWH(bounds, x, y, drawArgs->width, drawArgs->height);
+    TreeRect_Intersect(&args.display.bounds, &bounds, &drawArgs->bounds);
 
     /* We never lay out the style at less than the minimum size */
     if (drawArgs->width < minWidth + drawArgs->indent)

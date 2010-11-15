@@ -723,18 +723,14 @@ TreeClip_ToDC(
     state->region = None;
 
     if (clip && clip->type == TREE_CLIP_RECT) {
-	state->region = Tree_GetRegion(tree);
-	Tree_SetRectRegion(state->region, &clip->tr);
+	state->region = Tree_GetRectRegion(tree, &clip->tr);
 	SelectClipRgn(dc, (HRGN) state->region);
     }
     if (clip && clip->type == TREE_CLIP_AREA) {
-	int x1, y1, x2, y2;
-	XRectangle xr;
-	if (Tree_AreaBbox(tree, clip->area, &x1, &y1, &x2, &y2) == 0)
+	TreeRectangle tr;
+	if (Tree_AreaBbox(tree, clip->area, &tr) == 0)
 	    return;
-	xr.x = x1, xr.y = y1, xr.width = x2 - x1, xr.height = y2 - y1;
-	state->region = Tree_GetRegion(tree);
-	TkUnionRectWithRegion(&xr, state->region, state->region);
+	state->region = Tree_GetRectRegion(tree, &tr);
 	SelectClipRgn(dc, (HRGN) state->region);
     }
     if (clip && clip->type == TREE_CLIP_REGION) {
@@ -751,6 +747,200 @@ TreeClip_FinishDC(
     if (state->region != NULL)
 	Tree_FreeRegion(state->tree, state->region);
 }
+
+#if USE_ITEM_PIXMAP == 0
+/*
+ *----------------------------------------------------------------------
+ *
+ * DrawOrFillArc --
+ *	Copied from tkTwinDraw.c because the clip region is ignored on
+ *	Win32.
+ *
+ *	This function handles the rendering of drawn or filled arcs and
+ *	chords.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Renders the requested arc.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/*
+ * These macros convert between X's bizarre angle units to radians.
+ */
+
+#define PI 3.14159265358979
+#define XAngleToRadians(a) ((double)(a) / 64 * PI / 180);
+
+static void
+DrawOrFillArc(
+    TreeCtrl *tree,		/* Widget info. */
+    Drawable d,
+    TreeClip *clip,		/* Clipping area or NULL. */
+    GC gc,
+    int x, int y,		/* left top */
+    unsigned int width, unsigned int height,
+    int start,			/* start: three-o'clock (deg*64) */
+    int extent,			/* extent: relative (deg*64) */
+    int fill)			/* ==0 draw, !=0 fill */
+{
+    HDC dc;
+    HBRUSH brush, oldBrush;
+    HPEN pen, oldPen;
+    TkWinDCState state;
+    TreeClipStateDC clipState;
+    int clockwise = (extent < 0); /* non-zero if clockwise */
+    int xstart, ystart, xend, yend;
+    double radian_start, radian_end, xr, yr;
+
+    if (d == None) {
+	return;
+    }
+
+    dc = TkWinGetDrawableDC(tree->display, d, &state);
+    TreeClip_ToDC(tree, clip, dc, &clipState);
+
+/*    SetROP2(dc, tkpWinRopModes[gc->function]);*/
+
+    /*
+     * Compute the absolute starting and ending angles in normalized radians.
+     * Swap the start and end if drawing clockwise.
+     */
+
+    start = start % (64*360);
+    if (start < 0) {
+	start += (64*360);
+    }
+    extent = (start+extent) % (64*360);
+    if (extent < 0) {
+	extent += (64*360);
+    }
+    if (clockwise) {
+	int tmp = start;
+	start = extent;
+	extent = tmp;
+    }
+    radian_start = XAngleToRadians(start);
+    radian_end = XAngleToRadians(extent);
+
+    /*
+     * Now compute points on the radial lines that define the starting and
+     * ending angles. Be sure to take into account that the y-coordinate
+     * system is inverted.
+     */
+
+    xr = x + width / 2.0;
+    yr = y + height / 2.0;
+    xstart = (int)((xr + cos(radian_start)*width/2.0) + 0.5);
+    ystart = (int)((yr + sin(-radian_start)*height/2.0) + 0.5);
+    xend = (int)((xr + cos(radian_end)*width/2.0) + 0.5);
+    yend = (int)((yr + sin(-radian_end)*height/2.0) + 0.5);
+
+    /*
+     * Now draw a filled or open figure. Note that we have to increase the
+     * size of the bounding box by one to account for the difference in pixel
+     * definitions between X and Windows.
+     */
+
+    pen = CreatePen((int) PS_SOLID, gc->line_width, gc->foreground);
+    oldPen = SelectObject(dc, pen);
+    if (!fill) {
+	/*
+	 * Note that this call will leave a gap of one pixel at the end of the
+	 * arc for thin arcs. We can't use ArcTo because it's only supported
+	 * under Windows NT.
+	 */
+
+	SetBkMode(dc, TRANSPARENT);
+	Arc(dc, x, y, (int) (x+width+1), (int) (y+height+1), xstart, ystart,
+		xend, yend);
+    } else {
+	brush = CreateSolidBrush(gc->foreground);
+	oldBrush = SelectObject(dc, brush);
+	if (gc->arc_mode == ArcChord) {
+	    Chord(dc, x, y, (int) (x+width+1), (int) (y+height+1),
+		    xstart, ystart, xend, yend);
+	} else if (gc->arc_mode == ArcPieSlice) {
+	    Pie(dc, x, y, (int) (x+width+1), (int) (y+height+1),
+		    xstart, ystart, xend, yend);
+	}
+	DeleteObject(SelectObject(dc, oldBrush));
+    }
+    DeleteObject(SelectObject(dc, oldPen));
+    TreeClip_FinishDC(&clipState);
+    TkWinReleaseDrawableDC(d, dc, &state);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tree_DrawArc --
+ *
+ *	Wrapper around XDrawArc() because the clip region is
+ *	ignored on Win32.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Draws onto the specified drawable.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tree_DrawArc(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeDrawable td,		/* Where to draw. */
+    TreeClip *clip,		/* Clipping area or NULL. */
+    GC gc,
+    int x, int y,
+    unsigned int width, unsigned int height,
+    int start, int extent)
+{
+    tree->display->request++;
+
+    DrawOrFillArc(tree, td.drawable, clip, gc, x, y, width, height,
+	start, extent, 0);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tree_FillArc --
+ *
+ *	Wrapper around XFillArc() because the clip region is
+ *	ignored on Win32.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Draws onto the specified drawable.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tree_FillArc(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeDrawable td,		/* Where to draw. */
+    TreeClip *clip,		/* Clipping area or NULL. */
+    GC gc,
+    int x, int y,
+    unsigned int width, unsigned int height,
+    int start, int extent)
+{
+    tree->display->request++;
+
+    DrawOrFillArc(tree, td.drawable, clip, gc, x, y, width, height,
+	start, extent, 1);
+}
+
+#endif /* USE_ITEM_PIXMAP == 0 */
 
 /*
  *----------------------------------------------------------------------
@@ -778,6 +968,27 @@ Tree_FillRectangle(
     TreeRectangle tr		/* Rectangle to paint. */
     )
 {
+#if 1
+    HDC dc;
+    TkWinDCState dcState;
+    TreeClipStateDC clipState;
+    RECT rect;
+    COLORREF oldColor;
+
+    dc = TkWinGetDrawableDC(tree->display, td.drawable, &dcState);
+    TreeClip_ToDC(tree, clip, dc, &clipState);
+
+    rect.left = tr.x, rect.top = tr.y,
+	rect.right = tr.x + tr.width, rect.bottom = tr.y + tr.height;
+
+    oldColor = SetBkColor(dc, (COLORREF)gc->foreground);
+    SetBkMode(dc, OPAQUE);
+    ExtTextOut(dc, 0, 0, ETO_OPAQUE, &rect, NULL, 0, NULL);
+    SetBkColor(dc, oldColor);
+
+    TreeClip_FinishDC(&clipState);
+    TkWinReleaseDrawableDC(td.drawable, dc, &dcState);
+#else
     HDC dc;
     TkWinDCState dcState;
     HBRUSH brush;
@@ -795,7 +1006,305 @@ Tree_FillRectangle(
     TreeClip_FinishDC(&clipState);
     DeleteObject(brush);
     TkWinReleaseDrawableDC(td.drawable, dc, &dcState);
+#endif
 }
+
+#if USE_ITEM_PIXMAP == 0
+
+static void
+FastFillRect(
+    HDC dc,
+    int x, int y, int width, int height,
+    COLORREF pixel
+    )
+{
+    RECT rect;
+    COLORREF oldColor;
+
+    rect.left = x, rect.top = y,
+	rect.right = x + width, rect.bottom = y + height;
+
+    oldColor = SetBkColor(dc, pixel);
+    SetBkMode(dc, OPAQUE);
+    ExtTextOut(dc, 0, 0, ETO_OPAQUE, &rect, NULL, 0, NULL);
+    SetBkColor(dc, oldColor);
+}
+    
+static void
+_3DVerticalBevel(
+    HDC dc,
+    Tk_Window tkwin,		/* Window for which border was allocated. */
+    Tk_3DBorder border,		/* Token for border to draw. */
+    int x, int y, int width, int height,
+				/* Area of vertical bevel. */
+    int leftBevel,		/* Non-zero means this bevel forms the left
+				 * side of the object; 0 means it forms the
+				 * right side. */
+    int relief)			/* Kind of bevel to draw. For example,
+				 * TK_RELIEF_RAISED means interior of object
+				 * should appear higher than exterior. */
+{
+    COLORREF left, right;
+    int half;
+
+    switch (relief) {
+    case TK_RELIEF_RAISED:
+	left = (leftBevel)
+		? TkWinGetBorderPixels(tkwin, border, TK_3D_LIGHT_GC)
+		: TkWinGetBorderPixels(tkwin, border, TK_3D_DARK_GC);
+	right = (leftBevel)
+		? TkWinGetBorderPixels(tkwin, border, TK_3D_LIGHT2)
+		: TkWinGetBorderPixels(tkwin, border, TK_3D_DARK2);
+	break;
+    case TK_RELIEF_SUNKEN:
+	left = (leftBevel)
+		? TkWinGetBorderPixels(tkwin, border, TK_3D_DARK_GC)
+		: TkWinGetBorderPixels(tkwin, border, TK_3D_LIGHT2);
+	right = (leftBevel)
+		? TkWinGetBorderPixels(tkwin, border, TK_3D_DARK2)
+		: TkWinGetBorderPixels(tkwin, border, TK_3D_LIGHT_GC);
+	break;
+    case TK_RELIEF_RIDGE:
+	left = TkWinGetBorderPixels(tkwin, border, TK_3D_LIGHT_GC);
+	right = TkWinGetBorderPixels(tkwin, border, TK_3D_DARK_GC);
+	break;
+    case TK_RELIEF_GROOVE:
+	left = TkWinGetBorderPixels(tkwin, border, TK_3D_DARK_GC);
+	right = TkWinGetBorderPixels(tkwin, border, TK_3D_LIGHT_GC);
+	break;
+    case TK_RELIEF_FLAT:
+	left = right = TkWinGetBorderPixels(tkwin, border, TK_3D_FLAT_GC);
+	break;
+    case TK_RELIEF_SOLID:
+    default:
+	left = right = RGB(0,0,0);
+	break;
+    }
+    half = width/2;
+    if (leftBevel && (width & 1)) {
+	half++;
+    }
+    FastFillRect(dc, x, y, half, height, left);
+    FastFillRect(dc, x+half, y, width-half, height, right);
+}
+
+static void
+_3DHorizontalBevel(
+    HDC dc,
+    Tk_Window tkwin,		/* Window for which border was allocated. */
+    Tk_3DBorder border,		/* Token for border to draw. */
+    int x, int y, int width, int height,
+				/* Bounding box of area of bevel. Height gives
+				 * width of border. */
+    int leftIn, int rightIn,	/* Describes whether the left and right edges
+				 * of the bevel angle in or out as they go
+				 * down. For example, if "leftIn" is true, the
+				 * left side of the bevel looks like this:
+				 *	___________
+				 *	 __________
+				 *	  _________
+				 *	   ________
+				 */
+    int topBevel,		/* Non-zero means this bevel forms the top
+				 * side of the object; 0 means it forms the
+				 * bottom side. */
+    int relief)			/* Kind of bevel to draw. For example,
+				 * TK_RELIEF_RAISED means interior of object
+				 * should appear higher than exterior. */
+{
+    int bottom, halfway, x1, x2, x1Delta, x2Delta;
+    int topColor, bottomColor;
+
+    switch (relief) {
+    case TK_RELIEF_RAISED:
+	topColor = (topBevel)
+		? TkWinGetBorderPixels(tkwin, border, TK_3D_LIGHT_GC)
+		: TkWinGetBorderPixels(tkwin, border, TK_3D_DARK_GC);
+	bottomColor = (topBevel)
+		? TkWinGetBorderPixels(tkwin, border, TK_3D_LIGHT2)
+		: TkWinGetBorderPixels(tkwin, border, TK_3D_DARK2);
+	break;
+    case TK_RELIEF_SUNKEN:
+	topColor = (topBevel)
+		? TkWinGetBorderPixels(tkwin, border, TK_3D_DARK_GC)
+		: TkWinGetBorderPixels(tkwin, border, TK_3D_LIGHT2);
+	bottomColor = (topBevel)
+		? TkWinGetBorderPixels(tkwin, border, TK_3D_DARK2)
+		: TkWinGetBorderPixels(tkwin, border, TK_3D_LIGHT_GC);
+	break;
+    case TK_RELIEF_RIDGE:
+	topColor = TkWinGetBorderPixels(tkwin, border, TK_3D_LIGHT_GC);
+	bottomColor = TkWinGetBorderPixels(tkwin, border, TK_3D_DARK_GC);
+	break;
+    case TK_RELIEF_GROOVE:
+	topColor = TkWinGetBorderPixels(tkwin, border, TK_3D_DARK_GC);
+	bottomColor = TkWinGetBorderPixels(tkwin, border, TK_3D_LIGHT_GC);
+	break;
+    case TK_RELIEF_FLAT:
+	topColor = bottomColor = TkWinGetBorderPixels(tkwin, border, TK_3D_FLAT_GC);
+	break;
+    case TK_RELIEF_SOLID:
+    default:
+	topColor = bottomColor = RGB(0,0,0);
+    }
+
+    if (leftIn) {
+	x1 = x+1;
+    } else {
+	x1 = x+height-1;
+    }
+    x2 = x+width;
+    if (rightIn) {
+	x2--;
+    } else {
+	x2 -= height;
+    }
+    x1Delta = (leftIn) ? 1 : -1;
+    x2Delta = (rightIn) ? -1 : 1;
+    halfway = y + height/2;
+    if (topBevel && (height & 1)) {
+	halfway++;
+    }
+    bottom = y + height;
+
+    for ( ; y < bottom; y++) {
+	if (x1 < x2) {
+	    FastFillRect(dc, x1, y, x2-x1, 1,
+		(y < halfway) ? topColor : bottomColor);
+	}
+	x1 += x1Delta;
+	x2 += x2Delta;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tree_Draw3DRectangle --
+ *
+ *	Reimplementation of Tk_Draw3DRectangle() because the clip
+ *	region is ignored on Win32.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Draws onto the specified drawable.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tree_Draw3DRectangle(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeDrawable td,		/* Where to draw. */
+    TreeClip *clip,		/* Clipping area or NULL. */
+    Tk_3DBorder border,		/* Token for border to draw. */
+    int x, int y, int width, int height,
+				/* Outside area of region in which border will
+				 * be drawn. */
+    int borderWidth,		/* Desired width for border, in pixels. */
+    int relief			/* Type of relief: TK_RELIEF_RAISED,
+				 * TK_RELIEF_SUNKEN, TK_RELIEF_GROOVE, etc. */
+    )
+{
+    Tk_Window tkwin = tree->tkwin;
+    HDC dc;
+    TkWinDCState dcState;
+    TreeClipStateDC clipState;
+
+    dc = TkWinGetDrawableDC(tree->display, td.drawable, &dcState);
+    TreeClip_ToDC(tree, clip, dc, &clipState);
+
+    if (width < 2*borderWidth) {
+	borderWidth = width/2;
+    }
+    if (height < 2*borderWidth) {
+	borderWidth = height/2;
+    }
+    _3DVerticalBevel(dc, tkwin, border, x, y, borderWidth, height,
+	    1, relief);
+    _3DVerticalBevel(dc, tkwin, border, x+width-borderWidth, y,
+	    borderWidth, height, 0, relief);
+    _3DHorizontalBevel(dc, tkwin, border, x, y, width, borderWidth,
+	    1, 1, 1, relief);
+    _3DHorizontalBevel(dc, tkwin, border, x, y+height-borderWidth,
+	    width, borderWidth, 0, 0, 0, relief);
+
+    TreeClip_FinishDC(&clipState);
+    TkWinReleaseDrawableDC(td.drawable, dc, &dcState);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tree_Fill3DRectangle --
+ *
+ *	Reimplementation of Tree_Fill3DRectangle() because the clip
+ *	region is ignored on Win32.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Draws onto the specified drawable.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tree_Fill3DRectangle(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeDrawable td,		/* Where to draw. */
+    TreeClip *clip,		/* Clipping area or NULL. */
+    Tk_3DBorder border,		/* Token for border to draw. */
+    int x, int y, int width, int height,
+				/* Outside area of rectangular region. */
+    int borderWidth,		/* Desired width for border, in pixels. Border
+				 * will be *inside* region. */
+    int relief			/* Indicates 3D effect: TK_RELIEF_FLAT,
+				 * TK_RELIEF_RAISED, or TK_RELIEF_SUNKEN. */
+    )
+{
+    Tk_Window tkwin = tree->tkwin;
+    HDC dc;
+    TkWinDCState dcState;
+    TreeClipStateDC clipState;
+    int doubleBorder;
+
+    dc = TkWinGetDrawableDC(tree->display, td.drawable, &dcState);
+    TreeClip_ToDC(tree, clip, dc, &clipState);
+
+    if (relief == TK_RELIEF_FLAT) {
+	borderWidth = 0;
+    } else {
+	if (width < 2*borderWidth) {
+	    borderWidth = width/2;
+	}
+	if (height < 2*borderWidth) {
+	    borderWidth = height/2;
+	}
+    }
+    doubleBorder = 2*borderWidth;
+
+    if ((width > doubleBorder) && (height > doubleBorder)) {
+	FastFillRect(dc,
+		x + borderWidth, y + borderWidth,
+		(unsigned int) (width - doubleBorder),
+		(unsigned int) (height - doubleBorder),
+		TkWinGetBorderPixels(tkwin, border, TK_3D_FLAT_GC));
+    }
+
+    TreeClip_FinishDC(&clipState);
+    TkWinReleaseDrawableDC(td.drawable, dc, &dcState);
+
+    if (borderWidth) {
+	Tree_Draw3DRectangle(tree, td, clip, border, x, y, width,
+		height, borderWidth, relief);
+    }
+}
+
+#endif /* USE_ITEM_PIXMAP == 0 */
 
 /*** Themes ***/
 
@@ -1164,7 +1673,7 @@ LoadXPThemeProcs(HINSTANCE *phlib)
 int
 TreeTheme_DrawHeaderItem(
     TreeCtrl *tree,		/* Widget info. */
-    Drawable drawable,		/* Where to draw. */
+    TreeDrawable td,		/* Where to draw. */
     int state,			/* COLUMN_STATE_xxx flags. */
     int arrow,			/* COLUMN_ARROW_xxx flags. */
     int visIndex,		/* 0-based index in list of visible columns. */
@@ -1214,7 +1723,7 @@ TreeTheme_DrawHeaderItem(
 	iStateId)) {
 #if 1
 	/* What color should I use? */
-	Tk_Fill3DRectangle(tree->tkwin, drawable, tree->border, x, y, width, height, 0, TK_RELIEF_FLAT);
+	Tk_Fill3DRectangle(tree->tkwin, td.drawable, tree->border, x, y, width, height, 0, TK_RELIEF_FLAT);
 #else
 	/* This draws nothing, maybe because the parent window is not
 	 * themed */
@@ -1225,7 +1734,7 @@ TreeTheme_DrawHeaderItem(
 #endif
     }
 
-    hDC = TkWinGetDrawableDC(tree->display, drawable, &dcState);
+    hDC = TkWinGetDrawableDC(tree->display, td.drawable, &dcState);
 
 #if 0
     {
@@ -1266,7 +1775,7 @@ TreeTheme_DrawHeaderItem(
 	&rc,
 	NULL);
 
-    TkWinReleaseDrawableDC(drawable, hDC, &dcState);
+    TkWinReleaseDrawableDC(td.drawable, hDC, &dcState);
 
     if (hr != S_OK)
 	return TCL_ERROR;
@@ -1370,7 +1879,7 @@ dbwin("margins %d %d %d %d\n", bounds[0], bounds[1], bounds[2], bounds[3]);
 int
 TreeTheme_DrawHeaderArrow(
     TreeCtrl *tree,		/* Widget info. */
-    Drawable drawable,		/* Where to draw. */
+    TreeDrawable td,		/* Where to draw. */
     int state,			/* COLUMN_STATE_xxx flags. */
     int up,			/* TRUE if up arrow, FALSE otherwise. */
     int x, int y,		/* Bounds of arrow.  Width and */
@@ -1388,17 +1897,17 @@ TreeTheme_DrawHeaderArrow(
 	return TCL_ERROR;
 
     color = Tk_GetColor(tree->interp, tree->tkwin, "#ACA899");
-    gc = Tk_GCForColor(color, drawable);
+    gc = Tk_GCForColor(color, td.drawable);
 
     if (up) {
 	for (i = 0; i < height; i++) {
-	    XDrawLine(tree->display, drawable, gc,
+	    XDrawLine(tree->display, td.drawable, gc,
 		x + width / 2 - i, y + i,
 		x + width / 2 + i + 1, y + i);
 	}
     } else {
 	for (i = 0; i < height; i++) {
-	    XDrawLine(tree->display, drawable, gc,
+	    XDrawLine(tree->display, td.drawable, gc,
 		x + width / 2 - i, y + (height - 1) - i,
 		x + width / 2 + i + 1, y + (height - 1) - i);
 	}
@@ -1433,7 +1942,7 @@ TreeTheme_DrawHeaderArrow(
 	return TCL_ERROR;
     }
 
-    hDC = TkWinGetDrawableDC(tree->display, drawable, &dcState);
+    hDC = TkWinGetDrawableDC(tree->display, td.drawable, &dcState);
 
     rc.left = x;
     rc.top = y;
@@ -1448,7 +1957,7 @@ TreeTheme_DrawHeaderArrow(
 	&rc,
 	NULL);
 
-    TkWinReleaseDrawableDC(drawable, hDC, &dcState);
+    TkWinReleaseDrawableDC(td.drawable, hDC, &dcState);
     return TCL_OK;
 #endif /* THEME_ARROW==1 */
 }
@@ -1473,7 +1982,7 @@ TreeTheme_DrawHeaderArrow(
 int
 TreeTheme_DrawButton(
     TreeCtrl *tree,		/* Widget info. */
-    Drawable drawable,		/* Where to draw. */
+    TreeDrawable td,		/* Where to draw. */
     TreeItem item,		/* Needed for animating. */
     int state,			/* STATE_xxx | BUTTON_STATE_xxx flags. */
     int x, int y,		/* Bounds of the button.  Width and height */
@@ -1517,7 +2026,7 @@ TreeTheme_DrawButton(
     }
 #endif
 
-    hDC = TkWinGetDrawableDC(tree->display, drawable, &dcState);
+    hDC = TkWinGetDrawableDC(tree->display, td.drawable, &dcState);
 
     rc.left = x;
     rc.top = y;
@@ -1531,7 +2040,7 @@ TreeTheme_DrawButton(
 	&rc,
 	NULL);
 
-    TkWinReleaseDrawableDC(drawable, hDC, &dcState);
+    TkWinReleaseDrawableDC(td.drawable, hDC, &dcState);
 
     if (hr != S_OK)
 	return TCL_ERROR;
@@ -2574,12 +3083,14 @@ TreeClip_ToGraphics(
 	    CombineModeReplace);
     }
     if (clip && clip->type == TREE_CLIP_AREA) {
-	int x1, y1, x2, y2;
-	if (Tree_AreaBbox(tree, clip->area, &x1, &y1, &x2, &y2) == 0) {
-	    x1 = y1 = x2 = y2 = 0;
+	TreeRectangle tr;
+	if (Tree_AreaBbox(tree, clip->area, &tr) == 0) {
+	    TreeRect_SetXYWH(tr, 0, 0, 0, 0);
 	}
 	status = DllExports._GdipSetClipRectI(graphics,
-	    x1, y1, x2 - x1, y2 - y1, CombineModeReplace);
+	    TreeRect_Left(tr), TreeRect_Top(tr),
+	    TreeRect_Width(tr), TreeRect_Height(tr),
+	    CombineModeReplace);
     }
     if (clip && clip->type == TREE_CLIP_REGION) {
 	panic("TREE_CLIP_REGION unimplemented @ %s:%s", __FILE__, __LINE__);
@@ -2827,6 +3338,7 @@ void
 Tree_DrawRoundRect(
     TreeCtrl *tree,		/* Widget info. */
     TreeDrawable td,		/* Where to draw. */
+    TreeClip *clip,		/* Clipping area or NULL. */
     XColor *xcolor,		/* Color. */
     TreeRectangle tr,		/* Rectangle to draw. */
     int outlineWidth,		/* Width of outline. */
@@ -2836,6 +3348,7 @@ Tree_DrawRoundRect(
 {
     HDC hDC;
     TkWinDCState dcState;
+    TreeClipStateGraphics clipState;
     GpGraphics *graphics;
     GpPath *path;
     ARGB color;
@@ -2845,7 +3358,7 @@ Tree_DrawRoundRect(
 
     if (!tree->nativeGradients || (DllExports.handle == NULL)) {
 	GC gc = Tk_GCForColor(xcolor, td.drawable);
-	Tree_DrawRoundRectX11(tree, td, gc, tr, outlineWidth, rx, ry, open);
+	Tree_DrawRoundRectX11(tree, td, clip, gc, tr, outlineWidth, rx, ry, open);
 	return;
     }
 
@@ -2861,6 +3374,10 @@ Tree_DrawRoundRect(
 
     color = MakeGDIPlusColor(xcolor,1.0f);
     status = DllExports._GdipCreatePen1(color, 1, UnitPixel, &pen);
+    if (status != Ok)
+	goto error3;
+
+    status = TreeClip_ToGraphics(tree, clip, graphics, &clipState);
     if (status != Ok)
 	goto error3;
 
@@ -2985,6 +3502,7 @@ void
 Tree_FillRoundRect(
     TreeCtrl *tree,		/* Widget info. */
     TreeDrawable td,		/* Where to draw. */
+    TreeClip *clip,		/* Clipping area or NULL. */
     XColor *xcolor,		/* Color. */
     TreeRectangle tr,		/* Where to draw. */
     int rx, int ry,		/* Corner radius */
@@ -2993,6 +3511,7 @@ Tree_FillRoundRect(
 {
     HDC hDC;
     TkWinDCState dcState;
+    TreeClipStateGraphics clipState;
     GpGraphics *graphics;
     GpPath *path;
     ARGB color;
@@ -3004,7 +3523,7 @@ Tree_FillRoundRect(
 
     if (!tree->nativeGradients || (DllExports.handle == NULL)) {
 	GC gc = Tk_GCForColor(xcolor, td.drawable);
-	Tree_FillRoundRectX11(tree, td, gc, tr, rx, ry, open);
+	Tree_FillRoundRectX11(tree, td, clip, gc, tr, rx, ry, open);
 	return;
     }
 
@@ -3039,6 +3558,10 @@ Tree_FillRoundRect(
 #endif
     );
 
+    status = TreeClip_ToGraphics(tree, clip, graphics, &clipState);
+    if (status != Ok)
+	goto error4;
+
     DllExports._GdipFillPath(graphics, brush, path);
 
 #ifdef ROUND_RECT_SYMMETRY_HACK
@@ -3052,9 +3575,9 @@ Tree_FillRoundRect(
     DllExports._GdipDrawPath(graphics, pen, path);
 
     DllExports._GdipDeletePen(pen);
+#endif /* ROUND_RECT_SYMMETRY_HACK */
 
 error4:
-#endif /* ROUND_RECT_SYMMETRY_HACK */
     DllExports._GdipDeleteBrush(brush);
 
 error3:
@@ -3071,6 +3594,7 @@ void
 TreeGradient_FillRoundRect(
     TreeCtrl *tree,		/* Widget info. */
     TreeDrawable td,		/* Where to draw. */
+    TreeClip *clip,		/* Clipping area or NULL. */
     TreeGradient gradient,	/* Gradient token. */
     TreeRectangle trBrush,	/* Brush bounds. */
     TreeRectangle tr,		/* Where to draw. */
@@ -3080,6 +3604,7 @@ TreeGradient_FillRoundRect(
 {
     HDC hDC;
     TkWinDCState dcState;
+    TreeClipStateGraphics clipState;
     GpGraphics *graphics;
     GpPath *path;
     GpLineGradient *lineGradient;
@@ -3118,8 +3643,13 @@ TreeGradient_FillRoundRect(
 #endif
     );
 
+    status = TreeClip_ToGraphics(tree, clip, graphics, &clipState);
+    if (status != Ok)
+	goto error4;
+
     DllExports._GdipFillPath(graphics, lineGradient, path);
 
+error4:
     DllExports._GdipDeleteBrush(lineGradient);
 
 error3:

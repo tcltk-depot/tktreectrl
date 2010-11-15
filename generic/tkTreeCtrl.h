@@ -77,6 +77,7 @@ MODULE_SCOPE void dbwin_add_interp(Tcl_Interp *interp);
 /* #define DRAGIMAGE_STYLE */ /* Use an item style as the dragimage instead of XOR rectangles. */
 #define GRAD_COORDS 1
 #define BGIMAGEOPT 1
+#define USE_ITEM_PIXMAP 1
 
 typedef struct TreeCtrl TreeCtrl;
 typedef struct TreeColumn_ *TreeColumn;
@@ -155,9 +156,32 @@ typedef struct
     int width, height;
 } TreeRectangle;
 
-#define XRectToTreeRect(xr,trp) ((trp)->x=(xr).x, (trp)->y=(xr).y, \
+#define TreeRect_Left(tr) ((tr).x)
+#define TreeRect_Top(tr) ((tr).y)
+#define TreeRect_Right(tr) ((tr).x + (tr).width)
+#define TreeRect_Bottom(tr) ((tr).y + (tr).height)
+#define TreeRect_Width(tr) ((tr).width)
+#define TreeRect_Height(tr) ((tr).height)
+#define TreeRect_XYWH(tr,X,Y,W,H) ((*X)=TreeRect_Left(tr),(*Y)=TreeRect_Top(tr),\
+	    (*W)=TreeRect_Width(tr),(*H)=TreeRect_Height(tr))
+#define TreeRect_SetXYWH(tr,X,Y,W,H) ((tr).x=(X),(tr).y=(Y),\
+	    (tr).width=(W),(tr).height=(H))
+#define TreeRect_XYXY(tr,X1,Y1,X2,Y2) ((*X1)=TreeRect_Left(tr),(*Y1)=TreeRect_Top(tr),\
+	    (*X2)=TreeRect_Right(tr),(*Y2)=TreeRect_Bottom(tr))
+#define TreeRect_SetXYXY(tr,X1,Y1,X2,Y2) ((tr).x=(X1),(tr).y=(Y1),\
+	    (tr).width=(X2)-(X1),(tr).height=(Y2)-(Y1))
+
+#define TreeRect_ClipPoint(tr,XP,YP) \
+    do { \
+	if ((*XP) < (tr).x) (*XP)=(tr).x; \
+	if ((*XP) >= TreeRect_Right(tr)) (*XP) = TreeRect_Right(tr) - 1; \
+	if ((*YP) < (tr).y) (*YP)=(tr).y; \
+	if ((*YP) >= TreeRect_Bottom(tr)) (*YP) = TreeRect_Bottom(tr) - 1; \
+    } while (0)
+
+#define TreeRect_FromXRect(xr,trp) ((trp)->x=(xr).x, (trp)->y=(xr).y, \
 	    (trp)->width=(xr).width, (trp)->height=(xr).height)
-#define TreeRectToXRect(tr,xrp) ((xrp)->x=(tr).x, (xrp)->y=(tr).y, \
+#define TreeRect_ToXRect(tr,xrp) ((xrp)->x=(tr).x, (xrp)->y=(tr).y, \
 	    (xrp)->width=(tr).width, (xrp)->height=(tr).height)
 
 typedef struct GCCache GCCache;
@@ -720,7 +744,7 @@ struct StyleDrawArgs
     TreeDrawable td;
     int state;		/* STATE_xxx */
     Tk_Justify justify;
-    int bounds[4];
+    TreeRectangle bounds;
 };
 
 /* tkTreeStyle.c */
@@ -898,7 +922,7 @@ MODULE_SCOPE int Tree_CanvasWidth(TreeCtrl *tree);
 MODULE_SCOPE int Tree_CanvasHeight(TreeCtrl *tree);
 MODULE_SCOPE TreeItem Tree_ItemUnderPoint(TreeCtrl *tree, int *x, int *y, int nearest);
 MODULE_SCOPE void Tree_FreeItemRInfo(TreeCtrl *tree, TreeItem item);
-MODULE_SCOPE int Tree_ItemBbox(TreeCtrl *tree, TreeItem item, int lock, int *x, int *y, int *w, int *h);
+MODULE_SCOPE int Tree_ItemBbox(TreeCtrl *tree, TreeItem item, int lock, TreeRectangle *tr);
 MODULE_SCOPE TreeItem Tree_ItemLARB(TreeCtrl *tree, TreeItem item, int vertical, int prev);
 MODULE_SCOPE TreeItem Tree_ItemAbove(TreeCtrl *tree, TreeItem item);
 MODULE_SCOPE TreeItem Tree_ItemBelow(TreeCtrl *tree, TreeItem item);
@@ -911,7 +935,7 @@ MODULE_SCOPE TreeItem Tree_ItemLeftMost(TreeCtrl *tree, TreeItem item);
 MODULE_SCOPE TreeItem Tree_ItemRightMost(TreeCtrl *tree, TreeItem item);
 MODULE_SCOPE int Tree_ItemToRNC(TreeCtrl *tree, TreeItem item, int *row, int *col);
 MODULE_SCOPE TreeItem Tree_RNCToItem(TreeCtrl *tree, int row, int col);
-MODULE_SCOPE int Tree_AreaBbox(TreeCtrl *tree, int area, int *x1_, int *y1_, int *x2_, int *y2_);
+MODULE_SCOPE int Tree_AreaBbox(TreeCtrl *tree, int area, TreeRectangle *tr);
 
 enum {
 TREE_AREA_NONE = 0,
@@ -982,7 +1006,7 @@ Tree_DrawBgImage(
     );
 #endif
 
-MODULE_SCOPE int Tree_IntersectRect(TreeRectangle *resultPtr,
+MODULE_SCOPE int TreeRect_Intersect(TreeRectangle *resultPtr,
     CONST TreeRectangle *r1, CONST TreeRectangle *r2);
 
 #define DINFO_OUT_OF_DATE 0x0001
@@ -1011,12 +1035,12 @@ MODULE_SCOPE int TreeTheme_InitInterp(Tcl_Interp *interp);
 MODULE_SCOPE void TreeTheme_ThemeChanged(TreeCtrl *tree);
 MODULE_SCOPE int TreeTheme_Init(TreeCtrl *tree);
 MODULE_SCOPE int TreeTheme_Free(TreeCtrl *tree);
-MODULE_SCOPE int TreeTheme_DrawHeaderItem(TreeCtrl *tree, Drawable drawable,
+MODULE_SCOPE int TreeTheme_DrawHeaderItem(TreeCtrl *tree, TreeDrawable td,
     int state, int arrow, int visIndex, int x, int y, int width, int height);
 MODULE_SCOPE int TreeTheme_GetHeaderFixedHeight(TreeCtrl *tree, int *heightPtr);
 MODULE_SCOPE int TreeTheme_GetHeaderContentMargins(TreeCtrl *tree, int state, int arrow, int bounds[4]);
-MODULE_SCOPE int TreeTheme_DrawHeaderArrow(TreeCtrl *tree, Drawable drawable, int state, int up, int x, int y, int width, int height);
-MODULE_SCOPE int TreeTheme_DrawButton(TreeCtrl *tree, Drawable drawable, TreeItem item, int state, int x, int y, int width, int height);
+MODULE_SCOPE int TreeTheme_DrawHeaderArrow(TreeCtrl *tree, TreeDrawable td, int state, int up, int x, int y, int width, int height);
+MODULE_SCOPE int TreeTheme_DrawButton(TreeCtrl *tree, TreeDrawable td, TreeItem item, int state, int x, int y, int width, int height);
 MODULE_SCOPE int TreeTheme_GetButtonSize(TreeCtrl *tree, Drawable drawable, int open, int *widthPtr, int *heightPtr);
 MODULE_SCOPE int TreeTheme_GetArrowSize(TreeCtrl *tree, Drawable drawable, int up, int *widthPtr, int *heightPtr);
 MODULE_SCOPE int TreeTheme_SetBorders(TreeCtrl *tree);
@@ -1072,8 +1096,8 @@ MODULE_SCOPE void Tree_FreeRegion(TreeCtrl *tree, TkRegion region);
 MODULE_SCOPE void Tree_FillRegion(Display *display, Drawable drawable, GC gc, TkRegion rgn);
 MODULE_SCOPE void Tree_OffsetRegion(TkRegion region, int xOffset, int yOffset);
 MODULE_SCOPE void Tree_SetEmptyRegion(TkRegion region);
-MODULE_SCOPE TkRegion Tree_GetRectRegion(TreeCtrl *tree, TreeRectangle *rect);
-MODULE_SCOPE void Tree_SetRectRegion(TkRegion region, TreeRectangle *rect);
+MODULE_SCOPE TkRegion Tree_GetRectRegion(TreeCtrl *tree, const TreeRectangle *rect);
+MODULE_SCOPE void Tree_SetRectRegion(TkRegion region, const TreeRectangle *rect);
 MODULE_SCOPE void Tree_GetRegionBounds(TkRegion region, TreeRectangle *rect);
 MODULE_SCOPE void Tree_UnionRegion(TkRegion rgnA, TkRegion rgnB, TkRegion rgnOut);
 MODULE_SCOPE int Tree_ScrollWindow(TreeCtrl *tree, GC gc, int x, int y,
@@ -1404,10 +1428,33 @@ typedef struct {
 MODULE_SCOPE void Tree_FillRectangle(TreeCtrl *tree, TreeDrawable td,
     TreeClip *clip, GC gc, TreeRectangle tr);
 
+
+#if USE_ITEM_PIXMAP == 0
+MODULE_SCOPE void Tree_DrawArc(TreeCtrl *tree, TreeDrawable td, TreeClip *clip,
+    GC gc, int x, int y, unsigned int width, unsigned int height,
+    int start, int extent);
+MODULE_SCOPE void Tree_FillArc(TreeCtrl *tree, TreeDrawable td, TreeClip *clip,
+    GC gc, int x, int y, unsigned int width, unsigned int height,
+    int start, int extent);
+
+MODULE_SCOPE void Tree_Draw3DRectangle(TreeCtrl *tree, TreeDrawable td,
+    TreeClip *clip, Tk_3DBorder border, int x, int y, int width, int height,
+    int borderWidth, int relief);
+MODULE_SCOPE void Tree_Fill3DRectangle(TreeCtrl *tree, TreeDrawable td,
+    TreeClip *clip, Tk_3DBorder border, int x, int y, int width, int height,
+    int borderWidth, int relief);
+#else /* USE_ITEM_PIXMAP == 1 */
+#define Tree_DrawArc(tree,td,clip,gc,x,y,width,height,start,extent) \
+    XDrawArc(tree->display,td.drawable,gc,x,y,width,height,start,extent);
+#define Tree_FillArc(tree,td,clip,gc,x,y,width,height,start,extent) \
+    XFillArc(tree->display,td.drawable,gc,x,y,width,height,start,extent);
+#endif /* USE_ITEM_PIXMAP == 1 */
+
 MODULE_SCOPE void Tree_DrawRoundRectX11(TreeCtrl *tree, TreeDrawable td,
-    GC gc, TreeRectangle tr, int outlineWidth, int rx, int ry, int open);
+    TreeClip *clip, GC gc, TreeRectangle tr, int outlineWidth,
+    int rx, int ry, int open);
 MODULE_SCOPE void Tree_FillRoundRectX11(TreeCtrl *tree, TreeDrawable td,
-    GC gc, TreeRectangle tr, int rx, int ry, int open);
+    TreeClip *clip, GC gc, TreeRectangle tr, int rx, int ry, int open);
 MODULE_SCOPE void TreeGradient_FillRectX11(TreeCtrl *tree, TreeDrawable td,
     TreeClip *clip, TreeGradient gradient, TreeRectangle trBrush,
     TreeRectangle tr);
@@ -1416,17 +1463,17 @@ MODULE_SCOPE void TreeGradient_FillRoundRectX11(TreeCtrl *tree, TreeDrawable td,
     TreeRectangle tr, int rx, int ry, int open);
 
 MODULE_SCOPE void Tree_DrawRoundRect(TreeCtrl *tree, TreeDrawable td,
-    XColor *xcolor, TreeRectangle tr, int outlineWidth, int rx, int ry,
-    int open);
+    TreeClip *clip, XColor *xcolor, TreeRectangle tr, int outlineWidth,
+    int rx, int ry, int open);
 MODULE_SCOPE void Tree_FillRoundRect(TreeCtrl *tree, TreeDrawable td,
-    XColor *xcolor, TreeRectangle tr, int rx, int ry, int open);
+    TreeClip *clip, XColor *xcolor, TreeRectangle tr, int rx, int ry, int open);
 
 MODULE_SCOPE void TreeGradient_FillRect(TreeCtrl *tree, TreeDrawable td,
     TreeClip *clip, TreeGradient gradient, TreeRectangle trBrush,
     TreeRectangle tr);
 MODULE_SCOPE void TreeGradient_FillRoundRect(TreeCtrl *tree, TreeDrawable td,
-    TreeGradient gradient, TreeRectangle trBrush, TreeRectangle tr,
-    int rx, int ry, int open);
+    TreeClip *clip, TreeGradient gradient, TreeRectangle trBrush,
+    TreeRectangle tr, int rx, int ry, int open);
 
 MODULE_SCOPE void TreeColor_DrawRect(TreeCtrl *tree, TreeDrawable td,
     TreeClip *clip, TreeColor *tc, TreeRectangle tr, int outlineWidth,
@@ -1434,9 +1481,10 @@ MODULE_SCOPE void TreeColor_DrawRect(TreeCtrl *tree, TreeDrawable td,
 MODULE_SCOPE void TreeColor_FillRect(TreeCtrl *tree, TreeDrawable td,
     TreeClip *clip, TreeColor *tc, TreeRectangle trBrush, TreeRectangle tr);
 MODULE_SCOPE void TreeColor_DrawRoundRect(TreeCtrl *tree, TreeDrawable td,
-    TreeColor *tc, TreeRectangle tr, int outlineWidth, int rx, int ry,
-    int open);
+    TreeClip *clip, TreeColor *tc, TreeRectangle tr, int outlineWidth,
+    int rx, int ry, int open);
 MODULE_SCOPE void TreeColor_FillRoundRect(TreeCtrl *tree, TreeDrawable td,
-    TreeColor *tc, TreeRectangle trBrush, TreeRectangle tr, int rx, int ry, int open);
+    TreeClip *clip, TreeColor *tc, TreeRectangle trBrush, TreeRectangle tr,
+    int rx, int ry, int open);
 
 MODULE_SCOPE int TreeDraw_InitInterp(Tcl_Interp *interp);
