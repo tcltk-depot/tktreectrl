@@ -3,7 +3,7 @@
  *
  *	This module is the header for treectrl widgets for the Tk toolkit.
  *
- * Copyright (c) 2002-2009 Tim Baker
+ * Copyright (c) 2002-2010 Tim Baker
  * Copyright (c) 2002-2003 Christian Krone
  * Copyright (c) 2003 ActiveState Corporation
  *
@@ -78,6 +78,7 @@ MODULE_SCOPE void dbwin_add_interp(Tcl_Interp *interp);
 #define GRAD_COORDS 1
 #define BGIMAGEOPT 1
 #define USE_ITEM_PIXMAP 1
+#define COLUMNGRID 1
 
 typedef struct TreeCtrl TreeCtrl;
 typedef struct TreeColumn_ *TreeColumn;
@@ -409,6 +410,9 @@ struct TreeCtrl
 				 * drawn */
     int columnTreeVis;		/* TRUE if columnTree is visible */
     int columnBgCnt;		/* Max -itembackground colors */
+#if COLUMNGRID == 1
+    int columnsWithGridLines;	/* # visible columns with grid lines. */
+#endif
 
 #define COLUMN_LOCK_LEFT 0
 #define COLUMN_LOCK_NONE 1
@@ -877,6 +881,10 @@ MODULE_SCOPE int TreeColumn_Visible(TreeColumn column_);
 MODULE_SCOPE int TreeColumn_Squeeze(TreeColumn column_);
 MODULE_SCOPE int TreeColumn_BackgroundCount(TreeColumn column_);
 MODULE_SCOPE TreeColor *TreeColumn_BackgroundColor(TreeColumn column_, int which);
+#if COLUMNGRID==1
+MODULE_SCOPE int TreeColumn_GridColors(TreeColumn column, TreeColor **leftColorPtr,
+    TreeColor **rightColorPtr, int *leftWidthPtr, int *rightWidthPtr);
+#endif
 MODULE_SCOPE void Tree_DrawHeader(TreeCtrl *tree, TreeDrawable td, int x, int y);
 MODULE_SCOPE int TreeColumn_WidthOfItems(TreeColumn column_);
 MODULE_SCOPE void TreeColumn_InvalidateWidth(TreeColumn column_);
@@ -1399,6 +1407,10 @@ MODULE_SCOPE int TreeGradient_GetBrushBounds(TreeCtrl *tree,
     TreeRectangle *trBrush, TreeColumn column, TreeItem item);
 MODULE_SCOPE void TreeGradient_IsRelativeToCanvas(TreeGradient gradient,
     int *relX, int *relY);
+MODULE_SCOPE void TreeColor_GetBrushBounds(TreeCtrl *tree, TreeColor *tc,
+    TreeRectangle trPaint, int xOrigin, int yOrigin, TreeColumn column,
+    TreeItem item, TreeRectangle *trBrush);
+
 MODULE_SCOPE void TreeGradient_ColumnDeleted(TreeCtrl *tree,
     TreeColumn column);
 MODULE_SCOPE void TreeGradient_ItemDeleted(TreeCtrl *tree, TreeItem item);

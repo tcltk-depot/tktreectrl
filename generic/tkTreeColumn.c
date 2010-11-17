@@ -3,7 +3,7 @@
  *
  *	This module implements treectrl widget's columns.
  *
- * Copyright (c) 2002-2009 Tim Baker
+ * Copyright (c) 2002-2010 Tim Baker
  * Copyright (c) 2002-2003 Christian Krone
  * Copyright (c) 2003 ActiveState Corporation
  *
@@ -116,6 +116,12 @@ struct TreeColumn_
     int weight;			/* -weight */
 #endif
     TreeColumnDInfo dInfo;	/* Display info. */
+#if COLUMNGRID == 1
+    Tcl_Obj *gridLeftColorObj;	/* -gridleftcolor */
+    Tcl_Obj *gridRightColorObj;	/* -gridrightcolor */
+    TreeColor *gridLeftColor;	/* -gridleftcolor */
+    TreeColor *gridRightColor;	/* -gridrightcolor */
+#endif
 };
 
 #ifdef UNIFORM_GROUP
@@ -273,6 +279,9 @@ static CONST char *justifyStrings[] = {
 #define COLU_CONF_TEXT		0x0200
 #define COLU_CONF_BITMAP	0x0400
 #define COLU_CONF_RANGES	0x0800
+#if COLUMNGRID == 1
+#define COLU_CONF_GRIDLINES	0x1000
+#endif
 
 static Tk_OptionSpec columnSpecs[] = {
     {TK_OPTION_STRING_TABLE, "-arrow", (char *) NULL, (char *) NULL,
@@ -323,6 +332,18 @@ static Tk_OptionSpec columnSpecs[] = {
      (char *) NULL, -1, Tk_Offset(TreeColumn_, tkfont),
      TK_OPTION_NULL_OK, (ClientData) NULL, COLU_CONF_NWIDTH |
      COLU_CONF_NHEIGHT | COLU_CONF_DISPLAY | COLU_CONF_TEXT},
+#if COLUMNGRID==1
+    {TK_OPTION_CUSTOM, "-gridleftcolor", (char *) NULL, (char *) NULL, (char *) NULL,
+	Tk_Offset(TreeColumn_, gridLeftColorObj),
+	Tk_Offset(TreeColumn_, gridLeftColor),
+	TK_OPTION_NULL_OK, (ClientData) &TreeCtrlCO_treecolor,
+	COLU_CONF_GRIDLINES},
+    {TK_OPTION_CUSTOM, "-gridrightcolor", (char *) NULL, (char *) NULL, (char *) NULL,
+	Tk_Offset(TreeColumn_, gridRightColorObj),
+	Tk_Offset(TreeColumn_, gridRightColor),
+	TK_OPTION_NULL_OK, (ClientData) &TreeCtrlCO_treecolor,
+	COLU_CONF_GRIDLINES},
+#endif
     {TK_OPTION_STRING, "-image", (char *) NULL, (char *) NULL,
      (char *) NULL, -1, Tk_Offset(TreeColumn_, imageString),
      TK_OPTION_NULL_OK, (ClientData) NULL,
@@ -2058,14 +2079,20 @@ Column_Config(
     int mask, maskFree = 0;
     XGCValues gcValues;
     unsigned long gcMask;
-/*    int stateOld = Column_MakeState(column), stateNew;*/
     int visible = column->visible;
     int lock = column->lock;
+#if COLUMNGRID == 1
+    int gridLines, prevGridLines = visible &&
+	    (column->gridLeftColor != NULL ||
+	    column->gridRightColor != NULL);
+	    
+#endif
 
     /* Init these to prevent compiler warnings */
     saved.image = NULL;
     saved.itemBgCount = 0;
     saved.itemBgColor = NULL;
+
 
     for (error = 0; error <= 1; error++) {
 	if (error == 0) {
@@ -2252,7 +2279,7 @@ Column_Config(
 		walk = walk->next;
 	    }
 	}
-	Tree_DInfoChanged(tree, DINFO_INVALIDATE);
+	Tree_DInfoChanged(tree, DINFO_INVALIDATE); /* implicit DINFO_DRAW_WHITESPACE */
     }
 
     if (!createFlag && (column->lock != lock)) {
@@ -2312,6 +2339,20 @@ Column_Config(
     else if (mask & COLU_CONF_DISPLAY) {
 	Tree_DInfoChanged(tree, DINFO_DRAW_HEADER);
     }
+
+#if COLUMNGRID == 1
+    if (mask & COLU_CONF_GRIDLINES) {
+	Tree_DInfoChanged(tree, DINFO_INVALIDATE | DINFO_DRAW_WHITESPACE);
+    }
+
+    gridLines = column->visible &&
+	    (column->gridLeftColor != NULL ||
+	    column->gridRightColor != NULL);
+    if (gridLines != prevGridLines) {
+	tree->columnsWithGridLines += gridLines ? 1 : -1;
+dbwin("tree->columnsWithGridLines is now %d", tree->columnsWithGridLines);
+    }
+#endif
 
     return TCL_OK;
 }
@@ -3445,6 +3486,42 @@ TreeColumn_BackgroundColor(
     return column->itemBgColor[index % column->itemBgCount];
 }
 
+#if COLUMNGRID == 1
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeColumn_GridColors --
+ *
+ *	Returns the color and width for this column's gridlines.
+ *
+ * Results:
+ *	Returns the left and right colors and their widths.  Either
+ *	color may be NULL.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TreeColumn_GridColors(
+    TreeColumn column,		/* Column token. */
+    TreeColor **leftColorPtr,	/* Returned left color. */
+    TreeColor **rightColorPtr,	/* Returned right color. */
+    int *leftWidthPtr,
+    int *rightWidthPtr
+    )
+{
+    (*leftColorPtr) = column->gridLeftColor;
+    (*rightColorPtr) = column->gridRightColor;
+    (*leftWidthPtr) = 1;
+    (*rightWidthPtr) = 1;
+    return (*leftColorPtr != NULL && *leftWidthPtr > 0) ||
+	    (*rightColorPtr != NULL && *rightWidthPtr > 0);
+}
+#endif
+
 /*
  *----------------------------------------------------------------------
  *
@@ -4003,6 +4080,14 @@ TreeColumnCmd(
 #if GRAD_COORDS
 			TreeGradient_ColumnDeleted(tree, column);
 #endif
+#if COLUMNGRID == 1
+			if (column->visible &&
+				(column->gridLeftColor != NULL ||
+				column->gridRightColor != NULL)) {
+			    tree->columnsWithGridLines -= 1;
+dbwin("tree->columnsWithGridLines is now %d", tree->columnsWithGridLines);
+			}
+#endif
 			column = Column_Free(column);
 		    }
 		    tree->columnTail->index = 0;
@@ -4040,6 +4125,14 @@ TreeColumnCmd(
 		TreeDisplay_ColumnDeleted(tree, column);
 #if GRAD_COORDS
 		TreeGradient_ColumnDeleted(tree, column);
+#endif
+#if COLUMNGRID == 1
+		if (column->visible &&
+			(column->gridLeftColor != NULL ||
+			column->gridRightColor != NULL)) {
+		    tree->columnsWithGridLines -= 1;
+dbwin("tree->columnsWithGridLines is now %d", tree->columnsWithGridLines);
+		}
 #endif
 
 		/* Unlink. */
@@ -5270,7 +5363,7 @@ TreeColumn_Bbox(
     )
 {
     TreeCtrl *tree = column->tree;
-    int left = 0 - Tree_GetOriginX(tree); /* Canvas -> Window */
+    int left;
 
     if (!tree->showHeader || !TreeColumn_Visible(column))
 	return -1;
@@ -5292,6 +5385,7 @@ TreeColumn_Bbox(
 	    left = Tree_BorderLeft(tree);
 	    break;
 	case COLUMN_LOCK_NONE:
+	    left = 0 - Tree_GetOriginX(tree); /* Canvas -> Window */
 	    break;
 	case COLUMN_LOCK_RIGHT:
 	    left = Tree_ContentRight(tree);

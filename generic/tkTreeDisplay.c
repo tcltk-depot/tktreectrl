@@ -3,7 +3,7 @@
  *
  *	This module implements treectrl widget's main display code.
  *
- * Copyright (c) 2002-2009 Tim Baker
+ * Copyright (c) 2002-2010 Tim Baker
  *
  * RCS: @(#) $Id$
  */
@@ -21,8 +21,8 @@
 #define C2Wy(y) ((y) - tree->yOrigin)
 
 #define COMPLEX_WHITESPACE
-#define REDRAW_RGN
-#define CACHE_BG_IMG 0
+#define REDRAW_RGN 0
+#define CACHE_BG_IMG 1
 
 typedef struct TreeColumnDInfo_ TreeColumnDInfo_;
 typedef struct TreeDInfo_ TreeDInfo_;
@@ -35,6 +35,12 @@ static int Range_TotalWidth(TreeCtrl *tree, Range *range_);
 static int Range_TotalHeight(TreeCtrl *tree, Range *range_);
 static void Range_Redo(TreeCtrl *tree);
 static Range *Range_UnderPoint(TreeCtrl *tree, int *x_, int *y_, int nearest);
+
+static Pixmap DisplayGetPixmap(TreeCtrl *tree, TreeDrawable *dPixmap,
+    int width, int height);
+#if COLUMNGRID == 1
+static int GridLinesInWhiteSpace(TreeCtrl *tree);
+#endif
 
 /* One of these per TreeItem that is ReallyVisible(). */
 struct RItem
@@ -159,7 +165,7 @@ struct TreeDInfo_
 				 * columns, this range holds the vertical
 				 * offset and height of each ReallyVisible
 				 * item for displaying locked columns. */
-#ifdef REDRAW_RGN
+#if REDRAW_RGN == 1
     TkRegion redrawRgn;		/* Contains all redrawn (not copied) pixels
 				 * during a single Tree_Display call. */
 #endif /* REDRAW_RGN */
@@ -1242,7 +1248,7 @@ Increment_AddY(
  * RItemsToIncrementsX --
  *
  *	Recalculate the list of horizontal scroll increments. This gets
- *	called when the -orient=horizontal and -xscrollincrement=0.
+ *	called when -orient=horizontal and -xscrollincrement=0.
  *
  * Results:
  *	DInfo.xScrollIncrements is updated if the canvas width is > 0.
@@ -1266,13 +1272,16 @@ RItemsToIncrementsX(
     int x1, increment, prev;
     int size;
 
-    if (totalWidth
+    if (totalWidth/*
 	    - tree->canvasPadX[PAD_TOP_LEFT]
-	    - tree->canvasPadX[PAD_BOTTOM_RIGHT] <= 0)
+	    - tree->canvasPadX[PAD_BOTTOM_RIGHT]*/ <= 0)
 	return;
 
+    /* First increment is zero */
     size = 10;
     dInfo->xScrollIncrements = (int *) ckalloc(size * sizeof(int));
+    dInfo->xScrollIncrements[dInfo->xScrollIncrementCount++] = 0;
+    prev = 0;
 
     if (rangeFirst == NULL) {
 	/* Only the column headers are shown. */
@@ -1280,10 +1289,6 @@ RItemsToIncrementsX(
 	/* A single horizontal range is easy. Add one increment for the
 	 * left edge of each item. */
 	rItem = rangeFirst->first;
-
-	/* First increment is zero */
-	dInfo->xScrollIncrements[dInfo->xScrollIncrementCount++] = 0;
-	prev = 0;
 
 	while (1) {
 	    increment = rangeFirst->offset.x + rItem->offset;
@@ -1296,9 +1301,6 @@ RItemsToIncrementsX(
 	    rItem++;
 	}
     } else {
-	/* First increment is zero */
-	dInfo->xScrollIncrements[dInfo->xScrollIncrementCount++] = 0;
-
 	x1 = 0;
 	while (1) {
 	    int minLeft1 = totalWidth, minLeft2 = totalWidth;
@@ -1323,8 +1325,10 @@ RItemsToIncrementsX(
 	    }
 	    if (increment == totalWidth)
 		break;
-	    if (increment > 0) /* first increment is zero */
+	    if (increment > prev) {
 		size = Increment_AddX(tree, increment, size);
+		prev = increment;
+	    }
 	    if (minLeft1 == totalWidth && minLeft2 == totalWidth)
 		break; /* no increments > x1 */
 	    if (minLeft1 != totalWidth && minLeft1 > increment)
@@ -1347,8 +1351,7 @@ RItemsToIncrementsX(
  * RItemsToIncrementsY --
  *
  *	Recalculate the list of vertical scroll increments. This gets
- *	called when the TreeCtrl -orient option is "vertical" and
- *	-yscrollincrement option is "".
+ *	called when -orient=vertical and -yscrollincrement=0.
  *
  * Results:
  *	DInfo.yScrollIncrements is updated if the canvas height is > 0.
@@ -1372,26 +1375,27 @@ RItemsToIncrementsY(
     int y1, increment, prev;
     int size;
 
-    if (totalHeight - tree->canvasPadY[PAD_TOP_LEFT]
-	    - tree->canvasPadY[PAD_BOTTOM_RIGHT] <= 0)
+    if (totalHeight/* - tree->canvasPadY[PAD_TOP_LEFT]
+	    - tree->canvasPadY[PAD_BOTTOM_RIGHT]*/ <= 0)
 	return;
 
+    /* First increment is zero */
     size = 10;
     dInfo->yScrollIncrements = (int *) ckalloc(size * sizeof(int));
+    dInfo->yScrollIncrements[dInfo->yScrollIncrementCount++] = 0;
+    prev = 0;
 
     /* If only locked columns are visible, we still scroll vertically. */
     rangeFirst = dInfo->rangeFirst;
     if (rangeFirst == NULL)
 	rangeFirst = dInfo->rangeLock;
 
-    if (rangeFirst->next == NULL) {
+    if (rangeFirst == NULL) {
+	/* Only -canvaspady spacing, no items! */
+    } else if (rangeFirst->next == NULL) {
 	/* A single vertical range is easy. Add one increment for the
 	 * top edge of each item. */
 	rItem = rangeFirst->first;
-
-	/* First increment is zero */
-	dInfo->yScrollIncrements[dInfo->yScrollIncrementCount++] = 0;
-	prev = 0;
 
 	while (1) {
 	    increment = rangeFirst->offset.y + rItem->offset;
@@ -1404,9 +1408,6 @@ RItemsToIncrementsY(
 	    rItem++;
 	}
     } else {
-	/* First increment is zero */
-	dInfo->yScrollIncrements[dInfo->yScrollIncrementCount++] = 0;
-
 	y1 = 0;
 	while (1) {
 	    int minTop1 = totalHeight, minTop2 = totalHeight;
@@ -1430,8 +1431,10 @@ RItemsToIncrementsY(
 	    }
 	    if (increment == totalHeight)
 		break;
-	    if (increment > 0) /* first increment is zero */
+	    if (increment > prev) {
 		size = Increment_AddY(tree, increment, size);
+		prev = increment;
+	    }
 	    if (minTop1 == totalHeight && minTop2 == totalHeight)
 		break; /* no increments > y1 */
 	    if (minTop1 != totalHeight && minTop1 > increment)
@@ -1455,8 +1458,7 @@ RItemsToIncrementsY(
  * RangesToIncrementsX --
  *
  *	Recalculate the list of horizontal scroll increments. This gets
- *	called when the TreeCtrl -orient option is "vertical" and
- *	-xscrollincrement option is "".
+ *	called when -orient=vertical and -xscrollincrement=0.
  *
  * Results:
  *	DInfo.xScrollIncrements is updated if there are any Ranges.
@@ -1478,9 +1480,9 @@ RangesToIncrementsX(
     int totalWidth = Tree_CanvasWidth(tree);
     int size, prev;
 
-    if (totalWidth
+    if (totalWidth/*
 	    - tree->canvasPadX[PAD_TOP_LEFT]
-	    - tree->canvasPadX[PAD_BOTTOM_RIGHT] <= 0)
+	    - tree->canvasPadX[PAD_BOTTOM_RIGHT]*/ <= 0)
 	return;
 
     /* First increment is zero */
@@ -1511,8 +1513,7 @@ RangesToIncrementsX(
  * RangesToIncrementsY --
  *
  *	Recalculate the list of vertical scroll increments. This gets
- *	called when the TreeCtrl -orient option is "horizontal" and
- *	-yscrollincrement option is "".
+ *	called when -orient=horizontal and -yscrollincrement=0.
  *
  * Results:
  *	DInfo.yScrollIncrements is updated if there are any Ranges.
@@ -1534,9 +1535,9 @@ RangesToIncrementsY(
     int totalHeight = Tree_CanvasHeight(tree);
     int size, prev;
 
-    if (totalHeight
+    if (totalHeight/*
 	    - tree->canvasPadY[PAD_TOP_LEFT]
-	    - tree->canvasPadY[PAD_BOTTOM_RIGHT] <= 0)
+	    - tree->canvasPadY[PAD_BOTTOM_RIGHT]*/ <= 0)
 	return;
 
     /* First increment is zero */
@@ -3161,12 +3162,12 @@ UpdateDInfoForRange(
     int maxX, maxY;
     int index, indexVis;
     int bgImgWidth, bgImgHeight;
-#if BGIMAGEOPT
+#if BGIMAGEOPTxxx
     int bgImgX, bgImgY, oldBgImgX, oldBgImgY;
 #endif
 
     if (tree->backgroundImage != NULL) {
-#if BGIMAGEOPT
+#if BGIMAGEOPTxxx
 	TreeRectangle trImage;
 	(void) CalcBgImageBounds(tree, &trImage);
 	bgImgX = oldBgImgX = trImage.x, bgImgY = oldBgImgY = trImage.y;
@@ -3268,15 +3269,14 @@ UpdateDInfoForRange(
 		    area->flags |= DITEM_DIRTY | DITEM_ALL_DIRTY;
 
 		else if ((tree->backgroundImage != NULL) &&
-			(((DW2Cy(dItem->oldY) - oldBgImgY) % bgImgHeight) !=
-			((W2Cy(y) - bgImgY)% bgImgHeight)))
+		    (dInfo->yOrigin != tree->yOrigin) &&
+		    !(tree->bgImageScroll & BGIMG_SCROLL_Y))
 		    area->flags |= DITEM_DIRTY | DITEM_ALL_DIRTY;
-#else
+#endif
 		else if ((tree->backgroundImage != NULL) &&
 			((DW2Cy(dItem->oldY) % bgImgHeight) !=
 			(W2Cy(y) % bgImgHeight)))
 		    area->flags |= DITEM_DIRTY | DITEM_ALL_DIRTY;
-#endif
 	    }
 
 	    /* Make a new DItem */
@@ -3396,20 +3396,19 @@ UpdateDInfoForRange(
 		 * has the same part of the background image behind it */
 #if BGIMAGEOPT
 		else if ((tree->backgroundImage != NULL) &&
-		    (dInfo->yOrigin != tree->yOrigin) &&
-		    !(tree->bgImageScroll & BGIMG_SCROLL_Y))
+		    (dInfo->xOrigin != tree->xOrigin) &&
+		    !(tree->bgImageScroll & BGIMG_SCROLL_X))
 		    area->flags |= DITEM_DIRTY | DITEM_ALL_DIRTY;
 
 		else if ((tree->backgroundImage != NULL) &&
-			(((DW2Cx(dItem->oldX) - oldBgImgX) % bgImgWidth) !=
-			((W2Cx(x) - bgImgX)% bgImgWidth)))
+		    (dInfo->yOrigin != tree->yOrigin) &&
+		    !(tree->bgImageScroll & BGIMG_SCROLL_Y))
 		    area->flags |= DITEM_DIRTY | DITEM_ALL_DIRTY;
-#else
+#endif
 		else if ((tree->backgroundImage != NULL) &&
 			((DW2Cx(dItem->oldX) % bgImgWidth) !=
 				(W2Cx(x) % bgImgWidth)))
 		    area->flags |= DITEM_DIRTY | DITEM_ALL_DIRTY;
-#endif
 	    }
 
 	    /* Make a new DItem */
@@ -3913,6 +3912,11 @@ Range_RedoIfNeeded(
 	    dInfo->flags |= DINFO_DRAW_WHITESPACE;
 	}
 #endif
+#if COLUMNGRID == 1
+	if (GridLinesInWhiteSpace(tree)) {
+	    dInfo->flags |= DINFO_DRAW_WHITESPACE;
+	}
+#endif
 
 	/* Do this after clearing REDO_RANGES to prevent infinite loop */
 	tree->totalWidth = tree->totalHeight = -1;
@@ -3962,7 +3966,7 @@ DblBufWinDirty(
     TkUnionRectWithRegion(&rect, dInfo->dirtyRgn, dInfo->dirtyRgn);
 }
 
-#ifdef REDRAW_RGN
+#if REDRAW_RGN == 1
 static void
 AddRgnToRedrawRgn(
     TreeCtrl *tree,
@@ -5181,7 +5185,7 @@ GetItemBgIndex(
 	    index = indexVis;
 	    break;
 	case BG_MODE_COLUMN:
-	    index = range->index; /* always zero */
+	    index = range->index;
 	    break;
 	case BG_MODE_ROW:
 	    index = rItem->index;
@@ -5449,10 +5453,11 @@ DrawColumnBackground(
     while (top < bottom) {
 	/* Can't use clipping regions with XFillRectangle
 	 * because the clip region is ignored on Win32. */
-	rowBox.x = bounds->x;
-	rowBox.y = top;
-	rowBox.width = bounds->width;
-	rowBox.height = rItem ? rItem->size : height;
+	TreeRect_SetXYWH(rowBox,
+		bounds->x,
+		top,
+		bounds->width,
+		rItem ? rItem->size : height);
 	if (TreeRect_Intersect(&drawBox, &rowBox, &dirtyBox)) {
 #if GRAD_COORDS
 	    TreeRectangle trBrush;
@@ -5467,17 +5472,10 @@ DrawColumnBackground(
 		    drawBox.x, drawBox.y, drawBox.width, drawBox.height);
 	    } else {
 #if GRAD_COORDS
-		if (tc->gradient != NULL) {
-		    rowBox.x += tree->xOrigin;
-		    rowBox.y += tree->yOrigin;
-		    (void) TreeGradient_GetBrushBounds(tree, tc->gradient,
-			&rowBox, &trBrush, treeColumn, (TreeItem) NULL);
-		    trBrush.x -= tree->xOrigin;
-		    trBrush.y -= tree->yOrigin;
-		} else {
-		    trBrush = rowBox;
-		}
-		if (!TreeColor_IsOpaque(tree ,tc)
+		TreeColor_GetBrushBounds(tree, tc, rowBox,
+			tree->xOrigin, tree->yOrigin,
+			treeColumn, (TreeItem) NULL, &trBrush);
+		if (!TreeColor_IsOpaque(tree, tc)
 			|| (trBrush.width <= 0)
 			|| (trBrush.height <= 0)) {
 		    XFillRectangle(tree->display, td.drawable, backgroundGC,
@@ -5500,7 +5498,8 @@ DrawColumnBackground(
 	if (rItem != NULL) {
 	    rItem++;
 	}
-	index++;
+	if (tree->backgroundMode != BG_MODE_COLUMN)
+	    index++;
 	top += rowBox.height;
 	top += tree->itemGapY;
     }
@@ -5527,9 +5526,11 @@ static void
 DrawWhitespaceBelowItem(
     TreeCtrl *tree,		/* Widget info. */
     TreeDrawable td,		/* Where to draw. */
-    int lock,			/* Which columns to draw. */
+    TreeColumn treeColumn,	/* Which columns to draw. */
     TreeRectangle bounds,	/* TREE_AREA_xxx bounds. */
     int left,			/* Window coord of first column's left edge. */
+    int rangeWidth,		/* Width of range, needed when only 1 column
+				 * is visible with wrapping. */
     int top,			/* Window coord just below the last item. */
     TkRegion dirtyRgn,		/* Area of whitespace that needs painting. */
     TkRegion columnRgn,		/* Existing region to set and use. */
@@ -5537,34 +5538,23 @@ DrawWhitespaceBelowItem(
     int index			/* Used for alternating background colors. */
     )
 {
-    int i = 0, width;
-    TreeColumn treeColumn = NULL;
+    int lock = TreeColumn_Lock(treeColumn);
+    int width;
     TreeRectangle boundsBox, columnBox, visBox;
-
-    switch (lock) {
-	case COLUMN_LOCK_LEFT:
-	    treeColumn = tree->columnLockLeft;
-	    break;
-	case COLUMN_LOCK_NONE:
-	    treeColumn = tree->columnLockNone;
-	    break;
-	case COLUMN_LOCK_RIGHT:
-	    treeColumn = tree->columnLockRight;
-	    break;
-    }
 
     boundsBox = bounds;
 
-    for (i = TreeColumn_Index(treeColumn); i < tree->columnCount; i++) {
-	if (TreeColumn_Lock(treeColumn) != lock)
-	    break;
+    for (;
+	    (treeColumn != NULL) && (TreeColumn_Lock(treeColumn) == lock);
+	    treeColumn = TreeColumn_Next(treeColumn)) {
 	width = TreeColumn_GetDInfo(treeColumn)->width;
 	if (width == 0) /* also handles hidden columns */
-	    goto next;
-	columnBox.x = left;
-	columnBox.y = top;
-	columnBox.width = width;
-	columnBox.height = TreeRect_Bottom(bounds) - top;
+	    continue;
+	if (tree->columnCountVis == 1 && rangeWidth != -1)
+	    width = rangeWidth;
+	TreeRect_SetXYWH(columnBox,
+	    left, top,
+	    width, TreeRect_Bottom(bounds) - top);
 	if (TreeRect_Intersect(&visBox, &boundsBox, &columnBox)) {
 	    Tree_SetRectRegion(columnRgn, &visBox);
 	    TkIntersectRegion(dirtyRgn, columnRgn, columnRgn);
@@ -5572,8 +5562,6 @@ DrawWhitespaceBelowItem(
 		    columnRgn, &columnBox, (RItem *) NULL, height, index);
 	}
 	left += width;
-next:
-	treeColumn = TreeColumn_Next(treeColumn);
     }
 }
 
@@ -5603,8 +5591,8 @@ ComplexWhitespace(
 	    TreeColumn_BackgroundCount(tree->columnTail) == 0)
 	return 0;
 
-    if (!tree->vertical || (tree->wrapMode != TREE_WRAP_NONE) ||
-	    (tree->itemWrapCount > 0))
+    if (!tree->vertical /*|| (tree->wrapMode != TREE_WRAP_NONE) ||
+	    (tree->itemWrapCount > 0)*/)
 	return 0;
 
     if (tree->itemHeight <= 0 && tree->minItemHeight <= 0)
@@ -5665,14 +5653,9 @@ DrawWhitespace(
 	Tree_FillRegion(tree->display, td.drawable, gc, dirtyRgn);
     }
 
-    top = MAX(C2Wy(Tree_CanvasHeight(tree))
-	- tree->canvasPadY[PAD_BOTTOM_RIGHT]
-	+ tree->itemGapY, Tree_ContentTop(tree));
-    bottom = Tree_ContentBottom(tree);
-
     /* Figure out the height of each row of color below the items. */
     if (tree->backgroundMode == BG_MODE_COLUMN)
-	height = bottom - top; /* solid block of color */
+	height = -1; /* solid block of color */
     else if (tree->itemHeight > 0)
 	height = tree->itemHeight;
     else
@@ -5686,15 +5669,22 @@ DrawWhitespace(
 
     if (!dInfo->empty) {
 	int leftEdgeOfColumns = tree->canvasPadX[PAD_TOP_LEFT];
-	int rightEdgeOfColumns = tree->canvasPadX[PAD_TOP_LEFT] + Tree_WidthOfColumns(tree);
+	int rightEdgeOfColumns = Tree_CanvasWidth(tree) - tree->canvasPadX[PAD_BOTTOM_RIGHT];
 
 	TreeRect_XYXY(dInfo->bounds, &minX, &minY, &maxX, &maxY);
+
+	if (tree->backgroundMode == BG_MODE_COLUMN) {
+	    top = MAX(C2Wy(tree->canvasPadY[PAD_TOP_LEFT]),
+		minY);
+	    bottom = maxY;
+	    height = bottom - top; /* solid block of color */
+	}
 
 	/* Draw to the right of the items using the tail column's
 	 * -itembackground colors. The height of each row matches
 	 * the height of the adjacent item. */
 	if (C2Wx(rightEdgeOfColumns) < maxX) {
-	    columnBox.y = Tree_ContentTop(tree);
+	    columnBox.y = minY;
 	    if (range == NULL) {
 		rItem = NULL;
 		index = 0;
@@ -5705,7 +5695,7 @@ DrawWhitespace(
 		} else {
 		    int ccContentTop = W2Cy(minY);
 		    int rcContentTop = ccContentTop - range->offset.y; /* could be < 0 */
-		    int rcY = MAX(rcContentTop,0);
+		    int rcY = MAX(rcContentTop, 0);
 		    rItem = Range_ItemUnderPoint(tree, range, -666, rcY, NULL, NULL, 3);
 		    columnBox.y = C2Wy(range->offset.y + rItem->offset);
 		}
@@ -5724,7 +5714,7 @@ DrawWhitespace(
 	 * column's -itembackground colors. The height of each row matches
 	 * the height of the adjacent item. */
 	if (C2Wx(leftEdgeOfColumns) > minX) {
-	    columnBox.y = Tree_ContentTop(tree);
+	    columnBox.y = minY;
 	    if (range == NULL) {
 		rItem = NULL;
 		index = 0;
@@ -5746,14 +5736,67 @@ DrawWhitespace(
 	    columnBox.height = maxY - columnBox.y;
 	    Tree_SetRectRegion(columnRgn, &columnBox);
 	    TkIntersectRegion(dirtyRgn, columnRgn, columnRgn);
-	    DrawColumnBackground(tree, td, tree->columnVis,
+	    DrawColumnBackground(tree, td, tree->columnVis ?
+		    tree->columnVis : tree->columnTail,
 		    columnRgn, &columnBox, rItem, height, index);
 	}
     }
 
-    if (top < bottom) {
+    /* Draw below non-locked columns. */
+    if (!dInfo->empty && tree->columnVis != NULL) {
+	if (dInfo->rangeFirst == NULL) {
+	    index = 0;
+	    top = Tree_ContentTop(tree);
+	    bottom = Tree_ContentBottom(tree);
+	    if (tree->backgroundMode == BG_MODE_COLUMN)
+		height = bottom - top; /* solid block of color */
+	    DrawWhitespaceBelowItem(tree, td, tree->columnLockNone,
+		    dInfo->bounds, C2Wx(tree->canvasPadX[PAD_TOP_LEFT]), -1,
+		    top, dirtyRgn, columnRgn,
+		    height, index);
+	} else {
+	    int left = tree->canvasPadX[PAD_TOP_LEFT];
+	    while (range != NULL) {
+		top = MAX(C2Wy(range->offset.y + range->totalHeight),
+			Tree_ContentTop(tree));
+		bottom = Tree_ContentBottom(tree);
+		if ((C2Wx(left + range->totalWidth) > TreeRect_Left(dInfo->bounds))
+			&& (top < bottom)) {
+		    rItem = range->last;
+		    index = GetItemBgIndex(tree, rItem);
+		    if (tree->backgroundMode != BG_MODE_COLUMN) {
+			index++;
+		    }
+		    if (tree->backgroundMode == BG_MODE_COLUMN)
+			height = bottom - top; /* solid block of color */
+		    DrawWhitespaceBelowItem(tree, td, tree->columnLockNone,
+			    dInfo->bounds, C2Wx(left), range->totalWidth,
+			    top, dirtyRgn, columnRgn,
+			    height, index);
+		}
+		left += range->totalWidth;
+		if (C2Wx(left) >= TreeRect_Right(dInfo->bounds))
+		    break;
+		range = range->next;
+	    }
+	}
+    }
 
-	/* Get the display index of the last visible item. */
+    top = MAX(C2Wy(Tree_CanvasHeight(tree))
+	- tree->canvasPadY[PAD_BOTTOM_RIGHT]
+	+ tree->itemGapY, Tree_ContentTop(tree));
+    bottom = Tree_ContentBottom(tree);
+
+    if ((top < bottom) && !(dInfo->emptyL && dInfo->emptyR)) {
+
+	if (tree->backgroundMode == BG_MODE_COLUMN)
+	    height = bottom - top; /* solid block of color */
+
+	range = dInfo->rangeFirst;
+	if (range == NULL)
+	    range = dInfo->rangeLock;
+
+	/* Get the display index of the last visible item, if any. */
 	if (range == NULL) {
 	    index = 0;
 	} else {
@@ -5764,29 +5807,21 @@ DrawWhitespace(
 	    }
 	}
 
-	/* Draw below non-locked columns. */
-	if (!dInfo->empty && Tree_CanvasWidth(tree)/* && dInfo->rangeFirst != NULL */) {
-	    DrawWhitespaceBelowItem(tree, td, COLUMN_LOCK_NONE,
-		    dInfo->bounds, C2Wx(tree->canvasPadX[PAD_TOP_LEFT]),
-		    top, dirtyRgn, columnRgn,
-		    height, index);
-	}
-
 	/* Draw below the left columns. */
 	if (!dInfo->emptyL) {
 	    minX = TreeRect_Left(dInfo->boundsL);
-	    DrawWhitespaceBelowItem(tree, td, COLUMN_LOCK_LEFT,
+	    DrawWhitespaceBelowItem(tree, td, tree->columnLockLeft,
 		    dInfo->boundsL,
-		    minX, top, dirtyRgn, columnRgn,
+		    minX, -1, top, dirtyRgn, columnRgn,
 		    height, index);
 	}
 
 	/* Draw below the right columns. */
 	if (!dInfo->emptyR) {
 	    minX = TreeRect_Left(dInfo->boundsR);
-	    DrawWhitespaceBelowItem(tree, td, COLUMN_LOCK_RIGHT,
+	    DrawWhitespaceBelowItem(tree, td, tree->columnLockRight,
 		    dInfo->boundsR,
-		    minX, top, dirtyRgn, columnRgn,
+		    minX, -1, top, dirtyRgn, columnRgn,
 		    height, index);
 	}
     }
@@ -5799,7 +5834,7 @@ DrawWhitespace(
 
 	columnBox.x = Tree_BorderLeft(tree);
 	columnBox.y = Tree_ContentTop(tree);
-	columnBox.width = Tree_ContentWidth(tree);
+	columnBox.width = Tree_BorderRight(tree) - Tree_BorderLeft(tree);
 	columnBox.height = bottom - top;
 	Tree_SetRectRegion(columnRgn, &columnBox);
 	TkIntersectRegion(dirtyRgn, columnRgn, columnRgn);
@@ -5848,6 +5883,187 @@ DrawWhitespace(
 
 #endif /* COMPLEX_WHITESPACE */
 
+#if COLUMNGRID == 1
+
+static int
+GridLinesInWhiteSpace(
+    TreeCtrl *tree
+    )
+{
+    if (tree->columnsWithGridLines <= 0)
+	return 0;
+
+    if (!tree->vertical)
+	return 0;
+
+/*    if ((tree->wrapMode != TREE_WRAP_NONE) || (tree->itemWrapCount > 0))
+	return 0;*/
+
+    return 1;
+}
+
+static void
+DrawColumnGridLinesAux(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeColumn treeColumn,	/* First column. */
+    TreeDrawable td,		/* Where to draw. */
+    const TreeRectangle *boundsPtr,/* TREA_AREA_xxx bounds. */
+    int left,			/* Left edge of first column. */
+    int rangeWidth,		/* Width of range, needed when only 1 column
+				 * is visible with wrapping. */
+    int minY, int maxY,		/* Top & bottom of area to draw in. */
+    TkRegion dirtyRgn		/* The region that needs repainting. */
+    )
+{
+    int lock = TreeColumn_Lock(treeColumn);
+    int columnWidth;
+    TreeRectangle columnBox, gridBox, trBrush;
+    TreeColor *leftColor, *rightColor;
+    int leftWidth, rightWidth;
+    TreeClip clip;
+
+    clip.type = TREE_CLIP_REGION;
+    clip.region = dirtyRgn;
+
+    for (;
+	    treeColumn != NULL && TreeColumn_Lock(treeColumn) == lock;
+	    treeColumn = TreeColumn_Next(treeColumn)) {
+
+	if (TreeColumn_GridColors(treeColumn, &leftColor, &rightColor,
+		&leftWidth, &rightWidth) == 0) {
+	    continue;
+	}
+
+	columnWidth = TreeColumn_GetDInfo(treeColumn)->width;
+	if (columnWidth == 0) /* also handles hidden columns */
+	    continue;
+	if (tree->columnCountVis == 1 && rangeWidth != -1)
+	    columnWidth = rangeWidth;
+
+	TreeRect_SetXYWH(columnBox, left + TreeColumn_Offset(treeColumn),
+		minY, columnWidth, maxY - minY);
+
+	if (TreeRect_Right(columnBox) <= TreeRect_Left(*boundsPtr))
+	    continue;
+	if (TreeRect_Left(columnBox) >= TreeRect_Right(*boundsPtr))
+	    break;
+
+	if (leftColor != NULL && leftWidth > 0) {
+	    TreeRect_SetXYWH(gridBox, columnBox.x, columnBox.y, leftWidth,
+		    columnBox.height);
+	    if (TreeRect_Intersect(&gridBox, boundsPtr, &gridBox)) {
+#if GRAD_COORDS
+		TreeColor_GetBrushBounds(tree, leftColor, gridBox,
+			tree->xOrigin, tree->yOrigin,
+			treeColumn, (TreeItem) NULL, &trBrush);
+#else
+		trBrush = gridBox;
+#endif
+		TreeColor_FillRect(tree, td, &clip, leftColor, trBrush,
+			gridBox);
+	    }
+	}
+	if (rightColor != NULL && rightWidth > 0) {
+	    TreeRect_SetXYWH(gridBox, columnBox.x + columnBox.width - rightWidth,
+		    columnBox.y, rightWidth, columnBox.height);
+	    if (TreeRect_Intersect(&gridBox, boundsPtr, &gridBox)) {
+#if GRAD_COORDS
+		TreeColor_GetBrushBounds(tree, rightColor, gridBox,
+			tree->xOrigin, tree->yOrigin,
+			treeColumn, (TreeItem) NULL, &trBrush);
+#else
+		trBrush = gridBox;
+#endif
+		TreeColor_FillRect(tree, td, &clip, rightColor, trBrush,
+			gridBox);
+	    }
+	}
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DrawColumnGridLines --
+ *
+ *	Draws the column gridlines in the whitespace region below any
+ *	items.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Stuff is drawn.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+DrawColumnGridLines(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeDrawable td,		/* Where to draw. */
+    TkRegion dirtyRgn		/* The region that needs repainting. */
+    )
+{
+    TreeDInfo dInfo = tree->dInfo;
+    int minY, maxY;
+    Range *range = dInfo->rangeFirst;
+
+    if (!GridLinesInWhiteSpace(tree))
+	return;
+
+    maxY = Tree_ContentBottom(tree);
+
+    /* Draw gridlines below non-locked columns in every Range. */
+    if (!dInfo->empty && tree->columnVis != NULL) {
+	int left = tree->canvasPadX[PAD_TOP_LEFT];
+	if (range == NULL) {
+	    minY = Tree_ContentTop(tree);
+	    if (minY < maxY) {
+		DrawColumnGridLinesAux(tree, tree->columnLockNone, td,
+			&dInfo->bounds,
+			C2Wx(left - tree->canvasPadX[PAD_TOP_LEFT]),
+			-1,
+			minY, maxY, dirtyRgn);
+	    }
+	} else {
+	    while (range != NULL) {
+		minY = MAX(C2Wy(range->offset.y + range->totalHeight),
+			Tree_ContentTop(tree));
+		if ((C2Wx(left + range->totalWidth) > TreeRect_Left(dInfo->bounds))
+			&& (minY < maxY)) {
+		    DrawColumnGridLinesAux(tree, tree->columnLockNone, td,
+			    &dInfo->bounds,
+			    C2Wx(left - tree->canvasPadX[PAD_TOP_LEFT]),
+			    range->totalWidth,
+			    minY, maxY, dirtyRgn);
+		}
+		left += range->totalWidth;
+		if (C2Wx(left) >= TreeRect_Right(dInfo->bounds))
+		    break;
+		range = range->next;
+	    }
+	}
+    }
+
+    minY = MAX(C2Wy(Tree_CanvasHeight(tree))
+	- tree->canvasPadY[PAD_BOTTOM_RIGHT],
+	Tree_ContentTop(tree));
+    if (minY >= maxY)
+	return;
+
+    if (!dInfo->emptyL) {
+	DrawColumnGridLinesAux(tree, tree->columnLockLeft, td, &dInfo->boundsL,
+		Tree_BorderLeft(tree), -1, minY, maxY, dirtyRgn);
+    }
+    if (!dInfo->emptyR) {
+	DrawColumnGridLinesAux(tree, tree->columnLockRight, td, &dInfo->boundsR,
+		Tree_ContentRight(tree), -1, minY, maxY, dirtyRgn);
+    }
+}
+
+#endif
+
 /*
  *----------------------------------------------------------------------
  *
@@ -5865,13 +6081,6 @@ DrawWhitespace(
  */
 
 #if BGIMAGEOPT
-static Pixmap
-DisplayGetPixmap(
-    TreeCtrl *tree,
-    TreeDrawable *dPixmap,
-    int width,
-    int height
-    );
 int
 Tree_DrawTiledImage(
     TreeCtrl *tree,		/* Widget info. */
@@ -5986,10 +6195,28 @@ Tree_DrawTiledImage(
 #endif /* not BGIMAGEOPT */
 
 #if BGIMAGEOPT
+/*
+ *----------------------------------------------------------------------
+ *
+ * CalcBgImageBounds --
+ *
+ *	Calculate the bounds (in canvas coordinates) of the background
+ *	image.  The background image may be tiled relative to the
+ *	returned bounds.
+ *
+ * Results:
+ *	Sets trImage with the bounds and returns 1.
+ *
+ * Side effects:
+ *	May update item layout.
+ *
+ *----------------------------------------------------------------------
+ */
+
 static int
 CalcBgImageBounds(
-    TreeCtrl *tree,
-    TreeRectangle *trImage
+    TreeCtrl *tree,		/* Widget info. */
+    TreeRectangle *trImage	/* Returned image bounds. */
     )
 {
     int x1, y1, x2, y2;
@@ -6052,13 +6279,31 @@ CalcBgImageBounds(
     return 1;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tree_DrawBgImage --
+ *
+ *	Draws the -backgroundimage into the specified drawable inside
+ *	the given rectangle, positioning and tiling the image according
+ *	to the various bgimage widget options.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Stuff is drawn.
+ *
+ *----------------------------------------------------------------------
+ */
+
 int
 Tree_DrawBgImage(
-    TreeCtrl *tree,
-    TreeDrawable td,
-    TreeRectangle tr,
-    int xOrigin,
-    int yOrigin
+    TreeCtrl *tree,		/* Widget info. */
+    TreeDrawable td,		/* Where to draw. */
+    TreeRectangle tr,		/* Rect to paint with the image. */
+    int xOrigin,		/* Origin of the given drawable in */
+    int yOrigin			/* canvas coordinates. */
     )
 {
     TreeRectangle trImage;
@@ -6196,7 +6441,7 @@ DisplayDItem(
     }
 #endif
 
-#ifdef REDRAW_RGN
+#if REDRAW_RGN == 1
     AddRectToRedrawRgn(tree, left, top, right, bottom);
 #endif /* REDRAW_RGN */
 
@@ -6440,7 +6685,8 @@ Tree_Display(
 	return;
     }
 
-    /* */
+    /* After this point this function must only exit via the displayExit
+     * label. */
     Tcl_Preserve((ClientData) tree);
     Tree_PreserveItems(tree);
 
@@ -6580,6 +6826,21 @@ displayRetry:
     if (complexWhitespace != dInfo->complexWhitespace) {
 	dInfo->complexWhitespace = complexWhitespace;
 	dInfo->flags |= DINFO_DRAW_WHITESPACE;
+    }
+#endif
+#if COLUMNGRID == 1
+    /* If gridlines are drawn in the whitespace region then redraw all the
+     * whitespace if:
+     * a) horizontall scrolling occurs
+     * b) all the display info was marked as invalid (such as when
+     *    -itembackground colors change, or a column moves)
+     * c) item/column sizes change (handled by Range_RedoIfNeeded).
+     */
+    if (GridLinesInWhiteSpace(tree)) {
+	if ((dInfo->xOrigin != tree->xOrigin)
+		|| (dInfo->flags & DINFO_INVALIDATE)) {
+	    dInfo->flags |= DINFO_DRAW_WHITESPACE;
+	}
     }
 #endif
     /*
@@ -6723,7 +6984,7 @@ displayRetry:
     if (TreeMarquee_IsXOR(tree->marquee))
 	TreeMarquee_Undisplay(tree->marquee);
 
-#ifdef REDRAW_RGN
+#if REDRAW_RGN == 1
     /* Collect all the pixels that are redrawn below into the redrawRgn.
      * The redrawRgn is used to clip drawing of the marquee and dragimage. */
     Tree_SetEmptyRegion(dInfo->redrawRgn);
@@ -6743,7 +7004,7 @@ displayRetry:
 		DblBufWinDirty(tree, TreeRect_Left(tr), TreeRect_Top(tr),
 		    TreeRect_Right(tr), TreeRect_Bottom(tr));
 	    }
-#ifdef REDRAW_RGN
+#if REDRAW_RGN == 1
 /*	    AddRectToRedrawRgn(tree, minX, minY, maxX, maxY); */
 #endif /* REDRAW_RGN */
 	}
@@ -6840,11 +7101,15 @@ displayRetry:
 
 	    Tk_FreePixmap(tree->display, pixmap);
 
+#if COLUMNGRID==1
+	    DrawColumnGridLines(tree, tdrawable, wsRgnDif);
+#endif
+
 	    if (tree->doubleBuffer == DOUBLEBUFFER_WINDOW) {
 		DblBufWinDirty(tree, wsBox.x, wsBox.y, wsBox.x + wsBox.width,
 			wsBox.y + wsBox.height);
 	    }
-#ifdef REDRAW_RGN
+#if REDRAW_RGN == 1
 	    AddRgnToRedrawRgn(tree, wsRgnDif);
 #endif /* REDRAW_RGN */
 	}
@@ -6879,7 +7144,10 @@ displayRetry:
 		DblBufWinDirty(tree, wsBox.x, wsBox.y, wsBox.x + wsBox.width,
 			wsBox.y + wsBox.height);
 	    }
-#ifdef REDRAW_RGN
+#if COLUMNGRID==1
+	    DrawColumnGridLines(tree, tdrawable, wsRgnDif);
+#endif
+#if REDRAW_RGN == 1
 	    AddRgnToRedrawRgn(tree, wsRgnDif);
 #endif /* REDRAW_RGN */
 	}
@@ -6994,7 +7262,7 @@ displayRetry:
     if (tree->debug.enable && tree->debug.display)
 	dbwin("copy %d draw %d %s\n", numCopy, numDraw, Tk_PathName(tkwin));
 
-#ifdef REDRAW_RGNxxx
+#if 0 && REDRAW_RGN == 1
     tree->drawableXOrigin = tree->xOrigin;
     tree->drawableYOrigin = tree->yOrigin;
     if (TreeDragImage_IsXOR(tree->dragImage) == FALSE)
@@ -7129,6 +7397,12 @@ displayRetry:
     }
 
 displayExit:
+#if CACHE_BG_IMG
+    if (dInfo->pixmapBgImg.drawable != None) {
+	Tk_FreePixmap(tree->display, dInfo->pixmapBgImg.drawable);
+	dInfo->pixmapBgImg.drawable = None;
+    }
+#endif
     dInfo->flags &= ~(DINFO_REDRAW_PENDING);
     Tree_ReleaseItems(tree);
     Tcl_Release((ClientData) tree);
@@ -8655,7 +8929,7 @@ TreeDInfo_Init(
     dInfo->wsRgn = Tree_GetRegion(tree);
     dInfo->dirtyRgn = TkCreateRegion();
     Tcl_InitHashTable(&dInfo->itemVisHash, TCL_ONE_WORD_KEYS);
-#ifdef REDRAW_RGN
+#if REDRAW_RGN == 1
     dInfo->redrawRgn = TkCreateRegion();
 #endif /* REDRAW_RGN */
     tree->dInfo = dInfo;
@@ -8712,6 +8986,10 @@ TreeDInfo_Free(
 	Tk_FreePixmap(tree->display, dInfo->pixmapI.drawable);
     if (dInfo->pixmapT.drawable != None)
 	Tk_FreePixmap(tree->display, dInfo->pixmapT.drawable);
+#if CACHE_BG_IMG
+    if (dInfo->pixmapBgImg.drawable != None)
+	Tk_FreePixmap(tree->display, dInfo->pixmapBgImg.drawable);
+#endif
     if (dInfo->xScrollIncrements != NULL)
 	ckfree((char *) dInfo->xScrollIncrements);
     if (dInfo->yScrollIncrements != NULL)
@@ -8726,7 +9004,7 @@ TreeDInfo_Free(
     }
 #endif
     Tcl_DeleteHashTable(&dInfo->itemVisHash);
-#ifdef REDRAW_RGN
+#if REDRAW_RGN == 1
     TkDestroyRegion(dInfo->redrawRgn);
 #endif /* REDRAW_RGN */
     WFREE(dInfo, TreeDInfo_);

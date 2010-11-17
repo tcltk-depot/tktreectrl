@@ -3,7 +3,7 @@
  *
  *	This module implements items for treectrl widgets.
  *
- * Copyright (c) 2002-2009 Tim Baker
+ * Copyright (c) 2002-2010 Tim Baker
  *
  * RCS: @(#) $Id$
  */
@@ -3750,25 +3750,9 @@ ItemDrawBackground(
 	TreeRectangle trBrush;
 #endif
 #if GRAD_COORDS
-	if (tc->gradient != NULL) {
-	    TreeRectangle trPaint = tr;
-	    int relX, relY;
-
-	    trPaint.x += tree->drawableXOrigin;
-	    trPaint.y += tree->drawableYOrigin;
-	    (void) TreeGradient_GetBrushBounds(tree, tc->gradient, &trPaint,
-		&trBrush, treeColumn, item);
-	    trBrush.x -= tree->drawableXOrigin;
-	    trBrush.y -= tree->drawableYOrigin;
-
-	    TreeGradient_IsRelativeToCanvas(tc->gradient, &relX, &relY);
-	    if (relX == 0)
-		Tree_InvalidateItemOnScrollX(tree, item);
-	    if (relY == 0)
-		Tree_InvalidateItemOnScrollY(tree, item);
-	} else {
-	    trBrush = tr;
-	}
+	TreeColor_GetBrushBounds(tree, tc, tr,
+		tree->drawableXOrigin, tree->drawableYOrigin,
+		treeColumn, item, &trBrush);
 	if (!TreeColor_IsOpaque(tree, tc)
 		|| (trBrush.width <= 0) || (trBrush.height <= 0)) {
 	    GC gc = Tk_3DBorderGC(tree->tkwin, tree->border, TK_3D_FLAT_GC);
@@ -4204,6 +4188,10 @@ SpanWalkProc_Draw(
 {
     TreeColumn treeColumn = spanPtr->treeColumn;
     Column *itemColumn = (Column *) spanPtr->itemColumn;
+#if COLUMNGRID == 1
+    TreeColor *leftColor, *rightColor;
+    int leftWidth, rightWidth;
+#endif
     int i, x;
     struct {
 	TreeDrawable td;
@@ -4245,6 +4233,38 @@ SpanWalkProc_Draw(
 	StyleDrawArgs drawArgsCopy = *drawArgs;
 	TreeStyle_Draw(&drawArgsCopy);
     }
+
+#if COLUMNGRID == 1
+    if (TreeColumn_GridColors(spanPtr->treeColumn, &leftColor, &rightColor,
+	    &leftWidth, &rightWidth) != 0) {
+	TreeRectangle tr, trBrush;
+
+	if (leftColor != NULL && leftWidth > 0) {
+	    TreeRect_SetXYWH(tr, drawArgs->x, drawArgs->y, leftWidth,
+		    drawArgs->height);
+#if GRAD_COORDS
+	    TreeColor_GetBrushBounds(tree, leftColor, tr,
+		    tree->drawableXOrigin, tree->drawableYOrigin,
+		    spanPtr->treeColumn, item, &trBrush);
+#else
+	    trBrush = tr;
+#endif
+	    TreeColor_FillRect(tree, data->td, NULL, leftColor, trBrush, tr);
+	}
+	if (rightColor != NULL && rightWidth > 0) {
+	    TreeRect_SetXYWH(tr, drawArgs->x + drawArgs->width - rightWidth,
+		    drawArgs->y, rightWidth, drawArgs->height);
+#if GRAD_COORDS
+	    TreeColor_GetBrushBounds(tree, rightColor, tr,
+		    tree->drawableXOrigin, tree->drawableYOrigin,
+		    spanPtr->treeColumn, item, &trBrush);
+#else
+	    trBrush = tr;
+#endif
+	    TreeColor_FillRect(tree, data->td, NULL, rightColor, trBrush, tr);
+	}
+    }
+#endif
 
     if (spanPtr->treeColumn == tree->columnTree) {
 	if (tree->showLines)

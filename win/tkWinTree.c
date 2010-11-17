@@ -2888,6 +2888,7 @@ static struct
     GpStatus (WINGDIPAPI *_GdipDeleteGraphics)(GpGraphics*);
     GpStatus (WINGDIPAPI *_GdipDrawPath)(GpGraphics*,GpPen*,GpPath*);
     GpStatus (WINGDIPAPI *_GdipFillPath)(GpGraphics*,GpBrush*,GpPath*);
+    GpStatus (WINGDIPAPI *_GdipSetClipHrgn)(GpGraphics*,HRGN,CombineMode);
     GpStatus (WINGDIPAPI *_GdipSetClipPath)(GpGraphics*,GpPath*,CombineMode);
     GpStatus (WINGDIPAPI *_GdipSetClipRectI)(GpGraphics*,INT,INT,INT,INT,CombineMode);
     GpStatus (WINGDIPAPI *_GdipSetSmoothingMode)(GpGraphics*,SmoothingMode);
@@ -2957,6 +2958,7 @@ LoadGdiplus(void)
 	    && LOADPROC(GdipDeleteGraphics)
 	    && LOADPROC(GdipDrawPath)
 	    && LOADPROC(GdipFillPath)
+	    && LOADPROC(GdipSetClipHrgn)
 	    && LOADPROC(GdipSetClipPath)
 	    && LOADPROC(GdipSetClipRectI)
 	    && LOADPROC(GdipSetSmoothingMode)
@@ -3093,7 +3095,8 @@ TreeClip_ToGraphics(
 	    CombineModeReplace);
     }
     if (clip && clip->type == TREE_CLIP_REGION) {
-	panic("TREE_CLIP_REGION unimplemented @ %s:%s", __FILE__, __LINE__);
+	status = DllExports._GdipSetClipHrgn(graphics, (HRGN) clip->region,
+	    CombineModeReplace);
     }
 
     return status;

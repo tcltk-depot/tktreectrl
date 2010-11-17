@@ -3,7 +3,7 @@
  *
  *	This module implements misc routines for treectrl widgets.
  *
- * Copyright (c) 2002-2009 Tim Baker
+ * Copyright (c) 2002-2010 Tim Baker
  *
  * RCS: @(#) $Id$
  */
@@ -6815,6 +6815,41 @@ TreeGradient_IsRelativeToCanvas(
 	    (gradient->bottom != NULL &&
 	    gradient->bottom->type == GCT_AREA)))
 	(*relY) = 0;
+}
+
+void
+TreeColor_GetBrushBounds(
+    TreeCtrl *tree,
+    TreeColor *tc,
+    TreeRectangle trPaint,
+    int xOrigin,
+    int yOrigin,
+    TreeColumn column,
+    TreeItem item,
+    TreeRectangle *trBrush
+    )
+{
+    int relX, relY;
+
+    if (tc->gradient != NULL) {
+
+	trPaint.x += xOrigin;
+	trPaint.y += yOrigin;
+	(void) TreeGradient_GetBrushBounds(tree, tc->gradient, &trPaint,
+	    trBrush, column, item);
+	trBrush->x -= xOrigin;
+	trBrush->y -= yOrigin;
+
+	if (item != NULL) {
+	    TreeGradient_IsRelativeToCanvas(tc->gradient, &relX, &relY);
+	    if (relX == 0)
+		Tree_InvalidateItemOnScrollX(tree, item);
+	    if (relY == 0)
+		Tree_InvalidateItemOnScrollY(tree, item);
+	}
+    } else {
+	*trBrush = trPaint;
+    }
 }
 
 #endif /* GRAD_COORDS */

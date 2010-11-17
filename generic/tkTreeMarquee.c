@@ -3,7 +3,7 @@
  *
  *	This module implements the selection rectangle for treectrl widgets.
  *
- * Copyright (c) 2002-2009 Tim Baker
+ * Copyright (c) 2002-2010 Tim Baker
  *
  * RCS: @(#) $Id$
  */

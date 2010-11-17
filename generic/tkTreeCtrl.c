@@ -3,7 +3,7 @@
  *
  *	This module implements treectrl widgets for the Tk toolkit.
  *
- * Copyright (c) 2002-2009 Tim Baker
+ * Copyright (c) 2002-2010 Tim Baker
  * Copyright (c) 2002-2003 Christian Krone
  * Copyright (c) 2003-2005 ActiveState, a division of Sophos
  *
@@ -937,6 +937,7 @@ static int TreeWidgetCmd(
 	    char buf[64];
 	    int hit;
 	    int lock;
+	    int columnTreeLeft;
 /*
   set id [$tree identify $x $y]
   "item I column C" : mouse is in column C of item I
@@ -1005,13 +1006,17 @@ static int TreeWidgetCmd(
 		(hit == TREE_AREA_RIGHT) ? COLUMN_LOCK_RIGHT :
 		COLUMN_LOCK_NONE;
 
+	    columnTreeLeft = tree->columnTreeLeft; /* canvas coords */
+	    if (hit == TREE_AREA_CONTENT)
+		columnTreeLeft -= tree->canvasPadX[PAD_TOP_LEFT]; /* item coords */
+
 	    /* Point is in a line or button */
 	    if (tree->columnTreeVis &&
 		    (TreeColumn_Lock(tree->columnTree) == lock) &&
-		    (x >= tree->columnTreeLeft - tree->canvasPadX[PAD_TOP_LEFT]) &&
-		    (x < (tree->columnTreeLeft - tree->canvasPadX[PAD_TOP_LEFT]) + TreeColumn_UseWidth(tree->columnTree)) &&
-		    (x < (tree->columnTreeLeft - tree->canvasPadX[PAD_TOP_LEFT]) + depth * tree->useIndent)) {
-		int column = (x - (tree->columnTreeLeft - tree->canvasPadX[PAD_TOP_LEFT])) / tree->useIndent + 1;
+		    (x >= columnTreeLeft) &&
+		    (x < columnTreeLeft + TreeColumn_UseWidth(tree->columnTree)) &&
+		    (x < columnTreeLeft + depth * tree->useIndent)) {
+		int column = (x - columnTreeLeft) / tree->useIndent + 1;
 		if (column == depth) {
 		    if (TreeItem_HasButton(tree, item))
 			sprintf(buf + strlen(buf), " button");

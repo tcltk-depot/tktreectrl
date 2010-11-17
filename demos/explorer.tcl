@@ -326,8 +326,8 @@ proc ExplorerHeaderInvoke {T C} {
     set dirCount $::TreeCtrl::Priv(DirCnt,$T)
     set fileCount [expr {[$T item count] - 1 - $dirCount}]
     set lastDir [expr {$dirCount - 1}]
-    switch [$T column cget $C -tags] {
-	name {
+    switch -glob [$T column cget $C -tags] {
+	*name* {
 	    if {$dirCount} {
 		$T item sort root $order -last "root child $lastDir" -column $C -dictionary
 	    }

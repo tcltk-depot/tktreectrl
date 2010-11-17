@@ -1877,7 +1877,7 @@ TreeTheme_InitInterp(
 int
 TreeTheme_DrawHeaderItem(
     TreeCtrl *tree,		/* Widget info. */
-    Drawable drawable,		/* Where to draw. */
+    TreeDrawable td,		/* Where to draw. */
     int state,			/* COLUMN_STATE_xxx flags. */
     int arrow,			/* COLUMN_ARROW_xxx flags. */
     int visIndex,		/* 0-based index in list of visible columns. */
@@ -1936,7 +1936,7 @@ TreeTheme_GetHeaderContentMargins(
 int
 TreeTheme_DrawHeaderArrow(
     TreeCtrl *tree,		/* Widget info. */
-    Drawable drawable,		/* Where to draw. */
+    TreeDrawable td,		/* Where to draw. */
     int state,			/* COLUMN_STATE_xxx flags. */
     int up,			/* TRUE if up arrow, FALSE otherwise. */
     int x, int y,		/* Bounds of arrow.  Width and */
@@ -1967,7 +1967,7 @@ TreeTheme_DrawHeaderArrow(
 int
 TreeTheme_DrawButton(
     TreeCtrl *tree,		/* Widget info. */
-    Drawable drawable,		/* Where to draw. */
+    TreeDrawable td,		/* Where to draw. */
     TreeItem item,		/* Needed for animating. */
     int state,			/* STATE_xxx | BUTTON_STATE_xxx flags. */
     int x, int y,		/* Bounds of the button.  Width and height */
