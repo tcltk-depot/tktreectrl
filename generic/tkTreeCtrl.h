@@ -387,7 +387,7 @@ struct TreeCtrl
     GC copyGC;
     GC textGC;
     GC buttonGC;
-    GC lineGC;
+    GC lineGC[2];
     Tk_Image backgroundImage;	/* -backgroundimage */
     int useTheme;		/* -usetheme */
     char *itemPrefix;		/* -itemprefix */
@@ -1072,8 +1072,8 @@ MODULE_SCOPE int TreeThemeCmd(TreeCtrl *tree, int objc, Tcl_Obj *CONST objv[]);
 #define WCFREE(p,t,c) WIPEFREE(p, sizeof(t) * (c))
 
 MODULE_SCOPE int Tree_Ellipsis(Tk_Font tkfont, char *string, int numBytes, int *maxPixels, char *ellipsis, int force);
-MODULE_SCOPE void Tree_HDotLine(TreeCtrl *tree, Drawable drawable, GC gc, int x1, int y1, int x2);
-MODULE_SCOPE void Tree_VDotLine(TreeCtrl *tree, Drawable drawable, GC gc, int x1, int y1, int y2);
+MODULE_SCOPE void Tree_HDotLine(TreeCtrl *tree, Drawable drawable, int x1, int y1, int x2);
+MODULE_SCOPE void Tree_VDotLine(TreeCtrl *tree, Drawable drawable, int x1, int y1, int y2);
 MODULE_SCOPE void Tree_DrawActiveOutline(TreeCtrl *tree, Drawable drawable, int x, int y, int width, int height, int open);
 typedef struct DotState
 {
@@ -1467,6 +1467,9 @@ MODULE_SCOPE void Tree_DrawRoundRectX11(TreeCtrl *tree, TreeDrawable td,
     int rx, int ry, int open);
 MODULE_SCOPE void Tree_FillRoundRectX11(TreeCtrl *tree, TreeDrawable td,
     TreeClip *clip, GC gc, TreeRectangle tr, int rx, int ry, int open);
+MODULE_SCOPE void TreeGradient_DrawRectX11(TreeCtrl *tree, TreeDrawable td,
+    TreeClip *clip, TreeGradient gradient, TreeRectangle trBrush, TreeRectangle tr,
+    int outlineWidth, int open);
 MODULE_SCOPE void TreeGradient_FillRectX11(TreeCtrl *tree, TreeDrawable td,
     TreeClip *clip, TreeGradient gradient, TreeRectangle trBrush,
     TreeRectangle tr);
@@ -1480,6 +1483,12 @@ MODULE_SCOPE void Tree_DrawRoundRect(TreeCtrl *tree, TreeDrawable td,
 MODULE_SCOPE void Tree_FillRoundRect(TreeCtrl *tree, TreeDrawable td,
     TreeClip *clip, XColor *xcolor, TreeRectangle tr, int rx, int ry, int open);
 
+MODULE_SCOPE void TreeGradient_DrawRect(TreeCtrl *tree, TreeDrawable td,
+    TreeClip *clip, TreeGradient gradient, TreeRectangle trBrush,
+    TreeRectangle tr, int outlineWidth, int open);
+MODULE_SCOPE void TreeGradient_DrawRoundRect(TreeCtrl *tree, TreeDrawable td,
+    TreeClip *clip, TreeGradient gradient, TreeRectangle trBrush,
+    TreeRectangle tr, int outlineWidth, int rx, int ry, int open);
 MODULE_SCOPE void TreeGradient_FillRect(TreeCtrl *tree, TreeDrawable td,
     TreeClip *clip, TreeGradient gradient, TreeRectangle trBrush,
     TreeRectangle tr);
@@ -1488,13 +1497,13 @@ MODULE_SCOPE void TreeGradient_FillRoundRect(TreeCtrl *tree, TreeDrawable td,
     TreeRectangle tr, int rx, int ry, int open);
 
 MODULE_SCOPE void TreeColor_DrawRect(TreeCtrl *tree, TreeDrawable td,
-    TreeClip *clip, TreeColor *tc, TreeRectangle tr, int outlineWidth,
-    int open);
+    TreeClip *clip, TreeColor *tc, TreeRectangle trBrush, TreeRectangle tr,
+    int outlineWidth, int open);
 MODULE_SCOPE void TreeColor_FillRect(TreeCtrl *tree, TreeDrawable td,
     TreeClip *clip, TreeColor *tc, TreeRectangle trBrush, TreeRectangle tr);
 MODULE_SCOPE void TreeColor_DrawRoundRect(TreeCtrl *tree, TreeDrawable td,
-    TreeClip *clip, TreeColor *tc, TreeRectangle tr, int outlineWidth,
-    int rx, int ry, int open);
+    TreeClip *clip, TreeColor *tc, TreeRectangle trBrush, TreeRectangle tr,
+    int outlineWidth, int rx, int ry, int open);
 MODULE_SCOPE void TreeColor_FillRoundRect(TreeCtrl *tree, TreeDrawable td,
     TreeClip *clip, TreeColor *tc, TreeRectangle trBrush, TreeRectangle tr,
     int rx, int ry, int open);

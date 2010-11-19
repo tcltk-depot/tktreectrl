@@ -1763,14 +1763,23 @@ Tree_GetGC(
     XGCValues *gcValues)
 {
     GCCache *pGC;
-    unsigned long valid = GCFont | GCForeground | GCFunction | GCBackground
-	    | GCGraphicsExposures;
+    unsigned long valid = GCBackground | GCDashList | GCDashOffset | GCFont |
+	    GCForeground | GCFunction | GCGraphicsExposures | GCLineStyle;
 
     if ((mask | valid) != valid)
-	panic("GCCache_Get: unsupported mask");
+	panic("Tree_GetGC: unsupported mask");
 
     for (pGC = tree->gcCache; pGC != NULL; pGC = pGC->next) {
 	if (mask != pGC->mask)
+	    continue;
+	if ((mask & GCBackground) &&
+		(pGC->gcValues.background != gcValues->background))
+	    continue;
+	if ((mask & GCDashList) &&
+		(pGC->gcValues.dashes != gcValues->dashes)) /* FIXME: single value */
+	    continue;
+	if ((mask & GCDashOffset) &&
+		(pGC->gcValues.dash_offset != gcValues->dash_offset))
 	    continue;
 	if ((mask & GCFont) &&
 		(pGC->gcValues.font != gcValues->font))
@@ -1780,9 +1789,6 @@ Tree_GetGC(
 	    continue;
 	if ((mask & GCFunction) &&
 		(pGC->gcValues.function != gcValues->function))
-	    continue;
-	if ((mask & GCBackground) &&
-		(pGC->gcValues.background != gcValues->background))
 	    continue;
 	if ((mask & GCGraphicsExposures) &&
 		(pGC->gcValues.graphics_exposures != gcValues->graphics_exposures))
@@ -7891,6 +7897,42 @@ TreeGradient_FillRectX11(
 #endif
 }
 
+void
+TreeGradient_DrawRectX11(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeDrawable td,		/* Where to draw. */
+    TreeClip *clip,		/* Clipping area or NULL. */
+    TreeGradient gradient,	/* Gradient token. */
+    TreeRectangle trBrush,	/* Brush bounds. */
+    TreeRectangle tr,		/* Rectangle to outline. */
+    int outlineWidth,		/* Width of outline. */
+    int open			/* RECT_OPEN_x flags */
+    )
+{
+    TreeRectangle trEdge;
+
+    if (!(open & RECT_OPEN_W)) {
+	trEdge.x = tr.x, trEdge.y = tr.y,
+	    trEdge.width = outlineWidth, trEdge.height = tr.height;
+	TreeGradient_FillRectX11(tree, td, clip, gradient, trBrush, trEdge);
+    }
+    if (!(open & RECT_OPEN_N)) {
+	trEdge.x = tr.x, trEdge.y = tr.y,
+	    trEdge.width = tr.width, trEdge.height = outlineWidth;
+	TreeGradient_FillRectX11(tree, td, clip, gradient, trBrush, trEdge);
+    }
+    if (!(open & RECT_OPEN_E)) {
+	trEdge.x = tr.x + tr.width - outlineWidth, trEdge.y = tr.y,
+	    trEdge.width = outlineWidth, trEdge.height = tr.height;
+	TreeGradient_FillRectX11(tree, td, clip, gradient, trBrush, trEdge);
+    }
+    if (!(open & RECT_OPEN_S)) {
+	trEdge.x = tr.x, trEdge.y = tr.y + tr.height - outlineWidth,
+	    trEdge.width = tr.width, trEdge.height = outlineWidth;
+	TreeGradient_FillRectX11(tree, td, clip, gradient, trBrush, trEdge);
+    }
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -7913,6 +7955,7 @@ TreeColor_DrawRect(
     TreeDrawable td,		/* Where to draw. */
     TreeClip *clip,		/* Clipping area or NULL. */
     TreeColor *tc,		/* Color info. */
+    TreeRectangle trBrush,	/* Brush bounds. */
     TreeRectangle tr,		/* Rectangle to outline. */
     int outlineWidth,		/* Width of outline. */
     int open			/* RECT_OPEN_x flags */
@@ -7920,8 +7963,10 @@ TreeColor_DrawRect(
 {
     if (tc == NULL || outlineWidth < 1 || open == RECT_OPEN_WNES)
 	return;
-/*    if (tc->gradient != NULL)
-	TreeGradient_DrawRect(tree, td, tc->gradient, tr);*/
+    if (tc->gradient != NULL) {
+	TreeGradient_DrawRect(tree, td, clip, tc->gradient, trBrush, tr,
+	    outlineWidth, open);
+    }
     if (tc->color != NULL) {
 	GC gc = Tk_GCForColor(tc->color, td.drawable);
 	TreeRectangle trEdge;
@@ -8007,6 +8052,7 @@ TreeColor_DrawRoundRect(
     TreeDrawable td,		/* Where to draw. */
     TreeClip *clip,		/* Clipping area or NULL. */
     TreeColor *tc,		/* Color info. */
+    TreeRectangle trBrush,	/* Brush bounds. */
     TreeRectangle tr,		/* Rectangle to outline. */
     int outlineWidth,		/* Width of outline. */
     int rx, int ry,		/* Corner radius */
@@ -8015,8 +8061,10 @@ TreeColor_DrawRoundRect(
 {
     if (tc == NULL)
 	return;
-/*    if (tc->gradient != NULL)
-	TreeGradient_DrawRoundRect(tree, td, tc->gradient, tr, rx, ry);*/
+    if (tc->gradient != NULL) {
+	TreeGradient_DrawRoundRect(tree, td, clip, tc->gradient, trBrush, tr,
+	    outlineWidth, rx, ry, open);
+    }
     if (tc->color != NULL) {
 	Tree_DrawRoundRect(tree, td, clip, tc->color, tr, outlineWidth,
 	    rx, ry, open);
@@ -8053,9 +8101,10 @@ TreeColor_FillRoundRect(
 {
     if (tc == NULL)
 	return;
-    if (tc->gradient != NULL)
+    if (tc->gradient != NULL) {
 	TreeGradient_FillRoundRect(tree, td, clip, tc->gradient, trBrush, tr,
 	    rx, ry, open);
+    }
     if (tc->color != NULL) {
 	Tree_FillRoundRect(tree, td, clip, tc->color, tr, rx, ry, open);
     }

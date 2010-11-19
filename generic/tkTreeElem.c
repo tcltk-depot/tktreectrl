@@ -2158,7 +2158,6 @@ static void DisplayProcRect(TreeElementArgs *args)
     TreeRectangle trBrush;
 #endif
     TreeClip clip, *clipPtr = &clip;
-    XColor *color;
     int open = 0;
     int outlineWidth = 0;
     int showFocus = 0;
@@ -2230,35 +2229,26 @@ static void DisplayProcRect(TreeElementArgs *args)
 	TREECOLOR_FOR_STATE(tc, fill, state)
 	if (tc != NULL) {
 #if GRAD_COORDS
-	    if (tc->gradient != NULL) {
-		TreeRectangle trPaint = tr;
-		trPaint.x += tree->drawableXOrigin;
-		trPaint.y += tree->drawableYOrigin;
-		(void) TreeGradient_GetBrushBounds(tree, tc->gradient, &trPaint,
-		    &trBrush, args->display.column, args->display.item);
-		trBrush.x -= tree->drawableXOrigin;
-		trBrush.y -= tree->drawableYOrigin;
-
-		if (args->display.item != NULL) {
-		    int relX, relY;
-		    TreeGradient_IsRelativeToCanvas(tc->gradient, &relX, &relY);
-		    if (relX == 0)
-			Tree_InvalidateItemOnScrollX(tree, args->display.item);
-		    if (relY == 0)
-			Tree_InvalidateItemOnScrollY(tree, args->display.item);
-		}
-	    } else {
-		trBrush = tr;
-	    }
+	    TreeColor_GetBrushBounds(tree, tc, tr,
+		    tree->drawableXOrigin, tree->drawableYOrigin,
+		    args->display.column, args->display.item, &trBrush);
 	    TreeColor_FillRoundRect(tree, args->display.td, clipPtr, tc, trBrush, tr, rx, ry, open);
 #else
 	    TreeColor_FillRoundRect(tree, args->display.td, clipPtr, tc, tr, tr, rx, ry, open);
 #endif
 	}
-	COLOR_FOR_STATE(color, outline, state)
-	if ((color != NULL) && (outlineWidth > 0) && (open != RECT_OPEN_WNES)) {
-	    Tree_DrawRoundRect(tree, args->display.td, clipPtr, color, tr,
-		outlineWidth, rx, ry, open);
+	TREECOLOR_FOR_STATE(tc, outline, state)
+	if ((tc != NULL) && (outlineWidth > 0) && (open != RECT_OPEN_WNES)) {
+#if GRAD_COORDS
+	    TreeColor_GetBrushBounds(tree, tc, tr,
+		    tree->drawableXOrigin, tree->drawableYOrigin,
+		    args->display.column, args->display.item, &trBrush);
+	    TreeColor_DrawRoundRect(tree, args->display.td, clipPtr, tc,
+		trBrush, tr, outlineWidth, rx, ry, open);
+#else
+	    TreeColor_DrawRoundRect(tree, args->display.td, clipPtr, tc, tr,
+		tr, outlineWidth, rx, ry, open);
+#endif
 	}
 	/* TODO: active outline */
 	return;
@@ -2268,26 +2258,9 @@ static void DisplayProcRect(TreeElementArgs *args)
     if (tc != NULL) {
 	tr.x = x, tr.y = y, tr.width = width, tr.height = height;
 #if GRAD_COORDS
-	if (tc->gradient != NULL) {
-	    TreeRectangle trPaint = tr;
-	    trPaint.x += tree->drawableXOrigin;
-	    trPaint.y += tree->drawableYOrigin;
-	    (void) TreeGradient_GetBrushBounds(tree, tc->gradient, &trPaint,
-		&trBrush, args->display.column, args->display.item);
-	    trBrush.x -= tree->drawableXOrigin;
-	    trBrush.y -= tree->drawableYOrigin;
-
-	    if (args->display.item != NULL) {
-		int relX, relY;
-		TreeGradient_IsRelativeToCanvas(tc->gradient, &relX, &relY);
-		if (relX == 0)
-		    Tree_InvalidateItemOnScrollX(tree, args->display.item);
-		if (relY == 0)
-		    Tree_InvalidateItemOnScrollY(tree, args->display.item);
-	    }
-	} else {
-	    trBrush = tr;
-	}
+	TreeColor_GetBrushBounds(tree, tc, tr,
+		tree->drawableXOrigin, tree->drawableYOrigin,
+		args->display.column, args->display.item, &trBrush);
 	TreeColor_FillRect(tree, args->display.td, clipPtr, tc, trBrush, tr);
 #else
 	TreeColor_FillRect(tree, args->display.td, clipPtr, tc, tr, tr);
@@ -2297,8 +2270,16 @@ static void DisplayProcRect(TreeElementArgs *args)
     TREECOLOR_FOR_STATE(tc, outline, state)
     if ((tc != NULL) && (outlineWidth > 0) && (open != RECT_OPEN_WNES)) {
 	tr.x = x, tr.y = y, tr.width = width, tr.height = height;
-	TreeColor_DrawRect(tree, args->display.td, clipPtr, tc, tr,
+#if GRAD_COORDS
+	TreeColor_GetBrushBounds(tree, tc, tr,
+		tree->drawableXOrigin, tree->drawableYOrigin,
+		args->display.column, args->display.item, &trBrush);
+	TreeColor_DrawRect(tree, args->display.td, clipPtr, tc, trBrush, tr,
 	    outlineWidth, open);
+#else
+	TreeColor_DrawRect(tree, args->display.td, clipPtr, tc, tr, tr,
+	    outlineWidth, open);
+#endif
     }
 
     if (showFocus && (state & STATE_FOCUS) && (state & STATE_ACTIVE)) {

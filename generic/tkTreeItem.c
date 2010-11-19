@@ -4401,13 +4401,13 @@ TreeItem_DrawLines(
 
 	if (tree->lineStyle == LINE_STYLE_DOT) {
 	    for (i = 0; i < tree->lineThickness; i++) {
-		Tree_VDotLine(tree, td.drawable, tree->lineGC,
+		Tree_VDotLine(tree, td.drawable,
 			lineLeft + i,
 			top,
 			bottom);
 	    }
 	} else {
-	    XFillRectangle(tree->display, td.drawable, tree->lineGC,
+	    XFillRectangle(tree->display, td.drawable, tree->lineGC[0],
 		    lineLeft,
 		    top,
 		    tree->lineThickness,
@@ -4422,13 +4422,13 @@ TreeItem_DrawLines(
     if (hasPrev || hasNext) {
 	if (tree->lineStyle == LINE_STYLE_DOT) {
 	    for (i = 0; i < tree->lineThickness; i++) {
-		Tree_HDotLine(tree, td.drawable, tree->lineGC,
+		Tree_HDotLine(tree, td.drawable,
 			lineLeft + vert,
 			lineTop + i,
 			x /* + tree->columnTreeLeft */ + indent);
 	    }
 	} else {
-	    XFillRectangle(tree->display, td.drawable, tree->lineGC,
+	    XFillRectangle(tree->display, td.drawable, tree->lineGC[0],
 		    lineLeft + vert,
 		    lineTop,
 		    left + tree->useIndent - (lineLeft + vert),
@@ -4454,13 +4454,13 @@ TreeItem_DrawLines(
 	if (item != NULL) {
 	    if (tree->lineStyle == LINE_STYLE_DOT) {
 		for (i = 0; i < tree->lineThickness; i++) {
-		    Tree_VDotLine(tree, td.drawable, tree->lineGC,
+		    Tree_VDotLine(tree, td.drawable,
 			    lineLeft + i,
 			    y,
 			    y + height);
 		}
 	    } else {
-		XFillRectangle(tree->display, td.drawable, tree->lineGC,
+		XFillRectangle(tree->display, td.drawable, tree->lineGC[0],
 			lineLeft,
 			y,
 			tree->lineThickness,

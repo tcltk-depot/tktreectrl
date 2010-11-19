@@ -34,7 +34,6 @@ void
 Tree_HDotLine(
     TreeCtrl *tree,		/* Widget info. */
     Drawable drawable,		/* Where to draw. */
-    GC gc,			/* Graphics context. */
     int x1, int y1, int x2	/* Left, top and right coordinates. */
     )
 {
@@ -48,7 +47,7 @@ Tree_HDotLine(
     dc = TkWinGetDrawableDC(tree->display, drawable, &state);
     SetROP2(dc, R2_COPYPEN);
 
-    pen = CreatePen(PS_SOLID, 1, gc->foreground);
+    pen = CreatePen(PS_SOLID, 1, tree->lineGC[0]->foreground);
     oldPen = SelectObject(dc, pen);
 
     nw = !(wx & 1) == !(wy & 1);
@@ -83,7 +82,6 @@ void
 Tree_VDotLine(
     TreeCtrl *tree,		/* Widget info. */
     Drawable drawable,		/* Where to draw. */
-    GC gc,			/* Graphics context. */
     int x1, int y1, int y2)	/* Left, top, and bottom coordinates. */
 {
     TkWinDCState state;
@@ -96,7 +94,7 @@ Tree_VDotLine(
     dc = TkWinGetDrawableDC(tree->display, drawable, &state);
     SetROP2(dc, R2_COPYPEN);
 
-    pen = CreatePen(PS_SOLID, 1, gc->foreground);
+    pen = CreatePen(PS_SOLID, 1, tree->lineGC[0]->foreground);
     oldPen = SelectObject(dc, pen);
 
     nw = !(wx & 1) == !(wy & 1);
@@ -2471,7 +2469,11 @@ bool IsCompositionEnabled()
 #endif
 
 static LRESULT WINAPI
-WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
+ThemeMonitorWndProc(
+    HWND hwnd,
+    UINT msg,
+    WPARAM wp,
+    LPARAM lp)
 {
     Tcl_Interp *interp = (Tcl_Interp *)GetWindowLongPtr(hwnd, GWLP_USERDATA);
 
@@ -2491,20 +2493,21 @@ WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
 static CHAR windowClassName[32] = "TreeCtrlMonitorClass";
 
 static BOOL
-RegisterThemeMonitorWindowClass(HINSTANCE hinst)
+RegisterThemeMonitorWindowClass(
+    HINSTANCE hinst)
 {
     WNDCLASSEX wc;
     
     wc.cbSize        = sizeof(WNDCLASSEX);
     wc.style         = CS_HREDRAW | CS_VREDRAW;
-    wc.lpfnWndProc   = (WNDPROC)WndProc;
+    wc.lpfnWndProc   = (WNDPROC) ThemeMonitorWndProc;
     wc.cbClsExtra    = 0;
     wc.cbWndExtra    = 0;
     wc.hInstance     = hinst;
     wc.hIcon         = LoadIcon(NULL, IDI_APPLICATION);
     wc.hIconSm       = LoadIcon(NULL, IDI_APPLICATION);
     wc.hCursor       = LoadCursor(NULL, IDC_ARROW);
-    wc.hbrBackground = (HBRUSH)COLOR_WINDOW;
+    wc.hbrBackground = (HBRUSH) COLOR_WINDOW;
     wc.lpszMenuName  = windowClassName;
     wc.lpszClassName = windowClassName;
     
@@ -2512,7 +2515,9 @@ RegisterThemeMonitorWindowClass(HINSTANCE hinst)
 }
 
 static HWND
-CreateThemeMonitorWindow(HINSTANCE hinst, Tcl_Interp *interp)
+CreateThemeMonitorWindow(
+    HINSTANCE hinst,
+    Tcl_Interp *interp)
 {
     CHAR title[32] = "TreeCtrlMonitorWindow";
     HWND hwnd;
@@ -2536,7 +2541,10 @@ struct PerInterpData
     HWND hwnd;
 };
 
-static void FreeAssocData(ClientData clientData, Tcl_Interp *interp)
+static void
+ThemeFreeAssocData(
+    ClientData clientData,
+    Tcl_Interp *interp)
 {
     PerInterpData *data = (PerInterpData *) clientData;
 
@@ -2721,7 +2729,7 @@ TreeTheme_InitInterp(
 
     data = (PerInterpData *) ckalloc(sizeof(PerInterpData));
     data->hwnd = hwnd;
-    Tcl_SetAssocData(interp, "TreeCtrlTheme", FreeAssocData, (ClientData) data);
+    Tcl_SetAssocData(interp, "TreeCtrlTheme", ThemeFreeAssocData, (ClientData) data);
 
     return TCL_OK;
 }
@@ -2812,6 +2820,9 @@ typedef enum GpFillMode
     FillModeAlternate,
     FillModeWinding
 } GpFillMode;
+typedef enum GpLineCap {
+    LineCapSquare = 1,
+} GpLineCap;
 typedef enum GpUnit {
     UnitWorld = 0,
     UnitDisplay = 1,
@@ -2834,6 +2845,10 @@ typedef enum LinearGradientMode
     LinearGradientModeHorizontal,
     LinearGradientModeVertical
 } LinearGradientMode;
+typedef enum GpPenAlignment {
+    PenAlignmentCenter = 0,
+    PenAlignmentInset = 1
+} GpPenAlignment;
 typedef enum SmoothingMode {
     SmoothingModeHighQuality = 2,
     SmoothingModeAntiAlias = 4
@@ -2897,8 +2912,9 @@ static struct
     GpStatus (WINGDIPAPI *_GdipCreatePath)(GpFillMode,GpPath**);
     GpStatus (WINGDIPAPI *_GdipDeletePath)(GpPath*);
     GpStatus (WINGDIPAPI *_GdipResetPath)(GpPath*);
-    GpStatus (WINGDIPAPI *_GdipAddPathArcI)(GpPath*,INT,INT,INT,INT,REAL,REAL);
-    GpStatus (WINGDIPAPI *_GdipAddPathLineI)(GpPath*,INT,INT,INT,INT);
+    GpStatus (WINGDIPAPI *_GdipAddPathArc)(GpPath*,REAL,REAL,REAL,REAL,REAL,REAL);
+    GpStatus (WINGDIPAPI *_GdipAddPathLine)(GpPath*,REAL,REAL,REAL,REAL);
+    GpStatus (WINGDIPAPI *_GdipAddPathRectangle)(GpPath*,REAL,REAL,REAL,REAL);
     GpStatus (WINGDIPAPI *_GdipStartPathFigure)(GpPath*);
     GpStatus (WINGDIPAPI *_GdipClosePathFigure)(GpPath*);
 
@@ -2909,6 +2925,10 @@ static struct
 
     /* Pen */
     GpStatus (WINGDIPAPI *_GdipCreatePen1)(ARGB,REAL,GpUnit,GpPen**);
+    GpStatus (WINGDIPAPI *_GdipCreatePen2)(GpBrush*,REAL,GpUnit,GpPen**);
+    GpStatus (WINGDIPAPI *_GdipSetPenEndCap)(GpPen*,GpLineCap);
+    GpStatus (WINGDIPAPI *_GdipSetPenStartCap)(GpPen*,GpLineCap);
+    GpStatus (WINGDIPAPI *_GdipSetPenMode)(GpPen*,GpPenAlignment);
     GpStatus (WINGDIPAPI *_GdipDeletePen)(GpPen*);
 
     /* SolidFill brush */
@@ -2965,14 +2985,19 @@ LoadGdiplus(void)
 	    && LOADPROC(GdipCreatePath)
 	    && LOADPROC(GdipDeletePath)
 	    && LOADPROC(GdipResetPath)
-	    && LOADPROC(GdipAddPathArcI)
-	    && LOADPROC(GdipAddPathLineI)
+	    && LOADPROC(GdipAddPathArc)
+	    && LOADPROC(GdipAddPathLine)
+	    && LOADPROC(GdipAddPathRectangle)
 	    && LOADPROC(GdipStartPathFigure)
 	    && LOADPROC(GdipClosePathFigure)
 	    && LOADPROC(GdipCreateLineBrushFromRectI)
 	    && LOADPROC(GdipSetLinePresetBlend)
 	    && LOADPROC(GdipDeleteBrush)
 	    && LOADPROC(GdipCreatePen1)
+	    && LOADPROC(GdipCreatePen2)
+	    && LOADPROC(GdipSetPenEndCap)
+	    && LOADPROC(GdipSetPenStartCap)
+	    && LOADPROC(GdipSetPenMode)
 	    && LOADPROC(GdipDeletePen)
 	    && LOADPROC(GdipCreateSolidFill)
 	) {
@@ -3249,34 +3274,160 @@ error1:
 }
 
 static void
-GetRoundRectPath_Outline(
-    GpPath *path,
-    TreeRectangle tr,		/* Where to draw. */
-    int rx, int ry,		/* Corner radius. */
+GetRectPath_Outline(
+    GpPath *path,		/* GDI+ path to set. */
+    TreeRectangle tr,		/* Rectangle to draw. */
     int open,			/* RECT_OPEN_x flags. */
-    int fudgeX,			/* Fix for "open" edge endpoints when */
-    int fudgeY			/* outlineWidth>1. */
+    int outlineWidth		/* Thickness of the outline. */
     )
 {
-    int x = tr.x, y = tr.y, width = tr.width, height = tr.height;
+    REAL x = tr.x, y = tr.y, width = tr.width, height = tr.height;
     int drawW = (open & RECT_OPEN_W) == 0;
     int drawN = (open & RECT_OPEN_N) == 0;
     int drawE = (open & RECT_OPEN_E) == 0;
     int drawS = (open & RECT_OPEN_S) == 0;
 
+    /* Weird issue, if outlineWidth == 1 the NW corner is missing a pixel,
+     * even when calling GdipAddPathRectangle.  So don't draw on the 1/2
+     * pixel boundary in that case. */
+    if (outlineWidth > 1) {
+	x += outlineWidth / 2.0, y += outlineWidth / 2.0;
+    }
+    width -= outlineWidth, height -= outlineWidth;
+
+    /* Simple case: draw all 4 edges */
+    if (drawW && drawN && drawE && drawS) {
+	DllExports._GdipAddPathRectangle(path, x, y, width, height);
+
+    /* Complicated case: some edges are "open" */
+    } else {
+	if (drawN)
+	    DllExports._GdipAddPathLine(path, x, y, x + width, y);
+	if (drawE)
+	    DllExports._GdipAddPathLine(path, x + width, y, x + width, y + height);
+	else if (drawN)
+	    DllExports._GdipStartPathFigure(path);
+	if (drawS)
+	    DllExports._GdipAddPathLine(path, x + width, y + height, x, y + height);
+	else if (drawE)
+	    DllExports._GdipStartPathFigure(path);
+	if (drawW)
+	    DllExports._GdipAddPathLine(path, x, y + height, x, y);
+    }
+}
+
+void
+TreeGradient_DrawRect(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeDrawable td,		/* Where to draw. */
+    TreeClip *clip,		/* Clipping area or NULL. */
+    TreeGradient gradient,	/* Gradient. */
+    TreeRectangle trBrush,	/* Brush bounds. */
+    TreeRectangle tr,		/* Rectangle to draw. */
+    int outlineWidth,		/* Width of outline. */
+    int open			/* RECT_OPEN_x flags */
+    )
+{
+    HDC hDC;
+    TkWinDCState dcState;
+    TreeClipStateGraphics clipState;
+    GpGraphics *graphics;
+    GpPath *path;
+    GpLineGradient *lineGradient;
+    GpPen *pen;
+    GpStatus status;
+
+    if (gradient->stopArrPtr == NULL || gradient->stopArrPtr->nstops < 2)
+	return;
+
+    /* Draw nothing if the brush is zero-sized. */
+    if (trBrush.width <= 0 || trBrush.height <= 0)
+	return;
+
+    if (!tree->nativeGradients || (DllExports.handle == NULL)) {
+	TreeGradient_DrawRectX11(tree, td, clip, gradient, trBrush, tr, outlineWidth, open);
+	return;
+    }
+
+    hDC = TkWinGetDrawableDC(tree->display, td.drawable, &dcState);
+
+    status = DllExports._GdipCreateFromHDC(hDC, &graphics);
+    if (status != Ok)
+	goto error1;
+
+    status = DllExports._GdipCreatePath(FillModeAlternate, &path);
+    if (status != Ok)
+	goto error2;
+
+    status = MakeLinearGradientBrush(gradient, trBrush, &lineGradient);
+    if (status != Ok)
+	goto error3;
+
+    status = DllExports._GdipCreatePen2(lineGradient, outlineWidth,
+	UnitPixel, &pen);
+    if (status != Ok)
+	goto error4;
+
+    status = TreeClip_ToGraphics(tree, clip, graphics, &clipState);
+    if (status != Ok)
+	goto error5;
+
+    GetRectPath_Outline(path, tr, open, outlineWidth);
+    DllExports._GdipSetPenStartCap(pen, LineCapSquare);
+    DllExports._GdipSetPenEndCap(pen, LineCapSquare);
+    DllExports._GdipDrawPath(graphics, pen, path);
+
+error5:
+    DllExports._GdipDeletePen(pen);
+
+error4:
+    DllExports._GdipDeleteBrush(path);
+
+error3:
+    DllExports._GdipDeletePath(path);
+
+error2:
+    DllExports._GdipDeleteGraphics(graphics);
+
+error1:
+    TkWinReleaseDrawableDC(td.drawable, hDC, &dcState);
+}
+
+static void
+GetRoundRectPath_Outline(
+    GpPath *path,		/* GDI+ path to set. */
+    TreeRectangle tr,		/* Rectangle to draw. */
+    int rx, int ry,		/* Corner radius. */
+    int open,			/* RECT_OPEN_x flags. */
+    int fudgeX,			/* Fix for "open" edge endpoints when */
+    int fudgeY,			/* outlineWidth>1. */
+    int outlineWidth
+    )
+{
+    REAL x = tr.x, y = tr.y, width = tr.width, height = tr.height;
+    int drawW = (open & RECT_OPEN_W) == 0;
+    int drawN = (open & RECT_OPEN_N) == 0;
+    int drawE = (open & RECT_OPEN_E) == 0;
+    int drawS = (open & RECT_OPEN_S) == 0;
+
+    if (outlineWidth > 0) {
+	x += outlineWidth / 2.0, y += outlineWidth / 2.0;
+	width -= outlineWidth, height -= outlineWidth;
+    } else {
+	width -= 1, height -= 1;
+    }
+
     /* Simple case: draw all 4 corners and 4 edges */
     if (drawW && drawN && drawE && drawS) {
-	width -= 1, height -= 1;
-	DllExports._GdipAddPathArcI(path, x, y, rx*2, ry*2, 180, 90); /* top-left */
-	DllExports._GdipAddPathArcI(path, x + width - rx*2, y, rx*2, ry*2, 270, 90); /* top-right */
-	DllExports._GdipAddPathArcI(path, x + width - rx*2, y + height - ry*2, rx*2, ry*2, 0, 90); /* bottom-right */
-	DllExports._GdipAddPathArcI(path, x, y + height - ry*2, rx*2, ry*2, 90, 90); /* bottom-left */
+	DllExports._GdipAddPathArc(path, x, y, rx*2, ry*2, 180, 90); /* top-left */
+	DllExports._GdipAddPathArc(path, x + width - rx*2, y, rx*2, ry*2, 270, 90); /* top-right */
+	DllExports._GdipAddPathArc(path, x + width - rx*2, y + height - ry*2, rx*2, ry*2, 0, 90); /* bottom-right */
+	DllExports._GdipAddPathArc(path, x, y + height - ry*2, rx*2, ry*2, 90, 90); /* bottom-left */
 	DllExports._GdipClosePathFigure(path);
 
     /* Complicated case: some edges are "open" */
     } else {
 	GpPoint start[4], end[4]; /* start and end points of line segments*/
-	width -= 1, height -= 1;
 	start[0].X = x, start[0].Y = y;
 	end[3] = start[0];
 	if (drawW && drawN) {
@@ -3315,25 +3466,25 @@ GetRoundRectPath_Outline(
 	}
 
 	if (drawW && drawN)
-	    DllExports._GdipAddPathArcI(path, x, y, rx*2, ry*2, 180, 90); /* top-left */
+	    DllExports._GdipAddPathArc(path, x, y, rx*2, ry*2, 180, 90); /* top-left */
 	if (drawN)
-	    DllExports._GdipAddPathLineI(path, start[0].X, start[0].Y, end[0].X, end[0].Y);
+	    DllExports._GdipAddPathLine(path, start[0].X, start[0].Y, end[0].X, end[0].Y);
 	if (drawE && drawN)
-	    DllExports._GdipAddPathArcI(path, x + width - rx*2, y, rx*2, ry*2, 270, 90); /* top-right */
+	    DllExports._GdipAddPathArc(path, x + width - rx*2, y, rx*2, ry*2, 270, 90); /* top-right */
 	if (drawE)
-	    DllExports._GdipAddPathLineI(path, start[1].X, start[1].Y, end[1].X, end[1].Y);
+	    DllExports._GdipAddPathLine(path, start[1].X, start[1].Y, end[1].X, end[1].Y);
 	else if (drawN)
 	    DllExports._GdipStartPathFigure(path);
 	if (drawE && drawS)
-	    DllExports._GdipAddPathArcI(path, x + width - rx*2, y + height - ry*2, rx*2, ry*2, 0, 90); /* bottom-right */
+	    DllExports._GdipAddPathArc(path, x + width - rx*2, y + height - ry*2, rx*2, ry*2, 0, 90); /* bottom-right */
 	if (drawS)
-	    DllExports._GdipAddPathLineI(path, start[2].X, start[2].Y, end[2].X, end[2].Y);
+	    DllExports._GdipAddPathLine(path, start[2].X, start[2].Y, end[2].X, end[2].Y);
 	else if (drawE)
 	    DllExports._GdipStartPathFigure(path);
 	if (drawW && drawS)
-	    DllExports._GdipAddPathArcI(path, x, y + height - ry*2, rx*2, ry*2, 90, 90); /* bottom-left */
+	    DllExports._GdipAddPathArc(path, x, y + height - ry*2, rx*2, ry*2, 90, 90); /* bottom-left */
 	if (drawW)
-	    DllExports._GdipAddPathLineI(path, start[3].X, start[3].Y, end[3].X, end[3].Y);
+	    DllExports._GdipAddPathLine(path, start[3].X, start[3].Y, end[3].X, end[3].Y);
     }
 }
 
@@ -3384,23 +3535,122 @@ Tree_DrawRoundRect(
     if (status != Ok)
 	goto error3;
 
-    GetRoundRectPath_Outline(path, tr, rx, ry, open, 0, 0);
+    GetRoundRectPath_Outline(path, tr, rx, ry, open, 0, 0, 0);
     DllExports._GdipDrawPath(graphics, pen, path);
 
     /* http://www.codeproject.com/KB/GDI-plus/RoundRect.aspx */
     for (i = 1; i < outlineWidth; i++) {
 	tr.x += 1, tr.width -= 2;
 	DllExports._GdipResetPath(path);
-	GetRoundRectPath_Outline(path, tr, rx, ry, open, i, i-1);
+	GetRoundRectPath_Outline(path, tr, rx, ry, open, i, i-1, 0);
 	DllExports._GdipDrawPath(graphics, pen, path);
     
 	tr.y += 1, tr.height -= 2;
 	DllExports._GdipResetPath(path);
-	GetRoundRectPath_Outline(path, tr, rx, ry, open, i, i);
+	GetRoundRectPath_Outline(path, tr, rx, ry, open, i, i, 0);
 	DllExports._GdipDrawPath(graphics, pen, path);
     }
 
     DllExports._GdipDeletePen(pen);
+
+error3:
+    DllExports._GdipDeletePath(path);
+
+error2:
+    DllExports._GdipDeleteGraphics(graphics);
+
+error1:
+    TkWinReleaseDrawableDC(td.drawable, hDC, &dcState);
+}
+
+void
+TreeGradient_DrawRoundRect(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeDrawable td,		/* Where to draw. */
+    TreeClip *clip,		/* Clipping area or NULL. */
+    TreeGradient gradient,	/* Gradient. */
+    TreeRectangle trBrush,	/* Brush bounds. */
+    TreeRectangle tr,		/* Rectangle to draw. */
+    int outlineWidth,		/* Width of outline. */
+    int rx, int ry,		/* Corner radius */
+    int open			/* RECT_OPEN_x flags */
+    )
+{
+    HDC hDC;
+    TkWinDCState dcState;
+    TreeClipStateGraphics clipState;
+    GpGraphics *graphics;
+    GpPath *path;
+    GpLineGradient *lineGradient;
+    GpPen *pen;
+    GpStatus status;
+    int i;
+    int canRepairCorners;
+
+    if (gradient->stopArrPtr == NULL || gradient->stopArrPtr->nstops < 2)
+	return;
+
+    /* Draw nothing if the brush is zero-sized. */
+    if (trBrush.width <= 0 || trBrush.height <= 0)
+	return;
+
+    if (!tree->nativeGradients || (DllExports.handle == NULL)) {
+	XColor *xcolor = gradient->stopArrPtr->stops[0]->color; /* Use the first stop color */
+	GC gc = Tk_GCForColor(xcolor, td.drawable);
+	Tree_DrawRoundRectX11(tree, td, clip, gc, tr, outlineWidth, rx, ry, open);
+	return;
+    }
+
+    hDC = TkWinGetDrawableDC(tree->display, td.drawable, &dcState);
+
+    status = DllExports._GdipCreateFromHDC(hDC, &graphics);
+    if (status != Ok)
+	goto error1;
+
+    status = DllExports._GdipCreatePath(FillModeAlternate, &path);
+    if (status != Ok)
+	goto error2;
+
+    status = MakeLinearGradientBrush(gradient, trBrush, &lineGradient);
+    if (status != Ok)
+	goto error3;
+
+    canRepairCorners = (outlineWidth == 1) || TreeGradient_IsOpaque(tree, gradient);
+
+    status = DllExports._GdipCreatePen2(lineGradient, canRepairCorners ?
+	1 : outlineWidth, UnitPixel, &pen);
+    if (status != Ok)
+	goto error4;
+
+    status = TreeClip_ToGraphics(tree, clip, graphics, &clipState);
+    if (status != Ok)
+	goto error5;
+
+    GetRoundRectPath_Outline(path, tr, rx, ry, open, 0, 0,
+	canRepairCorners ? 0 : outlineWidth);
+
+    DllExports._GdipDrawPath(graphics, pen, path);
+
+    /* http://www.codeproject.com/KB/GDI-plus/RoundRect.aspx */
+    if (canRepairCorners) {
+	for (i = 1; i < outlineWidth; i++) {
+	    tr.x += 1, tr.width -= 2;
+	    DllExports._GdipResetPath(path);
+	    GetRoundRectPath_Outline(path, tr, rx, ry, open, i, i-1, 0);
+	    DllExports._GdipDrawPath(graphics, pen, path);
+	
+	    tr.y += 1, tr.height -= 2;
+	    DllExports._GdipResetPath(path);
+	    GetRoundRectPath_Outline(path, tr, rx, ry, open, i, i, 0);
+	    DllExports._GdipDrawPath(graphics, pen, path);
+	}
+    }
+
+error5:
+    DllExports._GdipDeletePen(pen);
+
+error4:
+    DllExports._GdipDeleteBrush(path);
 
 error3:
     DllExports._GdipDeletePath(path);
@@ -3423,8 +3673,8 @@ error1:
 /* http://www.codeproject.com/KB/GDI-plus/RoundRect.aspx */
 static void
 GetRoundRectPath_Fill(
-    GpPath *path,
-    TreeRectangle tr,		/* Where to draw. */
+    GpPath *path,		/* GDI+ path to set. */
+    TreeRectangle tr,		/* Rectangle to paint. */
     int rx, int ry,		/* Corner radius. */
     int open			/* RECT_OPEN_x flags. */
 #ifdef ROUND_RECT_SYMMETRY_HACK
@@ -3444,10 +3694,10 @@ GetRoundRectPath_Fill(
 	if (rrhack)
 	    width -= 1, height -= 1;
 #endif
-	DllExports._GdipAddPathArcI(path, x, y, rx*2, ry*2, 180, 90); /* top-left */
-	DllExports._GdipAddPathArcI(path, x + width - rx*2, y, rx*2, ry*2, 270, 90); /* top-right */
-	DllExports._GdipAddPathArcI(path, x + width - rx*2, y + height - ry*2, rx*2, ry*2, 0, 90); /* bottom-right */
-	DllExports._GdipAddPathArcI(path, x, y + height - ry*2, rx*2, ry*2, 90, 90); /* bottom-left */
+	DllExports._GdipAddPathArc(path, x, y, rx*2, ry*2, 180, 90); /* top-left */
+	DllExports._GdipAddPathArc(path, x + width - rx*2, y, rx*2, ry*2, 270, 90); /* top-right */
+	DllExports._GdipAddPathArc(path, x + width - rx*2, y + height - ry*2, rx*2, ry*2, 0, 90); /* bottom-right */
+	DllExports._GdipAddPathArc(path, x, y + height - ry*2, rx*2, ry*2, 90, 90); /* bottom-left */
 	DllExports._GdipClosePathFigure(path);
 
     /* Complicated case: some edges are "open" */
@@ -3487,17 +3737,17 @@ GetRoundRectPath_Fill(
 	}
 
 	if (drawW && drawN)
-	    DllExports._GdipAddPathArcI(path, x, y, rx*2, ry*2, 180, 90); /* top-left */
-	DllExports._GdipAddPathLineI(path, start[0].X, start[0].Y, end[0].X, end[0].Y);
+	    DllExports._GdipAddPathArc(path, x, y, rx*2, ry*2, 180, 90); /* top-left */
+	DllExports._GdipAddPathLine(path, start[0].X, start[0].Y, end[0].X, end[0].Y);
 	if (drawE && drawN)
-	    DllExports._GdipAddPathArcI(path, x + width - rx*2, y, rx*2, ry*2, 270, 90); /* top-right */
-	DllExports._GdipAddPathLineI(path, start[1].X, start[1].Y, end[1].X, end[1].Y);
+	    DllExports._GdipAddPathArc(path, x + width - rx*2, y, rx*2, ry*2, 270, 90); /* top-right */
+	DllExports._GdipAddPathLine(path, start[1].X, start[1].Y, end[1].X, end[1].Y);
 	if (drawE && drawS)
-	    DllExports._GdipAddPathArcI(path, x + width - rx*2, y + height - ry*2, rx*2, ry*2, 0, 90); /* bottom-right */
-	DllExports._GdipAddPathLineI(path, start[2].X, start[2].Y, end[2].X, end[2].Y);
+	    DllExports._GdipAddPathArc(path, x + width - rx*2, y + height - ry*2, rx*2, ry*2, 0, 90); /* bottom-right */
+	DllExports._GdipAddPathLine(path, start[2].X, start[2].Y, end[2].X, end[2].Y);
 	if (drawW && drawS)
-	    DllExports._GdipAddPathArcI(path, x, y + height - ry*2, rx*2, ry*2, 90, 90); /* bottom-left */
-	DllExports._GdipAddPathLineI(path, start[3].X, start[3].Y, end[3].X, end[3].Y);
+	    DllExports._GdipAddPathArc(path, x, y + height - ry*2, rx*2, ry*2, 90, 90); /* bottom-left */
+	DllExports._GdipAddPathLine(path, start[3].X, start[3].Y, end[3].X, end[3].Y);
     }
 }
 
@@ -3507,7 +3757,7 @@ Tree_FillRoundRect(
     TreeDrawable td,		/* Where to draw. */
     TreeClip *clip,		/* Clipping area or NULL. */
     XColor *xcolor,		/* Color. */
-    TreeRectangle tr,		/* Where to draw. */
+    TreeRectangle tr,		/* Recangle to paint. */
     int rx, int ry,		/* Corner radius */
     int open			/* RECT_OPEN_x flags */
     )
@@ -3574,7 +3824,7 @@ Tree_FillRoundRect(
 
     /* See comments above for why this is done */
     DllExports._GdipResetPath(path);
-    GetRoundRectPath_Outline(path, tr, rx, ry, open, 0, 0);
+    GetRoundRectPath_Outline(path, tr, rx, ry, open, 0, 0, 0);
     DllExports._GdipDrawPath(graphics, pen, path);
 
     DllExports._GdipDeletePen(pen);
@@ -3600,7 +3850,7 @@ TreeGradient_FillRoundRect(
     TreeClip *clip,		/* Clipping area or NULL. */
     TreeGradient gradient,	/* Gradient token. */
     TreeRectangle trBrush,	/* Brush bounds. */
-    TreeRectangle tr,		/* Where to draw. */
+    TreeRectangle tr,		/* Rectangle to paint. */
     int rx, int ry,		/* Corner radius */
     int open			/* RECT_OPEN_x flags */
     )
@@ -3611,7 +3861,9 @@ TreeGradient_FillRoundRect(
     GpGraphics *graphics;
     GpPath *path;
     GpLineGradient *lineGradient;
+    GpPen *pen;
     GpStatus status;
+    int canRepairCorners;
 
     if (gradient->stopArrPtr == NULL || gradient->stopArrPtr->nstops < 2)
 	return;
@@ -3640,9 +3892,14 @@ TreeGradient_FillRoundRect(
     if (status != Ok)
 	goto error3;
 
+    /* Filling the rounded rectangle gives asymmetric results at the corners.
+     * If the gradient is fully opaque then the corners can be "repaired" by
+     * drawing a 1-pixel thick outline after filling the shape. */
+    canRepairCorners = TreeGradient_IsOpaque(tree, gradient);
+
     GetRoundRectPath_Fill(path, tr, rx, ry, open
 #ifdef ROUND_RECT_SYMMETRY_HACK
-	, 0
+	, canRepairCorners
 #endif
     );
 
@@ -3651,6 +3908,18 @@ TreeGradient_FillRoundRect(
 	goto error4;
 
     DllExports._GdipFillPath(graphics, lineGradient, path);
+
+    if (canRepairCorners) {
+	status = DllExports._GdipCreatePen2(lineGradient, 1, UnitPixel, &pen);
+	if (status != Ok)
+	    goto error4;
+
+	DllExports._GdipResetPath(path);
+	GetRoundRectPath_Outline(path, tr, rx, ry, open, 0, 0, 0);
+	DllExports._GdipDrawPath(graphics, pen, path);
+
+	DllExports._GdipDeletePen(pen);
+    }
 
 error4:
     DllExports._GdipDeleteBrush(lineGradient);

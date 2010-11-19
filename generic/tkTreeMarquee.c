@@ -327,27 +327,27 @@ TreeMarquee_Draw(
 	if (marquee->fillColorPtr) {
 #if GRAD_COORDS
 	    TreeRectangle trBrush;
-	    if (marquee->fillColorPtr->gradient != NULL) {
-		TreeRectangle trPaint = tr;
-
-		trPaint.x += tree->xOrigin;
-		trPaint.y += tree->yOrigin;
-		(void) TreeGradient_GetBrushBounds(tree,
-		    marquee->fillColorPtr->gradient, &trPaint,
-		    &trBrush, (TreeColumn) NULL, (TreeItem) NULL);
-		trBrush.x -= tree->xOrigin;
-		trBrush.y -= tree->yOrigin;
-	    } else {
-		trBrush = tr;
-	    }
+	    TreeColor_GetBrushBounds(tree, marquee->fillColorPtr, tr,
+		    tree->xOrigin, tree->yOrigin,
+		    (TreeColumn) NULL, (TreeItem) NULL, &trBrush);
 	    TreeColor_FillRect(tree, td, &clip, marquee->fillColorPtr, trBrush, tr);
 #else
 	    TreeColor_FillRect(tree, td, &clip, marquee->fillColorPtr, tr, tr);
 #endif
 	}
-	if (marquee->outlineColorPtr && marquee->outlineWidth > 0)
-	    TreeColor_DrawRect(tree, td, &clip, marquee->outlineColorPtr, tr,
-		marquee->outlineWidth, 0);
+	if (marquee->outlineColorPtr && marquee->outlineWidth > 0) {
+#if GRAD_COORDS
+	    TreeRectangle trBrush;
+	    TreeColor_GetBrushBounds(tree, marquee->outlineColorPtr, tr,
+		    tree->xOrigin, tree->yOrigin,
+		    (TreeColumn) NULL, (TreeItem) NULL, &trBrush);
+	    TreeColor_DrawRect(tree, td, &clip, marquee->outlineColorPtr,
+		trBrush, tr, marquee->outlineWidth, 0);
+#else
+	    TreeColor_DrawRect(tree, td, &clip, marquee->outlineColorPtr,
+		tr, tr, marquee->outlineWidth, 0);
+#endif
+	}
 	return;
     }
 

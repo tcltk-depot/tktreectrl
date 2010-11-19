@@ -1603,12 +1603,28 @@ badWrap:
 	mask |= TREE_CONF_LINE;
 
     if (mask & TREE_CONF_LINE) {
-	if (tree->lineGC != None)
-	    Tk_FreeGC(tree->display, tree->lineGC);
-	gcValues.foreground = tree->lineColor->pixel;
-	gcValues.line_width = tree->lineThickness;
-	gcMask = GCForeground | GCLineWidth;
-	tree->lineGC = Tk_GetGC(tree->tkwin, gcMask, &gcValues);
+	if (tree->lineGC[0] != None)
+	    Tk_FreeGC(tree->display, tree->lineGC[0]);
+	if (tree->lineGC[1] != None)
+	    Tk_FreeGC(tree->display, tree->lineGC[1]);
+	if (tree->lineStyle == LINE_STYLE_DOT) {
+	    gcValues.foreground = tree->lineColor->pixel;
+	    gcValues.line_style = LineOnOffDash;
+	    gcValues.line_width = 1;
+	    gcValues.dash_offset = 0;
+	    gcValues.dashes = 1;
+	    gcMask = GCForeground | GCLineWidth | GCLineStyle | GCDashList | GCDashOffset;
+	    tree->lineGC[0] = Tk_GetGC(tree->tkwin, gcMask, &gcValues);
+
+	    gcValues.dash_offset = 1;
+	    tree->lineGC[1] = Tk_GetGC(tree->tkwin, gcMask, &gcValues);
+	} else {
+	    gcValues.foreground = tree->lineColor->pixel;
+	    gcValues.line_width = tree->lineThickness;
+	    gcMask = GCForeground | GCLineWidth;
+	    tree->lineGC[0] = Tk_GetGC(tree->tkwin, gcMask, &gcValues);
+	    tree->lineGC[1] = None;
+	}
     }
 
     if (mask & TREE_CONF_PROXY) {
@@ -1875,8 +1891,10 @@ TreeDestroy(
 	Tk_FreeGC(tree->display, tree->textGC);
     if (tree->buttonGC != None)
 	Tk_FreeGC(tree->display, tree->buttonGC);
-    if (tree->lineGC != None)
-	Tk_FreeGC(tree->display, tree->lineGC);
+    if (tree->lineGC[0] != None)
+	Tk_FreeGC(tree->display, tree->lineGC[0]);
+    if (tree->lineGC[1] != None)
+	Tk_FreeGC(tree->display, tree->lineGC[1]);
     Tree_FreeAllGC(tree);
 
     Tree_FreeColumns(tree);

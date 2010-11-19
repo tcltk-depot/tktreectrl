@@ -30,18 +30,14 @@ void
 Tree_HDotLine(
     TreeCtrl *tree,		/* Widget info. */
     Drawable drawable,		/* Where to draw. */
-    GC gc,			/* Graphics context. */
     int x1, int y1, int x2	/* Left, top and right coordinates. */
     )
 {
-    int nw;
     int wx = x1 + tree->drawableXOrigin;
     int wy = y1 + tree->drawableYOrigin;
+    int nw = !(wx & 1) == !(wy & 1);
 
-    nw = !(wx & 1) == !(wy & 1);
-    for (x1 += !nw; x1 < x2; x1 += 2) {
-	XDrawPoint(tree->display, drawable, gc, x1, y1);
-    }
+    XDrawLine(tree->display, drawable, tree->lineGC[!nw], x1, y1, x2, y1);
 }
 
 /*
@@ -64,17 +60,13 @@ void
 Tree_VDotLine(
     TreeCtrl *tree,		/* Widget info. */
     Drawable drawable,		/* Where to draw. */
-    GC gc,			/* Graphics context. */
     int x1, int y1, int y2)	/* Left, top, and bottom coordinates. */
 {
-    int nw;
     int wx = x1 + tree->drawableXOrigin;
     int wy = y1 + tree->drawableYOrigin;
+    int nw = !(wx & 1) == !(wy & 1);
 
-    nw = !(wx & 1) == !(wy & 1);
-    for (y1 += !nw; y1 < y2; y1 += 2) {
-	XDrawPoint(tree->display, drawable, gc, x1, y1);
-    }
+    XDrawLine(tree->display, drawable, tree->lineGC[!nw], x1, y1, x1, y2);
 }
 
 /*
@@ -111,9 +103,53 @@ Tree_DrawActiveOutline(
     int e = !(open & RECT_OPEN_E);
     int s = !(open & RECT_OPEN_S);
     int nw, ne, sw, se;
+#if 0
     int i;
+#endif
     XGCValues gcValues;
     unsigned long gcMask;
+
+#if 1
+    GC gc[2];
+
+    /* Dots on even pixels only */
+    nw = !(wx & 1) == !(wy & 1);
+    ne = !((wx + width - 1) & 1) == !(wy & 1);
+    sw = !(wx & 1) == !((wy + height - 1) & 1);
+    se = !((wx + width - 1) & 1) == !((wy + height - 1) & 1);
+
+    gcValues.function = GXinvert;
+    gcValues.line_style = LineOnOffDash;
+    gcValues.dashes = 1;
+    gcValues.dash_offset = 0;
+    gcMask = GCFunction | GCLineStyle | GCDashList | GCDashOffset;
+    gc[0] = Tree_GetGC(tree, gcMask, &gcValues);
+
+    gcValues.dash_offset = 1;
+    gc[1] = Tree_GetGC(tree, gcMask, &gcValues);
+
+    if (w) {
+	XDrawLine(tree->display, drawable, gc[!nw], x, y, x, y + height - 1);
+    }
+    if (n) {
+	if (w)
+	    XDrawLine(tree->display, drawable, gc[nw], x + 1, y, x + width - 1, y);
+	else
+	    XDrawLine(tree->display, drawable, gc[!nw], x, y, x + width - 1, y);
+    }
+    if (e) {
+	if (n)
+	    XDrawLine(tree->display, drawable, gc[ne], x + width - 1, y + 1, x + width - 1, y + height - 1);
+	else
+	    XDrawLine(tree->display, drawable, gc[!ne], x + width - 1, y, x + width - 1, y + height - 1);
+    }
+    if (s) {
+	if (w)
+	    XDrawLine(tree->display, drawable, gc[sw], x + 1, y + height - 1, x + width - 1 - e, y + height - 1);
+	else
+	    XDrawLine(tree->display, drawable, gc[!sw], x, y + height - 1, x + width - 1 - e, y + height - 1);
+    }
+#else
     GC gc;
 
     /* Dots on even pixels only */
@@ -150,6 +186,7 @@ Tree_DrawActiveOutline(
 	    XDrawPoint(tree->display, drawable, gc, x + i, y + height - 1);
 	}
     }
+#endif
 }
 
 /*
@@ -2384,7 +2421,7 @@ int
 Tree_HasNativeGradients(
     TreeCtrl *tree)
 {
-#ifdef  TREECTRL_GTK
+#ifdef TREECTRL_GTK
     return IsGtkUnavailable() == 0;
 #else
     return 0;
@@ -2487,6 +2524,130 @@ errorExit:
 
 #ifdef TREECTRL_GTK
 
+static void
+MakeRectPath_Outline(
+    cairo_t *c,			/* Cairo context. */
+    TreeRectangle tr,		/* Where to draw. */
+    int outlineWidth,		/* Thickness of the outline. */
+    int open			/* RECT_OPEN_x flags */
+    )
+{
+    double x = tr.x, y = tr.y, w = tr.width, h = tr.height;
+    int drawW = (open & RECT_OPEN_W) == 0;
+    int drawN = (open & RECT_OPEN_N) == 0;
+    int drawE = (open & RECT_OPEN_E) == 0;
+    int drawS = (open & RECT_OPEN_S) == 0;
+
+    x += outlineWidth / 2.0, y += outlineWidth / 2.0;
+    w -= outlineWidth, h -= outlineWidth;
+
+    /* Simple case: draw all 4 edges */
+    if (!open) {
+	cairo_rectangle(c, x, y, w, h);
+
+    /* Complicated case: some edges are "open" */
+    } else {
+	if (drawN) {
+	    cairo_move_to(c, x, y);
+	    cairo_line_to(c, x + w, y);
+	} else if (drawE)
+	    cairo_move_to(c, x + w, y);
+
+	if (drawE)
+	    cairo_line_to(c, x + w, y + h);
+	else if (drawS)
+	    cairo_move_to(c, x + w, y + h);
+
+	if (drawS)
+	    cairo_line_to(c, x, y + h);
+	else if (drawW)
+	    cairo_move_to(c, x, y + h);
+
+	if (drawW)
+	    cairo_line_to(c, x, y);
+    }
+}
+
+#endif /* TREECTRL_GTK */
+
+void
+TreeGradient_DrawRect(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeDrawable td,		/* Where to draw. */
+    TreeClip *clip,		/* Clipping area or NULL. */
+    TreeGradient gradient,	/* Gradient. */
+    TreeRectangle trBrush,	/* Brush bounds. */
+    TreeRectangle tr,		/* Rectangle to draw. */
+    int outlineWidth,		/* Width of outline. */
+    int open			/* RECT_OPEN_x flags */
+    )
+{
+#ifdef TREECTRL_GTK
+    cairo_t *c;
+    cairo_surface_t *surface;
+    cairo_pattern_t *pattern;
+    int x1, y1, x2, y2, i;
+
+    if (gradient->stopArrPtr == NULL || gradient->stopArrPtr->nstops < 2)
+	return;
+
+    /* Draw nothing if the brush is zero-sized. */
+    if (trBrush.width <= 0 || trBrush.height <= 0)
+	return;
+
+    if (IsGtkUnavailable() || !tree->nativeGradients) {
+errorExit:
+	TreeGradient_DrawRectX11(tree, td, clip, gradient, trBrush, tr, outlineWidth, open);
+	return;
+    }
+
+    surface =  cairo_xlib_surface_create(tree->display, td.drawable,
+	Tk_Visual(tree->tkwin), td.width, td.height);
+    if  (surface == NULL)
+	goto errorExit;
+
+    c = cairo_create(surface);
+    if  (c == NULL)
+	goto errorExit;
+
+    x1 = trBrush.x, y1 = trBrush.y;
+    if (gradient->vertical) {
+	x2 = x1, y2 = y1 + trBrush.height;
+    } else {
+	x2 = x1 + trBrush.width, y2 = y1;
+    }
+    pattern = cairo_pattern_create_linear(x1, y1, x2, y2);
+    if  (pattern == NULL)
+	goto errorExit;
+
+    for (i = 0; i < gradient->stopArrPtr->nstops; i++) {
+	GradientStop *stop = gradient->stopArrPtr->stops[i];
+	cairo_pattern_add_color_stop_rgba(pattern,
+	    stop->offset,
+	    RedDoubleFromXColorPtr(stop->color),
+	    GreenDoubleFromXColorPtr(stop->color),
+	    BlueDoubleFromXColorPtr(stop->color),
+	    stop->opacity);
+    }
+    cairo_pattern_set_extend(pattern, CAIRO_EXTEND_REPEAT);
+    cairo_set_source(c, pattern);
+    cairo_set_line_width(c, outlineWidth);
+    cairo_set_line_cap(c, CAIRO_LINE_CAP_SQUARE);
+
+    MakeRectPath_Outline(c, tr, outlineWidth, open);
+
+    cairo_stroke(c);
+    cairo_pattern_destroy(pattern);
+    cairo_destroy(c);
+    cairo_surface_destroy(surface);
+#else
+    TreeGradient_DrawRectX11(tree, td, clip, gradient, trBrush, tr,
+	outlineWidth, open);
+#endif
+}
+
+#ifdef TREECTRL_GTK
+
 /* http://cairographics.org/cookbook/roundedrectangles/ */
 #define ARC_TO_BEZIER 0.55228475
 
@@ -2573,6 +2734,100 @@ MakeRoundRectPath_Fill(
 	/*else
 	    CGPathMoveToPoint(p, NULL, start[3].x, start[3].y);*/
 	cairo_line_to(c, end[3].x, end[3].y);
+    }
+}
+
+static void
+MakeRoundRectPath_Outline(
+    cairo_t *c,			/* Cairo context. */
+    TreeRectangle tr,		/* Where to draw. */
+    int outlineWidth,		/* Thickness of the outline. */
+    int rx, int ry,		/* Corner radius */
+    int open			/* RECT_OPEN_x flags */
+    )
+{
+    double x = tr.x, y = tr.y, w = tr.width, h = tr.height;
+    int drawW = (open & RECT_OPEN_W) == 0;
+    int drawN = (open & RECT_OPEN_N) == 0;
+    int drawE = (open & RECT_OPEN_E) == 0;
+    int drawS = (open & RECT_OPEN_S) == 0;
+    double c1, c2;
+
+    c1 = ARC_TO_BEZIER * rx;
+    c2 = ARC_TO_BEZIER * ry;
+
+    x += outlineWidth / 2.0, y += outlineWidth / 2.0;
+    w -= outlineWidth, h -= outlineWidth;
+
+    /* Simple case: draw all 4 corners and 4 edges */
+    if (!open) {
+
+	cairo_move_to(c, x + rx, y);
+	cairo_rel_line_to(c, w - 2 * rx, 0.0);
+	cairo_rel_curve_to(c, c1, 0.0, rx, c2, rx, ry);
+	cairo_rel_line_to(c, 0, h - 2 * ry);
+	cairo_rel_curve_to(c, 0.0, c2, c1 - rx, ry, -rx, ry);
+	cairo_rel_line_to(c, -w + 2 * rx, 0);
+	cairo_rel_curve_to(c, -c1, 0, -rx, -c2, -rx, -ry);
+	cairo_rel_line_to(c, 0, -h + 2 * ry);
+	cairo_rel_curve_to(c, 0.0, -c2, rx - c1, -ry, rx, -ry);
+
+    /* Complicated case: some edges are "open" */
+    } else {
+	struct {double x,y;} start[4], end[4]; /* start and end points of line segments */
+#define  PointMake(P,X,Y) (P).x=X,(P).y=Y
+	PointMake(start[0], x, y);
+	end[3] = start[0];
+	if (drawW && drawN) {
+	    start[0].x += rx;
+	    end[3].y += ry;
+	}
+	PointMake(end[0], x + w, y);
+	start[1]= end[0];
+	if (drawE && drawN) {
+	    end[0].x -= rx;
+	    start[1].y += ry;
+	}
+	PointMake(end[1], x + w, y + h);
+	start[2] = end[1];
+	if (drawE && drawS) {
+	    end[1].y -= ry;
+	    start[2].x -= rx;
+	}
+	PointMake(end[2], x, y + h);
+	start[3] = end[2];
+	if (drawW && drawS) {
+	    end[2].x += rx;
+	    start[3].y -= ry;
+	}
+#undef  PointMake
+
+	if (drawW && drawN) {
+	    cairo_move_to(c, x, y + ry);
+	    cairo_rel_curve_to(c, 0.0, -c2, rx - c1, -ry, rx, -ry); /* top-left */
+	} else if (drawN) {
+	    cairo_move_to(c, start[0].x, start[0].y);
+	}
+	if (drawN)
+	    cairo_line_to(c, end[0].x, end[0].y);
+	else if (drawE)
+	    cairo_move_to(c, start[1].x, start[1].y);
+	if (drawE && drawN)
+	    cairo_rel_curve_to(c, c1, 0.0, rx, c2, rx, ry); /* top-right */
+	if (drawE)
+	    cairo_line_to(c, end[1].x, end[1].y);
+	else if (drawS)
+	    cairo_move_to(c, end[1].x, end[1].y);
+	if (drawE && drawS)
+	    cairo_rel_curve_to(c, 0.0, c2, c1 - rx, ry, -rx, ry); /* bottom-right */
+	if (drawS)
+	    cairo_line_to(c, end[2].x, end[2].y);
+	else if (drawW)
+	    cairo_move_to(c, start[3].x, start[3].y);
+	if (drawW && drawS)
+	    cairo_rel_curve_to(c, -c1, 0, -rx, -c2, -rx, -ry); /* bottom-left */
+	if (drawW)
+	    cairo_line_to(c, end[3].x, end[3].y);
     }
 }
 
@@ -2680,7 +2935,7 @@ Tree_DrawRoundRect(
     TreeClip *clip,		/* Clipping area or NULL. */
     XColor *xcolor,		/* Color. */
     TreeRectangle tr,		/* Where to draw. */
-    int outlineWidth,
+    int outlineWidth,		/* Thickness of the outline. */
     int rx, int ry,		/* Corner radius */
     int open			/* RECT_OPEN_x flags */
     )
@@ -2688,6 +2943,101 @@ Tree_DrawRoundRect(
     /* FIXME: Can use 'cairo' on Unix, but need to add it to configure + Make */
     GC gc = Tk_GCForColor(xcolor, Tk_WindowId(tree->tkwin));
     Tree_DrawRoundRectX11(tree, td, clip, gc, tr, outlineWidth, rx, ry, open);
+}
+
+void
+TreeGradient_DrawRoundRect(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeDrawable td,		/* Where to draw. */
+    TreeClip *clip,		/* Clipping area or NULL. */
+    TreeGradient gradient,	/* Gradient. */
+    TreeRectangle trBrush,	/* Brush bounds. */
+    TreeRectangle tr,		/* Rectangle to draw. */
+    int outlineWidth,		/* Width of outline. */
+    int rx, int ry,		/* Corner radius */
+    int open			/* RECT_OPEN_x flags */
+    )
+{
+#ifdef TREECTRL_GTK
+
+    cairo_t *c;
+    cairo_surface_t *surface;
+    cairo_pattern_t *pattern;
+    int x1, y1, x2, y2, i;
+    XColor *xcolor;
+    GC gc;
+
+    if (gradient->stopArrPtr == NULL || gradient->stopArrPtr->nstops < 2)
+	return;
+
+    /* Draw nothing if the brush is zero-sized. */
+    if (trBrush.width <= 0 || trBrush.height <= 0)
+	return;
+
+    if (IsGtkUnavailable() || !tree->nativeGradients) {
+errorExit:
+	xcolor = gradient->stopArrPtr->stops[0]->color; /* Use the first stop color */
+	gc = Tk_GCForColor(xcolor, Tk_WindowId(tree->tkwin));
+	Tree_DrawRoundRectX11(tree, td, clip, gc, tr, outlineWidth, rx, ry, open);
+	return;
+    }
+
+    surface =  cairo_xlib_surface_create(tree->display, td.drawable,
+	Tk_Visual(tree->tkwin), td.width, td.height);
+    if  (surface == NULL)
+	goto errorExit;
+
+    c = cairo_create(surface);
+    if  (c == NULL)
+	goto errorExit;
+
+    x1 = trBrush.x, y1 = trBrush.y;
+    if (gradient->vertical) {
+	x2 = x1, y2 = y1 + trBrush.height;
+    } else {
+	x2 = x1 + trBrush.width, y2 = y1;
+    }
+    pattern = cairo_pattern_create_linear(x1, y1, x2, y2);
+    if  (pattern == NULL)
+	goto errorExit;
+
+    for (i = 0; i < gradient->stopArrPtr->nstops; i++) {
+	GradientStop *stop = gradient->stopArrPtr->stops[i];
+	cairo_pattern_add_color_stop_rgba(pattern,
+	    stop->offset,
+	    RedDoubleFromXColorPtr(stop->color),
+	    GreenDoubleFromXColorPtr(stop->color),
+	    BlueDoubleFromXColorPtr(stop->color),
+	    stop->opacity);
+    }
+    cairo_pattern_set_extend(pattern, CAIRO_EXTEND_REPEAT);
+    cairo_set_source(c, pattern);
+    cairo_set_line_width(c, outlineWidth);
+    cairo_set_line_cap(c, CAIRO_LINE_CAP_SQUARE);
+
+    /* http://cairographics.org/cookbook/roundedrectangles/ */
+    MakeRoundRectPath_Outline(c, tr, outlineWidth, rx, ry, open);
+
+    cairo_stroke(c);
+    cairo_pattern_destroy(pattern);
+    cairo_destroy(c);
+    cairo_surface_destroy(surface);
+
+#else
+    XColor *xcolor;
+    GC gc;
+
+    if (gradient->stopArrPtr == NULL || gradient->stopArrPtr->nstops < 2)
+	return;
+
+    /* Draw nothing if the brush is zero-sized. */
+    if (trBrush.width <= 0 || trBrush.height <= 0)
+	return;
+
+    xcolor = gradient->stopArrPtr->stops[0]->color; /* Use the first stop color */
+    gc = Tk_GCForColor(xcolor, Tk_WindowId(tree->tkwin));
+    Tree_DrawRoundRectX11(tree, td, clip, gc, tr, outlineWidth, rx, ry, open);
+#endif
 }
 
 void
