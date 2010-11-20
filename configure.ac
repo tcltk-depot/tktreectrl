@@ -100,6 +100,8 @@ TEA_PATH_X
 # Needed for OS X ppx/intel image handling
 AC_C_BIGENDIAN
 
+AS_IF([test "$GCC" = yes], [
+
 # Needed for pointer-to-int conversions with GCC on 64-bit
 AC_CHECK_TYPE([intptr_t], [
     AC_DEFINE([HAVE_INTPTR_T], 1, [Do we have the intptr_t type?])], [
@@ -116,6 +118,8 @@ AC_CHECK_TYPE([intptr_t], [
 	   type wide enough to hold a pointer.])
     fi
 ])
+
+], [])
 
 #--------------------------------------------------------------------
 # __CHANGE__

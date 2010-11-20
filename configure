@@ -6102,6 +6102,9 @@ $as_echo "#define AC_APPLE_UNIVERSAL_BUILD 1" >>confdefs.h
  esac
 
 
+if test "$GCC" = yes; then :
+
+
 # Needed for pointer-to-int conversions with GCC on 64-bit
 ac_fn_c_check_type "$LINENO" "intptr_t" "ac_cv_type_intptr_t" "$ac_includes_default"
 if test "x$ac_cv_type_intptr_t" = x""yes; then :
@@ -6153,6 +6156,9 @@ _ACEOF
 
 fi
 
+
+
+fi
 
 #--------------------------------------------------------------------
 # __CHANGE__
