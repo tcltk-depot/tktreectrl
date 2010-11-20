@@ -97,7 +97,7 @@
 <! -- CVS: $Id$ treectrl.n
    -->
 <body><div class="doctools">
-<h1 class="title">treectrl(n) 2.2.10 treectrl &quot;Tk Commands&quot;</h1>
+<h1 class="title">treectrl(n) 2.3 treectrl &quot;Tk Commands&quot;</h1>
 <div id="name" class="section"><h2><a name="name">Name</a></h2>
 <p>treectrl - Create and manipulate hierarchical multicolumn widgets</p>
 </div>
@@ -135,7 +135,7 @@
 <div id="synopsis" class="section"><h2><a name="synopsis">Synopsis</a></h2>
 <div class="synopsis">
 <ul class="requirements">
-<li>package require <b class="pkgname">treectrl 2.2.10</b></li>
+<li>package require <b class="pkgname">treectrl 2.3</b></li>
 </ul>
 <ul class="syntax">
 <li><a href="#1"><b class="cmd">treectrl</b> <i class="arg">pathName</i> <span class="opt">?<i class="arg">options</i>?</span></a></li>
@@ -474,6 +474,15 @@ Database Class:	<b class="optdbclass">ButtonThickness</b><br>
 <dd><p>Specifies the width of the outline and the plus or minus sign
 of the button to the left of an item
 in any of the forms acceptable to <b class="function">Tk_GetPixels</b>.</p></dd>
+<dt>Command-Line Switch:	<b class="option">-buttonttracking</b><br>
+Database Name:	<b class="optdbname">buttonTracking</b><br>
+Database Class:	<b class="optdbclass">ButtonTracking</b><br>
+</dt>
+<dd><p>Specifies a boolean that determines if the expand/collapse buttons are tracked
+like pushbuttons when clicking them.  When true, buttons are not toggled until
+the &lt;ButtonRelease&gt; event occurs over them.  When false, buttons are toggled as
+soon as the &lt;ButtonPress&gt; event occurs over them.  This option defaults to
+true on Mac OS X and Gtk+, false on Win32 and X11.</p></dd>
 <dt>Command-Line Switch:	<b class="option">-canvaspadx</b><br>
 Database Name:	<b class="optdbname">canvasPadX</b><br>
 Database Class:	<b class="optdbclass">CanvasPadX</b><br>
@@ -3610,14 +3619,14 @@ check that the display's color depth is at least 15 or 16 by calling the
 <li><p>Gradients are fully opaque when XFillRectangle() is used to draw them (see below).
 This means the <b class="option">opacity</b> value of each color stop is ignored.  Keep that
 in mind if your application is cross-platform.</p></li>
-<li><p>Rounded rectangles cannot be filled with a gradient when XFillRectangle() is
-used to draw gradients (see below).  Instead, the rounded rectangle is filled
+<li><p>Rounded rectangles cannot be filled or outlined with a gradient when XFillRectangle()
+is used to draw gradients (see below).  Instead, the rounded rectangle is painted
 with the gradient's first <b class="option">-stops</b> color.</p></li>
 </ol>
 <p>Gradients may be used in the following places:</p>
 <ol class="enumerated">
-<li><p>The -fill option of rect elements.</p></li>
-<li><p>The -fill option of the <b class="cmd">marquee configure</b> command.</p></li>
+<li><p>The -fill and -outline options of rect elements.</p></li>
+<li><p>The -fill and -outline options of the <b class="cmd">marquee configure</b> command.</p></li>
 <li><p>The -itembackground option of columns.</p></li>
 </ol>
 <p>On Microsoft Windows, GDI+ is used where it is available (gdiplus.dll is

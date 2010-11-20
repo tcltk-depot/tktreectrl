@@ -2,7 +2,7 @@
 
 # RCS: @(#) $Id$
 
-set VERSION 2.2.10
+set VERSION 2.3
 
 package require Tk 8.4
 
@@ -189,7 +189,6 @@ if {$tile} {
     set scrollbarCmd ::scrollbar
 }
 
-option add *TreeCtrl.useTheme 1
 option add *TreeCtrl.Background white
 #option add *TreeCtrl.itemPrefix item
 #option add *TreeCtrl.ColumnPrefix col
@@ -275,6 +274,7 @@ foreach file {
     firefox
     gradients
     gradients2
+    gradients3
     help
     imovie
     layout
@@ -859,15 +859,6 @@ proc TreePlusScrollbarsInAFrame {f h v} {
 	}
     }
 
-    switch -- [$f.t theme platform] {
-	aqua {
-	    $f.t configure -buttontracking yes
-	}
-	gtk {
-	    $f.t configure -buttontracking yes
-	}
-    }
-
     return
 }
 
@@ -954,6 +945,11 @@ proc MakeMainWindow {} {
     .pw2 add .f2 -width 450
 
     pack .pw2 -expand yes -fill both
+
+    bind [DemoList] <g> {
+	set NativeGradients [expr {!$NativeGradients}]
+	ToggleNativeGradients
+    }
 
     ###
     # A treectrl widget can generate the following built-in events:
@@ -1379,6 +1375,7 @@ proc InitDemoList {} {
 	"Column Locking" DemoColumnLock column-lock.tcl \
 	"Gradients" DemoGradients gradients.tcl \
 	"Gradients II" DemoGradients2 gradients2.tcl \
+	"Gradients III" DemoGradients3 gradients3.tcl \
 	] {
 	set item [$t item create]
 	$t item lastchild root $item
@@ -1671,7 +1668,6 @@ proc DemoClear {} {
     $T item expand root
 
     # Restore some happy defaults to the demo list
-if 1 {
     foreach spec [$T configure] {
 	if {[llength $spec] == 2} continue
 	lassign $spec name x y default current
@@ -1683,30 +1679,10 @@ if 1 {
     $T configure -font DemoFont
     $T configure -highlightthickness [expr {$::tileFull ? 0 : 3}]
     $T configure -relief ridge
-    $T configure -usetheme yes
-} else {
-    $T configure -orient vertical -wrap "" -xscrollincrement 0 \
-	-yscrollincrement 0 -itemheight 0 -showheader yes \
-	-background white -scrollmargin 0 -xscrolldelay 50 -yscrolldelay 50 \
-	-buttonbitmap "" -buttonimage "" -backgroundmode row \
-	-indent 19 -backgroundimage "" -showrootchildbuttons yes \
-	-showrootlines yes -minitemheight 0 -borderwidth [expr {$::tileFull ? 0 : 6}] \
-	-highlightthickness [expr {$::tileFull ? 0 : 3}] -usetheme yes -cursor {} \
-	-itemwidth {} -itemwidthequal no -itemwidthmultiple {} \
-	-font [.f4.t cget -font] -canvaspadx 0 -canvaspady 0 \
-	-itemgapx 0 -itemgapy 0
-}
+
     switch -- [$T theme platform] {
-	aqua -
-	gtk {
-	    $T configure -buttontracking yes
-	}
 	visualstyles {
-	    $T configure -buttontracking no
 	    $T theme setwindowtheme ""
-	}
-	default {
-	    $T configure -buttontracking no
 	}
     }
 
@@ -1972,7 +1948,7 @@ if {[llength [info commands loupe]]} {
 	radiobutton $f.r4 -text "4x" -variable ::Loupe(zoom) -value 4
 	radiobutton $f.r8 -text "8x" -variable ::Loupe(zoom) -value 8
 	pack $f.r1 $f.r2 $f.r4 $f.r8 -side left
-	pack $f -side bottom -anchor e
+	pack $f -side bottom -anchor center
 
 	# Resize the image with the window
 	bind LoupeWindow <Configure> {

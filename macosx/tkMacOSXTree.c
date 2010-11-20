@@ -1537,6 +1537,41 @@ TreeTheme_InitInterp(
     return TCL_OK;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeTheme_SetOptionDefault --
+ *
+ *	Sets the default value for an option.
+ *
+ * Results:
+ *	Sets the defValue field.
+ *
+ * Side effects:
+ *	Changes an existing option table.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TreeTheme_SetOptionDefault(
+    Tk_OptionSpec *specPtr
+    )
+{
+#ifdef TREECTRL_DEBUG
+    if (specPtr->defValue != NULL)
+	panic("TreeTheme_SetOptionDefault trying to set default value of \"%s\" twice!",
+	    specPtr->optionName ? specPtr->optionName : "NULL");
+#endif
+    if (!strcmp(specPtr->optionName, "-buttontracking"))
+	specPtr->defValue = "1";
+#ifdef TREECTRL_DEBUG
+    else
+	panic("TreeTheme_SetOptionDefault unhandled option \"%s\"",
+	    specPtr->optionName ? specPtr->optionName : "NULL");
+#endif
+}
+
 int 
 TreeThemeCmd(
     TreeCtrl *tree,		/* Widget info. */
@@ -2073,7 +2108,7 @@ TreeGradient_FillRect(
 }
 
 static CGMutablePathRef
-MakeRectPath_Stroke(
+MakeRectPath_OutlineFilled(
     TreeRectangle tr,		/* Where to draw. */
     int outlineWidth,		/* Thickness of the outline. */
     int open			/* RECT_OPEN_x flags */
@@ -2141,7 +2176,7 @@ errorExit:
     shading = MakeLinearGradientShading(context, gradient, trBrush, tr, &ms);
     if (shading) {
 
-	p = MakeRectPath_Stroke(tr, outlineWidth, open);
+	p = MakeRectPath_OutlineFilled(tr, outlineWidth, open);
 	if (p) {
 	    CGContextAddPath(context, p);
 	    CGPathRelease(p);
@@ -2353,7 +2388,8 @@ MakeRoundRectPath_Stroke(
 	itp = &it;
     }
 
-    x += outlineWidth / 2.0, y += outlineWidth / 2.0, width -= outlineWidth, height -= outlineWidth;
+    x += outlineWidth / 2.0, y += outlineWidth / 2.0;
+    width -= outlineWidth, height -= outlineWidth;
 
     /* Simple case: draw all 4 corners and 4 edges */
     if (!open) {
@@ -2501,6 +2537,90 @@ Tree_DrawRoundRect(
     TreeMacOSX_ReleaseContext(tree, &dc);
 }
 
+static CGMutablePathRef
+MakeRoundRectPath_OutlineFilled(
+    TreeRectangle tr,		/* Where to draw. */
+    int outlineWidth,		/* Thickness of the outline. */
+    int rx, int ry,		/* Corner radius */
+    int open			/* RECT_OPEN_x flags */
+    )
+{
+    CGFloat x = tr.x, y = tr.y, w = tr.width, h = tr.height;
+    CGFloat ow = outlineWidth, yow = ow;
+    CGFloat rOut = rx /*+ ow / 2*/, rIn = rx /*- ow / 2*/;
+    int drawW = (open & RECT_OPEN_W) == 0;
+    int drawN = (open & RECT_OPEN_N) == 0;
+    int drawE = (open & RECT_OPEN_E) == 0;
+    int drawS = (open & RECT_OPEN_S) == 0;
+    CGMutablePathRef p = CGPathCreateMutable();
+    CGRect r;
+    CGAffineTransform t, it, *tp, *itp;
+
+    if (rx == ry) {
+	itp = tp = NULL;
+    } else {
+	t = CGAffineTransformMakeScale(1.0, ry / (float)rx);
+	it = CGAffineTransformInvert(t);
+	tp = &t;
+	itp = &it;
+    }
+#if 1
+    /* Place the edges with gaps at the corners. */
+    if (drawN) {
+	r = CGRectMake(x + drawW * rx, y, w - (drawW + drawE) * rx, ow);
+	CGPathAddRect(p, NULL, r);
+    }
+    if (drawE) {
+	r = CGRectMake(x + w - ow, y + drawN * ry, ow, h - (drawN + drawS) * ry);
+	CGPathAddRect(p, NULL, r);
+    }
+    if (drawS) {
+	r = CGRectMake(x + drawW * rx, y + h - ow, w - (drawW + drawE) * rx, ow);
+	CGPathAddRect(p, NULL, r);
+    }
+    if (drawW) {
+	r = CGRectMake(x, y + drawN * ry, ow, h - (drawN + drawS) * ry);
+	CGPathAddRect(p, NULL, r);
+    }
+#endif
+    if (rx != ry) {
+	ry = rx;
+	h = CGPointApplyAffineTransform(CGPointMake(0, h), it).y;
+	yow = CGPointApplyAffineTransform(CGPointMake(0, yow), it).y;
+    }
+    if (drawW && drawN) {
+	CGPathMoveToPoint(p, tp, x + ow, y + yow + ry);
+	CGPathAddLineToPoint(p, tp, x, y + yow + ry);
+	CGPathAddArcToPoint(p, tp, x, y, x + ow + rx, y, rOut);
+	CGPathAddLineToPoint(p, tp, x + ow + rx, y + yow);
+	CGPathAddArcToPoint(p, tp, x + ow, y + yow, x + ow, y + yow + ry, rIn);
+    }
+
+    if (drawE && drawN) {
+	CGPathMoveToPoint(p, tp, x + w - ow - rx, y + yow);
+	CGPathAddLineToPoint(p, tp, x + w - ow - rx, y);
+	CGPathAddArcToPoint(p, tp, x + w, y, x + w, y + ry + yow, rOut);
+	CGPathAddLineToPoint(p, tp, x + w - ow, y + ry + yow);
+	CGPathAddArcToPoint(p, tp, x + w - ow, y + yow, x + w - ow - rx, y + yow, rIn);
+    }
+    if (drawE && drawS) {
+	CGPathMoveToPoint(p, tp, x + w - ow, y + h - ry - yow);
+	CGPathAddLineToPoint(p, tp, x + w, y + h - ry - yow);
+	CGPathAddArcToPoint(p, tp, x + w, y + h, x + w - rx - ow, y + h, rOut);
+	CGPathAddLineToPoint(p, tp, x + w - rx - ow, y + h - yow);
+	CGPathAddArcToPoint(p, tp, x + w - ow, y + h - yow, x + w - ow, y + h - ry - yow, rIn);
+    }
+    if (drawW && drawS) {
+	CGPathMoveToPoint(p, tp, x + rx + ow, y + h - yow);
+	CGPathAddLineToPoint(p, tp, x + rx + ow, y + h);
+	CGPathAddArcToPoint(p, tp, x, y + h, x, y + h - ry - yow, rOut);
+	CGPathAddLineToPoint(p, tp, x + ow, y + h - ry - yow);
+	CGPathAddArcToPoint(p, tp, x + ow, y + h - yow, x + rx + ow, y + h - yow, rIn);
+    }
+
+    return p;
+}
+
 void
 TreeGradient_DrawRoundRect(
     TreeCtrl *tree,		/* Widget info. */
@@ -2517,7 +2637,7 @@ TreeGradient_DrawRoundRect(
     MacDrawable *macDraw = (MacDrawable *) td.drawable;
     MacContextSetup dc;
     CGContextRef context;
-    int antialias = !open; /* the arcs can be antialiased, but not the line ends! */
+    int antialias = 1; /* the arcs can be antialiased, but not the line ends! */
     MacShading ms;
     CGShadingRef shading;
 
@@ -2545,40 +2665,29 @@ TreeGradient_DrawRoundRect(
 
     shading = MakeLinearGradientShading(context, gradient, trBrush, tr, &ms);
     if (shading) {
+	CGMutablePathRef p;
     
 	CGContextBeginPath(context);
-	if (rx == ry && !open) {
-	    CGFloat x = tr.x, y = tr.y, width = tr.width, height = tr.height;
-	    x += outlineWidth / 2.0, y += outlineWidth / 2.0, width -= outlineWidth, height -= outlineWidth;
-	    CGContextAddArc(context, x + rx, y + ry, rx, radians(180), radians(270), 0); /* top-left */
-	    CGContextAddArc(context, x + width - rx, y + ry, rx, radians(270), radians(0), 0); /* top-right */
-	    CGContextAddArc(context, x + width - rx, y + height - ry, rx, radians(0), radians(90), 0); /* bottom-right */
-	    CGContextAddArc(context, x + rx, y + height - ry, rx, radians(90), radians(180), 0); /* bottom-left */
-	    CGContextClosePath(context);
-	} else {
-	    CGMutablePathRef p = MakeRoundRectPath_Stroke(tr, outlineWidth, rx, ry, open);
-	    if (p) {
-		CGContextAddPath(context, p);
-		CGPathRelease(p);
-	    }
+
+	p = MakeRoundRectPath_OutlineFilled(tr, outlineWidth, rx, ry, open);
+	if (p) {
+	    CGContextAddPath(context, p);
+	    CGPathRelease(p);
+
+	    CGContextSetShouldAntialias(context, antialias);
+
+	    /* Must clip to the area to be painted otherwise the entire context
+	    * is filled with the gradient. */
+	    CGContextClip(context);
+
+	    CGContextDrawShading(context, shading);
 	}
-
-	CGContextSetLineWidth(context, outlineWidth - (antialias ? 0 : 0.99) /*0.01*/);
-	CGContextSetLineCap(context, kCGLineCapSquare);
-	CGContextSetShouldAntialias(context, antialias);
-
-	/* Must clip to the area to be painted otherwise the entire context
-	* is filled with the gradient. */
-	CGContextClip(context);
-
-	CGContextDrawShading(context, shading);
 
 	ReleaseLinearGradientShading(&ms);
     }
 
-    CGContextStrokePath(context);
-
-    TreeMacOSX_ReleaseContext(tree, &dc);}
+    TreeMacOSX_ReleaseContext(tree, &dc);
+}
 
 void
 Tree_FillRoundRect(

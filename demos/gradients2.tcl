@@ -73,10 +73,6 @@ proc DemoGradients2 {} {
     $T style elements styleIntro elemTextIntro
     $T style layout styleIntro elemTextIntro -padx 4 -pady {3 0}
 
-    $T style create styleText
-    $T style elements styleText elemText
-    $T style layout styleText elemText -padx 4 -pady {15 6}
-
     $T style create styleBox
     $T style elements styleBox elemBox
 

@@ -1,6 +1,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<html><head>
-<!-- $Id$ -->
+<html><head><!-- $Id$ -->
+
+
 
 
 
@@ -23,7 +24,7 @@
       <td style="vertical-align: top;">This is now a per-state option, just like the -background option, <span style="color: red;">which may be incompatible</span>.&nbsp;
 If you previously specified a Tk color name with a space in it, such as
 "light blue", then you will need to make the value a proper list:<br>
-      <pre>$T column configure $C -textcolor [list "light blue"]</pre>
+      <pre style="margin-left: 40px;">$T column configure $C -textcolor [list "light blue"]</pre>
 When this option is unspecified (the default), the system theme can
 specify the color.&nbsp; Currently that behavior is only used with the
 Gtk+ build of treectrl.<br>
@@ -57,7 +58,7 @@ toggle<br>
       </td>
       <td style="vertical-align: top;">A new option <span style="font-weight: bold;">-animate</span>
 was added to support animated disclosure triangles on Gtk+ and Mac OS
-X.&nbsp; The library scripts pass the -animate option when clicking in
+X.&nbsp; The library scripts pass the -animate option when clicking on
 a button, but not when toggling items using the keyboard.<br>
       </td>
     </tr>
@@ -151,7 +152,7 @@ expand/collapse buttons don't toggle when they are clicked, only when
 the mouse button is released over them, like regular pushbuttons.&nbsp;
 The value of this option is a boolean; when true the buttons toggle
 when the mouse button is released, when false the buttons toggle when
-clicked.&nbsp; The default is false.<br>
+clicked.&nbsp; The default is true on Mac OS X and Gtk+, false on Win32 and X11.<br>
       </td>
     </tr>
     <tr>
@@ -175,7 +176,17 @@ This is useful for 2D views such as an icon view in a file browser or
 an image thumbnail list.&nbsp; The value of each option is a screen
 distance defaulting to zero.<br>
       </td>
+    </tr><tr>
+<th style="background-color: rgb(255, 255, 204); width: 50%;">Usage
+Changed</th><th style="background-color: rgb(204, 255, 255);">How
+it changed</th></tr>
+    <tr>
+      <td style="vertical-align: top;">-usetheme<br>
+      </td>
+      <td style="vertical-align: top;">The default value is now <span style="font-weight: bold;">true</span>.&nbsp; <span style="color: red;">Complete reversal from previous versions, head for the hills.</span><br>
+      </td>
     </tr>
+
 </tbody>
 </table>
 <h2>TreeCtrl Command</h2>
@@ -201,7 +212,7 @@ distance defaulting to zero.<br>
 
       <td>Linear
 gradients!&nbsp; There are a number of issues when using gradients, see
-the relevant sections in the manual page for more info.<br>
+the demos and the relevant sections in the manual page for more info.<br>
 </td></tr><tr>
       <td style="vertical-align: top;">theme<br>
       </td>
@@ -215,11 +226,11 @@ returned to indicate the Tk Xlib calls are drawing the themed parts.</span></li>
         <li><span style="font-weight: normal;">On Unix systems the result is <span style="font-weight: bold;">gtk</span> if the Gtk+ version of treectrl
 was built, otherwise <span style="font-weight: bold;">X11</span> is returned.</span></li>
       </ul>
-      <span style="font-weight: normal;">MS Windows only: The <span style="font-weight: bold;">theme setwindowtheme</span> command takes the name of an application whose theme should be used.&nbsp; Call:<br>
+      <span style="font-weight: normal;">MS Windows only: The <span style="font-weight: bold;">theme setwindowtheme</span> command takes the name of an application whose theme should be used.&nbsp; If you call...<br>
       </span>
-      <pre><span style="font-weight: normal;">$T theme setwindowtheme "Explorer"</span></pre>
+      <pre style="margin-left: 40px;"><span style="font-weight: normal;">$T theme setwindowtheme "Explorer"</span></pre>
       <pre><span style="font-weight: normal;"></span></pre>
-      <span style="font-weight: normal;">on Windows 7 and the disclosure triangles of the Explorer file browser will be used rather than +/- buttons.<br>
+      <span style="font-weight: normal;">...on Windows 7 the disclosure triangles of the Explorer file browser will be used rather than +/- buttons.<br>
       </span></td>
     </tr>
 </tbody>
@@ -232,7 +243,7 @@ proper pkg-config setup for the gtk+-2.0 and gdk-pixbuf-xlib-2.0
 libraries.</li>
   <li>Leave the column option <span style="font-weight: bold;">-textcolor</span>={} so the theme colors will be used for column header labels.<br>
   </li>
-  <li>Set the new widget option <span style="font-weight: bold;">-buttontracking</span>=yes for native behavior when clicking buttons.<br>
+  <li>Leave the new widget option <span style="font-weight: bold;">-buttontracking</span>=yes for native behavior when clicking buttons.<br>
   </li>
   <li>BUG: Currently the theme does not change when the system theme changes.<br>
   </li>
@@ -258,7 +269,7 @@ configure option was removed when building on Mac OS X.&nbsp; Instead
 the configure script determines whether Tk was built using the Cocoa
 API by examining the TK_LIBS variable.</li>
   <li>Cross-compiling on a Unix host using the MingW toolchain should
-work out-of-the-box now.&nbsp; If the --host configure option contains
+work out-of-the-box now.&nbsp; If the <span style="font-weight: bold;">--host</span> configure option contains
 "mingw32" then TEA_PLATFORM is set to "windows".</li>
   <li>The 'make clean' target does a better job cleaning what it
 should.&nbsp; It doesn't remove the .manifest file generated by
@@ -280,12 +291,12 @@ Win7)" demos which very closely match the appearance and behavior of
 the Windows 7 file explorer.&nbsp; These demos use gradients, rounded
 rectangles and the new -canvaspadx, -canvaspady, -itemgapx and
 -itemgapy options.</li>
-  <li>New demos "Gradients" and "Gradients II" demostrate and describe various gradient options.<br>
+  <li>New demos "Gradients", "Gradients II" and "Gradients II" demostrate and describe various gradient features.<br>
   </li>
   <li>The "Column Spanning" demo uses gradients.</li>
-  <li>Use ::tk::mac::iconBitmap where available for native filesystem icons on Mac OS X.<br>
+  <li>The ::tk::mac::iconBitmap is used where available for native filesystem icons on Mac OS X.<br>
   </li>
-  <li>Fixed bug with increasing/decreasing font size if the font size was negative (i.e. on X11).<br>
+  <li>Fixed a bug with increasing/decreasing the font size if the font size was negative (i.e. on X11).<br>
   </li>
 </ul>
 <h2>Bug Fixes</h2>
@@ -293,8 +304,13 @@ rectangles and the new -canvaspadx, -canvaspady, -itemgapx and
   <li>Fixed non-themed expand/collapse buttons being one pixel too large on Mac OS X.</li>
   <li>Fixed dotted line and dotted rectangle drawing on Mac OS X.</li>
   <li>Fixed the column option -<span style="font-weight: bold;">arrowpady</span> being broken for -arrowimage, -arrowbitmap and when themed arrows were drawn. It only worked when the X11 fallback was used.</li>
-  <li>Fix "Bug 3104147 - Error after widget was destroyed".&nbsp; Various [after] callbacks did not check that the treectrl still existed.</li>
-  <li>Fix "Bug 3104148 - column "202" doesn't exist".&nbsp; Check that the previously-highlighted column exists before configuring its state in MotionInHeader.</li>
+  <li>Fix
+"Bug 3104147 - Error after widget was destroyed".&nbsp; Various [after]
+callbacks did not check that the treectrl still existed.</li>
+  <li>Fix
+"Bug 3104148 - column "202" doesn't exist".&nbsp; Check that the
+previously-highlighted column exists before configuring its state in
+MotionInHeader.</li>
   <li>Fixed &lt;Left&gt; and &lt;Right&gt; arrow keys not moving to adjacent items when some items had -<span style="font-weight: bold;">wrap</span>=true.</li>
   <li>Fixed error with autoscanning when the content area was completely obscurred by locked columns.</li>
   <li>Fixed the ordering of some entries in the treectrl option table.<br>

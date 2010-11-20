@@ -97,7 +97,7 @@ static Tk_OptionSpec optionSpecs[] = {
      Tk_Offset(TreeCtrl, borderWidth),
      0, (ClientData) NULL, TREE_CONF_BORDERS | TREE_CONF_RELAYOUT},
     {TK_OPTION_CUSTOM, "-buttonbitmap", "buttonBitmap", "ButtonBitmap",
-     (char *) NULL,
+     (char *) NULL, /* DEFAULT VALUE IS INITIALIZED LATER */
      Tk_Offset(TreeCtrl, buttonBitmap.obj), Tk_Offset(TreeCtrl, buttonBitmap),
      TK_OPTION_NULL_OK, (ClientData) NULL,
      TREE_CONF_BUTTON | TREE_CONF_BUTBMP | TREE_CONF_RELAYOUT},
@@ -105,7 +105,7 @@ static Tk_OptionSpec optionSpecs[] = {
      "#808080", -1, Tk_Offset(TreeCtrl, buttonColor),
      0, (ClientData) NULL, TREE_CONF_BUTTON | TREE_CONF_REDISPLAY},
     {TK_OPTION_CUSTOM, "-buttonimage", "buttonImage", "ButtonImage",
-     (char *) NULL,
+     (char *) NULL, /* DEFAULT VALUE IS INITIALIZED LATER */
      Tk_Offset(TreeCtrl, buttonImage.obj), Tk_Offset(TreeCtrl, buttonImage),
      TK_OPTION_NULL_OK, (ClientData) NULL,
      TREE_CONF_BUTTON | TREE_CONF_BUTIMG | TREE_CONF_RELAYOUT},
@@ -119,7 +119,8 @@ static Tk_OptionSpec optionSpecs[] = {
      Tk_Offset(TreeCtrl, buttonThickness),
      0, (ClientData) NULL, TREE_CONF_BUTTON | TREE_CONF_REDISPLAY},
     {TK_OPTION_BOOLEAN, "-buttontracking", "buttonTracking", "ButtonTracking",
-     "0", -1, Tk_Offset(TreeCtrl, buttonTracking), 0, (ClientData) NULL, 0},
+     (char *) NULL, /* DEFAULT VALUE IS INITIALIZED LATER */
+     -1, Tk_Offset(TreeCtrl, buttonTracking), 0, (ClientData) NULL, 0},
     {TK_OPTION_CUSTOM, "-canvaspadx", "canvasPadX", "CanvasPadX",
      "0",
      Tk_Offset(TreeCtrl, canvasPadXObj),
@@ -282,7 +283,7 @@ static Tk_OptionSpec optionSpecs[] = {
      TK_OPTION_NULL_OK, (ClientData) &TreeCtrlCO_column_NOT_TAIL,
      TREE_CONF_RELAYOUT},
     {TK_OPTION_BOOLEAN, "-usetheme", "useTheme",
-     "UseTheme", "0", -1, Tk_Offset(TreeCtrl, useTheme),
+     "UseTheme", "1", -1, Tk_Offset(TreeCtrl, useTheme),
      0, (ClientData) NULL, TREE_CONF_THEME | TREE_CONF_RELAYOUT},
     {TK_OPTION_PIXELS, "-width", "width", "Width",
      "200", Tk_Offset(TreeCtrl, widthObj), Tk_Offset(TreeCtrl, width),
@@ -4553,6 +4554,7 @@ Treectrl_Init(
 #else
     static CONST char *tcl_version = "8.4";
 #endif
+    Tk_OptionSpec *specPtr;
 
 #ifdef USE_TCL_STUBS
     if (Tcl_InitStubs(interp, tcl_version, 0) == NULL) {
@@ -4585,6 +4587,13 @@ Treectrl_Init(
 
     if (TreeColumn_InitInterp(interp) != TCL_OK)
 	return TCL_ERROR;
+
+    /* Set the default value of the -buttontracking option. */
+    /* Do this *after* the system theme is initialized. */
+    specPtr = Tree_FindOptionSpec(optionSpecs, "-buttontracking");
+    if (specPtr->defValue == NULL) {
+	TreeTheme_SetOptionDefault(specPtr);
+    }
 
     /* Hack for editing a text Element. */
     Tcl_CreateObjCommand(interp, "textlayout", TextLayoutCmd, NULL, NULL);

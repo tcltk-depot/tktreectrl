@@ -5363,7 +5363,7 @@ TreeColumn_Bbox(
     )
 {
     TreeCtrl *tree = column->tree;
-    int left;
+    int left = 0;
 
     if (!tree->showHeader || !TreeColumn_Visible(column))
 	return -1;

@@ -2734,6 +2734,41 @@ TreeTheme_InitInterp(
     return TCL_OK;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeTheme_SetOptionDefault --
+ *
+ *	Sets the default value for an option.
+ *
+ * Results:
+ *	Sets the defValue field.
+ *
+ * Side effects:
+ *	Changes an existing option table.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TreeTheme_SetOptionDefault(
+    Tk_OptionSpec *specPtr
+    )
+{
+#ifdef TREECTRL_DEBUG
+    if (specPtr->defValue != NULL)
+	panic("TreeTheme_SetOptionDefault trying to set default value of \"%s\" twice!",
+	    specPtr->optionName ? specPtr->optionName : "NULL");
+#endif
+    if (!strcmp(specPtr->optionName, "-buttontracking"))
+	specPtr->defValue = "0";
+#ifdef TREECTRL_DEBUG
+    else
+	panic("TreeTheme_SetOptionDefault unhandled option \"%s\"",
+	    specPtr->optionName ? specPtr->optionName : "NULL");
+#endif
+}
+
 int 
 TreeThemeCmd(
     TreeCtrl *tree,		/* Widget info. */

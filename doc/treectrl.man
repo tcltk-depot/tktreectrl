@@ -5,10 +5,10 @@
 
   $Id$}
 ]
-[manpage_begin treectrl n 2.2.10]
+[manpage_begin treectrl n 2.3]
 [moddesc {Tk Commands}]
 [titledesc {Create and manipulate hierarchical multicolumn widgets}]
-[require treectrl 2.2.10]
+[require treectrl 2.3]
 
 [description]
 [list_begin definitions] 
@@ -136,6 +136,13 @@ in any of the forms acceptable to [fun Tk_GetPixels].
 Specifies the width of the outline and the plus or minus sign
 of the button to the left of an item
 in any of the forms acceptable to [fun Tk_GetPixels].
+
+[tkoption_def -buttonttracking buttonTracking ButtonTracking]
+Specifies a boolean that determines if the expand/collapse buttons are tracked
+like pushbuttons when clicking them.  When true, buttons are not toggled until
+the <ButtonRelease> event occurs over them.  When false, buttons are toggled as
+soon as the <ButtonPress> event occurs over them.  This option defaults to
+true on Mac OS X and Gtk+, false on Win32 and X11.
 
 [tkoption_def -canvaspadx canvasPadX CanvasPadX]
 Specifies the width of extra whitespace on the left and right edges of the canvas
@@ -3747,17 +3754,17 @@ Gradients are fully opaque when XFillRectangle() is used to draw them (see below
 This means the [option opacity] value of each color stop is ignored.  Keep that
 in mind if your application is cross-platform.
 [enum]
-Rounded rectangles cannot be filled with a gradient when XFillRectangle() is
-used to draw gradients (see below).  Instead, the rounded rectangle is filled
+Rounded rectangles cannot be filled or outlined with a gradient when XFillRectangle()
+is used to draw gradients (see below).  Instead, the rounded rectangle is painted
 with the gradient's first [option -stops] color.
 [list_end]
 
 Gradients may be used in the following places:
 [list_begin enum]
 [enum]
-The -fill option of rect elements.
+The -fill and -outline options of rect elements.
 [enum]
-The -fill option of the [cmd "marquee configure"] command.
+The -fill and -outline options of the [cmd "marquee configure"] command.
 [enum]
 The -itembackground option of columns.
 [list_end]

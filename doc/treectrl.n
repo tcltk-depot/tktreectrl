@@ -237,12 +237,12 @@ Database Class:	\\fB\\$3\\fR
 .de UL
 \\$1\l'|0\(ul'\\$2
 ..
-.TH "treectrl" n 2.2.10 treectrl "Tk Commands"
+.TH "treectrl" n 2.3 treectrl "Tk Commands"
 .BS
 .SH NAME
 treectrl \- Create and manipulate hierarchical multicolumn widgets
 .SH SYNOPSIS
-package require \fBtreectrl  2.2.10\fR
+package require \fBtreectrl  2.3\fR
 .sp
 \fBtreectrl\fR \fIpathName\fR ?\fIoptions\fR?
 .sp
@@ -808,6 +808,20 @@ Database Class:	\fBButtonThickness\fR
 Specifies the width of the outline and the plus or minus sign
 of the button to the left of an item
 in any of the forms acceptable to \fBTk_GetPixels\fR.
+.LP
+.nf
+.ta 6c
+Command-Line Switch:	\fB-buttonttracking\fR
+Database Name:	\fBbuttonTracking\fR
+Database Class:	\fBButtonTracking\fR
+
+.fi
+.IP
+Specifies a boolean that determines if the expand/collapse buttons are tracked
+like pushbuttons when clicking them.  When true, buttons are not toggled until
+the <ButtonRelease> event occurs over them.  When false, buttons are toggled as
+soon as the <ButtonPress> event occurs over them.  This option defaults to
+true on Mac OS X and Gtk+, false on Win32 and X11.
 .LP
 .nf
 .ta 6c
@@ -4666,15 +4680,15 @@ Gradients are fully opaque when XFillRectangle() is used to draw them (see below
 This means the \fBopacity\fR value of each color stop is ignored.  Keep that
 in mind if your application is cross-platform.
 .IP [5]
-Rounded rectangles cannot be filled with a gradient when XFillRectangle() is
-used to draw gradients (see below).  Instead, the rounded rectangle is filled
+Rounded rectangles cannot be filled or outlined with a gradient when XFillRectangle()
+is used to draw gradients (see below).  Instead, the rounded rectangle is painted
 with the gradient's first \fB-stops\fR color.
 .PP
 Gradients may be used in the following places:
 .IP [1]
-The -fill option of rect elements.
+The -fill and -outline options of rect elements.
 .IP [2]
-The -fill option of the \fBmarquee configure\fR command.
+The -fill and -outline options of the \fBmarquee configure\fR command.
 .IP [3]
 The -itembackground option of columns.
 .PP

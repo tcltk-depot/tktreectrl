@@ -1059,6 +1059,7 @@ MODULE_SCOPE int TreeTheme_ItemDeleted(TreeCtrl *tree, TreeItem item);
 MODULE_SCOPE void TreeTheme_Relayout(TreeCtrl *tree);
 MODULE_SCOPE int TreeTheme_IsDesktopComposited(TreeCtrl *tree);
 MODULE_SCOPE int TreeThemeCmd(TreeCtrl *tree, int objc, Tcl_Obj *CONST objv[]);
+MODULE_SCOPE void TreeTheme_SetOptionDefault(Tk_OptionSpec *specPtr);
 
 /* tkTreeUtils.c */
 #ifdef TREECTRL_DEBUG

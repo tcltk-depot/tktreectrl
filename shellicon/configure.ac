@@ -19,8 +19,8 @@ dnl	to configure the system for the local environment.
 # AC_INIT(generic/tcl.h)
 #-----------------------------------------------------------------------
 
-AC_INIT([shellicon], [2.2])
-AC_SUBST([PACKAGE_PATCHLEVEL], [2.2.10])
+AC_INIT([shellicon], [2.3])
+AC_SUBST([PACKAGE_PATCHLEVEL], [2.3])
 AC_DEFINE_UNQUOTED(PACKAGE_PATCHLEVEL, "$PACKAGE_PATCHLEVEL")
 
 TEA_INIT([3.9])
