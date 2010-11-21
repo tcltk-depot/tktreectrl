@@ -5902,6 +5902,19 @@ StyleLayoutCmd(
 		break;
 	    }
 	    case OPTION_EXPAND: {
+#if 1
+		static const CharFlag charFlags[] = {
+		    { 'n', ELF_eEXPAND_N },
+		    { 'e', ELF_eEXPAND_E },
+		    { 's', ELF_eEXPAND_S },
+		    { 'w', ELF_eEXPAND_W },
+		    { 0, 0 }
+		};
+		if (Tree_GetFlagsFromObj(tree, objv[i + 1], "expand value",
+			charFlags, &eLink->flags) != TCL_OK) {
+		    goto badConfig;
+		}
+#else
 		char *expand;
 		int len, k;
 		expand = Tcl_GetStringFromObj(objv[i + 1], &len);
@@ -5922,9 +5935,25 @@ StyleLayoutCmd(
 			}
 		    }
 		}
+#endif
 		break;
 	    }
 	    case OPTION_iEXPAND: {
+#if 1
+		static const CharFlag charFlags[] = {
+		    { 'x', ELF_iEXPAND_X },
+		    { 'y', ELF_iEXPAND_Y },
+		    { 'n', ELF_iEXPAND_N },
+		    { 'e', ELF_iEXPAND_E },
+		    { 's', ELF_iEXPAND_S },
+		    { 'w', ELF_iEXPAND_W },
+		    { 0, 0 }
+		};
+		if (Tree_GetFlagsFromObj(tree, objv[i + 1], "iexpand value",
+			charFlags, &eLink->flags) != TCL_OK) {
+		    goto badConfig;
+		}
+#else
 		char *expand;
 		int len, k;
 		expand = Tcl_GetStringFromObj(objv[i + 1], &len);
@@ -5947,6 +5976,7 @@ StyleLayoutCmd(
 			}
 		    }
 		}
+#endif
 		break;
 	    }
 	    case OPTION_INDENT: {
@@ -5960,6 +5990,17 @@ StyleLayoutCmd(
 		break;
 	    }
 	    case OPTION_SQUEEZE: {
+#if 1
+		static const CharFlag charFlags[] = {
+		    { 'x', ELF_SQUEEZE_X },
+		    { 'y', ELF_SQUEEZE_Y },
+		    { 0, 0 }
+		};
+		if (Tree_GetFlagsFromObj(tree, objv[i + 1], "squeeze value",
+			charFlags, &eLink->flags) != TCL_OK) {
+		    goto badConfig;
+		}
+#else
 		char *string;
 		int len, k;
 		string = Tcl_GetStringFromObj(objv[i + 1], &len);
@@ -5978,6 +6019,7 @@ StyleLayoutCmd(
 			}
 		    }
 		}
+#endif
 		break;
 	    }
 	    case OPTION_UNION: {
@@ -6142,6 +6184,19 @@ StyleLayoutCmd(
 		break;
 	    }
 	    case OPTION_STICKY: {
+#if 1
+		static const CharFlag charFlags[] = {
+		    { 'n', ELF_STICKY_N },
+		    { 'e', ELF_STICKY_E },
+		    { 's', ELF_STICKY_S },
+		    { 'w', ELF_STICKY_W },
+		    { 0, 0 }
+		};
+		if (Tree_GetFlagsFromObj(tree, objv[i + 1], "sticky value",
+			charFlags, &eLink->flags) != TCL_OK) {
+		    goto badConfig;
+		}
+#else
 		char *sticky;
 		int len, k;
 		sticky = Tcl_GetStringFromObj(objv[i + 1], &len);
@@ -6162,6 +6217,7 @@ StyleLayoutCmd(
 			}
 		    }
 		}
+#endif
 		break;
 	    }
 	    case OPTION_DRAW:

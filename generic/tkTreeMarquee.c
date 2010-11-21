@@ -319,34 +319,28 @@ TreeMarquee_Draw(
     if (marquee->fillColorPtr || marquee->outlineColorPtr) {
 	TreeRectangle tr;
 	TreeClip clip;
+
 	tr.x = 0 - tree->xOrigin + MIN(marquee->x1, marquee->x2);
 	tr.width = abs(marquee->x1 - marquee->x2) + 1;
 	tr.y = 0 - tree->yOrigin + MIN(marquee->y1, marquee->y2);
 	tr.height = abs(marquee->y1 - marquee->y2) + 1;
+
 	clip.type = TREE_CLIP_AREA, clip.area = TREE_AREA_CONTENT;
+
 	if (marquee->fillColorPtr) {
-#if GRAD_COORDS
 	    TreeRectangle trBrush;
 	    TreeColor_GetBrushBounds(tree, marquee->fillColorPtr, tr,
 		    tree->xOrigin, tree->yOrigin,
 		    (TreeColumn) NULL, (TreeItem) NULL, &trBrush);
 	    TreeColor_FillRect(tree, td, &clip, marquee->fillColorPtr, trBrush, tr);
-#else
-	    TreeColor_FillRect(tree, td, &clip, marquee->fillColorPtr, tr, tr);
-#endif
 	}
 	if (marquee->outlineColorPtr && marquee->outlineWidth > 0) {
-#if GRAD_COORDS
 	    TreeRectangle trBrush;
 	    TreeColor_GetBrushBounds(tree, marquee->outlineColorPtr, tr,
 		    tree->xOrigin, tree->yOrigin,
 		    (TreeColumn) NULL, (TreeItem) NULL, &trBrush);
 	    TreeColor_DrawRect(tree, td, &clip, marquee->outlineColorPtr,
 		trBrush, tr, marquee->outlineWidth, 0);
-#else
-	    TreeColor_DrawRect(tree, td, &clip, marquee->outlineColorPtr,
-		tr, tr, marquee->outlineWidth, 0);
-#endif
 	}
 	return;
     }

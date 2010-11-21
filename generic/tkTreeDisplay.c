@@ -91,11 +91,9 @@ struct DItem
     int height;			/* Current height. */
     DItemArea area;		/* COLUMN_LOCK_NONE. */
     DItemArea left, right;	/* COLUMN_LOCK_LEFT, COLUMN_LOCK_RIGHT. */
-#if GRAD_COORDS
 #define DITEM_INVALIDATE_ON_SCROLL_X 0x0001
 #define DITEM_INVALIDATE_ON_SCROLL_Y 0x0002
     int flags;
-#endif
     int oldX, oldY;		/* Where it was last drawn, window coords. */
     Range *range;		/* Range the TreeItem is in. */
     int index;			/* Used for alternating background colors. */
@@ -111,6 +109,11 @@ struct TreeColumnDInfo_
     int offset;			/* Last seen x-offset */
     int width;			/* Last seen column width */
 };
+
+typedef struct DScrollIncrements {
+    int *increments;		/* When TreeCtrl.x|yScrollIncrement is zero */
+    int count;			/* Size of increments[]. */
+} DScrollIncrements;
 
 /* Display information for a TreeCtrl. */
 struct TreeDInfo_
@@ -140,14 +143,8 @@ struct TreeDInfo_
 				   and/or proxies. */
     TkRegion dirtyRgn;		/* DOUBLEBUFFER_WINDOW */
     int flags;			/* DINFO_XXX */
-    int xScrollIncrement;	/* Last seen TreeCtr.xScrollIncrement */
-    int yScrollIncrement;	/* Last seen TreeCtr.yScrollIncrement */
-    int *xScrollIncrements;	/* When tree->xScrollIncrement is zero */
-    int *yScrollIncrements;	/* When tree->yScrollIncrement is zero */
-    int xScrollIncrementCount;	/* Size of xScrollIncrements. */
-    int yScrollIncrementCount;	/* Size of yScrollIncrements. */
-    int incrementTop;		/* yScrollIncrement[] index of item at top */
-    int incrementLeft;		/* xScrollIncrement[] index of item at left */
+    DScrollIncrements xScrollIncrements;
+    DScrollIncrements yScrollIncrements;
     TkRegion wsRgn;		/* Region containing whitespace */
 #ifdef COMPLEX_WHITESPACE
     int complexWhitespace;
@@ -1169,27 +1166,27 @@ Increment_AddX(
     )
 {
     TreeDInfo dInfo = tree->dInfo;
+    DScrollIncrements *dIncr = &dInfo->xScrollIncrements;
     int visWidth = Tree_ContentWidth(tree);
 
-    while ((visWidth > 1) && (dInfo->xScrollIncrementCount > 0) &&
-	    (offset - dInfo->xScrollIncrements[dInfo->xScrollIncrementCount - 1]
-		    > visWidth)) {
+    while ((visWidth > 1) && (dIncr->count > 0) &&
+	    (offset - dIncr->increments[dIncr->count - 1] > visWidth)) {
 	size = Increment_AddX(tree,
-		dInfo->xScrollIncrements[dInfo->xScrollIncrementCount - 1] + visWidth,
+		dIncr->increments[dIncr->count - 1] + visWidth,
 		size);
     }
 #ifdef TREECTRL_DEBUG
-    if (dInfo->xScrollIncrementCount > 0 && offset ==
-	    dInfo->xScrollIncrements[dInfo->xScrollIncrementCount - 1]) {
+    if ((dIncr->count > 0) &&
+	    (offset == dIncr->increments[dIncr->count - 1])) {
 	panic("Increment_AddX: offset %d same as previous offset", offset);
     }
 #endif
-    if (dInfo->xScrollIncrementCount + 1 > size) {
+    if (dIncr->count + 1 > size) {
 	size *= 2;
-	dInfo->xScrollIncrements = (int *) ckrealloc(
-	    (char *) dInfo->xScrollIncrements, size * sizeof(int));
+	dIncr->increments = (int *) ckrealloc(
+	    (char *) dIncr->increments, size * sizeof(int));
     }
-    dInfo->xScrollIncrements[dInfo->xScrollIncrementCount++] = offset;
+    dIncr->increments[dIncr->count++] = offset;
     return size;
 }
 
@@ -1218,27 +1215,27 @@ Increment_AddY(
     )
 {
     TreeDInfo dInfo = tree->dInfo;
+    DScrollIncrements *dIncr = &dInfo->yScrollIncrements;
     int visHeight = Tree_ContentHeight(tree);
 
-    while ((visHeight > 1) && (dInfo->yScrollIncrementCount > 0) &&
-	    (offset - dInfo->yScrollIncrements[dInfo->yScrollIncrementCount - 1]
-		    > visHeight)) {
+    while ((visHeight > 1) && (dIncr->count > 0) &&
+	    (offset - dIncr->increments[dIncr->count - 1] > visHeight)) {
 	size = Increment_AddY(tree,
-		dInfo->yScrollIncrements[dInfo->yScrollIncrementCount - 1] + visHeight,
+		dIncr->increments[dIncr->count - 1] + visHeight,
 		size);
     }
 #ifdef TREECTRL_DEBUG
-    if (dInfo->yScrollIncrementCount > 0 && offset ==
-	    dInfo->yScrollIncrements[dInfo->yScrollIncrementCount - 1]) {
+    if ((dIncr->count > 0) &&
+	    (offset == dIncr->increments[dIncr->count - 1])) {
 	panic("Increment_AddY: offset %d same as previous offset", offset);
     }
 #endif
-    if (dInfo->yScrollIncrementCount + 1 > size) {
+    if (dIncr->count + 1 > size) {
 	size *= 2;
-	dInfo->yScrollIncrements = (int *) ckrealloc(
-	    (char *) dInfo->yScrollIncrements, size * sizeof(int));
+	dIncr->increments = (int *) ckrealloc(
+	    (char *) dIncr->increments, size * sizeof(int));
     }
-    dInfo->yScrollIncrements[dInfo->yScrollIncrementCount++] = offset;
+    dIncr->increments[dIncr->count++] = offset;
     return size;
 }
 
@@ -1265,6 +1262,7 @@ RItemsToIncrementsX(
     )
 {
     TreeDInfo dInfo = tree->dInfo;
+    DScrollIncrements *dIncr = &dInfo->xScrollIncrements;
     Range *range, *rangeFirst = dInfo->rangeFirst;
     RItem *rItem;
     int visWidth = Tree_ContentWidth(tree);
@@ -1272,15 +1270,13 @@ RItemsToIncrementsX(
     int x1, increment, prev;
     int size;
 
-    if (totalWidth/*
-	    - tree->canvasPadX[PAD_TOP_LEFT]
-	    - tree->canvasPadX[PAD_BOTTOM_RIGHT]*/ <= 0)
+    if (totalWidth <= 0)
 	return;
 
     /* First increment is zero */
     size = 10;
-    dInfo->xScrollIncrements = (int *) ckalloc(size * sizeof(int));
-    dInfo->xScrollIncrements[dInfo->xScrollIncrementCount++] = 0;
+    dIncr->increments = (int *) ckalloc(size * sizeof(int));
+    dIncr->increments[dIncr->count++] = 0;
     prev = 0;
 
     if (rangeFirst == NULL) {
@@ -1338,10 +1334,10 @@ RItemsToIncrementsX(
 	}
     }
     if ((visWidth > 1) && (totalWidth -
-		dInfo->xScrollIncrements[dInfo->xScrollIncrementCount - 1] > visWidth)) {
+		dIncr->increments[dIncr->count - 1] > visWidth)) {
 	Increment_AddX(tree, totalWidth, size);
-	dInfo->xScrollIncrementCount--;
-	dInfo->xScrollIncrements[dInfo->xScrollIncrementCount - 1] = totalWidth - visWidth;
+	dIncr->count--;
+	dIncr->increments[dIncr->count - 1] = totalWidth - visWidth;
     }
 }
 
@@ -1368,6 +1364,7 @@ RItemsToIncrementsY(
     )
 {
     TreeDInfo dInfo = tree->dInfo;
+    DScrollIncrements *dIncr = &dInfo->yScrollIncrements;
     Range *range, *rangeFirst;
     RItem *rItem;
     int visHeight = Tree_ContentHeight(tree);
@@ -1375,14 +1372,13 @@ RItemsToIncrementsY(
     int y1, increment, prev;
     int size;
 
-    if (totalHeight/* - tree->canvasPadY[PAD_TOP_LEFT]
-	    - tree->canvasPadY[PAD_BOTTOM_RIGHT]*/ <= 0)
+    if (totalHeight <= 0)
 	return;
 
     /* First increment is zero */
     size = 10;
-    dInfo->yScrollIncrements = (int *) ckalloc(size * sizeof(int));
-    dInfo->yScrollIncrements[dInfo->yScrollIncrementCount++] = 0;
+    dIncr->increments = (int *) ckalloc(size * sizeof(int));
+    dIncr->increments[dIncr->count++] = 0;
     prev = 0;
 
     /* If only locked columns are visible, we still scroll vertically. */
@@ -1445,10 +1441,10 @@ RItemsToIncrementsY(
     }
 
     if ((visHeight > 1) && (totalHeight -
-		dInfo->yScrollIncrements[dInfo->yScrollIncrementCount - 1] > visHeight)) {
+		dIncr->increments[dIncr->count - 1] > visHeight)) {
 	size = Increment_AddY(tree, totalHeight, size);
-	dInfo->yScrollIncrementCount--;
-	dInfo->yScrollIncrements[dInfo->yScrollIncrementCount - 1] = totalHeight - visHeight;
+	dIncr->count--;
+	dIncr->increments[dIncr->count - 1] = totalHeight - visHeight;
     }
 }
 
@@ -1475,20 +1471,19 @@ RangesToIncrementsX(
     )
 {
     TreeDInfo dInfo = tree->dInfo;
+    DScrollIncrements *dIncr = &dInfo->xScrollIncrements;
     Range *range = dInfo->rangeFirst;
     int visWidth = Tree_ContentWidth(tree);
     int totalWidth = Tree_CanvasWidth(tree);
     int size, prev;
 
-    if (totalWidth/*
-	    - tree->canvasPadX[PAD_TOP_LEFT]
-	    - tree->canvasPadX[PAD_BOTTOM_RIGHT]*/ <= 0)
+    if (totalWidth <= 0)
 	return;
 
     /* First increment is zero */
     size = 10;
-    dInfo->xScrollIncrements = (int *) ckalloc(size * sizeof(int));
-    dInfo->xScrollIncrements[dInfo->xScrollIncrementCount++] = 0;
+    dIncr->increments = (int *) ckalloc(size * sizeof(int));
+    dIncr->increments[dIncr->count++] = 0;
     prev = 0;
 
     while (range != NULL) {
@@ -1500,10 +1495,10 @@ RangesToIncrementsX(
     }
 
     if ((visWidth > 1) && (totalWidth -
-		dInfo->xScrollIncrements[dInfo->xScrollIncrementCount - 1] > visWidth)) {
+		dIncr->increments[dIncr->count - 1] > visWidth)) {
 	size = Increment_AddX(tree, totalWidth, size);
-	dInfo->xScrollIncrementCount--;
-	dInfo->xScrollIncrements[dInfo->xScrollIncrementCount - 1] = totalWidth - visWidth;
+	dIncr->count--;
+	dIncr->increments[dIncr->count - 1] = totalWidth - visWidth;
     }
 }
 
@@ -1530,20 +1525,19 @@ RangesToIncrementsY(
     )
 {
     TreeDInfo dInfo = tree->dInfo;
+    DScrollIncrements *dIncr = &dInfo->yScrollIncrements;
     Range *range = dInfo->rangeFirst;
     int visHeight = Tree_ContentHeight(tree);
     int totalHeight = Tree_CanvasHeight(tree);
     int size, prev;
 
-    if (totalHeight/*
-	    - tree->canvasPadY[PAD_TOP_LEFT]
-	    - tree->canvasPadY[PAD_BOTTOM_RIGHT]*/ <= 0)
+    if (totalHeight <= 0)
 	return;
 
     /* First increment is zero */
     size = 10;
-    dInfo->yScrollIncrements = (int *) ckalloc(size * sizeof(int));
-    dInfo->yScrollIncrements[dInfo->yScrollIncrementCount++] = 0;
+    dIncr->increments = (int *) ckalloc(size * sizeof(int));
+    dIncr->increments[dIncr->count++] = 0;
     prev = 0;
 
     while (range != NULL) {
@@ -1555,10 +1549,10 @@ RangesToIncrementsY(
     }
 
     if ((visHeight > 1) && (totalHeight -
-		dInfo->yScrollIncrements[dInfo->yScrollIncrementCount - 1] > visHeight)) {
+		dIncr->increments[dIncr->count - 1] > visHeight)) {
 	size = Increment_AddY(tree, totalHeight, size);
-	dInfo->yScrollIncrementCount--;
-	dInfo->yScrollIncrements[dInfo->yScrollIncrementCount - 1] = totalHeight - visHeight;
+	dIncr->count--;
+	dIncr->increments[dIncr->count - 1] = totalHeight - visHeight;
     }
 }
 
@@ -1570,7 +1564,7 @@ RangesToIncrementsY(
  *	Recalculate the lists of scroll increments.
  *
  * Results:
- *	DInfo.xScrollIncrements and DInfo.xScrollIncrements are updated.
+ *	DInfo.xScrollIncrements and DInfo.yScrollIncrements are updated.
  *	Either may be set to NULL. The old values are freed, if any.
  *
  * Side effects:
@@ -1585,18 +1579,20 @@ Increment_Redo(
     )
 {
     TreeDInfo dInfo = tree->dInfo;
+    DScrollIncrements *xIncr = &dInfo->xScrollIncrements;
+    DScrollIncrements *yIncr = &dInfo->yScrollIncrements;
 
     /* Free x */
-    if (dInfo->xScrollIncrements != NULL)
-	ckfree((char *) dInfo->xScrollIncrements);
-    dInfo->xScrollIncrements = NULL;
-    dInfo->xScrollIncrementCount = 0;
+    if (xIncr->increments != NULL)
+	ckfree((char *) xIncr->increments);
+    xIncr->increments = NULL;
+    xIncr->count = 0;
 
     /* Free y */
-    if (dInfo->yScrollIncrements != NULL)
-	ckfree((char *) dInfo->yScrollIncrements);
-    dInfo->yScrollIncrements = NULL;
-    dInfo->yScrollIncrementCount = 0;
+    if (yIncr->increments != NULL)
+	ckfree((char *) yIncr->increments);
+    yIncr->increments = NULL;
+    yIncr->count = 0;
 
     if (tree->vertical) {
 	/* No xScrollIncrement is given. Snap to left edge of a Range */
@@ -1606,8 +1602,7 @@ Increment_Redo(
 	/* No yScrollIncrement is given. Snap to top edge of a TreeItem */
 	if (tree->yScrollIncrement <= 0)
 	    RItemsToIncrementsY(tree);
-    }
-    else {
+    } else {
 	/* No xScrollIncrement is given. Snap to left edge of a TreeItem */
 	if (tree->xScrollIncrement <= 0)
 	    RItemsToIncrementsX(tree);
@@ -1626,7 +1621,7 @@ Increment_Redo(
  *	Recalculate the lists of scroll increments if needed.
  *
  * Results:
- *	DInfo.xScrollIncrements and DInfo.xScrollIncrements may be
+ *	DInfo.xScrollIncrements and DInfo.yScrollIncrements may be
  *	updated.
  *
  * Side effects:
@@ -1645,13 +1640,6 @@ Increment_RedoIfNeeded(
 
     Range_RedoIfNeeded(tree);
 
-    /* Check for x|yScrollIncrement >0 changing to <=0 */
-    if (((dInfo->yScrollIncrement > 0) != (tree->yScrollIncrement > 0)) ||
-	    ((dInfo->xScrollIncrement > 0) != (tree->xScrollIncrement > 0))) {
-	dInfo->yScrollIncrement = tree->yScrollIncrement;
-	dInfo->xScrollIncrement = tree->xScrollIncrement;
-	dInfo->flags |= DINFO_REDO_INCREMENTS;
-    }
     if (dInfo->flags & DINFO_REDO_INCREMENTS) {
 	Increment_Redo(tree);
 	dInfo->flags &= ~DINFO_REDO_INCREMENTS;
@@ -1680,7 +1668,7 @@ static int
 B_IncrementFind(
     int *increments,		/* DInfo.x|yScrollIncrements. */
     int count,			/* Length of increments[]. */
-    int offset			/* Offset to search with. */
+    int offset			/* Offset to search for. */
     )
 {
     int i, l, u, v;
@@ -1726,14 +1714,15 @@ B_IncrementFind(
 static int
 B_IncrementFindX(
     TreeCtrl *tree,		/* Widget info. */
-    int offset			/* Offset to search with. */
+    int offset			/* Offset to search for. */
     )
 {
     TreeDInfo dInfo = tree->dInfo;
+    DScrollIncrements *dIncr = &dInfo->xScrollIncrements;
 
     return B_IncrementFind(
-	dInfo->xScrollIncrements,
-	dInfo->xScrollIncrementCount,
+	dIncr->increments,
+	dIncr->count,
 	offset);
 }
 
@@ -1762,24 +1751,22 @@ B_IncrementFindY(
     )
 {
     TreeDInfo dInfo = tree->dInfo;
+    DScrollIncrements *dIncr = &dInfo->yScrollIncrements;
 
     return B_IncrementFind(
-	dInfo->yScrollIncrements,
-	dInfo->yScrollIncrementCount,
+	dIncr->increments,
+	dIncr->count,
 	offset);
 }
 
 /*
  *--------------------------------------------------------------
  *
- * B_XviewCmd --
+ * TreeXviewCmd --
  *
  *	This procedure is invoked to process the "xview" option for
  *	the widget command for a TreeCtrl. See the user documentation
  *	for details on what it does.
- *
- *	NOTE: This procedure is called when the -xscrollincrement option
- *	is unspecified.
  *
  * Results:
  *	A standard Tcl result.
@@ -1791,14 +1778,13 @@ B_IncrementFindY(
  */
 
 int
-B_XviewCmd(
+TreeXviewCmd(
     TreeCtrl *tree,		/* Widget info. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *CONST objv[]	/* Argument values. */
     )
 {
     Tcl_Interp *interp = tree->interp;
-    TreeDInfo dInfo = tree->dInfo;
 
     if (objc == 2) {
 	double fractions[2];
@@ -1816,8 +1802,22 @@ B_XviewCmd(
 	if (totWidth <= visWidth)
 	    return TCL_OK;
 
+	type = Tk_GetScrollInfoObj(interp, objc, objv, &fraction, &count);
+#if SCROLLSMOOTHING == 1
+	Tree_SetScrollSmoothingX(tree, type != TK_SCROLL_UNITS);
+#endif
+
+#if 1
+	totWidth = Tree_FakeCanvasWidth(tree);
 	if (visWidth > 1) {
-	    /* Find incrementLeft when scrolled to right */
+	    indexMax = Increment_FindX(tree, totWidth - visWidth);
+	} else {
+	    indexMax = Increment_FindX(tree, totWidth);
+	    visWidth = 1;
+	}
+#else
+	if (visWidth > 1) {
+	    /* Find incrementLeft when scrolled to extreme right */
 	    indexMax = Increment_FindX(tree, totWidth - visWidth);
 	    offset = Increment_ToOffsetX(tree, indexMax);
 	    if (offset < totWidth - visWidth) {
@@ -1832,8 +1832,8 @@ B_XviewCmd(
 	    indexMax = Increment_FindX(tree, totWidth);
 	    visWidth = 1;
 	}
+#endif
 
-	type = Tk_GetScrollInfoObj(interp, objc, objv, &fraction, &count);
 	switch (type) {
 	    case TK_SCROLL_ERROR:
 		return TCL_ERROR;
@@ -1850,7 +1850,15 @@ B_XviewCmd(
 		    index++;
 		break;
 	    case TK_SCROLL_UNITS:
-		index = dInfo->incrementLeft + count;
+		offset = W2Cx(Tree_ContentLeft(tree));
+		index = Increment_FindX(tree, offset);
+		offset = Increment_ToOffsetX(tree, index);
+		/* If the left-most increment is partially visible due to
+		 * non-unit scrolling, then scrolling by -1 units should
+		 * snap to the left of the partially-visible increment. */
+		if ((C2Wx(offset) < Tree_ContentLeft(tree)) && (count < 0))
+		    index++;
+		index += count;
 		break;
 	}
 
@@ -1863,8 +1871,7 @@ B_XviewCmd(
 	    index = indexMax;
 
 	offset = Increment_ToOffsetX(tree, index);
-	if ((index != dInfo->incrementLeft) || (tree->xOrigin != offset - Tree_ContentLeft(tree))) {
-	    dInfo->incrementLeft = index;
+	if (tree->xOrigin != offset - Tree_ContentLeft(tree)) {
 	    tree->xOrigin = offset - Tree_ContentLeft(tree);
 	    Tree_EventuallyRedraw(tree);
 	}
@@ -1875,14 +1882,11 @@ B_XviewCmd(
 /*
  *--------------------------------------------------------------
  *
- * B_YviewCmd --
+ * TreeYviewCmd --
  *
  *	This procedure is invoked to process the "yview" option for
  *	the widget command for a TreeCtrl. See the user documentation
  *	for details on what it does.
- *
- *	NOTE: This procedure is called when the -yscrollincrement option
- *	is unspecified.
  *
  * Results:
  *	A standard Tcl result.
@@ -1894,14 +1898,13 @@ B_XviewCmd(
  */
 
 int
-B_YviewCmd(
+TreeYviewCmd(
     TreeCtrl *tree,		/* Widget info. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *CONST objv[]	/* Argument values. */
     )
 {
     Tcl_Interp *interp = tree->interp;
-    TreeDInfo dInfo = tree->dInfo;
 
     if (objc == 2) {
 	double fractions[2];
@@ -1920,6 +1923,20 @@ B_YviewCmd(
 	if (totHeight <= visHeight)
 	    return TCL_OK;
 
+	type = Tk_GetScrollInfoObj(interp, objc, objv, &fraction, &count);
+#if SCROLLSMOOTHING == 1
+	Tree_SetScrollSmoothingY(tree, type != TK_SCROLL_UNITS);
+#endif
+
+#if 1
+	totHeight = Tree_FakeCanvasHeight(tree);
+	if (visHeight > 1) {
+	    indexMax = Increment_FindY(tree, totHeight - visHeight);
+	} else {
+	    indexMax = Increment_FindY(tree, totHeight);
+	    visHeight = 1;
+	}
+#else
 	if (visHeight > 1) {
 	    /* Find incrementTop when scrolled to bottom */
 	    indexMax = Increment_FindY(tree, totHeight - visHeight);
@@ -1937,8 +1954,8 @@ B_YviewCmd(
 	    indexMax = Increment_FindY(tree, totHeight);
 	    visHeight = 1;
 	}
+#endif
 
-	type = Tk_GetScrollInfoObj(interp, objc, objv, &fraction, &count);
 	switch (type) {
 	    case TK_SCROLL_ERROR:
 		return TCL_ERROR;
@@ -1955,7 +1972,15 @@ B_YviewCmd(
 		    index++;
 		break;
 	    case TK_SCROLL_UNITS:
-		index = dInfo->incrementTop + count;
+		offset = W2Cy(Tree_ContentTop(tree));
+		index = Increment_FindY(tree, offset);
+		offset = Increment_ToOffsetY(tree, index);
+		/* If the top-most increment is partially visible due to
+		 * non-unit scrolling, then scrolling by -1 units should
+		 * snap to the top of the partially-visible increment. */
+		if ((C2Wy(offset) < Tree_ContentTop(tree)) && (count < 0))
+		    index++;
+		index += count;
 		break;
 	}
 
@@ -1968,8 +1993,7 @@ B_YviewCmd(
 	    index = indexMax;
 
 	offset = Increment_ToOffsetY(tree, index);
-	if ((index != dInfo->incrementTop) || (tree->yOrigin != offset - Tree_ContentTop(tree))) {
-	    dInfo->incrementTop = index;
+	if (tree->yOrigin != offset - Tree_ContentTop(tree)) {
 	    tree->yOrigin = offset - Tree_ContentTop(tree);
 	    Tree_EventuallyRedraw(tree);
 	}
@@ -3223,7 +3247,6 @@ UpdateDInfoForRange(
 		else if (dInfo->flags & DINFO_INVALIDATE)
 		    area->flags |= DITEM_DIRTY | DITEM_ALL_DIRTY;
 
-#if GRAD_COORDS
 		else if ((dItem->flags & DITEM_INVALIDATE_ON_SCROLL_X)
 			&& (x != dItem->oldX))
 		    area->flags |= DITEM_DIRTY | DITEM_ALL_DIRTY;
@@ -3231,7 +3254,6 @@ UpdateDInfoForRange(
 		else if ((dItem->flags & DITEM_INVALIDATE_ON_SCROLL_Y)
 			&& (y != dItem->oldY))
 		    area->flags |= DITEM_DIRTY | DITEM_ALL_DIRTY;
-#endif
 
 		/* The range may have changed size */
 		else if ((area->width != range->totalWidth) ||
@@ -3357,7 +3379,6 @@ UpdateDInfoForRange(
 		else if (dInfo->flags & DINFO_INVALIDATE)
 		    area->flags |= DITEM_DIRTY | DITEM_ALL_DIRTY;
 
-#if GRAD_COORDS
 		else if ((dItem->flags & DITEM_INVALIDATE_ON_SCROLL_X)
 			&& (x != dItem->oldX))
 		    area->flags |= DITEM_DIRTY | DITEM_ALL_DIRTY;
@@ -3365,7 +3386,6 @@ UpdateDInfoForRange(
 		else if ((dItem->flags & DITEM_INVALIDATE_ON_SCROLL_Y)
 			&& (y != dItem->oldY))
 		    area->flags |= DITEM_DIRTY | DITEM_ALL_DIRTY;
-#endif
 
 		/* The range may have changed size */
 		else if ((area->width != rItem->size) ||
@@ -5459,9 +5479,7 @@ DrawColumnBackground(
 		bounds->width,
 		rItem ? rItem->size : height);
 	if (TreeRect_Intersect(&drawBox, &rowBox, &dirtyBox)) {
-#if GRAD_COORDS
 	    TreeRectangle trBrush;
-#endif
 	    if (rItem != NULL) {
 		index = GetItemBgIndex(tree, rItem);
 	    }
@@ -5471,7 +5489,6 @@ DrawColumnBackground(
 		XFillRectangle(tree->display, td.drawable, gc,
 		    drawBox.x, drawBox.y, drawBox.width, drawBox.height);
 	    } else {
-#if GRAD_COORDS
 		TreeColor_GetBrushBounds(tree, tc, rowBox,
 			tree->xOrigin, tree->yOrigin,
 			treeColumn, (TreeItem) NULL, &trBrush);
@@ -5482,13 +5499,6 @@ DrawColumnBackground(
 			drawBox.x, drawBox.y, drawBox.width, drawBox.height);
 		}
 		TreeColor_FillRect(tree, td, NULL, tc, trBrush, drawBox);
-#else
-		if (!TreeColor_IsOpaque(tree ,tc)) {
-		    XFillRectangle(tree->display, td.drawable, backgroundGC,
-			drawBox.x, drawBox.y, drawBox.width, drawBox.height);
-		}
-		TreeColor_FillRect(tree, td, NULL, tc, rowBox, drawBox);
-#endif
 	    }
 	}
 	if (rItem != NULL && rItem == rItem->range->last) {
@@ -5952,13 +5962,9 @@ DrawColumnGridLinesAux(
 	    TreeRect_SetXYWH(gridBox, columnBox.x, columnBox.y, leftWidth,
 		    columnBox.height);
 	    if (TreeRect_Intersect(&gridBox, boundsPtr, &gridBox)) {
-#if GRAD_COORDS
 		TreeColor_GetBrushBounds(tree, leftColor, gridBox,
 			tree->xOrigin, tree->yOrigin,
 			treeColumn, (TreeItem) NULL, &trBrush);
-#else
-		trBrush = gridBox;
-#endif
 		TreeColor_FillRect(tree, td, &clip, leftColor, trBrush,
 			gridBox);
 	    }
@@ -5967,13 +5973,9 @@ DrawColumnGridLinesAux(
 	    TreeRect_SetXYWH(gridBox, columnBox.x + columnBox.width - rightWidth,
 		    columnBox.y, rightWidth, columnBox.height);
 	    if (TreeRect_Intersect(&gridBox, boundsPtr, &gridBox)) {
-#if GRAD_COORDS
 		TreeColor_GetBrushBounds(tree, rightColor, gridBox,
 			tree->xOrigin, tree->yOrigin,
 			treeColumn, (TreeItem) NULL, &trBrush);
-#else
-		trBrush = gridBox;
-#endif
 		TreeColor_FillRect(tree, td, &clip, rightColor, trBrush,
 			gridBox);
 	    }
@@ -6361,9 +6363,8 @@ DisplayDItem(
 
     area->flags &= ~(DITEM_DIRTY | DITEM_ALL_DIRTY);
     area->flags |= DITEM_DRAWN;
-#if GRAD_COORDS
+
     dItem->flags &= ~(DITEM_INVALIDATE_ON_SCROLL_X | DITEM_INVALIDATE_ON_SCROLL_Y);
-#endif
 
     if (left < TreeRect_Left(bounds))
 	left = TreeRect_Left(bounds);
@@ -7484,6 +7485,127 @@ A_IncrementFindY(
     return index;
 }
 
+int
+Tree_FakeCanvasWidth(
+    TreeCtrl *tree
+    )
+{
+    int visWidth = Tree_ContentWidth(tree);
+    int totWidth = Tree_CanvasWidth(tree);
+#if SCROLLSMOOTHING == 1
+    int oldSmoothing = tree->scrollSmoothing;
+#endif
+    int indexMax, offset;
+
+    if (totWidth <= 0)
+	return 0;
+
+    if (visWidth > 1) {
+#if SCROLLSMOOTHING == 1
+	tree->scrollSmoothing = 0;
+#endif
+	/* Find incrementLeft when scrolled to extreme right */
+	indexMax = Increment_FindX(tree, totWidth - visWidth);
+	offset = Increment_ToOffsetX(tree, indexMax);
+	if (offset < totWidth - visWidth) {
+	    indexMax++;
+	    offset = Increment_ToOffsetX(tree, indexMax);
+	}
+
+	/* Add some fake content to right */
+	if (offset + visWidth > totWidth)
+	    totWidth = offset + visWidth;
+
+#if SCROLLSMOOTHING == 1
+	tree->scrollSmoothing = oldSmoothing;
+#endif
+    }
+    return totWidth;
+}
+
+int
+Tree_FakeCanvasHeight(
+    TreeCtrl *tree
+    )
+{
+    int visHeight = Tree_ContentHeight(tree);
+    int totHeight = Tree_CanvasHeight(tree);
+#if SCROLLSMOOTHING == 1
+    int oldSmoothing = tree->scrollSmoothing;
+#endif
+    int indexMax, offset;
+
+    if (totHeight <= 0)
+	return 0;
+    
+    if (visHeight > 1) {
+#if SCROLLSMOOTHING == 1
+	tree->scrollSmoothing = 0;
+#endif
+	/* Find incrementTop when scrolled to bottom */
+	indexMax = Increment_FindY(tree, totHeight - visHeight);
+	offset = Increment_ToOffsetY(tree, indexMax);
+	if (offset < totHeight - visHeight) {
+	    indexMax++;
+	    offset = Increment_ToOffsetY(tree, indexMax);
+	}
+
+	/* Add some fake content to bottom */
+	if (offset + visHeight > totHeight)
+	    totHeight = offset + visHeight;
+
+#if SCROLLSMOOTHING == 1
+	tree->scrollSmoothing = oldSmoothing;
+#endif
+    }
+    return totHeight;
+}
+
+#if SCROLLSMOOTHING == 1
+
+static int
+Smooth_IncrementFindX(
+    TreeCtrl *tree,		/* Widget info. */
+    int offset			/* Canvas x-coordinate. */
+    )
+{
+    int totWidth = Tree_FakeCanvasWidth(tree);
+    int xIncr = 1;
+    int index, indexMax;
+
+    indexMax = totWidth / xIncr;
+    if (totWidth % xIncr == 0)
+	indexMax--;
+    if (offset < 0)
+	offset = 0;
+    index = offset / xIncr;
+    if (index > indexMax)
+	index = indexMax;
+    return index;
+}
+
+static int
+Smooth_IncrementFindY(
+    TreeCtrl *tree,		/* Widget info. */
+    int offset			/* Canvas y-coordinate. */
+    )
+{
+    int totHeight = Tree_FakeCanvasHeight(tree);
+    int yIncr = 1;
+    int index, indexMax;
+
+    indexMax = totHeight / yIncr;
+    if (totHeight % yIncr == 0)
+	indexMax--;
+    if (offset < 0)
+	offset = 0;
+    index = offset / yIncr;
+    if (index > indexMax)
+	index = indexMax;
+    return index;
+}
+#endif
+
 /*
  *--------------------------------------------------------------
  *
@@ -7507,6 +7629,10 @@ Increment_FindX(
     int offset			/* Canvas x-coordinate. */
     )
 {
+#if SCROLLSMOOTHING == 1
+    if (tree->scrollSmoothing & SMOOTHING_X)
+	return Smooth_IncrementFindX(tree, offset);
+#endif
     if (tree->xScrollIncrement <= 0) {
 	Increment_RedoIfNeeded(tree);
 	return B_IncrementFindX(tree, offset);
@@ -7537,6 +7663,10 @@ Increment_FindY(
     int offset			/* Canvas y-coordinate. */
     )
 {
+#if SCROLLSMOOTHING == 1
+    if (tree->scrollSmoothing & SMOOTHING_Y)
+	return Smooth_IncrementFindY(tree, offset);
+#endif
     if (tree->yScrollIncrement <= 0) {
 	Increment_RedoIfNeeded(tree);
 	return B_IncrementFindY(tree, offset);
@@ -7567,14 +7697,21 @@ Increment_ToOffsetX(
     )
 {
     TreeDInfo dInfo = tree->dInfo;
+    int xIncr = tree->xScrollIncrement;
 
-    if (tree->xScrollIncrement <= 0) {
-	if (index < 0 || index >= dInfo->xScrollIncrementCount)
+#if SCROLLSMOOTHING == 1
+    if (tree->scrollSmoothing & SMOOTHING_X)
+	return index * 1;
+#endif
+    if (xIncr <= 0) {
+	DScrollIncrements *dIncr = &dInfo->xScrollIncrements;
+	if (index < 0 || index >= dIncr->count) {
 	    panic("Increment_ToOffsetX: bad index %d (must be 0-%d)",
-		    index, dInfo->xScrollIncrementCount-1);
-	return dInfo->xScrollIncrements[index];
+		    index, dIncr->count-1);
+	}
+	return dIncr->increments[index];
     }
-    return index * tree->xScrollIncrement;
+    return index * xIncr;
 }
 
 /*
@@ -7600,16 +7737,22 @@ Increment_ToOffsetY(
     )
 {
     TreeDInfo dInfo = tree->dInfo;
+    int yIncr = tree->yScrollIncrement;
 
-    if (tree->yScrollIncrement <= 0) {
-	if (index < 0 || index >= dInfo->yScrollIncrementCount) {
+#if SCROLLSMOOTHING == 1
+    if (tree->scrollSmoothing & SMOOTHING_Y)
+	return index * 1;
+#endif
+    if (yIncr <= 0) {
+	DScrollIncrements *dIncr = &dInfo->yScrollIncrements;
+	if (index < 0 || index >= dIncr->count) {
 	    panic("Increment_ToOffsetY: bad index %d (must be 0-%d)\ntotHeight %d visHeight %d",
-		    index, dInfo->yScrollIncrementCount - 1,
+		    index, dIncr->count - 1,
 		    Tree_CanvasHeight(tree), Tree_ContentHeight(tree));
 	}
-	return dInfo->yScrollIncrements[index];
+	return dIncr->increments[index];
     }
-    return index * tree->yScrollIncrement;
+    return index * yIncr;
 }
 
 /*
@@ -7687,7 +7830,6 @@ Tree_GetScrollFractionsX(
     int left = W2Cx(Tree_ContentLeft(tree));
     int visWidth = Tree_ContentWidth(tree);
     int totWidth = Tree_CanvasWidth(tree);
-    int index, offset;
 
     /* The tree is empty, or everything fits in the window */
     if (visWidth < 0)
@@ -7703,6 +7845,9 @@ Tree_GetScrollFractionsX(
 	return;
     }
 
+#if 1
+    totWidth = Tree_FakeCanvasWidth(tree);
+#else
     /* Find incrementLeft when scrolled to extreme right */
     index = Increment_FindX(tree, totWidth - visWidth);
     offset = Increment_ToOffsetX(tree, index);
@@ -7714,6 +7859,7 @@ Tree_GetScrollFractionsX(
     /* Add some fake content to right */
     if (offset + visWidth > totWidth)
 	totWidth = offset + visWidth;
+#endif
 
     GetScrollFractions(left, left + visWidth, 0, totWidth, fractions);
 }
@@ -7744,7 +7890,6 @@ Tree_GetScrollFractionsY(
     int top = W2Cy(Tree_ContentTop(tree));
     int visHeight = Tree_ContentHeight(tree);
     int totHeight = Tree_CanvasHeight(tree);
-    int index, offset;
 
     /* The tree is empty, or everything fits in the window */
     if (visHeight < 0)
@@ -7760,6 +7905,9 @@ Tree_GetScrollFractionsY(
 	return;
     }
 
+#if 1
+    totHeight = Tree_FakeCanvasHeight(tree);
+#else
     /* Find incrementTop when scrolled to bottom */
     index = Increment_FindY(tree, totHeight - visHeight);
     offset = Increment_ToOffsetY(tree, index);
@@ -7771,9 +7919,37 @@ Tree_GetScrollFractionsY(
     /* Add some fake content to bottom */
     if (offset + visHeight > totHeight)
 	totHeight = offset + visHeight;
+#endif
 
     GetScrollFractions(top, top + visHeight, 0, totHeight, fractions);
 }
+
+#if SCROLLSMOOTHING == 1
+void
+Tree_SetScrollSmoothingX(
+    TreeCtrl *tree,		/* Widget info. */
+    int smoothing		/* TRUE or FALSE */
+    )
+{
+    if (smoothing && tree->xScrollSmoothing)
+	tree->scrollSmoothing |= SMOOTHING_X;
+    else
+	tree->scrollSmoothing &= ~SMOOTHING_X;
+}
+
+void
+Tree_SetScrollSmoothingY(
+    TreeCtrl *tree,		/* Widget info. */
+    int smoothing		/* TRUE or FALSE */
+    )
+{
+    if (smoothing && tree->yScrollSmoothing)
+	tree->scrollSmoothing |= SMOOTHING_Y;
+    else
+	tree->scrollSmoothing &= ~SMOOTHING_Y;
+}
+
+#endif
 
 /*
  *--------------------------------------------------------------
@@ -7801,7 +7977,6 @@ Tree_SetOriginX(
 				 * to the nearest scroll increment. */
     )
 {
-    TreeDInfo dInfo = tree->dInfo;
     int totWidth = Tree_CanvasWidth(tree);
     int visWidth = Tree_ContentWidth(tree);
     int index, indexMax, offset;
@@ -7813,12 +7988,19 @@ Tree_SetOriginX(
 	xOrigin = 0 - Tree_ContentLeft(tree);
 	if (xOrigin != tree->xOrigin) {
 	    tree->xOrigin = xOrigin;
-	    dInfo->incrementLeft = 0;
 	    Tree_EventuallyRedraw(tree);
 	}
 	return;
     }
 
+#if 1
+    totWidth = Tree_FakeCanvasWidth(tree);
+    if (visWidth > 1) {
+	indexMax = Increment_FindX(tree, totWidth - visWidth);
+    } else {
+	indexMax = Increment_FindX(tree, totWidth);
+    }
+#else
     if (visWidth > 1) {
 	/* Find incrementLeft when scrolled to extreme right */
 	indexMax = Increment_FindX(tree, totWidth - visWidth);
@@ -7833,6 +8015,7 @@ Tree_SetOriginX(
 	    totWidth = offset + visWidth;
     } else
 	indexMax = Increment_FindX(tree, totWidth);
+#endif
 
     xOrigin += Tree_ContentLeft(tree); /* origin -> canvas */
     index = Increment_FindX(tree, xOrigin);
@@ -7852,7 +8035,6 @@ Tree_SetOriginX(
 	return;
 
     tree->xOrigin = xOrigin;
-    dInfo->incrementLeft = index;
 
     Tree_EventuallyRedraw(tree);
 }
@@ -7883,7 +8065,6 @@ Tree_SetOriginY(
 				 * to the nearest scroll increment. */
     )
 {
-    TreeDInfo dInfo = tree->dInfo;
     int visHeight = Tree_ContentHeight(tree);
     int totHeight = Tree_CanvasHeight(tree);
     int index, indexMax, offset;
@@ -7895,12 +8076,19 @@ Tree_SetOriginY(
 	yOrigin = 0 - Tree_ContentTop(tree);
 	if (yOrigin != tree->yOrigin) {
 	    tree->yOrigin = yOrigin;
-	    dInfo->incrementTop = 0;
 	    Tree_EventuallyRedraw(tree);
 	}
 	return;
     }
 
+#if 1
+    totHeight = Tree_FakeCanvasHeight(tree);
+    if (visHeight > 1) {
+	indexMax = Increment_FindY(tree, totHeight - visHeight);
+    } else {
+	indexMax = Increment_FindY(tree, totHeight);
+    }
+#else
     if (visHeight > 1) {
 	/* Find incrementTop when scrolled to bottom */
 	indexMax = Increment_FindY(tree, totHeight - visHeight);
@@ -7915,6 +8103,7 @@ Tree_SetOriginY(
 	    totHeight = offset + visHeight;
     } else
 	indexMax = Increment_FindY(tree, totHeight);
+#endif
 
     yOrigin += Tree_ContentTop(tree); /* origin -> canvas */
     index = Increment_FindY(tree, yOrigin);
@@ -7933,7 +8122,6 @@ Tree_SetOriginY(
 	return;
 
     tree->yOrigin = yOrigin;
-    dInfo->incrementTop = index;
 
     Tree_EventuallyRedraw(tree);
 }
@@ -8775,7 +8963,25 @@ Tree_InvalidateItemArea(
     Tree_InvalidateArea(tree, x1, y1, x2, y2);
 }
 
-#if GRAD_COORDS
+/*
+ *--------------------------------------------------------------
+ *
+ * Tree_InvalidateItemOnScrollX --
+ *
+ *	Mark an item as needing to be redrawn completely if
+ *	the list scrolls horizontally.  This is called when a
+ *	gradient whose coordinates aren't canvas-relative
+ *	is drawn in the item.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *--------------------------------------------------------------
+ */
+
 void
 Tree_InvalidateItemOnScrollX(
     TreeCtrl *tree,		/* Widget info. */
@@ -8790,6 +8996,25 @@ Tree_InvalidateItemOnScrollX(
     dItem->flags |= DITEM_INVALIDATE_ON_SCROLL_X;
 }
 
+/*
+ *--------------------------------------------------------------
+ *
+ * Tree_InvalidateItemOnScrollY --
+ *
+ *	Mark an item as needing to be redrawn completely if
+ *	the list scrolls vertically.  This is called when a
+ *	gradient whose coordinates aren't canvas-relative
+ *	is drawn in the item.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *--------------------------------------------------------------
+ */
+
 void
 Tree_InvalidateItemOnScrollY(
     TreeCtrl *tree,		/* Widget info. */
@@ -8803,7 +9028,6 @@ Tree_InvalidateItemOnScrollY(
 
     dItem->flags |= DITEM_INVALIDATE_ON_SCROLL_Y;
 }
-#endif /* GRAD_COORDS */
 
 /*
  *--------------------------------------------------------------
@@ -8990,10 +9214,10 @@ TreeDInfo_Free(
     if (dInfo->pixmapBgImg.drawable != None)
 	Tk_FreePixmap(tree->display, dInfo->pixmapBgImg.drawable);
 #endif
-    if (dInfo->xScrollIncrements != NULL)
-	ckfree((char *) dInfo->xScrollIncrements);
-    if (dInfo->yScrollIncrements != NULL)
-	ckfree((char *) dInfo->yScrollIncrements);
+    if (dInfo->xScrollIncrements.increments != NULL)
+	ckfree((char *) dInfo->xScrollIncrements.increments);
+    if (dInfo->yScrollIncrements.increments != NULL)
+	ckfree((char *) dInfo->yScrollIncrements.increments);
     Tree_FreeRegion(tree, dInfo->wsRgn);
     TkDestroyRegion(dInfo->dirtyRgn);
 #ifdef DCOLUMN

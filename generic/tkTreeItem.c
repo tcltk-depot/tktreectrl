@@ -3746,10 +3746,7 @@ ItemDrawBackground(
      */
     tc = TreeColumn_BackgroundColor(treeColumn, index);
     if (tc != NULL) {
-#if GRAD_COORDS
 	TreeRectangle trBrush;
-#endif
-#if GRAD_COORDS
 	TreeColor_GetBrushBounds(tree, tc, tr,
 		tree->drawableXOrigin, tree->drawableYOrigin,
 		treeColumn, item, &trBrush);
@@ -3759,13 +3756,6 @@ ItemDrawBackground(
 	    Tree_FillRectangle(tree, td, clipPtr, gc, tr);
 	}
 	TreeColor_FillRect(tree, td, clipPtr, tc, trBrush, tr);
-#else
-	if (!TreeColor_IsOpaque(tree, tc)) {
-	    GC gc = Tk_3DBorderGC(tree->tkwin, tree->border, TK_3D_FLAT_GC);
-	    XFillRectangle(tree->display, td.drawable, gc, x, y, width, height);
-	}
-	TreeColor_FillRect(tree, td, NULL, tc, tr, tr);
-#endif
     } else {
 	GC gc = Tk_3DBorderGC(tree->tkwin, tree->border, TK_3D_FLAT_GC);
 	Tree_FillRectangle(tree, td, clipPtr, gc, tr);
@@ -4242,25 +4232,17 @@ SpanWalkProc_Draw(
 	if (leftColor != NULL && leftWidth > 0) {
 	    TreeRect_SetXYWH(tr, drawArgs->x, drawArgs->y, leftWidth,
 		    drawArgs->height);
-#if GRAD_COORDS
 	    TreeColor_GetBrushBounds(tree, leftColor, tr,
 		    tree->drawableXOrigin, tree->drawableYOrigin,
 		    spanPtr->treeColumn, item, &trBrush);
-#else
-	    trBrush = tr;
-#endif
 	    TreeColor_FillRect(tree, data->td, NULL, leftColor, trBrush, tr);
 	}
 	if (rightColor != NULL && rightWidth > 0) {
 	    TreeRect_SetXYWH(tr, drawArgs->x + drawArgs->width - rightWidth,
 		    drawArgs->y, rightWidth, drawArgs->height);
-#if GRAD_COORDS
 	    TreeColor_GetBrushBounds(tree, rightColor, tr,
 		    tree->drawableXOrigin, tree->drawableYOrigin,
 		    spanPtr->treeColumn, item, &trBrush);
-#else
-	    trBrush = tr;
-#endif
 	    TreeColor_FillRect(tree, data->td, NULL, rightColor, trBrush, tr);
 	}
     }

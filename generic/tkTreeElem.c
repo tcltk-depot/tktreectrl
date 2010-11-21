@@ -2154,9 +2154,7 @@ static void DisplayProcRect(TreeElementArgs *args)
 #endif
     TreeColor *tc;
     TreeRectangle tr;
-#if GRAD_COORDS
     TreeRectangle trBrush;
-#endif
     TreeClip clip, *clipPtr = &clip;
     int open = 0;
     int outlineWidth = 0;
@@ -2228,27 +2226,18 @@ static void DisplayProcRect(TreeElementArgs *args)
     if (rx >= 1 && ry >= 1) {
 	TREECOLOR_FOR_STATE(tc, fill, state)
 	if (tc != NULL) {
-#if GRAD_COORDS
 	    TreeColor_GetBrushBounds(tree, tc, tr,
 		    tree->drawableXOrigin, tree->drawableYOrigin,
 		    args->display.column, args->display.item, &trBrush);
 	    TreeColor_FillRoundRect(tree, args->display.td, clipPtr, tc, trBrush, tr, rx, ry, open);
-#else
-	    TreeColor_FillRoundRect(tree, args->display.td, clipPtr, tc, tr, tr, rx, ry, open);
-#endif
 	}
 	TREECOLOR_FOR_STATE(tc, outline, state)
 	if ((tc != NULL) && (outlineWidth > 0) && (open != RECT_OPEN_WNES)) {
-#if GRAD_COORDS
 	    TreeColor_GetBrushBounds(tree, tc, tr,
 		    tree->drawableXOrigin, tree->drawableYOrigin,
 		    args->display.column, args->display.item, &trBrush);
 	    TreeColor_DrawRoundRect(tree, args->display.td, clipPtr, tc,
 		trBrush, tr, outlineWidth, rx, ry, open);
-#else
-	    TreeColor_DrawRoundRect(tree, args->display.td, clipPtr, tc, tr,
-		tr, outlineWidth, rx, ry, open);
-#endif
 	}
 	/* TODO: active outline */
 	return;
@@ -2257,29 +2246,20 @@ static void DisplayProcRect(TreeElementArgs *args)
     TREECOLOR_FOR_STATE(tc, fill, state)
     if (tc != NULL) {
 	tr.x = x, tr.y = y, tr.width = width, tr.height = height;
-#if GRAD_COORDS
 	TreeColor_GetBrushBounds(tree, tc, tr,
 		tree->drawableXOrigin, tree->drawableYOrigin,
 		args->display.column, args->display.item, &trBrush);
 	TreeColor_FillRect(tree, args->display.td, clipPtr, tc, trBrush, tr);
-#else
-	TreeColor_FillRect(tree, args->display.td, clipPtr, tc, tr, tr);
-#endif
     }
 
     TREECOLOR_FOR_STATE(tc, outline, state)
     if ((tc != NULL) && (outlineWidth > 0) && (open != RECT_OPEN_WNES)) {
 	tr.x = x, tr.y = y, tr.width = width, tr.height = height;
-#if GRAD_COORDS
 	TreeColor_GetBrushBounds(tree, tc, tr,
 		tree->drawableXOrigin, tree->drawableYOrigin,
 		args->display.column, args->display.item, &trBrush);
 	TreeColor_DrawRect(tree, args->display.td, clipPtr, tc, trBrush, tr,
 	    outlineWidth, open);
-#else
-	TreeColor_DrawRect(tree, args->display.td, clipPtr, tc, tr, tr,
-	    outlineWidth, open);
-#endif
     }
 
     if (showFocus && (state & STATE_FOCUS) && (state & STATE_ACTIVE)) {

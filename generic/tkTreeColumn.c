@@ -4077,15 +4077,12 @@ TreeColumnCmd(
 		    column = tree->columns;
 		    while (column != NULL) {
 			TreeDisplay_ColumnDeleted(tree, column);
-#if GRAD_COORDS
 			TreeGradient_ColumnDeleted(tree, column);
-#endif
 #if COLUMNGRID == 1
 			if (column->visible &&
 				(column->gridLeftColor != NULL ||
 				column->gridRightColor != NULL)) {
 			    tree->columnsWithGridLines -= 1;
-dbwin("tree->columnsWithGridLines is now %d", tree->columnsWithGridLines);
 			}
 #endif
 			column = Column_Free(column);
@@ -4123,9 +4120,7 @@ dbwin("tree->columnsWithGridLines is now %d", tree->columnsWithGridLines);
 		}
 
 		TreeDisplay_ColumnDeleted(tree, column);
-#if GRAD_COORDS
 		TreeGradient_ColumnDeleted(tree, column);
-#endif
 #if COLUMNGRID == 1
 		if (column->visible &&
 			(column->gridLeftColor != NULL ||
@@ -4871,6 +4866,10 @@ DrawDragIndicator(
     }
 
     if (TreeColumn_Bbox(column, &x, &y, &w, &h) == 0) {
+	if (column == tree->columnVis) {
+	    x -= tree->canvasPadX[PAD_TOP_LEFT];
+	    w += tree->canvasPadX[PAD_TOP_LEFT];
+	}
 	if (tree->columnDrag.indSide == SIDE_LEFT) {
 	    x -= 1;
 	    if (x == minX - 1)

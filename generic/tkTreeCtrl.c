@@ -86,10 +86,10 @@ static Tk_OptionSpec optionSpecs[] = {
      "nw", -1, Tk_Offset(TreeCtrl, bgImageAnchor),
      0, (ClientData) NULL, TREE_CONF_REDISPLAY},
     {TK_OPTION_STRING, "-bgimagescroll", "bgImageScroll", "BgImageScroll",
-     "xy", -1, Tk_Offset(TreeCtrl, bgImageScrollString),
+     "xy", Tk_Offset(TreeCtrl, bgImageScrollObj), -1,
      0, (ClientData) NULL, TREE_CONF_REDISPLAY},
     {TK_OPTION_STRING, "-bgimagetile", "bgImageTile", "BgImageTile",
-     "xy", -1, Tk_Offset(TreeCtrl, bgImageTileString),
+     "xy", Tk_Offset(TreeCtrl, bgImageTileObj), -1,
      0, (ClientData) NULL, TREE_CONF_REDISPLAY},
 #endif
     {TK_OPTION_PIXELS, "-borderwidth", "borderWidth", "BorderWidth",
@@ -139,7 +139,7 @@ static Tk_OptionSpec optionSpecs[] = {
      TK_OPTION_NULL_OK, (ClientData) NULL, TREE_CONF_PROXY},
     {TK_OPTION_STRING_TABLE, "-columnresizemode",
      "columnResizeMode", "ColumnResizeMode",
-     "proxy", -1, Tk_Offset(TreeCtrl, columnResizeMode),
+     "realtime", -1, Tk_Offset(TreeCtrl, columnResizeMode),
      0, (ClientData) columnResizeModeST, 0},
     {TK_OPTION_BOOLEAN, "-columntagexpr", "columnTagExpr", "ColumnTagExpr",
      "1", -1, Tk_Offset(TreeCtrl, columnTagExpr),
@@ -151,8 +151,7 @@ static Tk_OptionSpec optionSpecs[] = {
     {TK_OPTION_STRING, "-defaultstyle", "defaultStyle", "DefaultStyle",
      (char *) NULL, Tk_Offset(TreeCtrl, defaultStyle.stylesObj), -1,
      TK_OPTION_NULL_OK, (ClientData) NULL, TREE_CONF_DEFSTYLE},
-    {TK_OPTION_STRING_TABLE, "-doublebuffer",
-     "doubleBuffer", "DoubleBuffer",
+    {TK_OPTION_STRING_TABLE, "-doublebuffer", "doubleBuffer", "DoubleBuffer",
      "item", -1, Tk_Offset(TreeCtrl, doubleBuffer),
      0, (ClientData) doubleBufferST, TREE_CONF_REDISPLAY},
 #endif /* DEPRECATED */
@@ -184,10 +183,6 @@ static Tk_OptionSpec optionSpecs[] = {
      "19", Tk_Offset(TreeCtrl, indentObj),
      Tk_Offset(TreeCtrl, indent),
      0, (ClientData) NULL, TREE_CONF_INDENT | TREE_CONF_RELAYOUT},
-    {TK_OPTION_PIXELS, "-itemheight", "itemHeight", "ItemHeight",
-     "0", Tk_Offset(TreeCtrl, itemHeightObj),
-     Tk_Offset(TreeCtrl, itemHeight),
-     0, (ClientData) NULL, TREE_CONF_ITEMSIZE | TREE_CONF_RELAYOUT},
     {TK_OPTION_PIXELS, "-itemgapx", "itemGapX", "ItemGapX",
      "0",
      Tk_Offset(TreeCtrl, itemGapXObj),
@@ -198,6 +193,10 @@ static Tk_OptionSpec optionSpecs[] = {
      Tk_Offset(TreeCtrl, itemGapYObj),
      Tk_Offset(TreeCtrl, itemGapY),
      0, (ClientData) NULL, TREE_CONF_RELAYOUT},
+    {TK_OPTION_PIXELS, "-itemheight", "itemHeight", "ItemHeight",
+     "0", Tk_Offset(TreeCtrl, itemHeightObj),
+     Tk_Offset(TreeCtrl, itemHeight),
+     0, (ClientData) NULL, TREE_CONF_ITEMSIZE | TREE_CONF_RELAYOUT},
 #if 0
     {TK_OPTION_CUSTOM, "-itempadx", (char *) NULL, (char *) NULL,
      "0",
@@ -260,8 +259,9 @@ static Tk_OptionSpec optionSpecs[] = {
     {TK_OPTION_BOOLEAN, "-showheader", "showHeader", "ShowHeader",
      "1", -1, Tk_Offset(TreeCtrl, showHeader),
      0, (ClientData) NULL, TREE_CONF_RELAYOUT},
-    {TK_OPTION_BOOLEAN, "-showlines", "showLines",
-     "ShowLines", "1", -1, Tk_Offset(TreeCtrl, showLines),
+    {TK_OPTION_BOOLEAN, "-showlines", "showLines", "ShowLines",
+     (char *) NULL, /* DEFAULT VALUE IS INITIALIZED LATER */
+     -1, Tk_Offset(TreeCtrl, showLines),
      0, (ClientData) NULL, TREE_CONF_RELAYOUT},
     {TK_OPTION_BOOLEAN, "-showroot", "showRoot",
      "ShowRoot", "1", -1, Tk_Offset(TreeCtrl, showRoot),
@@ -301,6 +301,11 @@ static Tk_OptionSpec optionSpecs[] = {
     {TK_OPTION_PIXELS, "-xscrollincrement", "xScrollIncrement", "ScrollIncrement",
      "0", -1, Tk_Offset(TreeCtrl, xScrollIncrement),
      0, (ClientData) NULL, TREE_CONF_REDISPLAY},
+#if SCROLLSMOOTHING == 1
+    {TK_OPTION_BOOLEAN, "-xscrollsmoothing", "xScrollSmoothing", "ScrollSmoothing",
+     "0", -1, Tk_Offset(TreeCtrl, xScrollSmoothing),
+     0, (ClientData) NULL, TREE_CONF_REDISPLAY},
+#endif
     {TK_OPTION_STRING, "-yscrollcommand", "yScrollCommand", "ScrollCommand",
      (char *) NULL, -1, Tk_Offset(TreeCtrl, yScrollCmd),
      TK_OPTION_NULL_OK, 0, 0},
@@ -310,6 +315,11 @@ static Tk_OptionSpec optionSpecs[] = {
     {TK_OPTION_PIXELS, "-yscrollincrement", "yScrollIncrement", "ScrollIncrement",
      "0", -1, Tk_Offset(TreeCtrl, yScrollIncrement),
      0, (ClientData) NULL, TREE_CONF_REDISPLAY},
+#if SCROLLSMOOTHING == 1
+    {TK_OPTION_BOOLEAN, "-yscrollsmoothing", "yScrollSmoothing", "ScrollSmoothing",
+     "0", -1, Tk_Offset(TreeCtrl, yScrollSmoothing),
+     0, (ClientData) NULL, TREE_CONF_REDISPLAY},
+#endif
 
     {TK_OPTION_END, (char *) NULL, (char *) NULL, (char *) NULL,
      (char *) NULL, -1, -1, 0, (ClientData) NULL, 0}
@@ -356,10 +366,6 @@ static void TreeComputeGeometry(TreeCtrl *tree);
 static int TreeSeeCmd(TreeCtrl *tree, int objc, Tcl_Obj *CONST objv[]);
 static int TreeStateCmd(TreeCtrl *tree, int objc, Tcl_Obj *CONST objv[]);
 static int TreeSelectionCmd(Tcl_Interp *interp, TreeCtrl *tree, int objc,
-    Tcl_Obj *CONST objv[]);
-static int TreeXviewCmd(Tcl_Interp *interp, TreeCtrl *tree, int objc,
-    Tcl_Obj *CONST objv[]);
-static int TreeYviewCmd(Tcl_Interp *interp, TreeCtrl *tree, int objc,
     Tcl_Obj *CONST objv[]);
 static int TreeDebugCmd(ClientData clientData, Tcl_Interp *interp, int objc,
     Tcl_Obj *CONST objv[]);
@@ -1176,6 +1182,10 @@ static int TreeWidgetCmd(
 		    }
 		    xOrigin = tree->scanXOrigin - gain * (x - tree->scanX);
 		    yOrigin = tree->scanYOrigin - gain * (y - tree->scanY);
+#if SCROLLSMOOTHING == 1
+		    Tree_SetScrollSmoothingX(tree, TRUE);
+		    Tree_SetScrollSmoothingY(tree, TRUE);
+#endif
 		    Tree_SetOriginX(tree, xOrigin);
 		    Tree_SetOriginY(tree, yOrigin);
 		    break;
@@ -1223,12 +1233,12 @@ static int TreeWidgetCmd(
 	    break;
 	}
 	case COMMAND_XVIEW: {
-	    result = TreeXviewCmd(interp, tree, objc, objv);
+	    result = TreeXviewCmd(tree, objc, objv);
 	    break;
 	}
 
 	case COMMAND_YVIEW: {
-	    result = TreeYviewCmd(interp, tree, objc, objv);
+	    result = TreeYviewCmd(tree, objc, objv);
 	    break;
 	}
     }
@@ -1358,60 +1368,28 @@ TreeConfigure(
 
 #if BGIMAGEOPT
 	    {
-		const char *s = tree->bgImageScrollString;
-		int i, bogus = 0;
-		tree->bgImageScroll = 0;
-		for (i = 0; s[i] != '\0'; i++) {
-		    switch (s[i]) {
-			case 'x': case 'X':
-			    tree->bgImageScroll |= BGIMG_SCROLL_X;
-			    break;
-			case 'y': case 'Y':
-			    tree->bgImageScroll |= BGIMG_SCROLL_Y;
-			    break;
-			default: {
-			    Tcl_ResetResult(tree->interp);
-			    Tcl_AppendResult(tree->interp, "bad scroll value \"",
-				s, "\": must be a string ",
-				"containing zero or more of x and y",
-				(char *) NULL);
-			    bogus = 1;
-			    break;
-			}
-		    }
-		    if (bogus)
-			break;
-		}
-		if (bogus)
+		static const CharFlag scrollFlags[] = {
+		    { 'x', BGIMG_SCROLL_X },
+		    { 'y', BGIMG_SCROLL_Y },
+		    { 0, 0 }
+		};
+		if (Tree_GetFlagsFromObj(tree, tree->bgImageScrollObj,
+			"scroll value", scrollFlags, &tree->bgImageScroll)
+			!= TCL_OK) {
 		    continue;
+		}
 	    }
 	    {
-		const char *s = tree->bgImageTileString;
-		int i, bogus = 0;
-		tree->bgImageTile = 0;
-		for (i = 0; s[i] != '\0'; i++) {
-		    switch (s[i]) {
-			case 'x': case 'X':
-			    tree->bgImageTile |= BGIMG_TILE_X;
-			    break;
-			case 'y': case 'Y':
-			    tree->bgImageTile |= BGIMG_TILE_Y;
-			    break;
-			default: {
-			    Tcl_ResetResult(tree->interp);
-			    Tcl_AppendResult(tree->interp, "bad tile value \"",
-				s, "\": must be a string ",
-				"containing zero or more of x and y",
-				(char *) NULL);
-			    bogus = 1;
-			    break;
-			}
-		    }
-		    if (bogus)
-			break;
-		}
-		if (bogus)
+		static const CharFlag tileFlags[] = {
+		    { 'x', BGIMG_TILE_X },
+		    { 'y', BGIMG_TILE_Y },
+		    { 0, 0 }
+		};
+		if (Tree_GetFlagsFromObj(tree, tree->bgImageTileObj,
+			"tile value", tileFlags, &tree->bgImageTile)
+			!= TCL_OK) {
 		    continue;
+		}
 	    }
 #endif
 
@@ -1659,6 +1637,13 @@ badWrap:
 
     TreeStyle_TreeChanged(tree, mask);
     TreeColumn_TreeChanged(tree, mask);
+
+#if SCROLLSMOOTHING == 1
+    if ((tree->scrollSmoothing & SMOOTHING_X) && !tree->xScrollSmoothing)
+	Tree_SetScrollSmoothingX(tree, FALSE);
+    if ((tree->scrollSmoothing & SMOOTHING_Y) && !tree->yScrollSmoothing)
+	Tree_SetScrollSmoothingY(tree, FALSE);
+#endif
 
     if (mask & TREE_CONF_RELAYOUT) {
 	TreeComputeGeometry(tree);
@@ -2344,7 +2329,7 @@ TreeSeeCmd(
 	return TCL_ERROR;
 
     if (objc > 3) {
-	int i, k, len, firstOption = 3;
+	int i, len, firstOption = 3;
 	char *s = Tcl_GetStringFromObj(objv[3], &len);
 	if (s[0] != '-') {
 	    if (TreeColumn_FromObj(tree, objv[3], &treeColumn,
@@ -2370,6 +2355,20 @@ TreeSeeCmd(
 	    switch (index)
 	    {
 		case 0: { /* -center */
+#if 1
+		    static const CharFlag centerFlags[] = {
+			{ 'x', 0x01 },
+			{ 'y', 0x02 },
+			{ 0, 0 }
+		    };
+		    int flags = 0;
+		    if (Tree_GetFlagsFromObj(tree, objv[i+1], "-center value",
+			    centerFlags, &flags) != TCL_OK) {
+			return TCL_ERROR;
+		    }
+		    centerX = (flags & 0x01) != 0;
+		    centerY = (flags & 0x02) != 0;
+#else
 		    char *s = Tcl_GetStringFromObj(objv[i+1], &len);
 		    for (k = 0; k < len; k++) {
 			switch (s[k]) {
@@ -2386,6 +2385,7 @@ TreeSeeCmd(
 			    }
 			}
 		    }
+#endif
 		    break;
 		}
 	    }
@@ -2396,15 +2396,17 @@ TreeSeeCmd(
     if (Tree_ItemBbox(tree, item, COLUMN_LOCK_NONE, &tr) < 0)
 	return TCL_OK;
 
-    x = TreeRect_Left(tr);
-    y = TreeRect_Top(tr);
-    w = TreeRect_Width(tr);
-    h = TreeRect_Height(tr);
+    TreeRect_XYWH(tr, &x, &y, &w, &h);
 
     if (treeColumn != NULL) {
 	x += TreeColumn_Offset(treeColumn);
 	w = TreeColumn_UseWidth(treeColumn);
     }
+
+#if SCROLLSMOOTHING == 1
+    Tree_SetScrollSmoothingX(tree, TRUE);
+    Tree_SetScrollSmoothingY(tree, TRUE);
+#endif
 
     /* No horizontal scrolling for locked columns. */
     if ((treeColumn != NULL) &&
@@ -3354,276 +3356,6 @@ modifyDONE:
     return TCL_OK;
 }
 
-/*
- *--------------------------------------------------------------
- *
- * A_XviewCmd --
- *
- *	This procedure is invoked to process the "xview" option for
- *	the widget command for a TreeCtrl. See the user documentation
- *	for details on what it does.
- *
- *	NOTE: This procedure is called when the -xscrollincrement option
- *	is specified.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	See the user documentation.
- *
- *--------------------------------------------------------------
- */
-
-static int
-A_XviewCmd(
-    TreeCtrl *tree,		/* Widget info. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[]	/* Argument values. */
-    )
-{
-    Tcl_Interp *interp = tree->interp;
-
-    if (objc == 2) {
-	double fractions[2];
-
-	Tree_GetScrollFractionsX(tree, fractions);
-	FormatResult(interp, "%g %g", fractions[0], fractions[1]);
-    } else {
-	int count, index = 0, indexMax, offset, type;
-	double fraction;
-	int visWidth = Tree_ContentWidth(tree);
-	int totWidth = Tree_CanvasWidth(tree);
-	int xIncr = tree->xScrollIncrement;
-
-	if (visWidth < 0)
-	    visWidth = 0;
-	if (totWidth <= visWidth)
-	    return TCL_OK;
-
-	if (visWidth > 1) {
-	    /* Find incrementLeft when scrolled to extreme right */
-	    indexMax = Increment_FindX(tree, totWidth - visWidth);
-	    offset = Increment_ToOffsetX(tree, indexMax);
-	    if (offset < totWidth - visWidth) {
-		indexMax++;
-		offset = Increment_ToOffsetX(tree, indexMax);
-	    }
-
-	    /* Add some fake content to right */
-	    if (offset + visWidth > totWidth)
-		totWidth = offset + visWidth;
-	} else {
-	    indexMax = Increment_FindX(tree, totWidth);
-	    visWidth = 1;
-	}
-
-	type = Tk_GetScrollInfoObj(interp, objc, objv, &fraction, &count);
-	switch (type) {
-	    case TK_SCROLL_ERROR:
-		return TCL_ERROR;
-	    case TK_SCROLL_MOVETO:
-		offset = (int) (fraction * totWidth + 0.5);
-		index = Increment_FindX(tree, offset);
-		break;
-	    case TK_SCROLL_PAGES:
-		offset = Tree_ContentLeft(tree) + tree->xOrigin;
-		offset += (int) (count * visWidth * 0.9);
-		index = Increment_FindX(tree, offset);
-		if ((count > 0) && (index ==
-			Increment_FindX(tree, Tree_ContentLeft(tree) + tree->xOrigin)))
-		    index++;
-		break;
-	    case TK_SCROLL_UNITS:
-		offset = Tree_ContentLeft(tree) + tree->xOrigin;
-		index = offset / xIncr;
-		index += count;
-		break;
-	}
-
-	/* Don't scroll too far left */
-	if (index < 0)
-	    index = 0;
-
-	/* Don't scroll too far right */
-	if (index > indexMax)
-	    index = indexMax;
-
-	offset = Increment_ToOffsetX(tree, index);
-	if (offset - Tree_ContentLeft(tree) != tree->xOrigin) {
-	    tree->xOrigin = offset - Tree_ContentLeft(tree);
-	    Tree_EventuallyRedraw(tree);
-	}
-    }
-    return TCL_OK;
-}
-
-/*
- *--------------------------------------------------------------
- *
- * A_YviewCmd --
- *
- *	This procedure is invoked to process the "yview" option for
- *	the widget command for a TreeCtrl. See the user documentation
- *	for details on what it does.
- *
- *	NOTE: This procedure is called when the -yscrollincrement option
- *	is specified.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	See the user documentation.
- *
- *--------------------------------------------------------------
- */
-
-static int
-A_YviewCmd(
-    TreeCtrl *tree,		/* Widget info. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[]	/* Argument values. */
-    )
-{
-    Tcl_Interp *interp = tree->interp;
-
-    if (objc == 2) {
-	double fractions[2];
-
-	Tree_GetScrollFractionsY(tree, fractions);
-	FormatResult(interp, "%g %g", fractions[0], fractions[1]);
-    } else {
-	int count, index = 0, indexMax, offset, type;
-	double fraction;
-	int visHeight = Tree_ContentHeight(tree);
-	int totHeight = Tree_CanvasHeight(tree);
-	int yIncr = tree->yScrollIncrement;
-
-	if (visHeight < 0)
-	    visHeight = 0;
-	if (totHeight <= visHeight)
-	    return TCL_OK;
-
-	if (visHeight > 1) {
-	    /* Find incrementTop when scrolled to bottom */
-	    indexMax = Increment_FindY(tree, totHeight - visHeight);
-	    offset = Increment_ToOffsetY(tree, indexMax);
-	    if (offset < totHeight - visHeight) {
-		indexMax++;
-		offset = Increment_ToOffsetY(tree, indexMax);
-	    }
-
-	    /* Add some fake content to bottom */
-	    if (offset + visHeight > totHeight)
-		totHeight = offset + visHeight;
-	} else {
-	    indexMax = Increment_FindY(tree, totHeight);
-	    visHeight = 1;
-	}
-
-	type = Tk_GetScrollInfoObj(interp, objc, objv, &fraction, &count);
-	switch (type) {
-	    case TK_SCROLL_ERROR:
-		return TCL_ERROR;
-	    case TK_SCROLL_MOVETO:
-		offset = (int) (fraction * totHeight + 0.5);
-		index = Increment_FindY(tree, offset);
-		break;
-	    case TK_SCROLL_PAGES:
-		offset = Tree_ContentTop(tree) + tree->yOrigin;
-		offset += (int) (count * visHeight * 0.9);
-		index = Increment_FindY(tree, offset);
-		if ((count > 0) && (index ==
-			Increment_FindY(tree, Tree_ContentTop(tree) + tree->yOrigin)))
-		    index++;
-		break;
-	    case TK_SCROLL_UNITS:
-		offset = Tree_ContentTop(tree) + tree->yOrigin;
-		index = offset / yIncr;
-		index += count;
-		break;
-	}
-
-	/* Don't scroll too far up */
-	if (index < 0)
-	    index = 0;
-
-	/* Don't scroll too far down */
-	if (index > indexMax)
-	    index = indexMax;
-
-	offset = Increment_ToOffsetY(tree, index);
-	if (offset - Tree_ContentTop(tree) != tree->yOrigin) {
-	    tree->yOrigin = offset - Tree_ContentTop(tree);
-	    Tree_EventuallyRedraw(tree);
-	}
-    }
-    return TCL_OK;
-}
-
-/*
- *--------------------------------------------------------------
- *
- * TreeXviewCmd --
- *
- *	This procedure is invoked to process the "xview" option for
- *	the widget command for a TreeCtrl. See the user documentation
- *	for details on what it does.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	See the user documentation.
- *
- *--------------------------------------------------------------
- */
-
-static int
-TreeXviewCmd(
-    Tcl_Interp *interp,		/* Current interpreter. */
-    TreeCtrl *tree,		/* Widget info. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[]	/* Argument values. */
-    )
-{
-    if (tree->xScrollIncrement <= 0)
-	return B_XviewCmd(tree, objc, objv);
-    return A_XviewCmd(tree, objc, objv);
-}
-
-/*
- *--------------------------------------------------------------
- *
- * TreeYviewCmd --
- *
- *	This procedure is invoked to process the "yview" option for
- *	the widget command for a TreeCtrl. See the user documentation
- *	for details on what it does.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	See the user documentation.
- *
- *--------------------------------------------------------------
- */
-
-static int
-TreeYviewCmd(
-    Tcl_Interp *interp,		/* Current interpreter. */
-    TreeCtrl *tree,		/* Widget info. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[]	/* Argument values. */
-    )
-{
-    if (tree->yScrollIncrement <= 0)
-	return B_YviewCmd(tree, objc, objv);
-    return A_YviewCmd(tree, objc, objv);
-}
-
 void
 Tree_Debug(
     TreeCtrl *tree		/* Widget info. */
@@ -3663,10 +3395,10 @@ TreeDebugCmd(
 {
     TreeCtrl *tree = clientData;
     static CONST char *commandNames[] = {
-	"alloc", "cget", "configure", "dinfo", "expose", "scroll", (char *) NULL
+	"alloc", "cget", "configure", "dinfo", "expose", (char *) NULL
     };
     enum { COMMAND_ALLOC, COMMAND_CGET, COMMAND_CONFIGURE, COMMAND_DINFO,
-	COMMAND_EXPOSE, COMMAND_SCROLL };
+	COMMAND_EXPOSE };
     int index;
 
     if (objc < 3) {
@@ -3771,23 +3503,6 @@ TreeDebugCmd(
 		return TCL_ERROR;
 	    Tree_RedrawArea(tree, MIN(x1, x2), MIN(y1, y2),
 		    MAX(x1, x2), MAX(y1, y2));
-	    break;
-	}
-
-	case COMMAND_SCROLL: {
-	    int visHeight = Tree_ContentHeight(tree);
-	    int totHeight = Tree_CanvasHeight(tree);
-	    int yIncr = tree->yScrollIncrement;
-	    if (yIncr <= 0)
-		yIncr = tree->itemHeight;
-	    if (yIncr <= 0)
-		yIncr = 1;
-	    FormatResult(interp, "visHeight %d totHeight %d visHeight %% yIncr %d totHeight %% yIncr %d",
-		    visHeight,
-		    totHeight,
-		    visHeight % yIncr,
-		    totHeight % yIncr
-		);
 	    break;
 	}
     }
@@ -4209,6 +3924,8 @@ LoupeCmd(
     grabY = y - (h / zoom / 2);
     grabW = w / zoom;
     grabH = h / zoom;
+    if (grabW * zoom < w)		++grabW;
+    if (grabH * zoom < h)		++grabH;
     if (grabW > displayW)		grabW = displayW;
     if (grabH > displayH)		grabH = displayH;
     if (grabX < minx)			grabX = minx;
@@ -4554,7 +4271,7 @@ Treectrl_Init(
 #else
     static CONST char *tcl_version = "8.4";
 #endif
-    Tk_OptionSpec *specPtr;
+    Tk_OptionSpec *specPtr, *prevSpecPtr = NULL;
 
 #ifdef USE_TCL_STUBS
     if (Tcl_InitStubs(interp, tcl_version, 0) == NULL) {
@@ -4573,6 +4290,17 @@ Treectrl_Init(
 
     dbwin_add_interp(interp);
 
+#ifdef TREECTRL_DEBUG
+    for (specPtr = optionSpecs; specPtr->type != TK_OPTION_END; specPtr++) {
+	if (prevSpecPtr != NULL &&
+		strcmp(prevSpecPtr->optionName, specPtr->optionName) >= 0) {
+	    panic("Treectrl_Init option table ordering %s >= %s",
+		    prevSpecPtr->optionName, specPtr->optionName);
+	}
+	prevSpecPtr = specPtr;
+    }
+#endif
+
     PerStateCO_Init(optionSpecs, "-buttonbitmap", &pstBitmap, TreeStateFromObj);
     PerStateCO_Init(optionSpecs, "-buttonimage", &pstImage, TreeStateFromObj);
 
@@ -4588,12 +4316,12 @@ Treectrl_Init(
     if (TreeColumn_InitInterp(interp) != TCL_OK)
 	return TCL_ERROR;
 
-    /* Set the default value of the -buttontracking option. */
+    /* Set the default value of some options. */
     /* Do this *after* the system theme is initialized. */
-    specPtr = Tree_FindOptionSpec(optionSpecs, "-buttontracking");
-    if (specPtr->defValue == NULL) {
-	TreeTheme_SetOptionDefault(specPtr);
-    }
+    TreeTheme_SetOptionDefault(
+	Tree_FindOptionSpec(optionSpecs, "-buttontracking"));
+    TreeTheme_SetOptionDefault(
+	Tree_FindOptionSpec(optionSpecs, "-showlines"));
 
     /* Hack for editing a text Element. */
     Tcl_CreateObjCommand(interp, "textlayout", TextLayoutCmd, NULL, NULL);

@@ -1545,7 +1545,7 @@ TreeTheme_InitInterp(
  *	Sets the default value for an option.
  *
  * Results:
- *	Sets the defValue field.
+ *	Sets the defValue field if it wasn't done already.
  *
  * Side effects:
  *	Changes an existing option table.
@@ -1559,12 +1559,19 @@ TreeTheme_SetOptionDefault(
     )
 {
 #ifdef TREECTRL_DEBUG
-    if (specPtr->defValue != NULL)
-	panic("TreeTheme_SetOptionDefault trying to set default value of \"%s\" twice!",
-	    specPtr->optionName ? specPtr->optionName : "NULL");
+    if (specPtr == NULL)
+	panic("TreeTheme_SetOptionDefault specPtr == NULL");
 #endif
+
+    /* Only set the default value once per-application. */
+    if (specPtr->defValue != NULL)
+	return;
+
     if (!strcmp(specPtr->optionName, "-buttontracking"))
 	specPtr->defValue = "1";
+    else if (!strcmp(specPtr->optionName, "-showlines"))
+	specPtr->defValue = "0";
+
 #ifdef TREECTRL_DEBUG
     else
 	panic("TreeTheme_SetOptionDefault unhandled option \"%s\"",

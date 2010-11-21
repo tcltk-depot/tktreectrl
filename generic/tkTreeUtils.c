@@ -2280,6 +2280,75 @@ PerStateRelief_ForState(
 
 /*****/
 
+int
+Tree_GetFlagsFromString(
+    TreeCtrl *tree,
+    const char *string,
+    int length,
+    const char *typeStr,
+    const CharFlag flags[],
+    int *flagsPtr
+    )
+{
+    int i, j, bits = 0, allBits = 0, numFlags = 0;
+
+    for (j = 0; flags[j].flagChar != '\0'; j++) {
+	allBits |= flags[j].flagBit;
+	numFlags++;
+    }
+
+    for (i = 0; i < length; i++) {
+	for (j = 0; flags[j].flagChar != '\0'; j++) {
+	    if (string[i] == flags[j].flagChar
+		    || string[i] == toupper(flags[j].flagChar)) {
+		bits |= flags[j].flagBit;
+		break;
+	    }
+	}
+	if (flags[j].flagChar == '\0') {
+	    Tcl_ResetResult(tree->interp);
+	    Tcl_AppendResult(tree->interp, "bad ", typeStr, " \"",
+		    string, "\": must be a string ",
+		    "containing zero or more of ",
+		    (char *) NULL);
+	    for (j = 0; flags[j].flagChar != '\0'; j++) {
+		char buf[8];
+		if (flags[j+1].flagChar != '\0')
+		    (void) sprintf(buf, "%c%s ", flags[j].flagChar,
+			(numFlags > 2) ? "," : "");
+		else
+		    (void) sprintf(buf, "and %c", flags[j].flagChar);
+		Tcl_AppendResult(tree->interp, buf, (char *) NULL);
+	    }
+	    return TCL_ERROR;
+	}
+    }
+
+    (*flagsPtr) &= ~allBits;
+    (*flagsPtr) |= bits;
+
+    return TCL_OK;
+}
+
+int
+Tree_GetFlagsFromObj(
+    TreeCtrl *tree,
+    Tcl_Obj *obj,
+    const char *typeStr,
+    const CharFlag flags[],
+    int *flagsPtr
+    )
+{
+    int length;
+    char *string;
+
+    string = Tcl_GetStringFromObj(obj, &length);
+    return Tree_GetFlagsFromString(tree, string, length, typeStr, flags,
+	    flagsPtr);
+}
+
+/*****/
+
 /* The rect element's -open option */
 typedef struct PerStateDataFlags PerStateDataFlags;
 struct PerStateDataFlags
@@ -2297,6 +2366,19 @@ PSDFlagsFromObj(
     if (ObjectIsEmpty(obj)) {
 	pFlags->flags = 0xFFFFFFFF;
     } else {
+#if 1
+	static const CharFlag openFlags[] = {
+	    { 'n', RECT_OPEN_N },
+	    { 'e', RECT_OPEN_E },
+	    { 's', RECT_OPEN_S },
+	    { 'w', RECT_OPEN_W },
+	    { 0, 0 }
+	};
+	if (Tree_GetFlagsFromObj(tree, obj, "open value", openFlags,
+		&pFlags->flags) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+#else
 	int length, i, flags = 0;
 	char *string;
 
@@ -2318,6 +2400,7 @@ PSDFlagsFromObj(
 	    }
 	}
 	pFlags->flags = flags;
+#endif
     }
     return TCL_OK;
 }
@@ -6247,7 +6330,7 @@ static Tk_ObjCustomOption stopsCO =
     (ClientData) NULL
 };
 
-#if GRAD_COORDS
+/*****/
 
 typedef enum {
     GCT_AREA = 0,
@@ -6799,6 +6882,23 @@ TreeGradient_GetBrushBounds(
     return trBrush->width > 0 && trBrush->height > 0;
 }
 
+/*
+ *--------------------------------------------------------------
+ *
+ * TreeGradient_IsRelativeToCanvas --
+ *
+ *	Returns true if the gradient brush is relative to the
+ *	canvas along the horizontal and vertical axes.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *--------------------------------------------------------------
+ */
+
 void
 TreeGradient_IsRelativeToCanvas(
     TreeGradient gradient,
@@ -6823,16 +6923,33 @@ TreeGradient_IsRelativeToCanvas(
 	(*relY) = 0;
 }
 
+/*
+ *--------------------------------------------------------------
+ *
+ * TreeColor_GetBrushBounds --
+ *
+ *	Determines the bounds of the gradient brush.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	May mark an item as needing to be redrawn when scrolling
+ *	occurs if the gradient brush isn't relative to the canvas.
+ *
+ *--------------------------------------------------------------
+ */
+
 void
 TreeColor_GetBrushBounds(
-    TreeCtrl *tree,
-    TreeColor *tc,
-    TreeRectangle trPaint,
-    int xOrigin,
+    TreeCtrl *tree,		/* Widget info. */
+    TreeColor *tc,		/* Color or gradient. */
+    TreeRectangle trPaint,	/* Area to be painted. */
+    int xOrigin,		/* Offset of trPaint from canvas. */
     int yOrigin,
-    TreeColumn column,
-    TreeItem item,
-    TreeRectangle *trBrush
+    TreeColumn column,		/* Column trPaint is in, or NULL. */
+    TreeItem item,		/* Item trPaint is in, or NULL. */
+    TreeRectangle *trBrush	/* Returned brush bounds. */
     )
 {
     int relX, relY;
@@ -6858,7 +6975,7 @@ TreeColor_GetBrushBounds(
     }
 }
 
-#endif /* GRAD_COORDS */
+/*****/
 
 #define GRAD_CONF_STOPS 0x0001
 #define GRAD_CONF_STEPS 0x0002
@@ -6866,7 +6983,6 @@ TreeColor_GetBrushBounds(
 static char *orientStringTable[] = { "horizontal", "vertical", (char *) NULL };
 
 static Tk_OptionSpec gradientOptionSpecs[] = {
-#if GRAD_COORDS
     {TK_OPTION_CUSTOM, "-bottom", NULL, NULL, NULL,
 	Tk_Offset(TreeGradient_, bottomObj),
         Tk_Offset(TreeGradient_, bottom),
@@ -6883,7 +6999,6 @@ static Tk_OptionSpec gradientOptionSpecs[] = {
 	Tk_Offset(TreeGradient_, topObj),
         Tk_Offset(TreeGradient_, top),
 	TK_OPTION_NULL_OK, (ClientData) &gradientCoordCO, 0},
-#endif
     {TK_OPTION_STRING_TABLE, "-orient", (char *) NULL, (char *) NULL,
 	"horizontal", -1, Tk_Offset(TreeGradient_, vertical),
 	0, (ClientData) orientStringTable, 0},

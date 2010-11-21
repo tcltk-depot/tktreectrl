@@ -75,10 +75,10 @@ MODULE_SCOPE void dbwin_add_interp(Tcl_Interp *interp);
 #define DEPRECATED
 /* #define DRAG_PIXMAP */
 /* #define DRAGIMAGE_STYLE */ /* Use an item style as the dragimage instead of XOR rectangles. */
-#define GRAD_COORDS 1
 #define BGIMAGEOPT 1
 #define USE_ITEM_PIXMAP 1
 #define COLUMNGRID 1
+#define SCROLLSMOOTHING 1
 
 typedef struct TreeCtrl TreeCtrl;
 typedef struct TreeColumn_ *TreeColumn;
@@ -136,7 +136,7 @@ typedef struct
 {
     XColor *color;
 #if 0
-    double opacity; /* UNUSED */
+    double opacity;
 #endif
     TreeGradient gradient;
 } TreeColor;
@@ -273,6 +273,13 @@ struct TreeCtrl
     Tcl_Obj *yScrollDelay;	/* -yscrolldelay: used by scripts */
     int xScrollIncrement;	/* -xscrollincrement */
     int yScrollIncrement;	/* -yscrollincrement */
+#if SCROLLSMOOTHING == 1
+    int xScrollSmoothing;	/* -xscrollsmoothing */
+    int yScrollSmoothing;	/* -yscrollsmoothing */
+#define SMOOTHING_X 0x01
+#define SMOOTHING_Y 0x02
+    int scrollSmoothing;	/* */
+#endif
     Tcl_Obj *scrollMargin;	/* -scrollmargin: used by scripts */
     char *takeFocus;		/* -takfocus */
     Tcl_Obj *fontObj;		/* -font */
@@ -333,11 +340,11 @@ struct TreeCtrl
     Tk_Anchor bgImageAnchor;	/* -bgimageanchor */
 #define BGIMG_SCROLL_X 0x01
 #define BGIMG_SCROLL_Y 0x02
-    char *bgImageScrollString;	/* -bgimagescroll */
+    Tcl_Obj *bgImageScrollObj;	/* -bgimagescroll */
     int bgImageScroll;		/* -bgimagescroll */
 #define BGIMG_TILE_X 0x01
 #define BGIMG_TILE_Y 0x02
-    char *bgImageTileString;	/* -bgimagetile */
+    Tcl_Obj *bgImageTileObj;	/* -bgimagetile */
     int bgImageTile;		/* -bgimagetile */
 #endif
     int useIndent;		/* MAX of open/closed button width and
@@ -959,12 +966,18 @@ MODULE_SCOPE void TreeDInfo_Free(TreeCtrl *tree);
 MODULE_SCOPE void Tree_EventuallyRedraw(TreeCtrl *tree);
 MODULE_SCOPE void Tree_GetScrollFractionsX(TreeCtrl *tree, double fractions[2]);
 MODULE_SCOPE void Tree_GetScrollFractionsY(TreeCtrl *tree, double fractions[2]);
+#if SCROLLSMOOTHING == 1
+MODULE_SCOPE int Tree_FakeCanvasWidth(TreeCtrl *tree);
+MODULE_SCOPE int Tree_FakeCanvasHeight(TreeCtrl *tree);
+MODULE_SCOPE void Tree_SetScrollSmoothingX(TreeCtrl *tree, int smooth);
+MODULE_SCOPE void Tree_SetScrollSmoothingY(TreeCtrl *tree, int smooth);
+#endif
 MODULE_SCOPE int Increment_FindX(TreeCtrl *tree, int offset);
 MODULE_SCOPE int Increment_FindY(TreeCtrl *tree, int offset);
 MODULE_SCOPE int Increment_ToOffsetX(TreeCtrl *tree, int index);
 MODULE_SCOPE int Increment_ToOffsetY(TreeCtrl *tree, int index);
-MODULE_SCOPE int B_XviewCmd(TreeCtrl *tree, int objc, Tcl_Obj *CONST objv[]);
-MODULE_SCOPE int B_YviewCmd(TreeCtrl *tree, int objc, Tcl_Obj *CONST objv[]);
+MODULE_SCOPE int TreeXviewCmd(TreeCtrl *tree, int objc, Tcl_Obj *CONST objv[]);
+MODULE_SCOPE int TreeYviewCmd(TreeCtrl *tree, int objc, Tcl_Obj *CONST objv[]);
 MODULE_SCOPE void Tree_SetOriginX(TreeCtrl *tree, int xOrigin);
 MODULE_SCOPE void Tree_SetOriginY(TreeCtrl *tree, int yOrigin);
 MODULE_SCOPE int Tree_GetOriginX(TreeCtrl *tree);
@@ -980,10 +993,8 @@ MODULE_SCOPE void TreeDisplay_GetReadyForTrouble(TreeCtrl *tree, int *requestsPt
 MODULE_SCOPE int TreeDisplay_WasThereTrouble(TreeCtrl *tree, int requests);
 MODULE_SCOPE void Tree_InvalidateArea(TreeCtrl *tree, int x1, int y1, int x2, int y2);
 MODULE_SCOPE void Tree_InvalidateItemArea(TreeCtrl *tree, int x1, int y1, int x2, int y2);
-#if GRAD_COORDS
 MODULE_SCOPE void Tree_InvalidateItemOnScrollX(TreeCtrl *tree, TreeItem item);
 MODULE_SCOPE void Tree_InvalidateItemOnScrollY(TreeCtrl *tree, TreeItem item);
-#endif
 MODULE_SCOPE void Tree_InvalidateRegion(TreeCtrl *tree, TkRegion region);
 MODULE_SCOPE void Tree_RedrawArea(TreeCtrl *tree, int x1, int y1, int x2, int y2);
 MODULE_SCOPE void Tree_ExposeArea(TreeCtrl *tree, int x1, int y1, int x2, int y2);
@@ -1191,6 +1202,16 @@ MODULE_SCOPE void PSTSave(PerStateInfo *pInfo, PerStateInfo *pSave);
 MODULE_SCOPE void PSTRestore(TreeCtrl *tree, PerStateType *typePtr,
     PerStateInfo *pInfo, PerStateInfo *pSave);
 
+typedef struct CharFlag {
+    char flagChar;
+    int flagBit;
+} CharFlag;
+
+MODULE_SCOPE int Tree_GetFlagsFromString(TreeCtrl *tree, const char *string,
+    int length, const char *typeStr, const CharFlag flags[], int *flagsPtr);
+MODULE_SCOPE int Tree_GetFlagsFromObj(TreeCtrl *tree, Tcl_Obj *obj,
+    const char *typeStr, const CharFlag flags[], int *flagsPtr);
+    
 #ifdef ALLOC_HAX
 MODULE_SCOPE ClientData TreeAlloc_Init(void);
 MODULE_SCOPE void TreeAlloc_Finalize(ClientData data);
@@ -1353,9 +1374,7 @@ MODULE_SCOPE TreeGradient PerStateGradient_ForState(TreeCtrl *tree, PerStateInfo
 #define TREECTRL_GRADIENT_API_MAJOR 1
 #define TREECTRL_GRADIENT_API_MINOR 0
 
-#if GRAD_COORDS
 typedef struct GradientCoord GradientCoord;
-#endif
 
 /*
  * Records for gradient fills.
@@ -1386,10 +1405,9 @@ typedef struct TreeGradient_
     int steps;			/* -steps */
     int nStepColors;		/* length of stepColors */
     XColor **stepColors;	/* calculated from color1,color2,steps */
-#if GRAD_COORDS
+
     GradientCoord *left, *right, *top, *bottom;
     Tcl_Obj *leftObj, *rightObj, *topObj, *bottomObj;
-#endif
 } TreeGradient_;
 
 MODULE_SCOPE void TreeGradient_Init(TreeCtrl *tree);
@@ -1402,7 +1420,6 @@ MODULE_SCOPE void TreeGradient_Release(TreeCtrl *tree, TreeGradient gradient);
 MODULE_SCOPE int TreeGradient_IsOpaque(TreeCtrl *tree, TreeGradient gradient);
 MODULE_SCOPE int Tree_HasNativeGradients(TreeCtrl *tree);
 
-#if GRAD_COORDS
 MODULE_SCOPE int TreeGradient_GetBrushBounds(TreeCtrl *tree,
     TreeGradient gradient, const TreeRectangle *trPaint,
     TreeRectangle *trBrush, TreeColumn column, TreeItem item);
@@ -1415,7 +1432,6 @@ MODULE_SCOPE void TreeColor_GetBrushBounds(TreeCtrl *tree, TreeColor *tc,
 MODULE_SCOPE void TreeGradient_ColumnDeleted(TreeCtrl *tree,
     TreeColumn column);
 MODULE_SCOPE void TreeGradient_ItemDeleted(TreeCtrl *tree, TreeItem item);
-#endif
 
 /*****/
 
