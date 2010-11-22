@@ -3761,13 +3761,8 @@ ItemDrawBackground(
 	Tree_FillRectangle(tree, td, clipPtr, gc, tr);
     }
     if (tree->backgroundImage != NULL) {
-#if BGIMAGEOPT
-	Tree_DrawBgImage(tree, td, tr, tree->drawableXOrigin, tree->drawableYOrigin);
-#else
-	Tree_DrawTiledImage(tree, td.drawable, tree->backgroundImage, x, y, 
-		x + width, y + height,
-		tree->drawableXOrigin, tree->drawableYOrigin);
-#endif
+	Tree_DrawBgImage(tree, td, tr, tree->drawableXOrigin,
+		tree->drawableYOrigin);
     }
 }
 

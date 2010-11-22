@@ -6630,7 +6630,7 @@ GetGradientBrushCoordX(
 	}
 
 	case GCT_CANVAS: {
-	    int canvasWidth = MAX(Tree_CanvasWidth(tree), Tree_ContentWidth(tree));
+	    int canvasWidth = Tree_FakeCanvasWidth(tree);
 	    (*xPtr) = (int) (canvasWidth * gcrd->value);
 	    return 1;
 	}
@@ -6764,7 +6764,7 @@ GetGradientBrushCoordY(
 	}
 
 	case GCT_CANVAS: {
-	    int canvasHeight = MAX(Tree_CanvasHeight(tree), Tree_ContentHeight(tree));
+	    int canvasHeight = Tree_FakeCanvasHeight(tree);
 	    (*yPtr) = (int) (canvasHeight * gcrd->value);
 	    return 1;
 	}

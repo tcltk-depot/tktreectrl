@@ -1766,16 +1766,11 @@ static void DisplayProcImage(TreeElementArgs *args)
     else if ((eitM != NULL) && (*eitM != -1))
 	tiled = *eitM;
     if (tiled) {
-#if BGIMAGEOPT
 	TreeRectangle tr;
 	tr.x = x, tr.y = y;
 	tr.width = args->display.width, tr.height = args->display.height;
 	Tree_DrawTiledImage(tree, args->display.td, image, tr,
-	    -x, -y, TRUE, TRUE);
-#else
-	Tree_DrawTiledImage(tree, args->display.drawable, image, x, y,
-	    x + args->display.width, y + args->display.height, -x, -y);
-#endif
+		x, y, TRUE, TRUE);
 	return;
     }
 
@@ -2245,7 +2240,7 @@ static void DisplayProcRect(TreeElementArgs *args)
 
     TREECOLOR_FOR_STATE(tc, fill, state)
     if (tc != NULL) {
-	tr.x = x, tr.y = y, tr.width = width, tr.height = height;
+/*	tr.x = x, tr.y = y, tr.width = width, tr.height = height;*/
 	TreeColor_GetBrushBounds(tree, tc, tr,
 		tree->drawableXOrigin, tree->drawableYOrigin,
 		args->display.column, args->display.item, &trBrush);
@@ -2254,7 +2249,7 @@ static void DisplayProcRect(TreeElementArgs *args)
 
     TREECOLOR_FOR_STATE(tc, outline, state)
     if ((tc != NULL) && (outlineWidth > 0) && (open != RECT_OPEN_WNES)) {
-	tr.x = x, tr.y = y, tr.width = width, tr.height = height;
+/*	tr.x = x, tr.y = y, tr.width = width, tr.height = height;*/
 	TreeColor_GetBrushBounds(tree, tc, tr,
 		tree->drawableXOrigin, tree->drawableYOrigin,
 		args->display.column, args->display.item, &trBrush);

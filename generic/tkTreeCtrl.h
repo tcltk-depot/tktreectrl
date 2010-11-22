@@ -75,10 +75,8 @@ MODULE_SCOPE void dbwin_add_interp(Tcl_Interp *interp);
 #define DEPRECATED
 /* #define DRAG_PIXMAP */
 /* #define DRAGIMAGE_STYLE */ /* Use an item style as the dragimage instead of XOR rectangles. */
-#define BGIMAGEOPT 1
 #define USE_ITEM_PIXMAP 1
 #define COLUMNGRID 1
-#define SCROLLSMOOTHING 1
 
 typedef struct TreeCtrl TreeCtrl;
 typedef struct TreeColumn_ *TreeColumn;
@@ -273,13 +271,11 @@ struct TreeCtrl
     Tcl_Obj *yScrollDelay;	/* -yscrolldelay: used by scripts */
     int xScrollIncrement;	/* -xscrollincrement */
     int yScrollIncrement;	/* -yscrollincrement */
-#if SCROLLSMOOTHING == 1
     int xScrollSmoothing;	/* -xscrollsmoothing */
     int yScrollSmoothing;	/* -yscrollsmoothing */
 #define SMOOTHING_X 0x01
 #define SMOOTHING_Y 0x02
     int scrollSmoothing;	/* */
-#endif
     Tcl_Obj *scrollMargin;	/* -scrollmargin: used by scripts */
     char *takeFocus;		/* -takfocus */
     Tcl_Obj *fontObj;		/* -font */
@@ -336,7 +332,6 @@ struct TreeCtrl
     PerStateInfo buttonImage;	/* -buttonimage */
     PerStateInfo buttonBitmap;	/* -buttonbitmap */
     char *backgroundImageString; /* -backgroundimage */
-#if BGIMAGEOPT
     Tk_Anchor bgImageAnchor;	/* -bgimageanchor */
 #define BGIMG_SCROLL_X 0x01
 #define BGIMG_SCROLL_Y 0x02
@@ -346,7 +341,6 @@ struct TreeCtrl
 #define BGIMG_TILE_Y 0x02
     Tcl_Obj *bgImageTileObj;	/* -bgimagetile */
     int bgImageTile;		/* -bgimagetile */
-#endif
     int useIndent;		/* MAX of open/closed button width and
 				 * indent */
 #define BG_MODE_COLUMN 0
@@ -538,7 +532,7 @@ struct TreeCtrl
 #define TREE_CONF_BUTIMG 0x0010
 #define TREE_CONF_BUTBMP 0x0020
 #define TREE_CONF_BORDERS 0x0040
-/* xxx */
+#define TREE_CONF_BGIMGOPT 0x0080
 #define TREE_CONF_RELAYOUT 0x0100
 #define TREE_CONF_REDISPLAY 0x0200
 #define TREE_CONF_FG 0x0400
@@ -966,12 +960,10 @@ MODULE_SCOPE void TreeDInfo_Free(TreeCtrl *tree);
 MODULE_SCOPE void Tree_EventuallyRedraw(TreeCtrl *tree);
 MODULE_SCOPE void Tree_GetScrollFractionsX(TreeCtrl *tree, double fractions[2]);
 MODULE_SCOPE void Tree_GetScrollFractionsY(TreeCtrl *tree, double fractions[2]);
-#if SCROLLSMOOTHING == 1
 MODULE_SCOPE int Tree_FakeCanvasWidth(TreeCtrl *tree);
 MODULE_SCOPE int Tree_FakeCanvasHeight(TreeCtrl *tree);
 MODULE_SCOPE void Tree_SetScrollSmoothingX(TreeCtrl *tree, int smooth);
 MODULE_SCOPE void Tree_SetScrollSmoothingY(TreeCtrl *tree, int smooth);
-#endif
 MODULE_SCOPE int Increment_FindX(TreeCtrl *tree, int offset);
 MODULE_SCOPE int Increment_FindY(TreeCtrl *tree, int offset);
 MODULE_SCOPE int Increment_ToOffsetX(TreeCtrl *tree, int index);
@@ -1005,25 +997,11 @@ MODULE_SCOPE void TreeColumnProxy_Undisplay(TreeCtrl *tree);
 MODULE_SCOPE void TreeColumnProxy_Display(TreeCtrl *tree);
 MODULE_SCOPE void TreeRowProxy_Undisplay(TreeCtrl *tree);
 MODULE_SCOPE void TreeRowProxy_Display(TreeCtrl *tree);
-#if BGIMAGEOPT
 MODULE_SCOPE int Tree_DrawTiledImage(TreeCtrl *tree, TreeDrawable td,
     Tk_Image image, TreeRectangle tr, int xOffset, int yOffset,
     int tileX, int tileY);
-#else
-MODULE_SCOPE void Tree_DrawTiledImage(TreeCtrl *tree, Drawable drawable, Tk_Image image, 
-    int x1, int y1, int x2, int y2, int xOffset, int yOffset);
-#endif
-
-#if BGIMAGEOPT
-int
-Tree_DrawBgImage(
-    TreeCtrl *tree,
-    TreeDrawable td,
-    TreeRectangle tr,
-    int xOrigin,
-    int yOrigin
-    );
-#endif
+MODULE_SCOPE int Tree_DrawBgImage(TreeCtrl *tree, TreeDrawable td,
+    TreeRectangle tr, int xOrigin, int yOrigin);
 
 MODULE_SCOPE int TreeRect_Intersect(TreeRectangle *resultPtr,
     CONST TreeRectangle *r1, CONST TreeRectangle *r2);

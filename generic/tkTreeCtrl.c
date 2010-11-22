@@ -81,17 +81,15 @@ static Tk_OptionSpec optionSpecs[] = {
      (char *) NULL, 0, -1, 0, (ClientData) "-borderwidth"},
     {TK_OPTION_SYNONYM, "-bg", (char *) NULL, (char *) NULL,
      (char *) NULL, 0, -1, 0, (ClientData) "-background"},
-#if BGIMAGEOPT
     {TK_OPTION_ANCHOR, "-bgimageanchor", "bgImageAnchor", "BgImageAnchor",
      "nw", -1, Tk_Offset(TreeCtrl, bgImageAnchor),
-     0, (ClientData) NULL, TREE_CONF_REDISPLAY},
+     0, (ClientData) NULL, TREE_CONF_BGIMGOPT | TREE_CONF_REDISPLAY},
     {TK_OPTION_STRING, "-bgimagescroll", "bgImageScroll", "BgImageScroll",
      "xy", Tk_Offset(TreeCtrl, bgImageScrollObj), -1,
-     0, (ClientData) NULL, TREE_CONF_REDISPLAY},
+     0, (ClientData) NULL, TREE_CONF_BGIMGOPT | TREE_CONF_REDISPLAY},
     {TK_OPTION_STRING, "-bgimagetile", "bgImageTile", "BgImageTile",
      "xy", Tk_Offset(TreeCtrl, bgImageTileObj), -1,
-     0, (ClientData) NULL, TREE_CONF_REDISPLAY},
-#endif
+     0, (ClientData) NULL, TREE_CONF_BGIMGOPT | TREE_CONF_REDISPLAY},
     {TK_OPTION_PIXELS, "-borderwidth", "borderWidth", "BorderWidth",
      DEF_LISTBOX_BORDER_WIDTH, Tk_Offset(TreeCtrl, borderWidthObj),
      Tk_Offset(TreeCtrl, borderWidth),
@@ -301,11 +299,9 @@ static Tk_OptionSpec optionSpecs[] = {
     {TK_OPTION_PIXELS, "-xscrollincrement", "xScrollIncrement", "ScrollIncrement",
      "0", -1, Tk_Offset(TreeCtrl, xScrollIncrement),
      0, (ClientData) NULL, TREE_CONF_REDISPLAY},
-#if SCROLLSMOOTHING == 1
     {TK_OPTION_BOOLEAN, "-xscrollsmoothing", "xScrollSmoothing", "ScrollSmoothing",
      "0", -1, Tk_Offset(TreeCtrl, xScrollSmoothing),
      0, (ClientData) NULL, TREE_CONF_REDISPLAY},
-#endif
     {TK_OPTION_STRING, "-yscrollcommand", "yScrollCommand", "ScrollCommand",
      (char *) NULL, -1, Tk_Offset(TreeCtrl, yScrollCmd),
      TK_OPTION_NULL_OK, 0, 0},
@@ -315,11 +311,9 @@ static Tk_OptionSpec optionSpecs[] = {
     {TK_OPTION_PIXELS, "-yscrollincrement", "yScrollIncrement", "ScrollIncrement",
      "0", -1, Tk_Offset(TreeCtrl, yScrollIncrement),
      0, (ClientData) NULL, TREE_CONF_REDISPLAY},
-#if SCROLLSMOOTHING == 1
     {TK_OPTION_BOOLEAN, "-yscrollsmoothing", "yScrollSmoothing", "ScrollSmoothing",
      "0", -1, Tk_Offset(TreeCtrl, yScrollSmoothing),
      0, (ClientData) NULL, TREE_CONF_REDISPLAY},
-#endif
 
     {TK_OPTION_END, (char *) NULL, (char *) NULL, (char *) NULL,
      (char *) NULL, -1, -1, 0, (ClientData) NULL, 0}
@@ -1182,10 +1176,10 @@ static int TreeWidgetCmd(
 		    }
 		    xOrigin = tree->scanXOrigin - gain * (x - tree->scanX);
 		    yOrigin = tree->scanYOrigin - gain * (y - tree->scanY);
-#if SCROLLSMOOTHING == 1
+
 		    Tree_SetScrollSmoothingX(tree, TRUE);
 		    Tree_SetScrollSmoothingY(tree, TRUE);
-#endif
+
 		    Tree_SetOriginX(tree, xOrigin);
 		    Tree_SetOriginY(tree, yOrigin);
 		    break;
@@ -1299,10 +1293,8 @@ TreeConfigure(
 #endif
     saved.wrapMode = TREE_WRAP_NONE;
     saved.wrapArg = 0;
-#if BGIMAGEOPT
     saved.bgImageScroll = tree->bgImageScroll;
     saved.bgImageTile = tree->bgImageTile;
-#endif
 
     for (error = 0; error <= 1; error++) {
 	if (error == 0) {
@@ -1366,8 +1358,7 @@ TreeConfigure(
 		}
 	    }
 
-#if BGIMAGEOPT
-	    {
+	    if (mask & TREE_CONF_BGIMGOPT) {
 		static const CharFlag scrollFlags[] = {
 		    { 'x', BGIMG_SCROLL_X },
 		    { 'y', BGIMG_SCROLL_Y },
@@ -1379,7 +1370,8 @@ TreeConfigure(
 		    continue;
 		}
 	    }
-	    {
+
+	    if (mask & TREE_CONF_BGIMGOPT) {
 		static const CharFlag tileFlags[] = {
 		    { 'x', BGIMG_TILE_X },
 		    { 'y', BGIMG_TILE_Y },
@@ -1391,7 +1383,6 @@ TreeConfigure(
 		    continue;
 		}
 	    }
-#endif
 
 #ifdef DEPRECATED
 	    if (mask & TREE_CONF_DEFSTYLE) {
@@ -1526,10 +1517,10 @@ badWrap:
 		tree->wrapMode = saved.wrapMode;
 		tree->wrapArg = saved.wrapArg;
 	    }
-#if BGIMAGEOPT
-	    tree->bgImageScroll = saved.bgImageScroll;
-	    tree->bgImageTile = saved.bgImageTile;
-#endif
+	    if (mask & TREE_CONF_BGIMGOPT) {
+		tree->bgImageScroll = saved.bgImageScroll;
+		tree->bgImageTile = saved.bgImageTile;
+	    }
 
 	    Tcl_SetObjResult(interp, errorResult);
 	    Tcl_DecrRefCount(errorResult);
@@ -1638,12 +1629,10 @@ badWrap:
     TreeStyle_TreeChanged(tree, mask);
     TreeColumn_TreeChanged(tree, mask);
 
-#if SCROLLSMOOTHING == 1
     if ((tree->scrollSmoothing & SMOOTHING_X) && !tree->xScrollSmoothing)
 	Tree_SetScrollSmoothingX(tree, FALSE);
     if ((tree->scrollSmoothing & SMOOTHING_Y) && !tree->yScrollSmoothing)
 	Tree_SetScrollSmoothingY(tree, FALSE);
-#endif
 
     if (mask & TREE_CONF_RELAYOUT) {
 	TreeComputeGeometry(tree);
@@ -2403,10 +2392,8 @@ TreeSeeCmd(
 	w = TreeColumn_UseWidth(treeColumn);
     }
 
-#if SCROLLSMOOTHING == 1
     Tree_SetScrollSmoothingX(tree, TRUE);
     Tree_SetScrollSmoothingY(tree, TRUE);
-#endif
 
     /* No horizontal scrolling for locked columns. */
     if ((treeColumn != NULL) &&
