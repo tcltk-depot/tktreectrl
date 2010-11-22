@@ -13,7 +13,7 @@ proc DemoIMovie {} {
 
     $T configure -showroot no -showbuttons no -showlines no \
 	-selectmode browse -orient horizontal -wrap window \
-	-showheader no -background #dcdcdc
+	-showheader no -background #dcdcdc -yscrollsmoothing yes
 
     $T configure -canvaspadx 8 -canvaspady 8 \
 	-itemgapx 8 -itemgapy 8
@@ -160,7 +160,7 @@ proc DemoIMovieWrap {} {
     DemoIMovie
 
     set T [DemoList]
-    $T configure -wrap ""
+    $T configure -wrap "" -xscrollsmoothing yes
     $T item configure "root child 4" -wrap yes
     $T item configure "root child 5" -wrap yes
     $T item configure "root child 8" -wrap yes

@@ -16,7 +16,8 @@ proc DemoGradients {} {
 
     $T configure \
 	-showbuttons no -showlines no -showroot no \
-	-xscrollincrement 1 -yscrollincrement 1 \
+	-xscrollincrement 20 -yscrollincrement 20 \
+	-xscrollsmoothing yes -yscrollsmoothing yes \
 	-canvaspadx 20
 
     $T gradient api 1.0

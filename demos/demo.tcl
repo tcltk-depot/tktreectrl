@@ -193,19 +193,6 @@ option add *TreeCtrl.Background white
 #option add *TreeCtrl.itemPrefix item
 #option add *TreeCtrl.ColumnPrefix col
 
-# Resizing columns can be done in realtime or by displaying a proxy line
-switch -- $::thisPlatform {
-    macosx -
-    unix {
-	option add *TreeCtrl.columnResizeMode realtime
-    }
-    windows {
-	if {$::tcl_platform(os) eq "Windows NT"} {
-	    option add *TreeCtrl.columnResizeMode realtime
-	}
-    }
-}
-
 if {$tile} {
     set font TkDefaultFont
 } else {
@@ -1006,6 +993,8 @@ proc MakeListPopup {T} {
     set m2 [menu $m.mBgImg -tearoff no]
     $m2 add radiobutton -label none -variable Popup(bgimg) -value none \
         -command {$Popup(T) configure -backgroundimage ""}
+    $m2 add radiobutton -label feather -variable Popup(bgimg) -value feather \
+        -command {$Popup(T) configure -backgroundimage $Popup(bgimg)}
     $m2 add radiobutton -label sky -variable Popup(bgimg) -value sky \
         -command {$Popup(T) configure -backgroundimage $Popup(bgimg)}
     $m2 add separator
@@ -1092,6 +1081,13 @@ if 0 {
     $m2 add radiobutton -label "Vertical" -variable Popup(orient) -value vertical \
 	-command {$Popup(T) configure -orient $Popup(orient)}
     $m add cascade -label Orient -menu $m2
+
+    set m2 [menu $m.mSmoothing -tearoff no]
+    $m2 add checkbutton -label X -variable Popup(xscrollsmoothing) \
+        -command {$Popup(T) configure -xscrollsmoothing $Popup(xscrollsmoothing)}
+    $m2 add checkbutton -label Y -variable Popup(yscrollsmoothing) \
+        -command {$Popup(T) configure -yscrollsmoothing $Popup(yscrollsmoothing)}
+    $m add cascade -label "Scroll Smoothing" -menu $m2
 
     set m2 [menu $m.mSelectMode -tearoff no]
     foreach mode [list browse extended multiple single] {
@@ -1204,7 +1200,7 @@ proc AddBindTag {w tag} {
 
 MakeMainWindow
 
-InitPics sky
+InitPics sky feather
 
 proc ShowPopup {T x y X Y} {
     global Popup
@@ -1267,6 +1263,8 @@ proc ShowPopup {T x y X Y} {
     set Popup(linestyle) [$T cget -linestyle]
     set Popup(orient) [$T cget -orient]
     set Popup(selectmode) [$T cget -selectmode]
+    set Popup(xscrollsmoothing) [$T cget -xscrollsmoothing]
+    set Popup(yscrollsmoothing) [$T cget -yscrollsmoothing]
     set Popup(showbuttons) [$T cget -showbuttons]
     set Popup(showheader) [$T cget -showheader]
     set Popup(showlines) [$T cget -showlines]
@@ -1675,7 +1673,6 @@ proc DemoClear {} {
     }
     $T configure -background white
     $T configure -borderwidth [expr {$::tileFull ? 0 : 6}]
-    $T configure -columnresizemode realtime
     $T configure -font DemoFont
     $T configure -highlightthickness [expr {$::tileFull ? 0 : 3}]
     $T configure -relief ridge

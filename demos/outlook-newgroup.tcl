@@ -22,7 +22,7 @@ proc DemoOutlookNewsgroup {} {
 
     $T configure -itemheight $height -selectmode browse \
 	-showroot no -showrootbutton no -showbuttons yes -showlines no \
-	-xscrollincrement 20
+	-xscrollincrement 20 -xscrollsmoothing yes
 
     switch -- [$T theme platform] {
 	visualstyles {
@@ -42,7 +42,7 @@ proc DemoOutlookNewsgroup {} {
     $T column create -text Sent -width 150 -tags sent
     $T column create -text Size -width 60 -justify right -tags size
 
-    $T column configure all -gridrightcolor #ebf4fe
+#    $T column configure all -gridrightcolor #ebf4fe
 
     # Would be nice if I could specify a column -tag too
     # *blink* The amazing code Genie makes it so!!!

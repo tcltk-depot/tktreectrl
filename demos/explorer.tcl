@@ -124,7 +124,7 @@ proc DemoExplorerDetails {} {
     #
 
     $T configure -showroot no -showbuttons no -showlines no -itemheight $height \
-	-selectmode extended -xscrollincrement 20 \
+	-selectmode extended -xscrollincrement 20 -xscrollsmoothing yes \
 	-scrollmargin 16 -xscrolldelay "500 50" -yscrolldelay "500 50"
 
     InitPics small-*
@@ -787,8 +787,10 @@ proc DemoExplorerDetailsWin7 {} {
     #
 
     $T configure -showroot no -showbuttons no -showlines no -itemheight $height \
-	-selectmode extended -xscrollincrement 20 \
+	-selectmode extended -xscrollincrement 20 -xscrollsmoothing yes \
 	-scrollmargin 16 -xscrolldelay "500 50" -yscrolldelay "500 50"
+
+    $T configure -canvaspadx {12 0} -canvaspady {6 0}
 
     InitPics small-*
 
@@ -865,7 +867,7 @@ proc DemoExplorerDetailsWin7 {} {
     $T style elements $S {elemRectGradient elemRectOutline elemImg txtName}
     $T style layout $S elemRectGradient -detach yes -padx {2 0} -pady {2 3} -iexpand xy
     $T style layout $S elemRectOutline -detach yes -pady {0 1} -iexpand xy
-    $T style layout $S elemImg -padx {2 2} -pady {2 3} -expand ns
+    $T style layout $S elemImg -padx {6 2} -pady {2 3} -expand ns
     $T style layout $S txtName -pady {2 3} -squeeze x -expand ns
 
     # column 1: text
@@ -1030,15 +1032,12 @@ proc DemoExplorerDetailsWin7 {} {
 proc DemoExplorerDetailsWin7_FixItemStyles {T} {
     foreach C [$T column id "visible !tail"] {
 	if {[$T column compare $C == "first visible"]} {
-	    set firstColumnPad 16
 	    set padx {2 0}
 	    set state openE
 	} elseif {[$T column compare $C == "last visible"]} {
-	    set firstColumnPad 0
 	    set padx {0 2}
 	    set state openW
 	} else {
-	    set firstColumnPad 0
 	    set padx {0 0}
 	    set state openWE
 	}
@@ -1050,29 +1049,16 @@ proc DemoExplorerDetailsWin7_FixItemStyles {T} {
 	    }
 	    size {
 		set style stySize
-		set padelem txtSize
-		set padelemX {6 6}
 	    }
 	    type {
 		set style styType
-		set padelem txtType
-		set padelemX {6 6}
 	    }
 	    modified {
 		set style styDate
-		set padelem txtDate
-		set padelemX {6 6}
 	    }
 	}
-	lset padx 0 [expr {[lindex $padx 0] + $firstColumnPad}]
-	lset padelemX 0 [expr {[lindex $padelemX 0] + $firstColumnPad}]
-	#puts "$C padx=$padx state=$state style=$style padelem=$padelem padelemX=$padelemX"
-	$T column configure $C -textpadx [list [expr {$firstColumnPad + 6}] 6]
 	$T item state forcolumn all $C [list !openW !openE !openWE $state]
 	$T style layout $style elemRectGradient -padx $padx
-	set padx [list $firstColumnPad 0]
-	$T style layout $style elemRectOutline -padx $padx
-	$T style layout $style $padelem -padx $padelemX
     }
 }
 
@@ -1090,8 +1076,8 @@ proc DemoExplorerLargeIconsWin7 {} {
 
     $T configure -showroot no -showbuttons no -showlines no \
 	-selectmode extended -wrap window -orient horizontal \
-	-itemwidth 74 -showheader no \
-	-scrollmargin 16 -xscrolldelay "500 50" -yscrolldelay "500 50"
+	-itemwidth 74 -showheader no -yscrollsmoothing yes \
+	-scrollmargin 16 -yscrolldelay "500 200"
 
     $T configure -canvaspadx {15 0} -canvaspady {6 0} -itemgapx 1 -itemgapy 1
 

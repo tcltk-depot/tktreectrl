@@ -20,7 +20,7 @@ proc DemoMailWasher {} {
 
     $T configure -showroot no -showrootbutton no -showbuttons no \
 	-showlines no -itemheight $height -selectmode browse \
-	-xscrollincrement 20
+	-xscrollincrement 20 -xscrollsmoothing yes
 
     #
     # Create columns

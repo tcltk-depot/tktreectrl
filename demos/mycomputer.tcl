@@ -16,7 +16,7 @@ proc DemoMyComputer {} {
     #
 
     $T configure -showroot no -showbuttons no -showlines no \
-	-selectmode browse -xscrollincrement 20 \
+	-selectmode browse -xscrollincrement 20 -xscrollsmoothing yes \
 	-font $font
 
     #

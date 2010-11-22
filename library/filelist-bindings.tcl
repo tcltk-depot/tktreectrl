@@ -608,24 +608,9 @@ proc ::TreeCtrl::FileListEdit {T I C E} {
 	scan [$T item bbox $I $C] "%d %d %d %d" x1 y1 x2 y2
 	set S [$T item style set $I $C]
 	set padx [$T style layout $S $E -padx]
-	if {[llength $padx] == 2} {
-	    lassign $padx padw pade
-	} else {
-	    set pade [set padw $padx]
-	}
-	foreach E2 [$T style elements $S] {
-	    if {[lsearch -exact [$T style layout $S $E2 -union] $E] == -1} continue
-	    foreach option {-padx -ipadx} {
-		set pad [$T style layout $S $E2 $option]
-		if {[llength $pad] == 2} {
-		    incr padw [lindex $pad 0]
-		    incr pade [lindex $pad 1]
-		} else {
-		    incr padw $pad
-		    incr pade $pad
-		}
-	    }
-	}
+	# FIXME: max of padx or union padding
+	GetPadding $padx padw pade
+	AddUnionPadding $T $S $E padw pade
 	TextExpanderOpen $T $I $C $E [expr {$x2 - $x1 - $padw - $pade}]
 
     # Single-line edit
@@ -635,6 +620,37 @@ proc ::TreeCtrl::FileListEdit {T I C E} {
 
     TryEvent $T Edit begin [list I $I C $C E $E]
 
+    return
+}
+
+proc ::TreeCtrl::GetPadding {pad _padw _pade} {
+    upvar $_padw padw
+    upvar $_pade pade
+    if {[llength $pad] == 2} {
+	lassign $pad padw pade
+    } else {
+	set pade [set padw $pad]
+    }
+    return
+}
+
+# Recursively adds -padx and -ipadx values of other elements in a style that
+# contain the given element in its -union.
+proc ::TreeCtrl::AddUnionPadding {T S E _padw _pade} {
+    upvar $_padw padw
+    upvar $_pade pade
+    foreach E2 [$T style elements $S] {
+	set union [$T style layout $S $E2 -union]
+	if {[lsearch -exact $union $E] == -1} continue
+	foreach option {-padx -ipadx} {
+	    set pad [$T style layout $S $E2 $option]
+	    GetPadding $pad p1 p2
+	    # FIXME: max of padx or union padding
+	    incr padw $p1
+	    incr pade $p2
+	}
+	AddUnionPadding $T $S $E2 padw pade
+    }
     return
 }
 

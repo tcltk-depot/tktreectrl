@@ -16,8 +16,8 @@ proc DemoColumnLock {} {
 	-showbuttons no \
 	-showlines no \
 	-showroot no \
-	-xscrollincrement 6 -xscrolldelay 30 \
-	-yscrollincrement 6 -yscrolldelay 30
+	-xscrollincrement 40 -xscrolldelay 50 -xscrollsmoothing yes \
+	-yscrollincrement 0 -yscrolldelay 50 -yscrollsmoothing yes
 
     #
     # Create columns

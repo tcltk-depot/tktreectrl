@@ -160,6 +160,7 @@ bind TreeCtrl <KeyPress-Return> {
 # Additional Tk bindings that aren't part of the Motif look and feel:
 
 bind TreeCtrl <ButtonPress-2> {
+    focus %W
     TreeCtrl::ScanMark %W %x %y
 }
 bind TreeCtrl <Button2-Motion> {
