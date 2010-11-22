@@ -3738,27 +3738,29 @@ ItemDrawBackground(
     clipPtr = NULL;
 #endif
 
-    tr.x = x, tr.y = y, tr.width = width, tr.height = height;
+    TreeRect_SetXYWH(tr, x, y, width, height);
 
     /*
-     * FIXME: If the -backgroundimage is being drawn and is non-transparent,
+     * If the -backgroundimage is being drawn and is opaque,
      * there is no need to erase first (unless it doesn't tile!).
      */
-    tc = TreeColumn_BackgroundColor(treeColumn, index);
-    if (tc != NULL) {
-	TreeRectangle trBrush;
-	TreeColor_GetBrushBounds(tree, tc, tr,
-		tree->drawableXOrigin, tree->drawableYOrigin,
-		treeColumn, item, &trBrush);
-	if (!TreeColor_IsOpaque(tree, tc)
-		|| (trBrush.width <= 0) || (trBrush.height <= 0)) {
+    if (!Tree_IsBgImageOpaque(tree)) {
+	tc = TreeColumn_BackgroundColor(treeColumn, index);
+	if (tc != NULL) {
+	    TreeRectangle trBrush;
+	    TreeColor_GetBrushBounds(tree, tc, tr,
+		    tree->drawableXOrigin, tree->drawableYOrigin,
+		    treeColumn, item, &trBrush);
+	    if (!TreeColor_IsOpaque(tree, tc)
+		    || (trBrush.width <= 0) || (trBrush.height <= 0)) {
+		GC gc = Tk_3DBorderGC(tree->tkwin, tree->border, TK_3D_FLAT_GC);
+		Tree_FillRectangle(tree, td, clipPtr, gc, tr);
+	    }
+	    TreeColor_FillRect(tree, td, clipPtr, tc, trBrush, tr);
+	} else {
 	    GC gc = Tk_3DBorderGC(tree->tkwin, tree->border, TK_3D_FLAT_GC);
 	    Tree_FillRectangle(tree, td, clipPtr, gc, tr);
 	}
-	TreeColor_FillRect(tree, td, clipPtr, tc, trBrush, tr);
-    } else {
-	GC gc = Tk_3DBorderGC(tree->tkwin, tree->border, TK_3D_FLAT_GC);
-	Tree_FillRectangle(tree, td, clipPtr, gc, tr);
     }
     if (tree->backgroundImage != NULL) {
 	Tree_DrawBgImage(tree, td, tr, tree->drawableXOrigin,

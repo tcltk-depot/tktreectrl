@@ -81,9 +81,14 @@ static Tk_OptionSpec optionSpecs[] = {
      (char *) NULL, 0, -1, 0, (ClientData) "-borderwidth"},
     {TK_OPTION_SYNONYM, "-bg", (char *) NULL, (char *) NULL,
      (char *) NULL, 0, -1, 0, (ClientData) "-background"},
+    {TK_OPTION_SYNONYM, "-bgimage", (char *) NULL, (char *) NULL,
+     (char *) NULL, 0, -1, 0, (ClientData) "-backgroundimage"},
     {TK_OPTION_ANCHOR, "-bgimageanchor", "bgImageAnchor", "BgImageAnchor",
      "nw", -1, Tk_Offset(TreeCtrl, bgImageAnchor),
      0, (ClientData) NULL, TREE_CONF_BGIMGOPT | TREE_CONF_REDISPLAY},
+    {TK_OPTION_BOOLEAN, "-bgimageopaque", "bgImageOpaque", "BgImageOpaque",
+     "1", -1, Tk_Offset(TreeCtrl, bgImageOpaque), 0, (ClientData) NULL,
+     TREE_CONF_BGIMGOPT | TREE_CONF_REDISPLAY},
     {TK_OPTION_STRING, "-bgimagescroll", "bgImageScroll", "BgImageScroll",
      "xy", Tk_Offset(TreeCtrl, bgImageScrollObj), -1,
      0, (ClientData) NULL, TREE_CONF_BGIMGOPT | TREE_CONF_REDISPLAY},
@@ -1323,6 +1328,7 @@ TreeConfigure(
 		    mask |= TREE_CONF_ITEMSIZE;
 		if (!ObjectIsEmpty(tree->itemWidMultObj))
 		    mask |= TREE_CONF_ITEMSIZE;
+		mask |= TREE_CONF_BGIMGOPT;
 	    }
 
 	    /*

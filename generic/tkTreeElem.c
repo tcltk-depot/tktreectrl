@@ -2201,7 +2201,7 @@ static void DisplayProcRect(TreeElementArgs *args)
 	TRUE, TRUE,
 	&x, &y, &width, &height);
 
-    tr.x = x, tr.y = y, tr.width = width, tr.height = height;
+    TreeRect_SetXYWH(tr, x, y, width, height);
 
 #if USE_ITEM_PIXMAP == 0
     clip.type = TREE_CLIP_RECT;
@@ -2234,13 +2234,18 @@ static void DisplayProcRect(TreeElementArgs *args)
 	    TreeColor_DrawRoundRect(tree, args->display.td, clipPtr, tc,
 		trBrush, tr, outlineWidth, rx, ry, open);
 	}
-	/* TODO: active outline */
+	/* FIXME: its not round! */
+	if (showFocus && (state & STATE_FOCUS) && (state & STATE_ACTIVE)) {
+	    Tree_DrawActiveOutline(tree, args->display.drawable,
+		    args->display.x, args->display.y,
+		    args->display.width, args->display.height,
+		    open);
+	}
 	return;
     }
 
     TREECOLOR_FOR_STATE(tc, fill, state)
     if (tc != NULL) {
-/*	tr.x = x, tr.y = y, tr.width = width, tr.height = height;*/
 	TreeColor_GetBrushBounds(tree, tc, tr,
 		tree->drawableXOrigin, tree->drawableYOrigin,
 		args->display.column, args->display.item, &trBrush);
@@ -2249,7 +2254,6 @@ static void DisplayProcRect(TreeElementArgs *args)
 
     TREECOLOR_FOR_STATE(tc, outline, state)
     if ((tc != NULL) && (outlineWidth > 0) && (open != RECT_OPEN_WNES)) {
-/*	tr.x = x, tr.y = y, tr.width = width, tr.height = height;*/
 	TreeColor_GetBrushBounds(tree, tc, tr,
 		tree->drawableXOrigin, tree->drawableYOrigin,
 		args->display.column, args->display.item, &trBrush);

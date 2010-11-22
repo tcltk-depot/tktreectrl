@@ -22,7 +22,7 @@
 
 #define COMPLEX_WHITESPACE
 #define REDRAW_RGN 0
-#define CACHE_BG_IMG 0 /* CAN'T CACHE TRANSPARENT IMAGE */
+#define CACHE_BG_IMG 1
 
 typedef struct TreeColumnDInfo_ TreeColumnDInfo_;
 typedef struct TreeDInfo_ TreeDInfo_;
@@ -175,7 +175,9 @@ struct TreeDInfo_
     int overlays;		/* TRUE if the dragimage|marquee|proxy
 				 * were drawn in non-XOR mode. */
 #if CACHE_BG_IMG
-    TreeDrawable pixmapBgImg;
+    TreeDrawable pixmapBgImg;	/* Pixmap containing the -backgroundimage
+				 * for efficient blitting.  Not used if the
+				 * -backgroundimage is transparent. */
 #endif
 };
 
@@ -6012,6 +6014,37 @@ DrawColumnGridLines(
 /*
  *----------------------------------------------------------------------
  *
+ * Tree_IsBgImageOpaque --
+ *
+ *	Determines if there is any need to erase before drawing the
+ *	-backgroundimage.
+ *
+ * Results:
+ *	Return 1 if the -backgroundimage will completely fill any
+ *	whitespace it is drawn into.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tree_IsBgImageOpaque(
+    TreeCtrl *tree		/* Widget info. */
+    )
+{
+    if (tree->backgroundImage == NULL)
+	return 0;
+    if ((tree->bgImageTile & (BGIMG_TILE_X|BGIMG_TILE_Y)) !=
+	    (BGIMG_TILE_X|BGIMG_TILE_Y))
+	return 0;
+    return tree->bgImageOpaque;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tree_DrawTiledImage --
  *
  *	This procedure draws a tiled image in the indicated box.
@@ -6047,15 +6080,13 @@ Tree_DrawTiledImage(
 	return 0;
 
 #if CACHE_BG_IMG
-    if (image == tree->backgroundImage) {
+    /* This pixmap is destroyed at the end of each call to Tree_Display,
+     * so any changes to -backgroundimage will be seen. */
+    if ((image == tree->backgroundImage) && tree->bgImageOpaque) {
 	pixmap = tree->dInfo->pixmapBgImg.drawable;
 	if (pixmap == None) {
-	    GC gc = Tk_3DBorderGC(tree->tkwin, tree->border, TK_3D_FLAT_GC);
 	    pixmap = DisplayGetPixmap(tree,
 		&tree->dInfo->pixmapBgImg, imgWidth, imgHeight);
-	    /* Erase to the -background color.  Not needed if the image is
-	    * fully opaque. */
-	    XFillRectangle(tree->display, pixmap, gc, 0, 0, imgWidth, imgHeight);
 	    Tk_RedrawImage(image, 0, 0, imgWidth, imgHeight, pixmap, 0, 0);
 	}
     }
@@ -6969,10 +7000,11 @@ displayRetry:
 		DisplayDelay(tree);
 	    }
 
-	    /* FIXME: only if backgroundImage is transparent or doesn't tile. */
-	    Tree_OffsetRegion(wsRgnDif, -wsBox.x, -wsBox.y);
-	    Tree_FillRegion(tree->display, tdPixmap.drawable, gc, wsRgnDif);
-	    Tree_OffsetRegion(wsRgnDif, wsBox.x, wsBox.y);
+	    if (!Tree_IsBgImageOpaque(tree)) {
+		Tree_OffsetRegion(wsRgnDif, -wsBox.x, -wsBox.y);
+		Tree_FillRegion(tree->display, tdPixmap.drawable, gc, wsRgnDif);
+		Tree_OffsetRegion(wsRgnDif, wsBox.x, wsBox.y);
+	    }
 
 	    trPaint.x = trPaint.y = 0;
 	    Tree_DrawBgImage(tree, tdPixmap, trPaint,

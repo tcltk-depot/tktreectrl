@@ -333,6 +333,7 @@ struct TreeCtrl
     PerStateInfo buttonBitmap;	/* -buttonbitmap */
     char *backgroundImageString; /* -backgroundimage */
     Tk_Anchor bgImageAnchor;	/* -bgimageanchor */
+    int bgImageOpaque;		/* -bgimageopaque */
 #define BGIMG_SCROLL_X 0x01
 #define BGIMG_SCROLL_Y 0x02
     Tcl_Obj *bgImageScrollObj;	/* -bgimagescroll */
@@ -1000,6 +1001,7 @@ MODULE_SCOPE void TreeRowProxy_Display(TreeCtrl *tree);
 MODULE_SCOPE int Tree_DrawTiledImage(TreeCtrl *tree, TreeDrawable td,
     Tk_Image image, TreeRectangle tr, int xOffset, int yOffset,
     int tileX, int tileY);
+MODULE_SCOPE int Tree_IsBgImageOpaque(TreeCtrl *tree);
 MODULE_SCOPE int Tree_DrawBgImage(TreeCtrl *tree, TreeDrawable td,
     TreeRectangle tr, int xOrigin, int yOrigin);
 
