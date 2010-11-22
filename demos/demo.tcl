@@ -1005,10 +1005,15 @@ proc MakeListPopup {T} {
 	    -command {$Popup(T) configure -bgimageanchor $Popup(bgimganchor)}
     }
     $m2 add cascade -label "Anchor" -menu $m3
+    $m2 add separator
+    $m2 add checkbutton -label "Opaque" -variable Popup(bgimgopaque) \
+	-command {$Popup(T) configure -bgimageopaque $Popup(bgimgopaque)}
+    $m2 add separator
     $m2 add checkbutton -label "Scroll X" -variable Popup(bgimgscrollx) \
 	-onvalue x -offvalue "" -command {$Popup(T) configure -bgimagescroll $Popup(bgimgscrollx)$Popup(bgimgscrolly)}
     $m2 add checkbutton -label "Scroll Y" -variable Popup(bgimgscrolly) \
 	-onvalue y -offvalue "" -command {$Popup(T) configure -bgimagescroll $Popup(bgimgscrollx)$Popup(bgimgscrolly)}
+    $m2 add separator
     $m2 add checkbutton -label "Tile X" -variable Popup(bgimgtilex) \
 	-onvalue x -offvalue "" -command {$Popup(T) configure -bgimagetile $Popup(bgimgtilex)$Popup(bgimgtiley)}
     $m2 add checkbutton -label "Tile Y" -variable Popup(bgimgtiley) \
@@ -1251,6 +1256,7 @@ proc ShowPopup {T x y X Y} {
     }
     set Popup(bgimg) [$T cget -backgroundimage]
     set Popup(bgimganchor) [$T cget -bgimageanchor]
+    set Popup(bgimgopaque) [$T cget -bgimageopaque]
     set Popup(bgimgscrollx) [string trim [$T cget -bgimagescroll] y]
     set Popup(bgimgscrolly) [string trim [$T cget -bgimagescroll] x]
     set Popup(bgimgtilex) [string trim [$T cget -bgimagetile] y]

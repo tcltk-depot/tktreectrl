@@ -190,7 +190,7 @@ proc DemoGradients3 {} {
 
     set I [$T item create -parent root -tags progress]
     $T item span $I C0 3
-    $T item style set $I C0 $S
+    $T item style set $I C0 $S C1 "" C2 ""
 
     set ::Gradients3(percent) 0.0
     set ::Gradients3(afterId) ""
