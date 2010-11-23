@@ -1,5 +1,10 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<html><head><!-- $Id$ -->
+<html><head>
+<!-- $Id$ -->
+
+
+
+
 
 
 
@@ -16,9 +21,31 @@
 <h1>What's New in TkTreeCtrl 2.3</h1>
 <h2>Column Configuration Options</h2>
 <table style="text-align: left; width: 100%;" border="1" cellpadding="2" cellspacing="2">
-<tbody><tr><th style="background-color: rgb(255, 255, 204); width: 50%;">Usage Changed<br>
+<tbody><tr>
+<th style="background-color: rgb(255, 255, 204); width: 50%;">New<br>
+</th><th style="background-color: rgb(204, 255, 255);">Comment</th></tr>
+    <tr>
+      <td style="vertical-align: top;">-gridleftcolor<br>
+-gridrightcolor<br>
+      </td>
+      <td style="vertical-align: top;">So-called "grid lines". These
+two options specify a color or gradient to draw on the left and/or
+right edge of the column.&nbsp; The lines are drawn overtop an item's
+style and down in the whitespace region below any items.<br>
+      </td>
+    </tr>
+<tr><th style="background-color: rgb(255, 255, 204); width: 50%;">Usage Changed<br>
 </th><th style="background-color: rgb(204, 255, 255);">How it changed<br>
 </th></tr><tr>
+      <td style="vertical-align: top;">-itembackground<br>
+      </td>
+      <td style="vertical-align: top;">Item background colors are now
+drawn below items in the whitespace region even when item wrapping is
+being used.&nbsp; Previously item background colors were not drawn
+below items when wrapping was used.<br>
+      </td>
+    </tr>
+<tr>
       <td style="vertical-align: top;">-textcolor<br>
       </td>
       <td style="vertical-align: top;">This is now a per-state option, just like the -background option, <span style="color: red;">which may be incompatible</span>.&nbsp;
@@ -118,6 +145,12 @@ string the dotted outline is not drawn.<br>
     </tr>
 
     <tr>
+      <td style="vertical-align: top;">-bgimage<br>
+      </td>
+      <td style="vertical-align: top;">This is a synonym for the -backgroundimage option.<br>
+      </td>
+    </tr>
+<tr>
 
       <td>-bgimageanchor</td>
 
@@ -127,6 +160,16 @@ anchor position such as "nw", "se" or "center", etc.&nbsp; The image is
 aligned to the content area when the image doesn't scroll, otherwise
 the image is aligned to the canvas.&nbsp; The default is "nw".<br>
 </td></tr><tr>
+      <td style="vertical-align: top;">-bgimageopaque<br>
+      </td>
+      <td style="vertical-align: top;">A boolean that indicates whether
+or not the -backgroundimage is partially transparent.&nbsp; This is
+needed because there is no way to tell in Tk whether an image contains
+transparency.&nbsp; The default is true, so if you use a transparent
+-backgroundimage you must set this to false.<br>
+      </td>
+    </tr>
+<tr>
       <td style="vertical-align: top;">-bgimagescroll<br>
       </td>
       <td style="vertical-align: top;">Controls whether the
@@ -177,13 +220,39 @@ an image thumbnail list.&nbsp; The value of each option is a screen
 distance defaulting to zero.<br>
       </td>
     </tr><tr>
+      <td style="vertical-align: top;">-xscrollsmoothing<br>
+-yscrollsmoothing<br>
+      </td>
+      <td style="vertical-align: top;">When these options are set to
+true and the xview or yview commands are called to scroll by "units",
+scrolling occurs according to the -xscrollincrement or
+-yscrollincrement options, and all other scrolling is done as if the
+-xscrollincrement or -yscrollincrement options were set to 1.&nbsp; The
+effect is that when dragging the scrollbar thumb scrolling is very
+smooth, but when clicking the scrollbar buttons scrolling is done in
+coarser increments.<br>
+      </td>
+    </tr>
+<tr>
 <th style="background-color: rgb(255, 255, 204); width: 50%;">Usage
 Changed</th><th style="background-color: rgb(204, 255, 255);">How
 it changed</th></tr>
     <tr>
+      <td style="vertical-align: top;">-columnresizemode<br>
+      </td>
+      <td style="vertical-align: top;">The default value is "realtime", it used to be "proxy".<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">-showlines<br>
+      </td>
+      <td style="vertical-align: top;">The default value is false on Mac OS X and Gtk+, true on Win32 and X11.<br>
+      </td>
+    </tr>
+<tr>
       <td style="vertical-align: top;">-usetheme<br>
       </td>
-      <td style="vertical-align: top;">The default value is now <span style="font-weight: bold;">true</span>.&nbsp; <span style="color: red;">Complete reversal from previous versions, head for the hills.</span><br>
+      <td style="vertical-align: top;">The default value is now true.&nbsp; <span style="color: red;">Complete reversal from previous versions, head for the hills.</span><br>
       </td>
     </tr>
 
@@ -291,7 +360,7 @@ Win7)" demos which very closely match the appearance and behavior of
 the Windows 7 file explorer.&nbsp; These demos use gradients, rounded
 rectangles and the new -canvaspadx, -canvaspady, -itemgapx and
 -itemgapy options.</li>
-  <li>New demos "Gradients", "Gradients II" and "Gradients II" demostrate and describe various gradient features.<br>
+  <li>New demos "Gradients", "Gradients II" and "Gradients II" demonstrate and describe various gradient features.<br>
   </li>
   <li>The "Column Spanning" demo uses gradients.</li>
   <li>The ::tk::mac::iconBitmap is used where available for native filesystem icons on Mac OS X.<br>

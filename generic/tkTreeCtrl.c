@@ -4264,7 +4264,9 @@ Treectrl_Init(
 #else
     static CONST char *tcl_version = "8.4";
 #endif
+#ifdef TREECTRL_DEBUG
     Tk_OptionSpec *specPtr, *prevSpecPtr = NULL;
+#endif
 
 #ifdef USE_TCL_STUBS
     if (Tcl_InitStubs(interp, tcl_version, 0) == NULL) {

@@ -95,11 +95,20 @@ When [const order] or [const ordervisible] is specified,
 the background color is chosen based on the result of the [cmd {item order}]
 command, regardless of the layout of items.
 
+[tkoption_def -bgimage bgImage BgImage]
+Synonym for -backgroundimage.
+
 [tkoption_def -bgimageanchor bgImageAnchor BgImageAnchor]
 Specifies how the background image should be aligned in any of the forms
 acceptable to [fun Tk_GetAnchor].  Must be one of the values
 [const n], [const ne], [const e], [const se], [const s], [const sw],
 [const w], [const nw], or [const center].  The default is [const nw].
+
+[tkoption_def -bgimageopaque bgImageOpaque BgImageOpaque]
+Specifies a boolean indicating whether or not the background image is fully
+opaque.  This is needed because there is no way in Tk to determine whether an image
+contains transparency or not.  The default value is true, so if you use a
+transparent -backgroundimage you must set this to false.
 
 [tkoption_def -bgimagescroll bgImageScroll BgImageScroll]
 Specifies whether the background image scrolls along with the items or whether it
@@ -184,7 +193,7 @@ Specifies the visual feedback used when resizing columns. The value should be
 one of [const proxy] or [const realtime]. For [const proxy], a 1-pixel thick
 vertical line is drawn representing where the right edge of the column will
 be after resizing. For [const realtime], the column's size is changed while
-the user is dragging the right edge of the column.
+the user is dragging the right edge of the column.  The default is [const realtime].
 
 [tkoption_def -columntagexpr columnTagExpr ColumnTagExpr]
 Specifies a boolean that enables or disables tag expressions in column
@@ -217,12 +226,12 @@ in any of the forms acceptable to [fun Tk_GetPixels].
 The default is 19 pixels.
 
 [tkoption_def -itemgapx itemGapX ItemGapX]
-Specifies the horizontal spacing between items
+Specifies the horizontal spacing between adjacent items
 in any of the forms acceptable to [fun Tk_GetPixels].
 The default is 0.
 
 [tkoption_def -itemgapy itemGapY ItemGapY]
-Specifies the vertical spacing between items
+Specifies the vertical spacing between adjacent items
 in any of the forms acceptable to [fun Tk_GetPixels].
 The default is 0.
 
@@ -230,9 +239,9 @@ The default is 0.
 Specifies a fixed height for every item
 in any of the forms acceptable to [fun Tk_GetPixels]. If non-zero, this
 option overrides the requested height of an item and the -minitemheight option.
-The default is 0, which means that
-every item has the height requested by the arrangement of elements
-in each column. Items are never shorter than the maximum height of a button.
+If an item's own -height option is specified then that is the height used for
+the item. In any case, items are never shorter than the maximum height of a
+button if they display one.  The default is 0. 
 
 [tkoption_def -itemprefix itemPrefix ItemPrefix]
 Specifies an ascii string that changes the way item ids are reported and
@@ -326,7 +335,7 @@ The default value is true.
 [tkoption_def -showlines showLines ShowLines]
 Specifies a boolean value that determines whether this widget
 should draw the connecting lines between related items.
-The default value is true.
+The default value is true on Win32 and X11, false on Mac OS X and Gtk+.
 
 [tkoption_def -showroot showRoot ShowRoot]
 Specifies a boolean value that determines whether this widget
@@ -359,7 +368,7 @@ The default is unspecified.
 [tkoption_def -usetheme useTheme UseTheme]
 Specifies a boolean value that determines whether this widget should draw
 parts of itself using a platform-specific theme manager.
-The default is false.
+The default is true.
 
 [tkoption_def -width width Width]
 Specifies the desired width for the window
@@ -410,6 +419,15 @@ this option is less than or equal to zero, then horizontal scrolling
 snaps to the left of an item, or part of an item if items are wider than the
 contentbox.
 
+[tkoption_def -xscrollsmoothing xScrollSmoothing ScrollSmoothing]
+Specifies whether scrolling should be done as if -xscrollincrement=1 whenever
+scrolling is performed by non-unit amounts.  When the value of this option is true
+and the xview command is called to scroll by "units", scrolling occurs according
+to the -xscrollincrement option, and all other scrolling is done as if the
+-xscrollincrement option was set to 1.  The effect is that when dragging the
+scrollbar thumb scrolling is very smooth, but when clicking the scrollbar buttons
+scrolling is done in coarser increments.  The default value is false.
+
 [tkoption_def -yscrolldelay yScrollDelay ScrollDelay]
 This option controls how quickly vertical scrolling occurs while dragging
 the mouse with button 1 pressed.
@@ -430,6 +448,16 @@ are selected) will also be [option -yscrollincrement].  If the value of
 this option is less than or equal to zero, then vertical scrolling
 snaps to the top of an item, or part of an item if items are taller than the
 contentbox.
+
+[tkoption_def -yscrollsmoothing yScrollSmoothing ScrollSmoothing]
+Specifies whether scrolling should be done as if -yscrollincrement=1 whenever
+scrolling is performed by non-unit amounts.  When the value of this option is true
+and the yview command is called to scroll by "units", scrolling occurs according
+to the -yscrollincrement option, and all other scrolling is done as if the
+-yscrollincrement option was set to 1.  The effect is that when dragging the
+scrollbar thumb scrolling is very smooth, but when clicking the scrollbar buttons
+scrolling is done in coarser increments.  The default value is false.
+
 [list_end]
 
 [section {ITEM AND COLUMN TAGS}]

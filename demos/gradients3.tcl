@@ -196,12 +196,12 @@ proc DemoGradients3 {} {
     set ::Gradients3(afterId) ""
 
     # Pause/resume animating when the progress bar's visibility changes
-    $T notify bind Gradients3Progress <ItemVisibility> {
+    $T notify bind $T <ItemVisibility> {
 	Gradients3ItemVisibility %T %v %h
     }
 
     # Stop animating when the item is deleted
-    $T notify bind Gradients3Progress <ItemDelete> {
+    $T notify bind $T <ItemDelete> {
 	after cancel $Gradients3(afterId)
 	dbwin "progressbar deleted"
     }
