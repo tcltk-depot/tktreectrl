@@ -21,7 +21,7 @@ package require Tk
 package require treectrl
 
 test column-0.1 {some needed preparations} -body {
-    pack [treectrl .t]
+    pack [treectrl .t -usetheme no]
 } -result {}
 
 test column-0.2 {create an image} -body {

@@ -2263,14 +2263,8 @@ Tree_ItemLARB(
 				 * FALSE for below/right. */
     )
 {
-#if 1
     RItem *rItem;
     Range *range;
-#else
-    RItem *rItem, *rItem2;
-    Range *range;
-    int i, l, u;
-#endif
 
     if (!TreeItem_ReallyVisible(tree, item) || (tree->columnCountVis < 1))
 	return NULL;
@@ -2295,25 +2289,9 @@ Tree_ItemLARB(
 	    return NULL;
 
 	/* Find item with same index */
-#if 1
 	if (range->last->index < rItem->index)
 	    return NULL;
 	return (range->first + rItem->index)->item;
-#else
-	/* Binary search */
-	l = 0;
-	u = range->last->index;
-	while (l <= u) {
-	    i = (l + u) / 2;
-	    rItem2 = range->first + i;
-	    if (rItem2->index == rItem->index)
-		return rItem2->item;
-	    if (rItem->index < rItem2->index)
-		u = i - 1;
-	    else
-		l = i + 1;
-	}
-#endif
     }
     return NULL;
 }
@@ -2378,14 +2356,8 @@ Tree_ItemFL(
     )
 {
     TreeDInfo dInfo = tree->dInfo;
-#if 1
     RItem *rItem;
     Range *range;
-#else
-    RItem *rItem, *rItem2;
-    Range *range;
-    int i, l, u;
-#endif
 
     if (!TreeItem_ReallyVisible(tree, item) || (tree->columnCountVis < 1)) {
 	return NULL;
@@ -2403,25 +2375,8 @@ Tree_ItemFL(
 	    if (range == rItem->range)
 		return item;
 
-#if 1
 	    if (range->last->index >= rItem->index)
 		return (range->first + rItem->index)->item;
-#else
-	    /* Find item with same index */
-	    /* Binary search */
-	    l = 0;
-	    u = range->last->index;
-	    while (l <= u) {
-		i = (l + u) / 2;
-		rItem2 = range->first + i;
-		if (rItem2->index == rItem->index)
-		    return rItem2->item;
-		if (rItem->index < rItem2->index)
-		    u = i - 1;
-		else
-		    l = i + 1;
-	    }
-#endif
 
 	    range = first ? range->next : range->prev;
 	}
@@ -2528,9 +2483,6 @@ Tree_RNCToItem(
     TreeDInfo dInfo = tree->dInfo;
     Range *range;
     RItem *rItem;
-#if 0
-    int i, l, u;
-#endif
 
     Range_RedoIfNeeded(tree);
     range = dInfo->rangeFirst;
@@ -2548,23 +2500,7 @@ Tree_RNCToItem(
 	rItem = range->last;
 	if (row > rItem->index)
 	    row = rItem->index;
-#if 1
 	return (range->first + row)->item;
-#else
-	/* Binary search */
-	l = 0;
-	u = range->last->index;
-	while (l <= u) {
-	    i = (l + u) / 2;
-	    rItem = range->first + i;
-	    if (rItem->index == row)
-		break;
-	    if (row < rItem->index)
-		u = i - 1;
-	    else
-		l = i + 1;
-	}
-#endif
     }
     else {
 	if (row > dInfo->rangeLast->index)
@@ -2574,23 +2510,7 @@ Tree_RNCToItem(
 	rItem = range->last;
 	if (col > rItem->index)
 	    col = rItem->index;
-#if 1
 	return (range->first + col)->item;
-#else
-	/* Binary search */
-	l = 0;
-	u = range->last->index;
-	while (l <= u) {
-	    i = (l + u) / 2;
-	    rItem = range->first + i;
-	    if (rItem->index == col)
-		break;
-	    if (col < rItem->index)
-		u = i - 1;
-	    else
-		l = i + 1;
-	}
-#endif
     }
     return rItem->item;
 }
@@ -3989,7 +3909,6 @@ DItemAllDirty(
     DItem *dItem
     )
 {
-#if 1
     if ((dItem->area.flags & DITEM_DRAWN) &&
 	    !(dItem->area.flags & DITEM_ALL_DIRTY))
 	return 0;
@@ -3999,17 +3918,6 @@ DItemAllDirty(
     if ((dItem->right.flags & DITEM_DRAWN) &&
 	    !(dItem->right.flags & DITEM_ALL_DIRTY))
 	return 0;
-#else
-    TreeDInfo dInfo = tree->dInfo;
-
-    if ((!dInfo->empty && dInfo->rangeFirstD != NULL) &&
-	    !(dItem->area.flags & DITEM_ALL_DIRTY))
-	return 0;
-    if (!dInfo->emptyL && !(dItem->left.flags & DITEM_ALL_DIRTY))
-	return 0;
-    if (!dInfo->emptyR && !(dItem->right.flags & DITEM_ALL_DIRTY))
-	return 0;
-#endif
     return 1;
 }
 

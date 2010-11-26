@@ -33,7 +33,7 @@ struct TreeDragImage_
     Tk_OptionTable optionTable;
     int visible;
     int x, y; /* offset to draw at in canvas coords */
-    int bounds[4]; /* bounds of all DragElems */
+    TreeRectangle bounds; /* bounds of all DragElems */
     DragElem *elem;
     int onScreen; /* TRUE if is displayed */
     int sx, sy; /* Window coords where displayed */
@@ -78,8 +78,8 @@ UpdateImage(
     TreeCtrl *tree = dragImage->tree;
     Tk_PhotoHandle photoH;
     XImage *ximage;
-    int width = dragImage->bounds[2] - dragImage->bounds[0];
-    int height = dragImage->bounds[3] - dragImage->bounds[1];
+    int width = TreeRect_Width(dragImage->bounds);
+    int height = TreeRect_Height(dragImage->bounds);
     int alpha = 128;
     XColor *colorPtr;
 
@@ -124,11 +124,9 @@ UpdatePixmap(
     DragElem *elem;
     unsigned long trans;
 
-    w = dragImage->bounds[2] - dragImage->bounds[0];
-    h = dragImage->bounds[3] - dragImage->bounds[1];
-    if (w > dragImage->pixmapW || h > dragImage->pixmapH)
-    {
-
+    w = TreeRect_Width(dragImage->bounds);
+    h = TreeRect_Height(dragImage->bounds);
+    if (w > dragImage->pixmapW || h > dragImage->pixmapH) {
 	if (dragImage->pixmap != None)
 	    Tk_FreePixmap(tree->display, dragImage->pixmap);
 	dragImage->pixmap = Tk_GetPixmap(tree->display,
@@ -151,8 +149,8 @@ UpdatePixmap(
 
     for (elem = dragImage->elem; elem != NULL; elem = elem->next) {
 	XFillRectangle(tree->display, dragImage->pixmap, gc,
-	    elem->x - dragImage->bounds[0],
-	    elem->y - dragImage->bounds[1],
+	    elem->x - TreeRect_Left(dragImage->bounds),
+	    elem->y - TreeRect_Top(dragImage->bounds),
 	    elem->width, elem->height);
     }
 
@@ -165,7 +163,8 @@ UpdatePixmap(
 static void
 DrawPixmap(
     TreeDragImage dragImage,	/* Drag image record. */
-    TreeDrawable td)
+    TreeDrawable td
+    )
 {
     TreeCtrl *tree = dragImage->tree;
     int ix, iy, iw, ih;
@@ -180,14 +179,14 @@ DrawPixmap(
 	return;
 
     ix = iy = 0;
-    iw = dragImage->bounds[2] - dragImage->bounds[0];
-    ih = dragImage->bounds[3] - dragImage->bounds[1];
+    iw = TreeRect_Width(dragImage->bounds);
+    ih = TreeRect_Height(dragImage->bounds);
 
     /* FIXME: clip src image to area to be redrawn */
 
     Tree_RedrawImage(dragImage->image, ix, iy, iw, ih, td,
-	dragImage->x + dragImage->bounds[0] - tree->drawableXOrigin,
-	dragImage->y + dragImage->bounds[1] - tree->drawableYOrigin);
+	dragImage->x + TreeRect_Left(dragImage->bounds) - tree->drawableXOrigin,
+	dragImage->y + TreeRect_Top(dragImage->bounds) - tree->drawableYOrigin);
 }
 #endif /* DRAG_PIXMAP */
 
@@ -195,7 +194,8 @@ DrawPixmap(
 void
 TreeDragImage_StyleDeleted(
     TreeDragImage dragImage,	/* Drag image record. */
-    TreeStyle style)		/* Style that was deleted. */
+    TreeStyle style		/* Style that was deleted. */
+    )
 {
     TreeCtrl *tree = dragImage->tree;
 
@@ -208,7 +208,8 @@ TreeDragImage_StyleDeleted(
 
 static void
 DragImage_UpdateStyleTkImage(
-    TreeDragImage dragImage)	/* Drag image record. */
+    TreeDragImage dragImage	/* Drag image record. */
+    )
 {
     TreeCtrl *tree = dragImage->tree;
     Tk_PhotoHandle photoH;
@@ -249,7 +250,8 @@ DragImage_UpdateStyleTkImage(
 
 static void
 DragImage_UpdateStylePixmap(
-    TreeDragImage dragImage)	/* Drag image record. */
+    TreeDragImage dragImage	/* Drag image record. */
+    )
 {
     TreeCtrl *tree = dragImage->tree;
     int w, h, state = 0;
@@ -306,7 +308,8 @@ DragImage_UpdateStylePixmap(
 static void
 DragImage_DrawStyle(
     TreeDragImage dragImage,	/* Drag image record. */
-    TreeDrawable td)		/* Where to draw. */
+    TreeDrawable td		/* Where to draw. */
+    )
 {
     TreeCtrl *tree = dragImage->tree;
     int ix, iy, iw, ih;
@@ -345,7 +348,8 @@ DragImage_DrawStyle(
 void
 TreeDragImage_Draw(
     TreeDragImage dragImage,	/* Drag image record. */
-    TreeDrawable td)		/* Where to draw. */
+    TreeDrawable td		/* Where to draw. */
+    )
 {
 #ifdef DRAG_PIXMAP
     DrawPixmap(tree->dragImage, tdrawable);
@@ -585,7 +589,10 @@ TreeDragImage_Free(
  *----------------------------------------------------------------------
  */
 
-int TreeDragImage_IsXOR(TreeDragImage dragImage)
+int
+TreeDragImage_IsXOR(
+    TreeDragImage dragImage	/* Drag image token. */
+    )
 {
 #if defined(WIN32)
     return FALSE; /* TRUE on XP, FALSE on Win7 (lots of flickering) */
@@ -614,7 +621,10 @@ int TreeDragImage_IsXOR(TreeDragImage dragImage)
  *----------------------------------------------------------------------
  */
 
-int TreeDragImage_IsVisible(TreeDragImage dragImage)
+int
+TreeDragImage_IsVisible(
+    TreeDragImage dragImage	/* Drag image token. */
+    )
 {
     return dragImage->visible;
 }
@@ -645,17 +655,18 @@ TreeDragImage_Display(
 
     if (!dragImage->onScreen && dragImage->visible) {
 	if (TreeDragImage_IsXOR(dragImage) == FALSE) {
-	    dragImage->sx = dragImage->x + dragImage->bounds[0] - tree->xOrigin;
-	    dragImage->sy = dragImage->y + dragImage->bounds[1] - tree->yOrigin;
-	    dragImage->sw = dragImage->bounds[2] - dragImage->bounds[0];
-	    dragImage->sh = dragImage->bounds[3] - dragImage->bounds[1];
+	    dragImage->sx = dragImage->x + TreeRect_Left(dragImage->bounds) - tree->xOrigin;
+	    dragImage->sy = dragImage->y + TreeRect_Top(dragImage->bounds) - tree->yOrigin;
+	    dragImage->sw = TreeRect_Width(dragImage->bounds);
+	    dragImage->sh = TreeRect_Height(dragImage->bounds);
 /*	    Tree_InvalidateItemArea(tree, dragImage->sx, dragImage->sy,
 		dragImage->sx + dragImage->sw, dragImage->sy + dragImage->sh);*/
 	    Tree_EventuallyRedraw(tree);
 	} else {
 	    dragImage->sx = 0 - tree->xOrigin;
 	    dragImage->sy = 0 - tree->yOrigin;
-	    TreeDragImage_DrawXOR(dragImage, Tk_WindowId(tree->tkwin), dragImage->sx, dragImage->sy);
+	    TreeDragImage_DrawXOR(dragImage, Tk_WindowId(tree->tkwin),
+		    dragImage->sx, dragImage->sy);
 	}
 	dragImage->onScreen = TRUE;
     }
@@ -790,7 +801,13 @@ DragImage_Config(
  *----------------------------------------------------------------------
  */
 
-void TreeDragImage_DrawXOR(TreeDragImage dragImage, Drawable drawable, int x, int y)
+void
+TreeDragImage_DrawXOR(
+    TreeDragImage dragImage,	/* Drag image record. */
+    Drawable drawable,		/* Where to draw. */
+    int xOffset,		/* Offset of the drawable from the top-left */
+    int yOffset			/* of the canvas. */
+    )
 {
     TreeCtrl *tree = dragImage->tree;
     DragElem *elem = dragImage->elem;
@@ -805,8 +822,8 @@ void TreeDragImage_DrawXOR(TreeDragImage dragImage, Drawable drawable, int x, in
 
     while (elem != NULL) {
 	TreeDotRect_Draw(&dotState,
-	    x + dragImage->x + elem->x,
-	    y + dragImage->y + elem->y,
+	    xOffset + dragImage->x + elem->x,
+	    yOffset + dragImage->y + elem->y,
 	    elem->width, elem->height);
 	elem = elem->next;
     }
@@ -875,6 +892,7 @@ TreeDragImageCmd(
 	    TreeRectangle rects[128];
 	    DragElem *elem;
 	    int i, count, result = TCL_OK;
+	    int minX, minY, maxX, maxY;
 
 	    if (objc < 4) {
 		Tcl_WrongNumArgs(interp, 3, objv, "item ?column? ?element ...?");
@@ -947,20 +965,21 @@ TreeDragImageCmd(
 	    }
 
 doneADD:
-	    dragImage->bounds[0] = 100000;
-	    dragImage->bounds[1] = 100000;
-	    dragImage->bounds[2] = -100000;
-	    dragImage->bounds[3] = -100000;
+	    minX = 100000;
+	    minY = 100000;
+	    maxX = -100000;
+	    maxY = -100000;
 	    for (elem = dragImage->elem; elem != NULL; elem = elem->next) {
-		if (elem->x < dragImage->bounds[0])
-		    dragImage->bounds[0] = elem->x;
-		if (elem->y < dragImage->bounds[1])
-		    dragImage->bounds[1] = elem->y;
-		if (elem->x + elem->width > dragImage->bounds[2])
-		    dragImage->bounds[2] = elem->x + elem->width;
-		if (elem->y + elem->height > dragImage->bounds[3])
-		    dragImage->bounds[3] = elem->y + elem->height;
+		if (elem->x < minX)
+		    minX = elem->x;
+		if (elem->y < minY)
+		    minY = elem->y;
+		if (elem->x + elem->width > maxX)
+		    maxX = elem->x + elem->width;
+		if (elem->y + elem->height > maxY)
+		    maxY = elem->y + elem->height;
 	    }
+	    TreeRect_SetXYXY(dragImage->bounds, minX, minY, maxX, maxY);
 #ifdef DRAG_PIXMAP
 	    UpdatePixmap(dragImage);
 #endif /* DRAG_PIXMAP */

@@ -33,6 +33,11 @@ bind TreeCtrlFileList <ButtonRelease-1> {
     break
 }
 
+# Escape cancels any drag-and-drop operation in progress
+bind TreeCtrlFileList <KeyPress-Escape> {
+    TreeCtrl::FileListEscapeKey %W
+}
+
 ## Bindings for the Entry widget used for editing
 
 # Accept edit when we lose the focus
@@ -201,16 +206,9 @@ proc ::TreeCtrl::FileListButton1 {T x y} {
 		ButtonPress1 $T $x $y
 	    }
 	    column {
+		set drag 0
 		if {[IsSensitive $T $x $y]} {
-		    set Priv(drag,motion) 0
-		    set Priv(drag,click,x) $x
-		    set Priv(drag,click,y) $y
-		    set Priv(drag,x) [$T canvasx $x]
-		    set Priv(drag,y) [$T canvasy $y]
-		    set Priv(drop) ""
 		    set Priv(drag,wasSel) [$T selection includes $item]
-		    set Priv(drag,C) $arg2
-		    set Priv(drag,E) $arg4
 		    $T activate $item
 		    if {$Priv(selectMode) eq "add"} {
 			BeginExtend $T $item
@@ -225,31 +223,44 @@ proc ::TreeCtrl::FileListButton1 {T x y} {
 
 		    # Click selected item(s) to drag or rename
 		    if {[$T selection includes $item]} {
-			set Priv(buttonMode) drag
+			set drag 1
 		    }
-		} elseif {[FileListEmulateWin7 $T]} {
+		} elseif {[FileListEmulateWin7 $T] && [IsSensitiveMarquee $T $x $y]} {
 		    # Click selected item(s) to drag or rename
-		    if {[$T selection includes $item]
-			&& [IsSensitiveMarquee $T $x $y]} {
-			set Priv(drag,motion) 0
-			set Priv(drag,click,x) $x
-			set Priv(drag,click,y) $y
-			set Priv(drag,x) [$T canvasx $x]
-			set Priv(drag,y) [$T canvasy $y]
-			set Priv(drop) ""
+		    if {[$T selection includes $item]} {
 			set Priv(drag,wasSel) 1
-			set Priv(drag,C) $arg2
-			set Priv(drag,E) $arg4
 			$T activate $item
-			set Priv(buttonMode) drag
+			set drag 1
+		    # Click marquee-sensitive parts of an unselected item
+		    # in single-select mode changes nothing until a drag
+		    # occurs or the mouse button is released.
+		    } elseif {[$T cget -selectmode] eq "single"} {
+			set Priv(drag,wasSel) 0
+			set drag 1
 		    } else {
 			set marquee 1
 		    }
 		} else {
 		    set marquee 1
 		}
+		if {$drag} {
+		    set Priv(drag,motion) 0
+		    set Priv(drag,click,x) $x
+		    set Priv(drag,click,y) $y
+		    set Priv(drag,x) [$T canvasx $x]
+		    set Priv(drag,y) [$T canvasy $y]
+		    set Priv(drop) ""
+		    set Priv(drag,item) $item
+		    set Priv(drag,C) $arg2
+		    set Priv(drag,E) $arg4
+		    set Priv(buttonMode) drag
+		}
 	    }
 	}
+    }
+    if {$marquee && [$T cget -selectmode] eq "single"} {
+	set marquee 0
+	$T selection clear
     }
     if {$marquee} {
 	set Priv(buttonMode) marquee
@@ -380,6 +391,16 @@ proc ::TreeCtrl::FileListMotion {T x y} {
 		# Detect initial mouse movement
 		if {(abs($x - $Priv(drag,click,x)) <= 4) &&
 		    (abs($y - $Priv(drag,click,y)) <= 4)} return
+
+		# In Win7 single-selectmode, when the insensitive parts of an
+		# unselected item are clicked, the active item and selection
+		# aren't changed until the drag begins.
+		if {[FileListEmulateWin7 $T]
+			&& [$T cget -selectmode] eq "single"
+			&& !$Priv(drag,wasSel)} {
+		    $T activate $Priv(drag,item)
+		    $T selection modify $Priv(drag,item) all
+		}
 
 		set Priv(selection) [$T selection get]
 		set Priv(drop) ""
@@ -527,10 +548,18 @@ proc ::TreeCtrl::FileListRelease1 {T x y} {
 		    # a selected item and multiple items are selected and the
 		    # mouse did not move then the selection is not modified
 		    # until after the mouse button is released.
-		    set item [$T item id active]
+		    set item $Priv(drag,item)
 		    if {[$T selection count] == 1 && $Priv(selectMode) eq "set"} {
-			# If clicked already-selected item, rename it
-			set rename $Priv(drag,wasSel)
+			# In single-selectmode, when clicking the insensitive
+			# parts of an unselected item, the active item and
+			# selection aren't changed until the button is released.
+			if {[$T cget -selectmode] eq "single" && !$Priv(drag,wasSel)} {
+			    $T activate $item
+			    $T selection modify $item all
+			} else {
+			    # If clicked already-selected item, rename it
+			    set rename $Priv(drag,wasSel)
+			}
 		    } elseif {[IsSensitive $T $x $y] && !$Priv(drag,wasSel)} {
 			# Selection was modified on ButtonPress, do nothing
 		    } elseif {$Priv(selectMode) eq "add"} {
@@ -575,6 +604,27 @@ proc ::TreeCtrl::FileListRelease1 {T x y} {
 	}
     }
     set Priv(buttonMode) ""
+    return
+}
+
+# ::TreeCtrl::EscapeKey
+#
+# Handle the <Escape> key.
+#
+# T		The treectrl widget.
+
+proc ::TreeCtrl::FileListEscapeKey {T} {
+    variable Priv
+    if {[info exists Priv(buttonMode)] && $Priv(buttonMode) eq "drag"} {
+	set Priv(buttonMode) ""
+	AutoScanCancel $T
+	if {$Priv(drag,motion)} {
+	    $T selection modify $Priv(selection) all
+	    $T dragimage configure -visible no
+	    TryEvent $T Drag end {}
+	}
+	return -code break
+    }
     return
 }
 

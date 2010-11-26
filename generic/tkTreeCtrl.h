@@ -364,12 +364,7 @@ struct TreeCtrl
     Tcl_Obj *itemGapXObj;	/* -itemgapx */
     int itemGapY;		/* -itemgapy */
     Tcl_Obj *itemGapYObj;	/* -itemgapy */
-#if 0
-    int *itemPadX;		/* -itempadx */
-    Tcl_Obj *itemPadXObj;	/* -itempadx */
-    int *itemPadY;		/* -itempady */
-    Tcl_Obj *itemPadYObj;	/* -itempady */
-#endif
+
     struct TreeCtrlDebug debug;
     struct TreeCtrlColumnDrag columnDrag;
 

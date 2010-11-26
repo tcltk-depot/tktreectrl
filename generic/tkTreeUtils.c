@@ -1080,7 +1080,7 @@ void TextLayout_Draw(
 	    Tk_DrawChars(display, drawable, gc, layoutPtr->tkfont,
 		firstByte, lastByte - firstByte, x + chunkPtr->x + drawX,
 		y + chunkPtr->y);
-#if 1
+
 	    if (underline >= firstChar && underline < numDisplayChars) {
 		CONST char *fstBytePtr = Tcl_UtfAtIndex(chunkPtr->start, underline);
 		CONST char *sndBytePtr = Tcl_UtfNext(fstBytePtr);
@@ -1089,13 +1089,11 @@ void TextLayout_Draw(
 			x + chunkPtr->x + drawX, y + chunkPtr->y, 
 			fstBytePtr - chunkPtr->start, sndBytePtr - chunkPtr->start);
 	    }
-#endif
 	}
 	firstChar -= chunkPtr->numChars;
 	lastChar -= chunkPtr->numChars;
-#if 1
 	underline -= chunkPtr->numChars;
-#endif
+
 	if (lastChar <= 0)
 	    break;
 	chunkPtr++;
@@ -2366,7 +2364,6 @@ PSDFlagsFromObj(
     if (ObjectIsEmpty(obj)) {
 	pFlags->flags = 0xFFFFFFFF;
     } else {
-#if 1
 	static const CharFlag openFlags[] = {
 	    { 'n', RECT_OPEN_N },
 	    { 'e', RECT_OPEN_E },
@@ -2378,29 +2375,6 @@ PSDFlagsFromObj(
 		&pFlags->flags) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-#else
-	int length, i, flags = 0;
-	char *string;
-
-	string = Tcl_GetStringFromObj(obj, &length);
-	for (i = 0; i < length; i++) {
-	    switch (string[i]) {
-		case 'w': case 'W': flags |= RECT_OPEN_W; break;
-		case 'n': case 'N': flags |= RECT_OPEN_N; break;
-		case 'e': case 'E': flags |= RECT_OPEN_E; break;
-		case 's': case 'S': flags |= RECT_OPEN_S; break;
-		default: {
-		    Tcl_ResetResult(tree->interp);
-		    Tcl_AppendResult(tree->interp, "bad open value \"",
-			    string, "\": must be a string ",
-			    "containing zero or more of n, e, s, and w",
-			    (char *) NULL);
-		    return TCL_ERROR;
-		}
-	    }
-	}
-	pFlags->flags = flags;
-#endif
     }
     return TCL_OK;
 }
@@ -7938,8 +7912,6 @@ TreeGradient_FillRectX11(
     if (tr.height < 1 || tr.width < 1) return;
 
     /* This implements tiling of the gradient brush */
-
-#if 1
     while (tr.x < trBrush.x)
 	trBrush.x -= trBrush.width;
     while (tr.x >= trBrush.x + trBrush.width)
@@ -7959,57 +7931,6 @@ TreeGradient_FillRectX11(
 	}
 	trBrush.x += trBrush.width;
     }
-#else
-    _TreeGradient_FillRectX11(tree, td, clip, gradient,
-	trBrush, tr);
-
-    /* Tile above */
-    while (tr.y < trBrush.y) {
-	trSub.x = tr.x;
-	trSub.width = tr.width;
-	trSub.y = MAX(tr.y, trBrush.y - trBrush.height);
-	trSub.height = MIN(trBrush.y - tr.y, trBrush.height);
-	trBrush.y -= trBrush.height;
-	_TreeGradient_FillRectX11(tree, td, clip, gradient,
-	    trBrush, trSub);
-    }
-    trBrush.y = oldY;
-
-    /* Tile below */
-    while (tr.y + tr.height > trBrush.y + trBrush.height) {
-	trSub.x = tr.x;
-	trSub.width = tr.width;
-	trSub.y = trBrush.y + trBrush.height;
-	trSub.height = MIN(tr.y + tr.height - trBrush.y, trBrush.height);
-	trBrush.y = trSub.y;
-	_TreeGradient_FillRectX11(tree, td, clip, gradient,
-	    trBrush, trSub);
-    }
-    trBrush.y = oldY;
-
-    /* Tile to the left */
-    while (tr.x < trBrush.x) {
-	trSub.x = MAX(tr.x, trBrush.x - trBrush.width);
-	trSub.width = MIN(trBrush.x - tr.x, trBrush.width);
-	trSub.y = tr.y;
-	trSub.height = tr.height;
-	trBrush.x -= trBrush.width;
-	_TreeGradient_FillRectX11(tree, td, clip, gradient,
-	    trBrush, trSub);
-    }
-    trBrush.x = oldX;
-
-    /* Tile to the right */
-    while (tr.x + tr.width > trBrush.x + trBrush.width) {
-	trSub.x = trBrush.x + trBrush.width;
-	trSub.width = MIN(tr.x + tr.width - trBrush.x, trBrush.width);
-	trSub.y = tr.y;
-	trSub.height = tr.height;
-	trBrush.x = trSub.x;
-	_TreeGradient_FillRectX11(tree, td, clip, gradient,
-	    trBrush, trSub);
-    }
-#endif
 }
 
 void

@@ -2053,17 +2053,9 @@ static int ConfigProcRect(TreeElementArgs *args)
     TreeCtrl *tree = args->tree;
     TreeElement elem = args->elem;
     ElementRect *elemX = (ElementRect *) elem;
-#if 0
-    ElementRect savedX;
-#endif
     Tk_SavedOptions savedOptions;
     int error;
     Tcl_Obj *errorResult = NULL;
-#if 0
-    int i;
-
-    savedX.open = 0; /* Prevent compiler warning */
-#endif
 
     for (error = 0; error <= 1; error++) {
 	if (error == 0) {
@@ -2074,49 +2066,14 @@ static int ConfigProcRect(TreeElementArgs *args)
 		args->config.flagSelf = 0;
 		continue;
 	    }
-#if 0
-	    if (args->config.flagSelf & RECT_CONF_OPEN)
-		savedX.open = elemX->open;
 
-	    if (args->config.flagSelf & RECT_CONF_OPEN) {
-		elemX->open = 0;
-		if (elemX->openString != NULL) {
-		    int badChar = 0;
-
-		    for (i = 0; elemX->openString[i]; i++) {
-			switch (elemX->openString[i]) {
-			    case 'w': case 'W': elemX->open |= 0x01; break;
-			    case 'n': case 'N': elemX->open |= 0x02; break;
-			    case 'e': case 'E': elemX->open |= 0x04; break;
-			    case 's': case 'S': elemX->open |= 0x08; break;
-			    default: {
-				Tcl_ResetResult(tree->interp);
-				Tcl_AppendResult(tree->interp, "bad open value \"",
-					elemX->openString, "\": must be a string ",
-					"containing zero or more of n, e, s, and w",
-					(char *) NULL);
-				badChar = 1;
-				break;
-			    }
-			}
-			if (badChar)
-			    break;
-		    }
-		    if (badChar)
-			continue;
-		}
-	    }
-#endif
 	    Tk_FreeSavedOptions(&savedOptions);
 	    break;
 	} else {
 	    errorResult = Tcl_GetObjResult(tree->interp);
 	    Tcl_IncrRefCount(errorResult);
 	    Tk_RestoreSavedOptions(&savedOptions);
-#if 0
-	    if (args->config.flagSelf & RECT_CONF_OPEN)
-		elemX->open = savedX.open;
-#endif
+
 	    Tcl_SetObjResult(tree->interp, errorResult);
 	    Tcl_DecrRefCount(errorResult);
 	    return TCL_ERROR;

@@ -3597,49 +3597,6 @@ TreeItem_ColumnFromObj(
     return Item_FindColumnFromObj(tree, item, obj, (Column **) columnPtr, indexPtr);
 }
 
-#if 0
-/*
- *----------------------------------------------------------------------
- *
- * Item_CreateColumnFromObj --
- *
- *	Return a Column record given a Tcl_Obj column description.
- *	The Column record is allocated if it doesn't exist.
- *
- * Results:
- *	TCL_OK or TCL_ERROR.
- *
- * Side effects:
- *	Memory may be allocated.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-Item_CreateColumnFromObj(
-    TreeCtrl *tree,		/* Widget info. */
-    TreeItem item,		/* Item record. */
-    Tcl_Obj *obj,		/* Column description. */
-    Column **column,		/* Returned column. */
-    int *indexPtr,		/* May be NULL. Returned 0-based index of
-				 * the column. */
-    int *isNew			/* May be NULL. Set to TRUE if the
-				 * column record was created. */
-    )
-{
-    TreeColumn treeColumn;
-    int columnIndex;
-
-    if (TreeColumn_FromObj(tree, obj, &treeColumn, CFO_NOT_NULL | CFO_NOT_TAIL) != TCL_OK)
-	return TCL_ERROR;
-    columnIndex = TreeColumn_Index(treeColumn);
-    (*column) = Item_CreateColumn(tree, item, columnIndex, isNew);
-    if (indexPtr != NULL)
-	(*indexPtr) = columnIndex;
-    return TCL_OK;
-}
-#endif
-
 /*
  *----------------------------------------------------------------------
  *
@@ -4711,10 +4668,6 @@ int TreeItem_ReallyVisible(
     TreeItem item		/* Item token. */
     )
 {
-#if 0
-    Tree_UpdateItemIndex(tree);
-    return item->indexVis != -1;
-#else
     TreeItem parent = item->parent;
 
     if (!tree->updateIndex)
@@ -4735,7 +4688,6 @@ int TreeItem_ReallyVisible(
     if (!IS_VISIBLE(parent) || !(parent->state & STATE_OPEN))
 	return 0;
     return TreeItem_ReallyVisible(tree, parent);
-#endif
 }
 
 /*

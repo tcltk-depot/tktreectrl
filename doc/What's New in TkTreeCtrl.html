@@ -13,6 +13,8 @@
 
 
 
+
+
   <meta content="text/html; charset=ISO-8859-1" http-equiv="content-type"><title>What's New in TkTreeCtrl</title>
   
 
@@ -39,7 +41,9 @@ style and down in the whitespace region below any items.<br>
 </th></tr><tr>
       <td style="vertical-align: top;">-itembackground<br>
       </td>
-      <td style="vertical-align: top;">Item background colors are now
+      <td style="vertical-align: top;">Item background colors can be a Tk color or a gradient name.<br>
+      <br>
+Item background colors are now
 drawn below items in the whitespace region even when item wrapping is
 being used.&nbsp; Previously item background colors were not drawn
 below items when wrapping was used.<br>
@@ -108,7 +112,7 @@ rectangle can be achieved.<br>
       <td style="vertical-align: top;">-outline<br>
       </td>
       <td style="vertical-align: top;">Specifies the outline color for
-the selection rectangle.&nbsp; The value can be a Tk color or the empty
+the selection rectangle.&nbsp; The value can be a Tk color, a gradient name, or an empty
 string which is the default.&nbsp; When this option isn't an empty
 string the dotted outline is not drawn.<br>
       </td>
@@ -326,10 +330,31 @@ width or height of the rectangle when being displayed.</li>
   <li>The <span style="font-weight: bold;">-open</span> option is now
 per-state.&nbsp; See the "Outlook Express (Newsgroup)" demo where the
 active outline of the selection rectangle appears to span across
-columns.&nbsp; In previous versions that required 3 different states.<br>
+columns.&nbsp; In previous versions that required 3 different states.</li>
+  <li>The <span style="font-weight: bold;">-fill</span> and <span style="font-weight: bold;">-outline</span> options can be a Tk color or a gradient.<br>
   </li>
+
+</ul>
+<h2>Library Scripts</h2>
+<ul>
+  <li>The treectrl window gets the focus after a &lt;ButtonPress-2&gt; event begins scan-dragging.</li>
+  <li>The Escape key cancels any drag-and-drop in progress with the TreeCtrlFileList bindings.<br>
+  </li>
+
+  
+  <li>Added some hackery to the TreeCtrlFileList bindings for emulating the complicated selection behavior of Windows 7 Explorer:<br>
+    <ul>
+      <li>Added TreeCtrl::FileListEmulateWin7 to indicate the Windows 7 behavior should be used.</li>
+      <li>Added TreeCtrl::SetSensitiveMarquee, just like
+TreeCtrl::SetSensitive but indicates which elements respond to the
+selection rectangle. Typically this is the same as the elements passed
+toTreeCtrl::SetSensitive with the addition of the selection rectangle elements.</li>
+    </ul>
+  </li>
+
 </ul>
 <h2>Build Changes</h2>
+
 <ul>
   <li>Added macosx/ unix/ and win/ subdirectories with platform-specific code in each.<br>
   </li>
@@ -365,8 +390,12 @@ rectangles and the new -canvaspadx, -canvaspady, -itemgapx and
   <li>The "Column Spanning" demo uses gradients.</li>
   <li>The ::tk::mac::iconBitmap is used where available for native filesystem icons on Mac OS X.<br>
   </li>
-  <li>Fixed a bug with increasing/decreasing the font size if the font size was negative (i.e. on X11).<br>
+  <li>Fixed a bug with increasing/decreasing the font size if the font size was negative (i.e. on X11).</li>
+  <li>New options were added to the context menu: -bgimageanchor,
+-bgimageopaque, -bgimagescroll, -bgimagetile, -buttontracking,
+-xscrollsmoothing and -yscrollsmoothing.<br>
   </li>
+
 </ul>
 <h2>Bug Fixes</h2>
 <ul>

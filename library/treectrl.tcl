@@ -1519,6 +1519,18 @@ proc ::TreeCtrl::Cancel w {
 	set first $last
 	set last $tmp
     }
+if 1 {
+    set select {}
+    set deselect {}
+    foreach item [$w item id "range $first $last visible"] {
+	if {[lsearch $Priv(selection) $item] == -1} {
+	    lappend deselect $item
+	} else {
+	    lappend select $item
+	}
+    }
+    $w selection modify $select $deselect
+} else {
     $w selection clear $first $last
     while {[$w item compare $first <= $last]} {
 	if {[lsearch $Priv(selection) $first] >= 0} {
@@ -1526,6 +1538,7 @@ proc ::TreeCtrl::Cancel w {
 	}
 	set first [$w item id "$first next visible"]
     }
+}
     return
 }
 

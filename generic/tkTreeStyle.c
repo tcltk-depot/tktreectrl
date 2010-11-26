@@ -96,8 +96,9 @@ struct IStyle
 #define ELF_EXPAND_S (ELF_eEXPAND_S | ELF_iEXPAND_S)
 #define ELF_STICKY (ELF_STICKY_W | ELF_STICKY_N | ELF_STICKY_E | ELF_STICKY_S)
 
+#define IS_DETACH(e) (((e)->flags & ELF_DETACH) != 0)
 #define IS_UNION(e) ((e)->onion != NULL)
-#define DETACH_OR_UNION(e) (IS_UNION(e) || ((e)->flags & ELF_DETACH))
+#define DETACH_OR_UNION(e) (IS_DETACH(e) || IS_UNION(e))
 
 /*
  * An array of these is kept for each master style, one per element.
@@ -1206,7 +1207,7 @@ Style_DoLayoutH(
 	if (!(eLink1->flags & ELF_SQUEEZE_X))
 	    continue;
 
-	if (!(eLink1->flags & ELF_DETACH) && !masterStyle->vertical)
+	if (!IS_DETACH(eLink1) && !masterStyle->vertical)
 	    continue;
 
 	ePadX = eLink1->ePadX;
@@ -1219,7 +1220,7 @@ Style_DoLayoutH(
 	    MAX(ePadX[PAD_BOTTOM_RIGHT], uPadX[PAD_BOTTOM_RIGHT]);
 	subtract = width - drawArgs->width;
 
-	if (!(eLink1->flags & ELF_DETACH) || (eLink1->flags & ELF_INDENT))
+	if (!IS_DETACH(eLink1) || (eLink1->flags & ELF_INDENT))
 	    subtract += drawArgs->indent;
 
 	if (subtract > 0) {
@@ -1408,7 +1409,7 @@ Style_DoLayoutH(
 	eLink1 = &eLinks1[i];
 	eLink2 = &eLinks2[i];
 
-	if (!(eLink1->flags & ELF_DETACH) || IS_UNION(eLink1))
+	if (!IS_DETACH(eLink1) || IS_UNION(eLink1))
 	    continue;
 
 	ePadX = eLink1->ePadX;
@@ -1440,93 +1441,7 @@ Style_DoLayoutH(
 
 	Layout_CalcUnionLayoutH(drawArgs, masterStyle, layouts, i);
     }
-#if 0
-    /* Expand -union elements if needed: horizontal. */
-    /* Expansion of "-union" elements is different than non-"-union" elements.
-     * Expanding a -union element never changes the size or position of any
-     * element other than the -union element itself. */
-    for (i = 0; i < eLinkCount; i++) {
-	struct Layout *layout = &layouts[i];
-	int extraWidth;
 
-	if (IS_HIDDEN(layout))
-	    continue;
-
-	eLink1 = &eLinks1[i];
-
-	if (!IS_UNION(eLink1) || !(eLink1->flags & ELF_EXPAND_WE))
-	    continue;
-
-	if (drawArgs->width - (layout->eWidth + drawArgs->indent) <= 0)
-	    continue;
-
-	extraWidth = layout->x - drawArgs->indent;
-	if ((extraWidth > 0) && (eLink1->flags & ELF_EXPAND_W)) {
-
-	    /* External and internal expansion: W */
-	    if ((eLink1->flags & ELF_EXPAND_W) == ELF_EXPAND_W) {
-		int eExtra = extraWidth / 2;
-		int iExtra = extraWidth - extraWidth / 2;
-
-		layout->x = drawArgs->indent;
-
-		/* External expansion */
-		layout->ePadX[PAD_TOP_LEFT] += eExtra;
-		layout->eWidth += extraWidth;
-
-		/* Internal expansion */
-		layout->iPadX[PAD_TOP_LEFT] += iExtra;
-		layout->iWidth += iExtra;
-	    }
-
-	    /* External expansion only: W */
-	    else if (eLink1->flags & ELF_eEXPAND_W) {
-		layout->ePadX[PAD_TOP_LEFT] += extraWidth;
-		layout->x = drawArgs->indent;
-		layout->eWidth += extraWidth;
-	    }
-
-	    /* Internal expansion only: W */
-	    else {
-		layout->iPadX[PAD_TOP_LEFT] += extraWidth;
-		layout->x = drawArgs->indent;
-		layout->iWidth += extraWidth;
-		layout->eWidth += extraWidth;
-	    }
-	}
-
-	extraWidth = drawArgs->width - (layout->x + layout->eWidth);
-	if ((extraWidth > 0) && (eLink1->flags & ELF_EXPAND_E)) {
-
-	    /* External and internal expansion: E */
-	    if ((eLink1->flags & ELF_EXPAND_E) == ELF_EXPAND_E) {
-		int eExtra = extraWidth / 2;
-		int iExtra = extraWidth - extraWidth / 2;
-
-		/* External expansion */
-		layout->ePadX[PAD_BOTTOM_RIGHT] += eExtra;
-		layout->eWidth += extraWidth; /* all the space */
-
-		/* Internal expansion */
-		layout->iPadX[PAD_BOTTOM_RIGHT] += iExtra;
-		layout->iWidth += iExtra;
-	    }
-
-	    /* External expansion only: E */
-	    else if (eLink1->flags & ELF_eEXPAND_E) {
-		layout->ePadX[PAD_BOTTOM_RIGHT] += extraWidth;
-		layout->eWidth += extraWidth;
-	    }
-
-	    /* Internal expansion only: E */
-	    else {
-		layout->iPadX[PAD_BOTTOM_RIGHT] += extraWidth;
-		layout->iWidth += extraWidth;
-		layout->eWidth += extraWidth;
-	    }
-	}
-    }
-#endif
     /* Add internal padding to display area for -union elements */
     for (i = 0; i < eLinkCount; i++) {
 	struct Layout *layout = &layouts[i];
@@ -1659,7 +1574,7 @@ Style_DoLayoutV(
 	    if (!(eLink1->flags & ELF_SQUEEZE_Y))
 		continue;
 
-	    if (!(eLink1->flags & ELF_DETACH) && masterStyle->vertical)
+	    if (!IS_DETACH(eLink1) && masterStyle->vertical)
 		continue;
 
 	    ePadY = eLink1->ePadY;
@@ -1818,7 +1733,7 @@ Style_DoLayoutV(
 	eLink1 = &eLinks1[i];
 	eLink2 = &eLinks2[i];
 
-	if (!(eLink1->flags & ELF_DETACH) || IS_UNION(eLink1))
+	if (!IS_DETACH(eLink1) || IS_UNION(eLink1))
 	    continue;
 
 	ePadY = eLink1->ePadY;
@@ -1849,87 +1764,6 @@ Style_DoLayoutV(
 	Layout_CalcUnionLayoutV(drawArgs, masterStyle, layouts, i);
     }
 
-#if 0
-    /* Expand -union elements if needed: vertical */
-    for (i = 0; i < eLinkCount; i++) {
-	struct Layout *layout = &layouts[i];
-	int extraHeight;
-
-	if (IS_HIDDEN(layout))
-	    continue;
-
-	eLink1 = &eLinks1[i];
-
-	if (!IS_UNION(eLink1) || !(eLink1->flags & ELF_EXPAND_NS))
-	    continue;
-
-	if (drawArgs->height - layout->eHeight <= 0)
-	    continue;
-
-	/* External and internal expansion: N */
-	extraHeight = layout->y;
-	if ((extraHeight > 0) && (eLink1->flags & ELF_EXPAND_N)) {
-	    if ((eLink1->flags & ELF_EXPAND_N) == ELF_EXPAND_N) {
-		int eExtra = extraHeight / 2;
-		int iExtra = extraHeight - extraHeight / 2;
-
-		/* External expansion */
-		layout->ePadY[PAD_TOP_LEFT] += eExtra;
-		layout->y = 0;
-		layout->eHeight += extraHeight;
-
-		/* Internal expansion */
-		layout->iPadY[PAD_TOP_LEFT] += iExtra;
-		layout->iHeight += iExtra;
-	    }
-
-	    /* External expansion only: N */
-	    else if (eLink1->flags & ELF_eEXPAND_N) {
-		layout->ePadY[PAD_TOP_LEFT] += extraHeight;
-		layout->y = 0;
-		layout->eHeight += extraHeight;
-	    }
-
-	    /* Internal expansion only: N */
-	    else {
-		layout->iPadY[PAD_TOP_LEFT] += extraHeight;
-		layout->y = 0;
-		layout->iHeight += extraHeight;
-		layout->eHeight += extraHeight;
-	    }
-	}
-
-	/* External and internal expansion: S */
-	extraHeight = drawArgs->height - (layout->y + layout->eHeight);
-	if ((extraHeight > 0) && (eLink1->flags & ELF_EXPAND_S)) {
-	    if ((eLink1->flags & ELF_EXPAND_S) == ELF_EXPAND_S) {
-		int eExtra = extraHeight / 2;
-		int iExtra = extraHeight - extraHeight / 2;
-
-		/* External expansion */
-		layout->ePadY[PAD_BOTTOM_RIGHT] += eExtra;
-		layout->eHeight += extraHeight; /* all the space */
-
-		/* Internal expansion */
-		layout->iPadY[PAD_BOTTOM_RIGHT] += iExtra;
-		layout->iHeight += iExtra;
-	    }
-
-	    /* External expansion only: S */
-	    else if (eLink1->flags & ELF_eEXPAND_S) {
-		layout->ePadY[PAD_BOTTOM_RIGHT] += extraHeight;
-		layout->eHeight += extraHeight;
-	    }
-
-	    /* Internal expansion only */
-	    else {
-		layout->iPadY[PAD_BOTTOM_RIGHT] += extraHeight;
-		layout->iHeight += extraHeight;
-		layout->eHeight += extraHeight;
-	    }
-	}
-    }
-#endif
     /* Add internal padding to display area for -union elements */
     for (i = 0; i < eLinkCount; i++) {
 	struct Layout *layout = &layouts[i];
@@ -2075,7 +1909,7 @@ Style_DoLayoutNeededV(
 	}
 
 	/* -detach elements are positioned by themselves */
-	if (eLink1->flags & ELF_DETACH)
+	if (IS_DETACH(eLink1))
 	    continue;
 
 	ePadY = eLink1->ePadY;
@@ -2100,7 +1934,7 @@ Style_DoLayoutNeededV(
 	eLink1 = &eLinks1[i];
 	eLink2 = &eLinks2[i];
 
-	if (!(eLink1->flags & ELF_DETACH) || IS_UNION(eLink1))
+	if (!IS_DETACH(eLink1) || IS_UNION(eLink1))
 	    continue;
 
 	ePadY = eLink1->ePadY;
@@ -2196,12 +2030,6 @@ Style_DoLayout(
 	    layout->useHeight = eLink2->layoutHeight;
 	    continue;
 	}
-#if 0
-	/* */
-	if ((eLink2->layoutWidth == -1) &&
-	    (layout->useWidth >= eLink2->neededWidth))
-	    continue;
-#endif
 #else
 	/* Not squeezed */
 	if (layout->useWidth >= layout->neededWidth)
@@ -2413,7 +2241,7 @@ Style_NeededSize(
 	}
 
 	/* -detach elements are positioned by themselves */
-	if (eLink1->flags & ELF_DETACH)
+	if (IS_DETACH(eLink1))
 	    continue;
 
 	ePadX = eLink1->ePadX;
@@ -2423,23 +2251,13 @@ Style_NeededSize(
 	uPadX = layout->uPadX;
 	uPadY = layout->uPadY;
 
-#if 0
-	layout->eLink = eLink2;
-#endif
 	layout->x = x + abs(ePadX[PAD_TOP_LEFT] - MAX(ePadX[PAD_TOP_LEFT], uPadX[PAD_TOP_LEFT]));
 	layout->y = y + abs(ePadY[PAD_TOP_LEFT] - MAX(ePadY[PAD_TOP_LEFT], uPadY[PAD_TOP_LEFT]));
 	layout->iWidth = iPadX[PAD_TOP_LEFT] + layout->useWidth + iPadX[PAD_BOTTOM_RIGHT];
 	layout->iHeight = iPadY[PAD_TOP_LEFT] + layout->useHeight + iPadY[PAD_BOTTOM_RIGHT];
 	layout->eWidth = ePadX[PAD_TOP_LEFT] + layout->iWidth + ePadX[PAD_BOTTOM_RIGHT];
 	layout->eHeight = ePadY[PAD_TOP_LEFT] + layout->iHeight + ePadY[PAD_BOTTOM_RIGHT];
-#if 0
-	for (j = 0; j < 2; j++) {
-	    layout->ePadX[j] = eLink1->ePadX[j];
-	    layout->ePadY[j] = eLink1->ePadY[j];
-	    layout->iPadX[j] = eLink1->iPadX[j];
-	    layout->iPadY[j] = eLink1->iPadY[j];
-	}
-#endif
+
 	if (masterStyle->vertical)
 	    y = layout->y + layout->eHeight;
 	else
@@ -2456,7 +2274,7 @@ Style_NeededSize(
 	eLink1 = &eLinks1[i];
 	eLink2 = &eLinks2[i];
 
-	if (!(eLink1->flags & ELF_DETACH) || IS_UNION(eLink1))
+	if (!IS_DETACH(eLink1) || IS_UNION(eLink1))
 	    continue;
 
 	ePadX = eLink1->ePadX;
@@ -2466,25 +2284,12 @@ Style_NeededSize(
 	uPadX = layout->uPadX;
 	uPadY = layout->uPadY;
 
-#if 0
-	layout->eLink = eLink2;
-	layout->master = eLink1;
-#endif
 	layout->x = abs(ePadX[PAD_TOP_LEFT] - MAX(ePadX[PAD_TOP_LEFT], uPadX[PAD_TOP_LEFT]));
 	layout->y = abs(ePadY[PAD_TOP_LEFT] - MAX(ePadY[PAD_TOP_LEFT], uPadY[PAD_TOP_LEFT]));
 	layout->iWidth = iPadX[PAD_TOP_LEFT] + layout->useWidth + iPadX[PAD_BOTTOM_RIGHT];
 	layout->iHeight = iPadY[PAD_TOP_LEFT] + layout->useHeight + iPadY[PAD_BOTTOM_RIGHT];
 	layout->eWidth = ePadX[PAD_TOP_LEFT] + layout->iWidth + ePadX[PAD_BOTTOM_RIGHT];
 	layout->eHeight = ePadY[PAD_TOP_LEFT] + layout->iHeight + ePadY[PAD_BOTTOM_RIGHT];
-
-#if 0
-	for (j = 0; j < 2; j++) {
-	    layout->ePadX[j] = eLink1->ePadX[j];
-	    layout->ePadY[j] = eLink1->ePadY[j];
-	    layout->iPadX[j] = eLink1->iPadX[j];
-	    layout->iPadY[j] = eLink1->iPadY[j];
-	}
-#endif
     }
 
     Layout_Size(masterStyle->vertical, eLinkCount, layouts,
@@ -2651,7 +2456,6 @@ TreeStyle_NeededHeight(
  *----------------------------------------------------------------------
  */
 
-/* Calculate height of Style considering drawArgs.width */
 int
 TreeStyle_UseHeight(
     StyleDrawArgs *drawArgs	/* Various args. */
@@ -5636,7 +5440,7 @@ LayoutOptionToObj(
 	case OPTION_iPADY:
 	    return TreeCtrl_NewPadAmountObj(eLink->iPadY);
 	case OPTION_DETACH:
-	    return Tcl_NewStringObj((eLink->flags & ELF_DETACH) ? "yes" : "no", -1);
+	    return Tcl_NewStringObj(IS_DETACH(eLink) ? "yes" : "no", -1);
 	case OPTION_EXPAND: {
 	    char flags[4];
 	    int n = 0;
@@ -5902,7 +5706,6 @@ StyleLayoutCmd(
 		break;
 	    }
 	    case OPTION_EXPAND: {
-#if 1
 		static const CharFlag charFlags[] = {
 		    { 'n', ELF_eEXPAND_N },
 		    { 'e', ELF_eEXPAND_E },
@@ -5914,32 +5717,9 @@ StyleLayoutCmd(
 			charFlags, &eLink->flags) != TCL_OK) {
 		    goto badConfig;
 		}
-#else
-		char *expand;
-		int len, k;
-		expand = Tcl_GetStringFromObj(objv[i + 1], &len);
-		eLink->flags &= ~ELF_eEXPAND;
-		for (k = 0; k < len; k++) {
-		    switch (expand[k]) {
-			case 'w': case 'W': eLink->flags |= ELF_eEXPAND_W; break;
-			case 'n': case 'N': eLink->flags |= ELF_eEXPAND_N; break;
-			case 'e': case 'E': eLink->flags |= ELF_eEXPAND_E; break;
-			case 's': case 'S': eLink->flags |= ELF_eEXPAND_S; break;
-			default: {
-			    Tcl_ResetResult(tree->interp);
-			    Tcl_AppendResult(tree->interp, "bad expand value \"",
-				expand, "\": must be a string ",
-				"containing zero or more of n, e, s, and w",
-				(char *) NULL);
-			    goto badConfig;
-			}
-		    }
-		}
-#endif
 		break;
 	    }
 	    case OPTION_iEXPAND: {
-#if 1
 		static const CharFlag charFlags[] = {
 		    { 'x', ELF_iEXPAND_X },
 		    { 'y', ELF_iEXPAND_Y },
@@ -5953,30 +5733,6 @@ StyleLayoutCmd(
 			charFlags, &eLink->flags) != TCL_OK) {
 		    goto badConfig;
 		}
-#else
-		char *expand;
-		int len, k;
-		expand = Tcl_GetStringFromObj(objv[i + 1], &len);
-		eLink->flags &= ~(ELF_iEXPAND | ELF_iEXPAND_X | ELF_iEXPAND_Y);
-		for (k = 0; k < len; k++) {
-		    switch (expand[k]) {
-			case 'x': case 'X': eLink->flags |= ELF_iEXPAND_X; break;
-			case 'y': case 'Y': eLink->flags |= ELF_iEXPAND_Y; break;
-			case 'w': case 'W': eLink->flags |= ELF_iEXPAND_W; break;
-			case 'n': case 'N': eLink->flags |= ELF_iEXPAND_N; break;
-			case 'e': case 'E': eLink->flags |= ELF_iEXPAND_E; break;
-			case 's': case 'S': eLink->flags |= ELF_iEXPAND_S; break;
-			default: {
-			    Tcl_ResetResult(tree->interp);
-			    Tcl_AppendResult(tree->interp, "bad iexpand value \"",
-				expand, "\": must be a string ",
-				"containing zero or more of x, y, n, e, s, and w",
-				(char *) NULL);
-			    goto badConfig;
-			}
-		    }
-		}
-#endif
 		break;
 	    }
 	    case OPTION_INDENT: {
@@ -5990,7 +5746,6 @@ StyleLayoutCmd(
 		break;
 	    }
 	    case OPTION_SQUEEZE: {
-#if 1
 		static const CharFlag charFlags[] = {
 		    { 'x', ELF_SQUEEZE_X },
 		    { 'y', ELF_SQUEEZE_Y },
@@ -6000,26 +5755,6 @@ StyleLayoutCmd(
 			charFlags, &eLink->flags) != TCL_OK) {
 		    goto badConfig;
 		}
-#else
-		char *string;
-		int len, k;
-		string = Tcl_GetStringFromObj(objv[i + 1], &len);
-		eLink->flags &= ~(ELF_SQUEEZE_X | ELF_SQUEEZE_Y);
-		for (k = 0; k < len; k++) {
-		    switch (string[k]) {
-			case 'x': case 'X': eLink->flags |= ELF_SQUEEZE_X; break;
-			case 'y': case 'Y': eLink->flags |= ELF_SQUEEZE_Y; break;
-			default: {
-			    Tcl_ResetResult(tree->interp);
-			    Tcl_AppendResult(tree->interp, "bad squeeze value \"",
-				string, "\": must be a string ",
-				"containing zero or more of x and y",
-				(char *) NULL);
-			    goto badConfig;
-			}
-		    }
-		}
-#endif
 		break;
 	    }
 	    case OPTION_UNION: {
@@ -6184,7 +5919,6 @@ StyleLayoutCmd(
 		break;
 	    }
 	    case OPTION_STICKY: {
-#if 1
 		static const CharFlag charFlags[] = {
 		    { 'n', ELF_STICKY_N },
 		    { 'e', ELF_STICKY_E },
@@ -6196,28 +5930,6 @@ StyleLayoutCmd(
 			charFlags, &eLink->flags) != TCL_OK) {
 		    goto badConfig;
 		}
-#else
-		char *sticky;
-		int len, k;
-		sticky = Tcl_GetStringFromObj(objv[i + 1], &len);
-		eLink->flags &= ~ELF_STICKY;
-		for (k = 0; k < len; k++) {
-		    switch (sticky[k]) {
-			case 'w': case 'W': eLink->flags |= ELF_STICKY_W; break;
-			case 'n': case 'N': eLink->flags |= ELF_STICKY_N; break;
-			case 'e': case 'E': eLink->flags |= ELF_STICKY_E; break;
-			case 's': case 'S': eLink->flags |= ELF_STICKY_S; break;
-			default: {
-			    Tcl_ResetResult(tree->interp);
-			    Tcl_AppendResult(tree->interp, "bad sticky value \"",
-				sticky, "\": must be a string ",
-				"containing zero or more of n, e, s, and w",
-				(char *) NULL);
-			    goto badConfig;
-			}
-		    }
-		}
-#endif
 		break;
 	    }
 	    case OPTION_DRAW:
@@ -6954,56 +6666,6 @@ TreeStyle_GetSortData(
     return TCL_ERROR;
 }
 
-#if 0
-
-/*
- *----------------------------------------------------------------------
- *
- * TreeStyle_ValidateElements --
- *
- *	Verify that each object in an objv[] array refers to a
- *	master element.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TreeStyle_ValidateElements(
-    TreeCtrl *tree,		/* Widget info. */
-    TreeStyle style_, 		/* Instance style. */
-    int objc,			/* Number of element names. */
-    Tcl_Obj *CONST objv[]	/* Array of element names. */
-    )
-{
-    IStyle *style = (IStyle *) style_;
-    MStyle *master = style->master;
-    TreeElement elem;
-    MElementLink *eLink;
-    int i;
-
-    for (i = 0; i < objc; i++) {
-	if (Element_FromObj(tree, objv[i], &elem) != TCL_OK)
-	    return TCL_ERROR;
-
-	eLink = MStyle_FindElem(tree, master, elem, NULL);
-	if (eLink == NULL) {
-	    FormatResult(tree->interp,
-		"style %s does not use element %s",
-		master->name, elem->name);
-	    return TCL_ERROR;
-	}
-    }
-    return TCL_OK;
-}
-
-#endif /* 0 */
-
 /*
  *----------------------------------------------------------------------
  *
@@ -7027,7 +6689,6 @@ TreeStyle_GetElemRects(
     Tcl_Obj *CONST objv[],	/* Array of element names. */
     TreeRectangle rects[]	/* Returned rectangles. */
     )
-    
 {
     IStyle *style = (IStyle *) drawArgs->style;
     MStyle *master = style->master;

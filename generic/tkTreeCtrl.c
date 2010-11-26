@@ -200,18 +200,6 @@ static Tk_OptionSpec optionSpecs[] = {
      "0", Tk_Offset(TreeCtrl, itemHeightObj),
      Tk_Offset(TreeCtrl, itemHeight),
      0, (ClientData) NULL, TREE_CONF_ITEMSIZE | TREE_CONF_RELAYOUT},
-#if 0
-    {TK_OPTION_CUSTOM, "-itempadx", (char *) NULL, (char *) NULL,
-     "0",
-     Tk_Offset(TreeCtrl, itemPadXObj),
-     Tk_Offset(TreeCtrl, itemPadX),
-     0, (ClientData) &TreeCtrlCO_pad, 0},
-    {TK_OPTION_CUSTOM, "-itempady", (char *) NULL, (char *) NULL,
-     "0",
-     Tk_Offset(TreeCtrl, itemPadYObj),
-     Tk_Offset(TreeCtrl, itemPadY),
-     0, (ClientData) &TreeCtrlCO_pad, 0},
-#endif
     {TK_OPTION_STRING, "-itemprefix", "itemPrefix", "ItemPrefix",
      "", -1, Tk_Offset(TreeCtrl, itemPrefix), 0, (ClientData) NULL, 0},
     {TK_OPTION_BOOLEAN, "-itemtagexpr", "itemTagExpr", "ItemTagExpr",
@@ -2350,7 +2338,6 @@ TreeSeeCmd(
 	    switch (index)
 	    {
 		case 0: { /* -center */
-#if 1
 		    static const CharFlag centerFlags[] = {
 			{ 'x', 0x01 },
 			{ 'y', 0x02 },
@@ -2363,24 +2350,6 @@ TreeSeeCmd(
 		    }
 		    centerX = (flags & 0x01) != 0;
 		    centerY = (flags & 0x02) != 0;
-#else
-		    char *s = Tcl_GetStringFromObj(objv[i+1], &len);
-		    for (k = 0; k < len; k++) {
-			switch (s[k]) {
-			    case 'x': case 'X': centerX = 1; break;
-			    case 'y': case 'Y': centerY = 1; break;
-			    default: {
-				Tcl_ResetResult(tree->interp);
-				Tcl_AppendResult(tree->interp,
-				    "bad -center value \"",
-				    s, "\": must be a string ",
-				    "containing zero or more of x and y",
-				    (char *) NULL);
-				return TCL_ERROR;
-			    }
-			}
-		    }
-#endif
 		    break;
 		}
 	    }

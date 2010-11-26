@@ -86,18 +86,9 @@ proc DemoExplorerBindings {{win7 0}} {
     TreeCtrl::FileListEmulateWin7 [DemoList] $win7
 
     if {$win7} {
-	set ::Explorer(buttonDown) 0
 	set ::Explorer(prev) ""
-	bind DemoExplorerWin7 <ButtonPress-1> {
-	    ExplorerButton1 %W %x %y
-	}
-	bind DemoExplorerWin7 <ButtonRelease-1> {
-	    ExplorerRelease1 %W %x %y
-	}
 	bind DemoExplorerWin7 <Motion> {
-	    if {$Explorer(buttonDown) == 0} {
-		ExplorerMotion %W %x %y
-	    }
+	    ExplorerMotion %W %x %y
 	}
 	bind DemoExplorerWin7 <Leave> {
 	    ExplorerMotion %W -1 -1
@@ -687,25 +678,31 @@ proc DemoExplorerList {} {
     return
 }
 
-proc ExplorerDoubleButton1 {w x y} {
+proc ExplorerDoubleButton1 {T x y} {
     global Explorer
     global Dir
-    set id [$w identify $x $y]
-    if {[TreeCtrl::IsSensitive $w $x $y]} {
+    set id [$T identify $x $y]
+    set sensitive [TreeCtrl::IsSensitive $T $x $y]
+    if {[TreeCtrl::FileListEmulateWin7 $T] && [TreeCtrl::IsSensitiveMarquee $T $x $y]} {
+	set sensitive 1
+    }
+    if {$sensitive} {
 	set item [lindex $id 1]
 	set column [lindex $id 3]
-	if {[$w item tag expr $item directory]} {
-	    set name [$w item text $item {tag C0}]
+	if {[$T item tag expr $item directory]} {
+	    set name [$T item text $item {tag C0}]
 	    if {$name eq ".."} {
 		set Dir [file dirname $Dir]
 	    } else {
 		set Dir [file join $Dir $name]
 	    }
-	    $w item delete all
+	    $T item delete all
 	    DemoExplorerAux $Explorer(scriptDir) $Explorer(scriptFile) $Explorer(scriptFollowup)
-	    $w activate "root firstchild"
-	    $w xview moveto 0.0
-	    $w yview moveto 0.0
+	    if {![TreeCtrl::FileListEmulateWin7 $T]} {
+		$T activate "root firstchild"
+	    }
+	    $T xview moveto 0.0
+	    $T yview moveto 0.0
 	}
     }
     return
@@ -1265,41 +1262,33 @@ proc DemoExplorerLargeIconsWin7 {} {
 # Win7: Handle <Motion> and <Leave> events.
 proc ExplorerMotion {w x y} {
     global Explorer
+
+    # Check for Win7 'mouseover' state
     if {[lsearch -exact [$w state names] mouseover] == -1} return
+
+    if {[info exists TreeCtrl::Priv(buttonMode)] && $TreeCtrl::Priv(buttonMode) ne ""} {
+	set x [set y -1]
+    }
+
     set id [$w identify $x $y]
     if {$id eq ""} {
     } elseif {[lindex $id 0] eq "header"} {
     } elseif {[lindex $id 0] eq "item" && [llength $id] > 4} {
 	set item [lindex $id 1]
-	set column all ; # [lindex $id 3]
-	set curr [list $item $column]
-	if {$curr ne $Explorer(prev)} {
+	if {$item ne $Explorer(prev)} {
 	    if {$Explorer(prev) ne ""} {
-		eval $w item state forcolumn $Explorer(prev) !mouseover
+		$w item state set $Explorer(prev) !mouseover
 	    }
-	    $w item state forcolumn $item $column mouseover
-	    set Explorer(prev) $curr
+	    $w item state set $item mouseover
+	    set Explorer(prev) $item
 	}
 	return
     }
     if {$Explorer(prev) ne ""} {
-	eval $w item state forcolumn $Explorer(prev) !mouseover
+	if {[$w item id $Explorer(prev)] ne ""} {
+	    $w item state set $Explorer(prev) !mouseover
+	}
 	set Explorer(prev) ""
     }
-    return
-}
-
-# Win7: Handle ButtonPress-1
-proc ExplorerButton1 {T x y} {
-    global Explorer
-    ExplorerMotion $T -1 -1
-    set Explorer(buttonDown) 1
-    return
-}
-
-# Win7: Handle ButtonRelease-1
-proc ExplorerRelease1 {T x y} {
-    global Explorer
-    set Explorer(buttonDown) 0
     return
 }
