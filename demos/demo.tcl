@@ -781,7 +781,7 @@ proc TreePlusScrollbarsInAFrame {f h v} {
 	frame $f -borderwidth 1 -relief sunken
     }
     treectrl $f.t -highlightthickness 0 -borderwidth 0
-    $f.t configure -xscrollincrement 20
+    $f.t configure -xscrollincrement 20 -xscrollsmoothing 1
 #    $f.t configure -itemprefix item# -columnprefix column#
     $f.t debug configure -enable no -display yes -erasecolor pink \
 	-drawcolor orange -displaydelay 30 -textlayout 0 -data 0 -span 0
@@ -994,9 +994,9 @@ proc MakeListPopup {T} {
     $m2 add radiobutton -label none -variable Popup(bgimg) -value none \
         -command {$Popup(T) configure -backgroundimage ""}
     $m2 add radiobutton -label feather -variable Popup(bgimg) -value feather \
-        -command {$Popup(T) configure -backgroundimage $Popup(bgimg)}
+        -command {$Popup(T) configure -bgimage $Popup(bgimg) -bgimageopaque no}
     $m2 add radiobutton -label sky -variable Popup(bgimg) -value sky \
-        -command {$Popup(T) configure -backgroundimage $Popup(bgimg)}
+        -command {$Popup(T) configure -bgimage $Popup(bgimg) -bgimageopaque yes}
     $m2 add separator
     set m3 [menu $m2.mBgImgAnchor -tearoff no]
     foreach anchor {nw n ne w center e sw s se} {

@@ -320,8 +320,6 @@ package require \fBtreectrl  2.3\fR
 .sp
 \fIpathName\fR \fBdebug expose\fR \fIx1\fR \fIy1\fR \fIx2\fR \fIy2\fR
 .sp
-\fIpathName\fR \fBdebug scroll\fR
-.sp
 \fIpathName\fR \fBdepth\fR ?\fIitemDesc\fR?
 .sp
 \fIpathName\fR \fBdragimage\fR \fIoption\fR ?\fIarg ...\fR?
@@ -685,9 +683,9 @@ Database Class:	\fBBackgroundImage\fR
 
 .fi
 .IP
-Specifies the name of an image to draw as the list background. The image is
-tiled horizontally and vertically to fill the content area of the list. If
-the image is transparent it is drawn on top of the background color(s).
+Specifies the name of an image to draw as the list background.   Other options
+control whether the image is tiled and whether the image scrolls. If the image is
+transparent it is drawn on top of any column \fB-itembackground\fR colors.
 .LP
 .nf
 .ta 6c
@@ -733,6 +731,8 @@ Specifies how the background image should be aligned in any of the forms
 acceptable to \fBTk_GetAnchor\fR.  Must be one of the values
 \fBn\fR, \fBne\fR, \fBe\fR, \fBse\fR, \fBs\fR, \fBsw\fR,
 \fBw\fR, \fBnw\fR, or \fBcenter\fR.  The default is \fBnw\fR.
+When the background image scrolls, the anchor position is relative to
+the \fBcanvas\fR, otherwise it is relative to the contentbox.
 .LP
 .nf
 .ta 6c
@@ -780,9 +780,9 @@ Database Class:	\fBButtonBitmap\fR
 
 .fi
 .IP
-Specifies the bitmap to be used as the expand/collapse button to the left of
-an item. This is a \fBper-state\fR option. If
-a bitmap is specified for a certain item state, it overrides the effects of
+Specifies the name of a bitmap be used to display the expand/collapse button of an item.
+This is a \fBper-state\fR option.
+If a bitmap is specified for a certain item state, it overrides the effects of
 -usetheme.
 .LP
 .nf
@@ -794,7 +794,7 @@ Database Class:	\fBButtonColor\fR
 .fi
 .IP
 Specifies the foreground color which should be used for drawing the outline
-and the plus or minus sign of the button to the left of an item.
+and the plus or minus sign of an item's expand/collapse button.
 .LP
 .nf
 .ta 6c
@@ -804,8 +804,8 @@ Database Class:	\fBButtonImage\fR
 
 .fi
 .IP
-Specifies the image to be used as the expand/collapse button to the left of
-an item. This is a \fBper-state\fR option.
+Specifies the name of an image to be used to display the expand/collapse button of an item.
+This is a \fBper-state\fR option.
 If an image is specified for a certain item state, it overrides the effects of
 -buttonbitmap and -usetheme.
 .LP
@@ -817,7 +817,7 @@ Database Class:	\fBButtonSize\fR
 
 .fi
 .IP
-Specifies the width and height of the button drawn to the left of an item
+Specifies the width and height of the expand/collapse button of an item
 in any of the forms acceptable to \fBTk_GetPixels\fR.
 .LP
 .nf
@@ -829,7 +829,7 @@ Database Class:	\fBButtonThickness\fR
 .fi
 .IP
 Specifies the width of the outline and the plus or minus sign
-of the button to the left of an item
+of the expand/collapse button of an item
 in any of the forms acceptable to \fBTk_GetPixels\fR.
 .LP
 .nf
@@ -854,10 +854,8 @@ Database Class:	\fBCanvasPadX\fR
 
 .fi
 .IP
-Specifies the width of extra whitespace on the left and right edges of the canvas
-in any of the forms acceptable to \fBTk_GetPixels\fR.
-The canvas is the virtual sheet of paper that all the visible items are
-drawn onto, of which only a portion may be visible in the treectrl window.
+Specifies the width of extra whitespace on the left and right edges of the
+\fBcanvas\fR in any of the forms acceptable to \fBTk_GetPixels\fR.
 The option value may be a list of one or two screen distances to specify padding
 for the two edges separately.  The default is 0.
 .LP
@@ -869,10 +867,8 @@ Database Class:	\fBCanvasPadY\fR
 
 .fi
 .IP
-Specifies the height of extra whitespace on the top and bottom edges of the canvas
-in any of the forms acceptable to \fBTk_GetPixels\fR.
-The canvas is the virtual sheet of paper that all the visible items are
-drawn onto, of which only a portion may be visible in the treectrl window.
+Specifies the height of extra whitespace on the top and bottom edges of the
+\fBcanvas\fR in any of the forms acceptable to \fBTk_GetPixels\fR.
 The option value may be a list of one or two screen distances to specify padding
 for the two edges separately.  The default is 0.
 .LP
@@ -1112,8 +1108,8 @@ Database Class:	\fBLineStyle\fR
 
 .fi
 .IP
-Specifies the style of the connecting lines between related items,
-should be \fBdot\fR which is the default, or \fBsolid\fR.
+Specifies the appearance of the connecting lines between related items.
+The value should be \fBdot\fR, which is the default, or \fBsolid\fR.
 .LP
 .nf
 .ta 6c
@@ -1136,10 +1132,11 @@ Database Class:	\fBMinItemHeight\fR
 .IP
 Specifies a minimum height for every item
 in any of the forms acceptable to \fBTk_GetPixels\fR.
-The default is 0, which means that
-every item has the height requested by the arrangement of elements
-in each column. This option has no effect if the -itemheight option is specified.
-Items are never shorter than the maximum height of a button.
+The default is 0, which means that every item has the height requested by the
+arrangement of elements in each column.
+This option has no effect if either the -itemheight widget option or -height
+item option is specified.
+In any case, items are never shorter than the maximum height of an expand/collapse button.
 .LP
 .nf
 .ta 6c
@@ -1199,8 +1196,8 @@ Database Class:	\fBShowButtons\fR
 Specifies a boolean value that determines whether this widget
 leaves indentation space to display the expand/collapse buttons next to items.
 The default value is true.
-The item option \fB-button\fR determines whether any item has a button.
-See also the treectrl option \fB-showrootbutton\fR.
+The item option \fB-button\fR determines whether an item has a button.
+See also the widget options \fB-showrootbutton\fR and \fB-showrootchildbuttons\fR.
 .LP
 .nf
 .ta 6c
@@ -1237,7 +1234,7 @@ Database Class:	\fBShowRoot\fR
 Specifies a boolean value that determines whether this widget
 should draw the root item.
 By suppressing the drawing of the root item the widget can have
-multiple items that appear as \fItoplevel\fR items.
+multiple items that appear as toplevel items.
 The default value is true.
 .LP
 .nf
@@ -1286,7 +1283,7 @@ Database Class:	\fBTreeColumn\fR
 .fi
 .IP
 Specifies a \fBcolumn description\fR that determines which
-column displays the buttons and lines.
+column displays the expand/collapse buttons and connecting lines between items.
 The default is unspecified.
 .LP
 .nf
@@ -1326,19 +1323,19 @@ Database Class:	\fBWrap\fR
 Specifies whether items are arranged in a 1- or 2-dimensional layout.
 .sp
 If the value is an empty string (the default), then items are arranged from top
-to bottom (-orient vertical) or from left to right (-orient horizontal) in
+to bottom (-orient=vertical) or from left to right (-orient=horizontal) in
 a 1-dimensional layout.
 .sp
 If the value is "\fIN\fR \fBitems\fR", then no more than \fIN\fR items will appear in
-a vertical group (-orient vertical) or horizontal group (-orient horizontal).
+a vertical group (-orient=vertical) or horizontal group (-orient=horizontal).
 .sp
 If the value is "\fIN\fR \fBpixels\fR", then no vertical group of items will be
-taller than \fIN\fR pixels (-orient vertical) or no horizontal group of items will
-be wider than \fIN\fR pixels (-orient horizontal).
+taller than \fIN\fR pixels (-orient=vertical) or no horizontal group of items will
+be wider than \fIN\fR pixels (-orient=horizontal).
 .sp
 If the value is \fBwindow\fR, then a no vertical group of items will be
-taller than the window (-orient vertical) or no horizontal group of items will
-be wider than the window (-orient horizontal).
+taller than the window (-orient=vertical) or no horizontal group of items will
+be wider than the window (-orient=horizontal).
 .sp
 It is also possible to cause wrapping to occur on a per-item basis by using
 the item option -wrap.  See the \fBitem create\fR command for that option.
@@ -1353,7 +1350,7 @@ Database Class:	\fBScrollDelay\fR
 .IP
 This option controls how quickly horizontal scrolling occurs while dragging
 the mouse with button 1 pressed.
-The value should be a list of 1 or 2 integers interpreted as microseconds.
+The value should be a list of 1 or 2 integers interpreted as milliseconds.
 If 2 values are specified, then the first value determines the intial delay
 after the first scroll, and the second value determines the delay for all
 scrolling after the first. If only 1 value is specified, each scroll takes
@@ -1370,7 +1367,7 @@ Database Class:	\fBScrollIncrement\fR
 Specifies an increment for horizontal scrolling, in any of the usual forms
 permitted for screen distances.  If the value of this option is greater
 than zero, the horizontal view in the window will be constrained so that
-the x coordinate at the left edge of the window is always an even
+the \fBcanvas\fR x coordinate at the left edge of the window is always an even
 multiple of \fB-xscrollincrement\fR;  furthermore, the units for scrolling
 (e.g., the change in view when the left and right arrows of a scrollbar
 are selected) will also be \fB-xscrollincrement\fR.  If the value of
@@ -1404,7 +1401,7 @@ Database Class:	\fBScrollDelay\fR
 .IP
 This option controls how quickly vertical scrolling occurs while dragging
 the mouse with button 1 pressed.
-The value should be a list of 1 or 2 integers interpreted as microseconds.
+The value should be a list of 1 or 2 integers interpreted as milliseconds.
 If 2 values are specified, then the first value determines the intial delay
 after the first scroll, and the second value determines the delay for all
 scrolling after the first. If only 1 value is specified, each scroll takes
@@ -1421,7 +1418,7 @@ Database Class:	\fBScrollIncrement\fR
 Specifies an increment for vertical scrolling, in any of the usual forms
 permitted for screen distances.  If the value of this option is greater
 than zero, the vertical view in the window will be constrained so that
-the y coordinate at the top edge of the window is always an even
+the \fBcanvas\fR y coordinate at the top edge of the window is always an even
 multiple of \fB-yscrollincrement\fR;  furthermore, the units for scrolling
 (e.g., the change in view when the top and bottom arrows of a scrollbar
 are selected) will also be \fB-yscrollincrement\fR.  If the value of
@@ -1445,6 +1442,11 @@ to the -yscrollincrement option, and all other scrolling is done as if the
 scrollbar thumb scrolling is very smooth, but when clicking the scrollbar buttons
 scrolling is done in coarser increments.  The default value is false.
 .PP
+.SH "THE CANVAS"
+Throughout this manual page the term \fIcanvas\fR is sometimes used.  The canvas
+can be thought of as the virtual sheet of paper upon which all visible items are
+drawn.  The treectrl window displays different areas of the canvas within its
+borders as the list is scrolled.
 .SH "ITEM AND COLUMN TAGS"
 Columns and items may have any number of tags associated with them.
 A tag is just a string of characters, and it may take any form,
@@ -1509,9 +1511,10 @@ commands are possible for treectrl widgets:
 .TP
 \fIpathName\fR \fBactivate\fR \fIitemDesc\fR
 Sets the active item to the one described by \fIitemDesc\fR,
-and switches on the state \fBactive\fR for this item.
-From now on the item can be retrieved with the item description \fBactive\fR.
-An \fB<ActiveItem>\fR event is generated.
+and switches on the state \fBactive\fR for that item.
+The active item can be referred to by the item description \fBactive\fR.
+If this command changes which item is active an \fB<ActiveItem>\fR event is generated.
+If the active item is deleted the root item becomes the new active item.
 .TP
 \fIpathName\fR \fBbbox\fR ?\fIarea\fR?
 Returns a list with four elements giving the bounding box (left, top, right
@@ -1532,17 +1535,13 @@ columns.
 .TP
 \fIpathName\fR \fBcanvasx\fR \fIwindowx\fR
 Translates the given window x-coordinate \fIwindowx\fR in the treectrl
-to canvas coordinate space.  The canvas is the virtual sheet of paper
-that all the visible items are drawn onto, of which only a portion may be
-visible in the treectrl window.  The \fBmarquee\fR command expects canvas
-coordinates.
+to \fBcanvas\fR coordinate space.  The \fBmarquee\fR command
+expects canvas coordinates.
 .TP
 \fIpathName\fR \fBcanvasy\fR \fIwindowy\fR
 Translates the given window y-coordinate \fIwindowy\fR in the treectrl
-to canvas coordinate space.  The canvas is the virtual sheet of paper
-that all the visible items are drawn onto, of which only a portion may be
-visible in the treectrl window.  The \fBmarquee\fR command expects canvas
-coordinates.
+to \fBcanvas\fR coordinate space.  The \fBmarquee\fR command
+expects canvas coordinates.
 .TP
 \fIpathName\fR \fBcget\fR \fIoption\fR
 Returns the current value of the configuration option given
@@ -1551,7 +1550,7 @@ by \fIoption\fR.
 command.
 .TP
 \fIpathName\fR \fBcollapse\fR ?\fB-recurse\fR? ?\fIitemDesc ...\fR?
-Use \fBitem collapse\fR instead.
+Deprecated. Use \fBitem collapse\fR instead.
 .TP
 \fIpathName\fR \fBcolumn\fR \fIoption\fR \fIcolumn\fR ?\fIarg ...\fR?
 This command is used to manipulate the columns of the treectrl widget
@@ -1565,9 +1564,9 @@ The following forms of the command are supported:
 Returns a list with four elements giving the bounding box
 of the header of the column specified by the
 \fBcolumn description\fR \fIcolumnDesc\fR.
-If the treectrl is configured not to display the column headers
-by means of the \fB-showheader\fR option, then
-an empty list is returned instead.
+The returned coordinates are relative to the top-left corner of the widget.
+If the column option \fB-visible\fR=false or if the widget option
+\fB-showheader\fR=false, then an empty list is returned.
 .TP
 \fIpathName\fR \fBcolumn cget\fR \fIcolumnDesc\fR \fIoption\fR
 This command returns the current value of the option named \fIoption\fR
@@ -1650,13 +1649,16 @@ The following configuration options are supported:
 .TP
 \fB\fB-enable\fR\fR \fIboolean\fR
 Controls whether the user is allowed to rearrange columns by drag-and-drop.
+The default is false.
 .TP
 \fB\fB-imagealpha\fR\fR \fIalpha\fR
 \fIAlpha\fR is an integer from 0 (invisible) to 255 (opaque) controlling the
 transparency of the drag image. Any value outside this range is clipped.
+The default is 128.
 .TP
 \fB\fB-imagecolor\fR\fR \fIbackground\fR
 \fIBackground\fR is the color of the drag image background rectangle.
+The default is "gray75".
 .TP
 \fB\fB-imagecolumn\fR\fR \fIcolumn\fR
 \fIColumn\fR specifies the column to create the drag image from.
@@ -1666,7 +1668,7 @@ transparency of the drag image. Any value outside this range is clipped.
 starting position.
 .TP
 \fB\fB-indicatorcolor\fR\fR \fIcolor\fR
-\fIColor\fR is the color of the 2-pixel-thick line.
+\fIColor\fR is the color of the 2-pixel-thick line.  The default is "black".
 .TP
 \fB\fB-indicatorcolumn\fR\fR \fIcolumn\fR
 The 2-pixel-thick line will be drawn over the left or right edge of \fIcolumn\fR.
@@ -1776,6 +1778,7 @@ of the screen area used to display items.
 This is the area of the window not including borders, column headers, or
 locked columns. An empty string is returned if the display area has
 no height or width, which can happen if the window is too small.
+The result of this command is the same as that of \fBbbox content\fR.
 .TP
 \fIpathName\fR \fBdebug\fR \fIoption\fR ?\fIarg arg ...\fR?
 This command is used to facilitate debugging of the treectrl widget.
@@ -1865,9 +1868,6 @@ of \fBalloc\fR, \fBditem\fR, \fBonscreen\fR or \fBrange\fR.
 \fIpathName\fR \fBdebug expose\fR \fIx1\fR \fIy1\fR \fIx2\fR \fIy2\fR
 Causes the area of the window bounded by the given window-coords to be
 marked as invalid. This simulates uncovering part of the window.
-.TP
-\fIpathName\fR \fBdebug scroll\fR
-Returns a string useful for debugging vertical scrolling.
 .RE
 .TP
 \fIpathName\fR \fBdepth\fR ?\fIitemDesc\fR?
@@ -1879,8 +1879,9 @@ items in the treectrl widget is returned instead.
 Depth is defined as the number of ancestors an item has.
 .TP
 \fIpathName\fR \fBdragimage\fR \fIoption\fR ?\fIarg ...\fR?
-This command is used to manipulate the dragimage,
-one or more dotted lines around rectangular regions of the treectrl widget.
+This command is used to manipulate the drag image, which is used to provide
+feedback when items are drag-and-dropped within the window.  The drag image is
+displayed as the dotted outlines of one or more items, columns and/or elements.
 The exact behavior of the command depends on the \fIoption\fR argument
 that follows the \fBdragimage\fR argument.
 The following forms of the command are supported:
@@ -1933,8 +1934,8 @@ whether the dragimage should currently be visible.
 \fIpathName\fR \fBdragimage offset\fR ?\fIx y\fR?
 Returns a list containing the x and y offsets of the dragimage,
 if no additional arguments are specified.
-The dragimage offset is the screen distance, the image is displayed
-relative to the item its shape is derived from.
+The dragimage offset is the screen distance the image is displayed at
+relative to the item(s) its shape is derived from.
 If two coordinates are specified,
 sets the dragimage offset to the given coordinates \fIx\fR and \fIy\fR.
 .RE
@@ -1999,7 +2000,7 @@ such as \fBrect\fR or \fBtext\fR.
 .RE
 .TP
 \fIpathName\fR \fBexpand\fR ?\fB-recurse\fR? ?\fIitemDesc ...\fR?
-Use \fBitem expand\fR instead.
+Deprecated.  Use \fBitem expand\fR instead.
 .TP
 \fIpathName\fR \fBgradient\fR \fIoption\fR ?\fIarg ...\fR?
 This command is used to manipulate color gradients.
@@ -2125,7 +2126,10 @@ See \fBGRADIENTS\fR for more on this.
 \fIpathName\fR \fBgradient delete\fR ?\fIname ...\fR?
 Deletes each gradient specified by \fIname\fR.  If the gradient is still being
 used then it is not actually deleted until all elements etc
-using the gradient have stopped using it.
+using the gradient have stopped using it.  A deleted-but-in-use gradient is
+not recognized by the various gradient commands.  Creating a new gradient
+with the same name as a deleted-but-in-use gradient resurrects the deleted
+gradient.
 .TP
 \fIpathName\fR \fBgradient names\fR
 Returns a list of names of all the gradients that have been created by this treectrl
@@ -2148,7 +2152,7 @@ otherwise the first word of the result is \fBheader\fR or \fBitem\fR.
 If the coordinates are over a column header, then
 the first word of the result is \fBheader\fR, followed by
 the unique id of the column (or the string \fBtail\fR).
-If the x coordinate is near the left or right end of a column, then
+If the x coordinate is near the left or right edge of a column, then
 a third word \fBleft\fR or \fBright\fR is appended to the result.
 .sp
 If the coordinates are over an item, then the first word of the result
@@ -2186,13 +2190,13 @@ the second is the parent's parent, an so on. The last list value will be the
 root item if \fIitemDesc\fR is a descendant of the root item.
 .TP
 \fIpathName\fR \fBitem bbox\fR \fIitemDesc\fR ?\fIcolumn\fR? ?\fIelement\fR?
-Returns a list with four elements giving the bounding box
-of the item described by \fIitemDesc\fR.
-If no further argument is specified, the bbox spans the area of the item
-over all non-locked columns. If a \fIcolumn\fR is specified, only the area of the item
-in this column is considered. If an additional \fIelement\fR is specified,
-the area of this \fIelement\fR in \fIcolumn\fR of the specified item is
-returned.
+Returns a list with four elements giving the bounding box of the item described
+by \fIitemDesc\fR. If no further argument is specified, the bbox spans the area
+of the item over all non-locked columns. If a \fIcolumn\fR is specified, only the
+area of the item in this column is considered. If an additional \fIelement\fR is
+specified, the area of this \fIelement\fR in \fIcolumn\fR of the specified item
+is returned.  The returned coordinates are relative to the top-left corner of the
+widget.  If the item is not visible for any reason, the result in an empty string.
 .TP
 \fIpathName\fR \fBitem buttonstate\fR \fIitemDesc\fR ?\fIstate\fR?
 If \fIstate\fR is specified, this command sets the state of the expand/collapse
@@ -2215,7 +2219,7 @@ the first child to the last child.
 Switches off the \fBopen\fR state of the item(s) described by \fIitemDesc\fR.
 If an item has descendants, then they are no longer displayed.
 If an item is already closed, then this command has no effect on that item.
-If \fB-animate\fR is specified, then item's button will animate as it
+If \fB-animate\fR is specified, then the item's button will animate as it
 transitions between states if the theme supports it; in this case only one item
 may be specified.
 If \fB-recurse\fR is specified, then all descendants of the items described
@@ -2307,16 +2311,22 @@ the column specified by the treectrl option \fB-treecolumn\fR is visible, and
 .IP [2]
 the treectrl option \fB-showbuttons\fR is true, and
 .IP [3]
-for the root item, the treectrl option \fB-showrootbutton\fR is true.
+for the root item, the treectrl option \fB-showrootbutton\fR is true, and
+.IP [4]
+for immediate children of the root item, the treectrl option \fB-showrootchildbuttons\fR is true.
 .RE
 .TP
 \fB\fB-count\fR\fR \fInumItems\fR
 Specifies the number of items to create. Must be >= 0. Defaults to 1.
 .TP
+\fB\fB-enabled\fR\fR \fIboolean\fR
+Specifies whether the items should be enabled. Default is true.
+.TP
 \fB\fB-height\fR\fR \fIheight\fR
 Specifies a fixed height in any of the forms acceptable to \fBTk_GetPixels\fR.
 Must be >= 0. If \fIheight\fR is zero then the item's height is unspecified.
-Defaults to 0.
+Defaults to 0.  See also the widget options \fB-itemheight\fR and
+\fB-minitemheight\fR.
 .TP
 \fB\fB-nextsibling\fR\fR \fIitemDesc\fR
 Specifies the item before which the new items will be inserted. The new items
@@ -2327,7 +2337,9 @@ Specifies whether the items should be open or closed. Default is true.
 .TP
 \fB\fB-parent\fR\fR \fIitemDesc\fR
 Specifies the item which the new items will be the children of. The new items
-will be appended to the list of children of \fIitemDesc\fR.
+will be appended to the list of children of \fIitemDesc\fR.  When no parent is
+specified, the new items are \fIorphan\fR items (see the widget command
+\fBorphans\fR) and will not be displayed in the list.
 .TP
 \fB\fB-prevsibling\fR\fR \fIitemDesc\fR
 Specifies the item after which the new items will be inserted. The new items
@@ -2345,8 +2357,12 @@ console or to improve performance. Default is true.
 \fIBoolean\fR must have one of the forms accepted by \fBTcl_GetBoolean\fR. It
 indicates that the item should be displayed in the list. The item will only be
 displayed if:
-a) each ancestor is a descendant of the root item (not an orphan);
-and b) each ancestor's \fB-visible\fR option is true
+.RS
+.IP [1]
+each ancestor is a descendant of the root item (not an orphan), and
+.IP [2]
+each ancestor's \fB-visible\fR option is true
+.RE
 .TP
 \fB\fB-wrap\fR\fR \fIboolean\fR
 \fIBoolean\fR must have one of the forms accepted by \fBTcl_GetBoolean\fR. It
@@ -2371,10 +2387,10 @@ There is no way to delete the root item of the treectrl widget;
 in all cases the specification of the root item is ignored.
 .sp
 For each call to this command, two events may be generated.
-If any of the deleted items are selected, then a \fB<Selection>\fR event
-is generated just before the items are deleted.
-If any items are going to be deleted, then an \fB<ItemDelete>\fR event event is generated just before the items
-are deleted.
+If any of the deleted items are selected, then they are removed from the selection
+and a \fB<Selection>\fR event is generated just before the items are deleted.
+If any items are going to be deleted, then an \fB<ItemDelete>\fR event is
+generated just before the items are deleted.
 .TP
 \fIpathName\fR \fBitem descendants\fR \fIitemDesc\fR
 Returns a list containing the item ids of the descendants
@@ -2382,7 +2398,7 @@ of the item specified by \fIitemDesc\fR, i.e. the children, grandchildren,
 great-grandchildren etc, of the item.
 .TP
 \fIpathName\fR \fBitem dump\fR \fIitemDesc\fR
-Returns a list with 4 words in the form
+Debug command. Returns a list with 4 words in the form
 \fBindex\fR \fIindex\fR \fBindexVis\fR \fIindexVis\fR.
 .TP
 \fIpathName\fR \fBitem element\fR \fIcommand\fR \fIitemDesc\fR \fIcolumn\fR \fIelement\fR ?\fIarg ...\fR?
@@ -2449,14 +2465,14 @@ Returns 1 if the item described by \fIitemDesc\fR has the
 state \fBenabled\fR switched on, 0 otherwise. If \fIboolean\fR is specified,
 then the \fBenabled\fR state of every item described by the
 \fBitem description\fR \fIitemDesc\fR is set accordingly.
-All items are enabled when first created. Disabled items cannot be selected,
+New items are enabled by default when created. Disabled items cannot be selected,
 and are ignored by the default key-navigation and mouse bindings.
 .TP
 \fIpathName\fR \fBitem expand\fR \fIitemDesc\fR ?\fB-animate\fR? ?\fB-recurse\fR?
 Switches on the \fBopen\fR state of the item(s) described by \fIitemDesc\fR.
 If an item has descendants, then they are now displayed.
 If an item is already open, then this command has no effect on that item.
-If \fB-animate\fR is specified, then item's button will animate as it
+If \fB-animate\fR is specified, then the item's button will animate as it
 transitions between states if the theme supports it; in this case only one item
 may be specified.
 If \fB-recurse\fR is specified, then all descendants of the items described by
@@ -2757,7 +2773,7 @@ Changes the \fBopen\fR state of the item(s) described by \fIitemDesc\fR.
 If the \fBopen\fR state is currently switched off, then
 this command does the same as the \fBitem expand\fR widget command;
 otherwise the same as the \fBitem collapse\fR widget command.
-If \fB-animate\fR is specified, then item's button will animate as it
+If \fB-animate\fR is specified, then the item's button will animate as it
 transitions between states if the theme supports it; in this case only one item
 may be specified.
 If \fB-recurse\fR is specified, then the \fBopen\fR state of all descendants of
@@ -2772,9 +2788,9 @@ One corner point of the marquee is fixed as long as the marquee is visible
 and called the anchor; the diagonally opposite corner is dragged with the
 mouse while resizing the marquee and simply called the corner.
 .sp
-All coordinates handled by this widget command are treectrl coordinates,
-i.e. the \fBcanvasx\fR or \fBcanvasy\fR widget command should be
-used to translate any window coordinates to marquee coordinates.
+All coordinates handled by this widget command are \fBcanvas\fR
+coordinates, i.e. the \fBcanvasx\fR or \fBcanvasy\fR widget command should be
+used to translate window coordinates to canvas coordinates.
 .sp
 By default, the marquee is displayed as a 1-pixel thick dotted rectangle.
 If either of the \fB-fill\fR or \fB-outline\fR options is specified, then
@@ -3276,7 +3292,7 @@ The following options are supported:
 .TP
 \fB\fB-detach\fR\fR \fIboolean\fR
 Specifies whether the element should be positioned by itself,
-i.e. independent from the other elements.
+i.e. independent from the other elements.  The default is false.
 .TP
 \fB\fB-draw\fR\fR \fIboolean\fR
 This is a \fBper-state\fR option that determines whether
@@ -3292,6 +3308,7 @@ to increase when a style has more screen space than it needs.
 Each letter refers to the padding on the top, bottom,
 left, or right that should be allowed to increase.
 This option is typically used to justify an element.
+The default is an empty string.
 .TP
 \fB\fB-iexpand\fR\fR \fIflags\fR
 This option allows the internal padding of the element
@@ -3307,45 +3324,46 @@ between the padding). Note that if the
 \fB-union\fR option is specified for this element, then the \fBx\fR and
 \fBy\fR flags have no effect, since the size of an element with
 \fB-union\fR layout is determined by the elements it surrounds.
+The default is an empty string.
 .TP
 \fB\fB-indent\fR\fR \fIboolean\fR
 Specifies whether the element should be positioned to the right of the
-button/line area in the tree column. This option is ignored unless the
-\fB-detach\fR option is true.
+button/line area in the tree column.  When false, the element is displayed
+beneath the buttons and lines in the tree column.
+This option is ignored unless the \fB-detach\fR option is true.
+The default is true.
 .TP
 \fB\fB-ipadx\fR\fR \fIamount\fR
 .TP
 \fB\fB-ipady\fR\fR \fIamount\fR
-\fIAmount\fR specifies how much internal padding to
-leave on the left and right (for \fB-ipadx\fR)
-or top and bottom (for \fB-ipady\fR) side of the element.
-\fIAmount\fR may be a list
-of two values to specify padding for the two sides separately,
-it defaults to 0.
+\fIAmount\fR specifies how much internal padding to leave on the left and
+right (for \fB-ipadx\fR) or top and bottom (for \fB-ipady\fR) sides of
+the element. \fIAmount\fR may be a list of two values to specify padding for
+the two sides separately.  The default value is 0.
 .TP
 \fB\fB-minheight\fR\fR \fIpixels\fR
 .TP
 \fB\fB-height\fR\fR \fIpixels\fR
 .TP
 \fB\fB-maxheight\fR\fR \fIpixels\fR
-Specifies the minimum, fixed, and maximum height of the element.
+Specifies the minimum, fixed, and maximum height of the display area of the element.
+The default is unspecified.
 .TP
 \fB\fB-minwidth\fR\fR \fIpixels\fR
 .TP
 \fB\fB-width\fR\fR \fIpixels\fR
 .TP
 \fB\fB-maxwidth\fR\fR \fIpixels\fR
-Specifies the minimum, fixed, and maximum width of the element.
+Specifies the minimum, fixed, and maximum width of the display area of the element.
+The default is unspecified.
 .TP
 \fB\fB-padx\fR\fR \fIamount\fR
 .TP
 \fB\fB-pady\fR\fR \fIamount\fR
-\fIAmount\fR specifies how much external padding to
-leave on the left and right (for \fB-padx\fR)
-or top and bottom (for \fB-pady\fR) side of the element.
-\fIAmount\fR may be a list
-of two values to specify padding for the two sides separately,
-it defaults to 0.
+\fIAmount\fR specifies how much external padding to leave on the left and
+right (for \fB-padx\fR) or top and bottom (for \fB-pady\fR) sides of the
+element. \fIAmount\fR may be a list of two values to specify padding for the
+two sides separately.  The default value is 0.
 .TP
 \fB\fB-squeeze\fR\fR \fIflags\fR
 This option allows the display area of an element to decrease when a
@@ -3356,14 +3374,15 @@ style has less space than it needs.
 \fBy\fR allows display area to decrease vertically.
 This option is typically used for \fBtext\fR elements and will cause
 the text element to display an ellipsis (...) and/or wrap lines.
+The default is an empty string.
 .TP
 \fB\fB-sticky\fR\fR \fIflags\fR
 This option controls how the actual display information (image, text, etc)
 of an element is positioned (or stretched) within its display area.
-\fIFlags\fR is a
-string that contains zero or more of the characters \fBn\fR, \fBs\fR,
-\fBw\fR or \fBe\fR. Each letter refers to the top, bottom, left or right
-side of the display area that the display information should "stick" to.
+\fIFlags\fR is a string that contains zero or more of the characters \fBn\fR,
+\fBs\fR, \fBw\fR or \fBe\fR. Each letter refers to the top, bottom, left
+or right side of the display area that the display information should "stick" to.
+The default is nswe.
 .TP
 \fB\fB-union\fR\fR \fIelementList\fR
 Specifies a list of other elements which this element will surround.
@@ -3513,11 +3532,11 @@ Indicates whether or not an arrow should be drawn in the column header.
 \fBnone\fR (the default), \fBup\fR, or \fBdown\fR.
 .TP
 \fB\fB-arrowbitmap\fR\fR \fIbitmap\fR
-Specifies as a \fBper-state\fR option the bitmap to
+Specifies as a \fBper-state\fR option the name of a bitmap to
 use to draw the arrow if this column's -arrow option is not \fBnone\fR.
 .TP
 \fB\fB-arrowimage\fR\fR \fIimage\fR
-Specifies as a \fBper-state\fR option the image to
+Specifies as a \fBper-state\fR option the name of an image to
 use to draw the arrow if this column's -arrow option is not \fBnone\fR.
 If an image is specified for a certain state, it overrides the -arrowbitmap option.
 .TP
@@ -3545,8 +3564,7 @@ of two values to specify padding for top and bottom separately;
 it defaults to 0.
 .TP
 \fB\fB-bitmap\fR\fR \fIbitmap\fR
-Specifies the bitmap to display in the element
-to the left of the column title.
+Specifies the name of a bitmap to display to the left of the column title.
 .TP
 \fB\fB-background\fR\fR \fIcolor\fR
 Specifies as a \fBper-state\fR option the color to
@@ -3573,9 +3591,16 @@ This option has no effect if the \fB-width\fR option is set.
 \fB\fB-font\fR\fR \fIfontName\fR
 Specifies the font to use for the column title inside the column header.
 .TP
+\fB\fB-gridleftcolor\fR\fR \fIcolor\fR
+.TP
+\fB\fB-gridrightcolor\fR\fR \fIcolor\fR
+Specifies the color of the lines drawn down the left and right edges of the
+column.  These so-called "grid lines" are drawn over the elements of each item
+style in the column and down into the whitespace region below any items.
+The default value for each option is an empty string meaning no lines are drawn.
+.TP
 \fB\fB-image\fR\fR \fIimage\fR
-Specifies the image to display in the element
-to the left of the column title.
+Specifies the name of an image to display to the left of the column title.
 This option overrides the \fB-bitmap\fR column option.
 .TP
 \fB\fB-imagepadx\fR\fR \fIamount\fR
@@ -4009,6 +4034,11 @@ height of the image, or zero if there is no image.
 Specifies as a \fBper-state\fR option
 the image to display in the element.
 .TP
+\fB\fB-tiled\fR\fR \fIboolean\fR
+Specifies a boolean indicating whether or not the image should be tiled
+horizontally and vertically within the display area for the element.
+The default is false.
+.TP
 \fB\fB-width\fR\fR \fIsize\fR
 Specifies the requested width of the display area for this element.
 If unspecified (the default), the element requests a width equal to the
@@ -4036,12 +4066,17 @@ Specifies the height of the rectangle. If this value is unspecified
 determined by the style layout options.
 .TP
 \fB\fB-open\fR\fR \fIopen\fR
-This option may be used to get an incomplete drawing of the outline.
+Specifies as a \fBper-state\fR option
+which edges of the rectangle should be left open.
+This option may be used to get an incomplete drawing of the outline and rounded
+corners, often to give the appearance of the rectangle extending over adjacent
+columns or items.
 \fIOpen\fR is a string that contains zero or more of the characters
 \fBn\fR, \fBs\fR, \fBe\fR or \fBw\fR.
-Each letter refers to a side (north, south, east, or west) that the outline
-will not be drawn.
-The default is the empty string, which causes the outline to be drawn completely.
+Each letter refers to an edge (north, south, east, or west) on which the outline
+and rounded corners will not be drawn.
+The default is the empty string, which causes all rounded corners and the outline
+to be drawn.
 .TP
 \fB\fB-outline\fR\fR \fIcolor\fR
 Specifies as a \fBper-state\fR option the color to
@@ -4741,11 +4776,13 @@ with the gradient's first \fB-stops\fR color.
 .PP
 Gradients may be used in the following places:
 .IP [1]
-The -fill and -outline options of rect elements.
+The -gridleftcolor and -gridrightcolor options of columns.
 .IP [2]
-The -fill and -outline options of the \fBmarquee configure\fR command.
-.IP [3]
 The -itembackground option of columns.
+.IP [3]
+The -fill and -outline options of rect elements.
+.IP [4]
+The -fill and -outline options of the \fBmarquee configure\fR command.
 .PP
 .PP
 On Microsoft Windows, GDI+ is used where it is available (gdiplus.dll is
@@ -4785,7 +4822,7 @@ By specifying any of the \fB-bottom\fR, \fB-left\fR, \fB-right\fR or
 \fB-top\fR gradient options the size of the gradient brush does not need
 to match that of the rectangle being painted.  These options can be used to
 make a gradient appear to span across the entire width or height of the treectrl
-window, or across the entire canvas, for example.
+window, or across the entire \fBcanvas\fR, for example.
 .PP
 There is no point specifying \fB-left\fR or \fB-right\fR if the gradient
 is vertical, since the gradient's colors are constant horizontally, so changing

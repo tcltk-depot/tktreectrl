@@ -4913,16 +4913,15 @@ ItemCreateCmd(
     )
 {
     TreeCtrl *tree = clientData;
-    static CONST char *optionNames[] = { "-button", "-count", "-height",
-	"-nextsibling", "-open", "-parent", "-prevsibling", "-returnid",
-	"-tags", "-visible", "-wrap",
+    static CONST char *optionNames[] = { "-button", "-count", "-enabled",
+	"-height", "-nextsibling", "-open", "-parent", "-prevsibling",
+	"-returnid", "-tags", "-visible", "-wrap",
 	(char *) NULL };
-    enum { OPT_BUTTON, OPT_COUNT, OPT_HEIGHT, OPT_NEXTSIBLING,
+    enum { OPT_BUTTON, OPT_COUNT, OPT_ENABLED, OPT_HEIGHT, OPT_NEXTSIBLING,
 	OPT_OPEN, OPT_PARENT, OPT_PREVSIBLING, OPT_RETURNID, OPT_TAGS,
 	OPT_VISIBLE, OPT_WRAP };
     int index, i, count = 1, button = 0, returnId = 1, open = 1, visible = 1;
-    int wrap = 0;
-    int height = 0;
+    int enabled = 1, wrap = 0, height = 0;
     TreeItem item, parent = NULL, prevSibling = NULL, nextSibling = NULL;
     TreeItem head = NULL, tail = NULL;
     Tcl_Obj *listObj = NULL, *tagsObj = NULL;
@@ -4962,6 +4961,12 @@ ItemCreateCmd(
 		if (count <= 0) {
 		    FormatResult(interp, "bad count \"%d\": must be > 0",
 			    count);
+		    return TCL_ERROR;
+		}
+		break;
+	    case OPT_ENABLED:
+		if (Tcl_GetBooleanFromObj(interp, objv[i + 1], &enabled)
+			!= TCL_OK) {
 		    return TCL_ERROR;
 		}
 		break;
@@ -5045,10 +5050,12 @@ ItemCreateCmd(
 	item = Item_Alloc(tree);
 	item->flags &= ~(ITEM_FLAG_BUTTON | ITEM_FLAG_BUTTON_AUTO);
 	item->flags |= button;
-	if (visible) item->flags |= ITEM_FLAG_VISIBLE;
-	else item->flags &= ~ITEM_FLAG_VISIBLE;
+	if (enabled) item->state |= STATE_ENABLED;
+	else item->state &= ~STATE_ENABLED;
 	if (open) item->state |= STATE_OPEN;
 	else item->state &= ~STATE_OPEN;
+	if (visible) item->flags |= ITEM_FLAG_VISIBLE;
+	else item->flags &= ~ITEM_FLAG_VISIBLE;
 	if (wrap) item->flags |= ITEM_FLAG_WRAP;
 	else item->flags &= ~ITEM_FLAG_WRAP;
 	item->fixedHeight = height;

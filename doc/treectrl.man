@@ -76,9 +76,9 @@ See the [cmd option] manual entry for details on the standard options.
 [list_begin tkoptions]
 
 [tkoption_def -backgroundimage backgroundImage BackgroundImage]
-Specifies the name of an image to draw as the list background. The image is
-tiled horizontally and vertically to fill the content area of the list. If
-the image is transparent it is drawn on top of the background color(s).
+Specifies the name of an image to draw as the list background.   Other options
+control whether the image is tiled and whether the image scrolls. If the image is
+transparent it is drawn on top of any column [option -itembackground] colors.
 
 [tkoption_def -backgroundmode backgroundMode BackgroundMode]
 Specifies how the background color of items is chosen in each column.
@@ -103,6 +103,8 @@ Specifies how the background image should be aligned in any of the forms
 acceptable to [fun Tk_GetAnchor].  Must be one of the values
 [const n], [const ne], [const e], [const se], [const s], [const sw],
 [const w], [const nw], or [const center].  The default is [const nw].
+When the background image scrolls, the anchor position is relative to
+the [sectref {THE CANVAS} {canvas}], otherwise it is relative to the contentbox.
 
 [tkoption_def -bgimageopaque bgImageOpaque BgImageOpaque]
 Specifies a boolean indicating whether or not the background image is fully
@@ -122,28 +124,28 @@ The value must be a string that contains zero or more of the characters
 [const x] or [const y].  The default is [const xy].
 
 [tkoption_def -buttonbitmap buttonBitmap ButtonBitmap]
-Specifies the bitmap to be used as the expand/collapse button to the left of
-an item. This is a [sectref {PER-STATE OPTIONS} per-state] option. If
-a bitmap is specified for a certain item state, it overrides the effects of
+Specifies the name of a bitmap be used to display the expand/collapse button of an item.
+This is a [sectref {PER-STATE OPTIONS} per-state] option.
+If a bitmap is specified for a certain item state, it overrides the effects of
 -usetheme.
 
 [tkoption_def -buttoncolor buttonColor ButtonColor]
 Specifies the foreground color which should be used for drawing the outline
-and the plus or minus sign of the button to the left of an item.
+and the plus or minus sign of an item's expand/collapse button.
 
 [tkoption_def -buttonimage buttonImage ButtonImage]
-Specifies the image to be used as the expand/collapse button to the left of
-an item. This is a [sectref {PER-STATE OPTIONS} per-state] option.
+Specifies the name of an image to be used to display the expand/collapse button of an item.
+This is a [sectref {PER-STATE OPTIONS} per-state] option.
 If an image is specified for a certain item state, it overrides the effects of
 -buttonbitmap and -usetheme.
 
 [tkoption_def -buttonsize buttonSize ButtonSize]
-Specifies the width and height of the button drawn to the left of an item
+Specifies the width and height of the expand/collapse button of an item
 in any of the forms acceptable to [fun Tk_GetPixels].
 
 [tkoption_def -buttonthickness buttonThickness ButtonThickness]
 Specifies the width of the outline and the plus or minus sign
-of the button to the left of an item
+of the expand/collapse button of an item
 in any of the forms acceptable to [fun Tk_GetPixels].
 
 [tkoption_def -buttonttracking buttonTracking ButtonTracking]
@@ -154,18 +156,14 @@ soon as the <ButtonPress> event occurs over them.  This option defaults to
 true on Mac OS X and Gtk+, false on Win32 and X11.
 
 [tkoption_def -canvaspadx canvasPadX CanvasPadX]
-Specifies the width of extra whitespace on the left and right edges of the canvas
-in any of the forms acceptable to [fun Tk_GetPixels].
-The canvas is the virtual sheet of paper that all the visible items are
-drawn onto, of which only a portion may be visible in the treectrl window.
+Specifies the width of extra whitespace on the left and right edges of the
+[sectref {THE CANVAS} {canvas}] in any of the forms acceptable to [fun Tk_GetPixels].
 The option value may be a list of one or two screen distances to specify padding
 for the two edges separately.  The default is 0.
 
 [tkoption_def -canvaspady canvasPadY CanvasPadY]
-Specifies the height of extra whitespace on the top and bottom edges of the canvas
-in any of the forms acceptable to [fun Tk_GetPixels].
-The canvas is the virtual sheet of paper that all the visible items are
-drawn onto, of which only a portion may be visible in the treectrl window.
+Specifies the height of extra whitespace on the top and bottom edges of the
+[sectref {THE CANVAS} {canvas}] in any of the forms acceptable to [fun Tk_GetPixels].
 The option value may be a list of one or two screen distances to specify padding
 for the two edges separately.  The default is 0.
 
@@ -279,8 +277,8 @@ Specifies the color which should be used for drawing
 the connecting lines between related items.
 
 [tkoption_def -linestyle lineStyle LineStyle]
-Specifies the style of the connecting lines between related items,
-should be [const dot] which is the default, or [const solid].
+Specifies the appearance of the connecting lines between related items.
+The value should be [const dot], which is the default, or [const solid].
 
 [tkoption_def -linethickness lineThickness LineThickness]
 Specifies the thickness of the connecting lines between related items
@@ -289,10 +287,11 @@ in any of the forms acceptable to [fun Tk_GetPixels].
 [tkoption_def -minitemheight minItemHeight MinItemHeight]
 Specifies a minimum height for every item
 in any of the forms acceptable to [fun Tk_GetPixels].
-The default is 0, which means that
-every item has the height requested by the arrangement of elements
-in each column. This option has no effect if the -itemheight option is specified.
-Items are never shorter than the maximum height of a button.
+The default is 0, which means that every item has the height requested by the
+arrangement of elements in each column.
+This option has no effect if either the -itemheight widget option or -height
+item option is specified.
+In any case, items are never shorter than the maximum height of an expand/collapse button.
 
 [tkoption_def -rowproxy rowProxy RowProxy]
 If this option specifies a non empty value,
@@ -324,8 +323,8 @@ or [const extended];  the default value is [const browse].
 Specifies a boolean value that determines whether this widget
 leaves indentation space to display the expand/collapse buttons next to items.
 The default value is true.
-The item option [option -button] determines whether any item has a button.
-See also the treectrl option [option -showrootbutton]. 
+The item option [option -button] determines whether an item has a button.
+See also the widget options [option -showrootbutton] and [option -showrootchildbuttons]. 
 
 [tkoption_def -showheader showHeader ShowHeader]
 Specifies a boolean value that determines whether this widget
@@ -341,7 +340,7 @@ The default value is true on Win32 and X11, false on Mac OS X and Gtk+.
 Specifies a boolean value that determines whether this widget
 should draw the root item.
 By suppressing the drawing of the root item the widget can have
-multiple items that appear as [emph toplevel] items.
+multiple items that appear as toplevel items.
 The default value is true.
 
 [tkoption_def -showrootbutton showRootButton ShowRootButton]
@@ -362,7 +361,7 @@ The default value is true.
 
 [tkoption_def -treecolumn treeColumn TreeColumn]
 Specifies a [sectref {COLUMN DESCRIPTION} {column description}] that determines which
-column displays the buttons and lines.
+column displays the expand/collapse buttons and connecting lines between items.
 The default is unspecified.
 
 [tkoption_def -usetheme useTheme UseTheme]
@@ -381,19 +380,19 @@ not request any size at all.
 Specifies whether items are arranged in a 1- or 2-dimensional layout.
 [para]
 If the value is an empty string (the default), then items are arranged from top
-to bottom (-orient vertical) or from left to right (-orient horizontal) in
+to bottom (-orient=vertical) or from left to right (-orient=horizontal) in
 a 1-dimensional layout.
 [para]
 If the value is "[emph N] [const items]", then no more than [emph N] items will appear in
-a vertical group (-orient vertical) or horizontal group (-orient horizontal).
+a vertical group (-orient=vertical) or horizontal group (-orient=horizontal).
 [para]
 If the value is "[emph N] [const pixels]", then no vertical group of items will be
-taller than [emph N] pixels (-orient vertical) or no horizontal group of items will
-be wider than [emph N] pixels (-orient horizontal).
+taller than [emph N] pixels (-orient=vertical) or no horizontal group of items will
+be wider than [emph N] pixels (-orient=horizontal).
 [para]
 If the value is [const window], then a no vertical group of items will be
-taller than the window (-orient vertical) or no horizontal group of items will
-be wider than the window (-orient horizontal).
+taller than the window (-orient=vertical) or no horizontal group of items will
+be wider than the window (-orient=horizontal).
 [para]
 It is also possible to cause wrapping to occur on a per-item basis by using
 the item option -wrap.  See the [cmd {item create}] command for that option.
@@ -401,7 +400,7 @@ the item option -wrap.  See the [cmd {item create}] command for that option.
 [tkoption_def -xscrolldelay xScrollDelay ScrollDelay]
 This option controls how quickly horizontal scrolling occurs while dragging
 the mouse with button 1 pressed.
-The value should be a list of 1 or 2 integers interpreted as microseconds.
+The value should be a list of 1 or 2 integers interpreted as milliseconds.
 If 2 values are specified, then the first value determines the intial delay 
 after the first scroll, and the second value determines the delay for all
 scrolling after the first. If only 1 value is specified, each scroll takes
@@ -411,7 +410,7 @@ place after that delay.
 Specifies an increment for horizontal scrolling, in any of the usual forms
 permitted for screen distances.  If the value of this option is greater
 than zero, the horizontal view in the window will be constrained so that
-the x coordinate at the left edge of the window is always an even
+the [sectref {THE CANVAS} canvas] x coordinate at the left edge of the window is always an even
 multiple of [option -xscrollincrement];  furthermore, the units for scrolling
 (e.g., the change in view when the left and right arrows of a scrollbar
 are selected) will also be [option -xscrollincrement].  If the value of
@@ -431,7 +430,7 @@ scrolling is done in coarser increments.  The default value is false.
 [tkoption_def -yscrolldelay yScrollDelay ScrollDelay]
 This option controls how quickly vertical scrolling occurs while dragging
 the mouse with button 1 pressed.
-The value should be a list of 1 or 2 integers interpreted as microseconds.
+The value should be a list of 1 or 2 integers interpreted as milliseconds.
 If 2 values are specified, then the first value determines the intial delay 
 after the first scroll, and the second value determines the delay for all
 scrolling after the first. If only 1 value is specified, each scroll takes
@@ -441,7 +440,7 @@ place after that delay.
 Specifies an increment for vertical scrolling, in any of the usual forms
 permitted for screen distances.  If the value of this option is greater
 than zero, the vertical view in the window will be constrained so that
-the y coordinate at the top edge of the window is always an even
+the [sectref {THE CANVAS} canvas] y coordinate at the top edge of the window is always an even
 multiple of [option -yscrollincrement];  furthermore, the units for scrolling
 (e.g., the change in view when the top and bottom arrows of a scrollbar
 are selected) will also be [option -yscrollincrement].  If the value of
@@ -459,6 +458,12 @@ scrollbar thumb scrolling is very smooth, but when clicking the scrollbar button
 scrolling is done in coarser increments.  The default value is false.
 
 [list_end]
+
+[section {THE CANVAS}]
+Throughout this manual page the term [emph canvas] is sometimes used.  The canvas
+can be thought of as the virtual sheet of paper upon which all visible items are
+drawn.  The treectrl window displays different areas of the canvas within its
+borders as the list is scrolled.
 
 [section {ITEM AND COLUMN TAGS}]
 Columns and items may have any number of tags associated with them.
@@ -521,9 +526,10 @@ commands are possible for treectrl widgets:
 
 [call [arg pathName] [cmd activate] [arg itemDesc]]
 Sets the active item to the one described by [arg itemDesc],
-and switches on the state [const active] for this item.
-From now on the item can be retrieved with the item description [const active].
-An [const <ActiveItem>] event is generated.
+and switches on the state [const active] for that item.
+The active item can be referred to by the item description [const active].
+If this command changes which item is active an [const <ActiveItem>] event is generated.
+If the active item is deleted the root item becomes the new active item.
 
 [call [arg pathName] [cmd bbox] [opt [arg area]]]
 Returns a list with four elements giving the bounding box (left, top, right
@@ -544,17 +550,13 @@ columns.
 
 [call [arg pathName] [cmd canvasx] [arg windowx]]
 Translates the given window x-coordinate [arg windowx] in the treectrl
-to canvas coordinate space.  The canvas is the virtual sheet of paper
-that all the visible items are drawn onto, of which only a portion may be
-visible in the treectrl window.  The [cmd marquee] command expects canvas
-coordinates.
+to [sectref {THE CANVAS} {canvas}] coordinate space.  The [cmd marquee] command
+expects canvas coordinates.
 
 [call [arg pathName] [cmd canvasy] [arg windowy]]
 Translates the given window y-coordinate [arg windowy] in the treectrl
-to canvas coordinate space.  The canvas is the virtual sheet of paper
-that all the visible items are drawn onto, of which only a portion may be
-visible in the treectrl window.  The [cmd marquee] command expects canvas
-coordinates.
+to [sectref {THE CANVAS} {canvas}] coordinate space.  The [cmd marquee] command
+expects canvas coordinates.
 
 [call [arg pathName] [cmd cget] [arg option]]
 Returns the current value of the configuration option given
@@ -564,7 +566,7 @@ command.
 
 [call [arg pathName] [cmd collapse] [opt [option -recurse]] \
      [opt [arg {itemDesc ...}]]]
-Use [cmd {item collapse}] instead.
+Deprecated. Use [cmd {item collapse}] instead.
 
 [call [arg pathName] [cmd column] [arg option] [arg column] \
      [opt [arg {arg ...}]]]
@@ -579,9 +581,9 @@ The following forms of the command are supported:
 Returns a list with four elements giving the bounding box
 of the header of the column specified by the
 [sectref {COLUMN DESCRIPTION} {column description}] [arg columnDesc].
-If the treectrl is configured not to display the column headers
-by means of the [option -showheader] option, then
-an empty list is returned instead.
+The returned coordinates are relative to the top-left corner of the widget.
+If the column option [option -visible]=false or if the widget option
+[option -showheader]=false, then an empty list is returned.
 
 [call [arg pathName] [cmd {column cget}] [arg columnDesc] [arg option]]
 This command returns the current value of the option named [arg option]
@@ -667,13 +669,16 @@ The following configuration options are supported:
 [list_begin options]
 [opt_def [option -enable] [arg boolean]]
 Controls whether the user is allowed to rearrange columns by drag-and-drop.
+The default is false.
 
 [opt_def [option -imagealpha] [arg alpha]]
 [arg Alpha] is an integer from 0 (invisible) to 255 (opaque) controlling the
 transparency of the drag image. Any value outside this range is clipped.
+The default is 128.
 
 [opt_def [option -imagecolor] [arg background]]
 [arg Background] is the color of the drag image background rectangle.
+The default is "gray75".
 
 [opt_def [option -imagecolumn] [arg column]]
 [arg Column] specifies the column to create the drag image from.
@@ -683,7 +688,7 @@ transparency of the drag image. Any value outside this range is clipped.
 starting position.
 
 [opt_def [option -indicatorcolor] [arg color]]
-[arg Color] is the color of the 2-pixel-thick line.
+[arg Color] is the color of the 2-pixel-thick line.  The default is "black".
 
 [opt_def [option -indicatorcolumn] [arg column]]
 The 2-pixel-thick line will be drawn over the left or right edge of [arg column].
@@ -798,6 +803,7 @@ of the screen area used to display items.
 This is the area of the window not including borders, column headers, or
 locked columns. An empty string is returned if the display area has
 no height or width, which can happen if the window is too small.
+The result of this command is the same as that of [cmd {bbox content}].
 
 [call [arg pathName] [cmd debug] [arg option] [opt [arg {arg arg ...}]]]
 This command is used to facilitate debugging of the treectrl widget.
@@ -890,8 +896,6 @@ of [const alloc], [const ditem], [const onscreen] or [const range].
 Causes the area of the window bounded by the given window-coords to be
 marked as invalid. This simulates uncovering part of the window.
 
-[call [arg pathName] [cmd {debug scroll}]]
-Returns a string useful for debugging vertical scrolling.
 [list_end]
 
 [call [arg pathName] [cmd depth] [opt [arg itemDesc]]]
@@ -903,8 +907,9 @@ items in the treectrl widget is returned instead.
 Depth is defined as the number of ancestors an item has.
 
 [call [arg pathName] [cmd dragimage] [arg option] [opt [arg {arg ...}]]]
-This command is used to manipulate the dragimage,
-one or more dotted lines around rectangular regions of the treectrl widget.
+This command is used to manipulate the drag image, which is used to provide
+feedback when items are drag-and-dropped within the window.  The drag image is
+displayed as the dotted outlines of one or more items, columns and/or elements.
 The exact behavior of the command depends on the [arg option] argument
 that follows the [cmd dragimage] argument.
 The following forms of the command are supported:
@@ -960,8 +965,8 @@ whether the dragimage should currently be visible.
 [call [arg pathName] [cmd {dragimage offset}] [opt [arg {x y}]]]
 Returns a list containing the x and y offsets of the dragimage,
 if no additional arguments are specified.
-The dragimage offset is the screen distance, the image is displayed
-relative to the item its shape is derived from.
+The dragimage offset is the screen distance the image is displayed at
+relative to the item(s) its shape is derived from.
 If two coordinates are specified,
 sets the dragimage offset to the given coordinates [arg x] and [arg y].
 
@@ -1031,7 +1036,7 @@ such as [const rect] or [const text].
 
 [call [arg pathName] [cmd expand] [opt [option -recurse]] \
      [opt [arg {itemDesc ...}]]]
-Use [cmd {item expand}] instead.
+Deprecated.  Use [cmd {item expand}] instead.
 
 
 [call [arg pathName] [cmd gradient] [arg option] [opt [arg {arg ...}]]]
@@ -1145,7 +1150,10 @@ See [sectref {GRADIENTS}] for more on this.
 [call [arg pathName] [cmd {gradient delete}] [opt [arg {name ...}]]]
 Deletes each gradient specified by [arg name].  If the gradient is still being
 used then it is not actually deleted until all elements etc
-using the gradient have stopped using it.
+using the gradient have stopped using it.  A deleted-but-in-use gradient is
+not recognized by the various gradient commands.  Creating a new gradient
+with the same name as a deleted-but-in-use gradient resurrects the deleted
+gradient.
 
 [call [arg pathName] [cmd {gradient names}]]
 Returns a list of names of all the gradients that have been created by this treectrl
@@ -1172,7 +1180,7 @@ otherwise the first word of the result is [const header] or [const item].
 If the coordinates are over a column header, then
 the first word of the result is [const header], followed by
 the unique id of the column (or the string [const tail]).
-If the x coordinate is near the left or right end of a column, then
+If the x coordinate is near the left or right edge of a column, then
 a third word [const left] or [const right] is appended to the result.
 [para]
 
@@ -1213,13 +1221,13 @@ root item if [arg itemDesc] is a descendant of the root item.
 
 [call [arg pathName] [cmd {item bbox}] [arg itemDesc] [opt [arg column]] \
      [opt [arg element]]]
-Returns a list with four elements giving the bounding box
-of the item described by [arg itemDesc].
-If no further argument is specified, the bbox spans the area of the item
-over all non-locked columns. If a [arg column] is specified, only the area of the item
-in this column is considered. If an additional [arg element] is specified,
-the area of this [arg element] in [arg column] of the specified item is
-returned.
+Returns a list with four elements giving the bounding box of the item described
+by [arg itemDesc]. If no further argument is specified, the bbox spans the area
+of the item over all non-locked columns. If a [arg column] is specified, only the
+area of the item in this column is considered. If an additional [arg element] is
+specified, the area of this [arg element] in [arg column] of the specified item
+is returned.  The returned coordinates are relative to the top-left corner of the
+widget.  If the item is not visible for any reason, the result in an empty string.
 
 [call [arg pathName] [cmd {item buttonstate}] [arg itemDesc] [opt [arg state]]]
 If [arg state] is specified, this command sets the state of the expand/collapse
@@ -1242,7 +1250,7 @@ the first child to the last child.
 Switches off the [const open] state of the item(s) described by [arg itemDesc].
 If an item has descendants, then they are no longer displayed.
 If an item is already closed, then this command has no effect on that item.
-If [option -animate] is specified, then item's button will animate as it
+If [option -animate] is specified, then the item's button will animate as it
 transitions between states if the theme supports it; in this case only one item
 may be specified.
 If [option -recurse] is specified, then all descendants of the items described
@@ -1331,16 +1339,22 @@ the column specified by the treectrl option [option -treecolumn] is visible, and
 [enum]
 the treectrl option [option -showbuttons] is true, and
 [enum]
-for the root item, the treectrl option [option -showrootbutton] is true.
+for the root item, the treectrl option [option -showrootbutton] is true, and
+[enum]
+for immediate children of the root item, the treectrl option [option -showrootchildbuttons] is true.
 [list_end]
 
 [opt_def [option -count] [arg numItems]]
 Specifies the number of items to create. Must be >= 0. Defaults to 1.
 
+[opt_def [option -enabled] [arg boolean]]
+Specifies whether the items should be enabled. Default is true.
+
 [opt_def [option -height] [arg height]]
 Specifies a fixed height in any of the forms acceptable to [fun Tk_GetPixels].
 Must be >= 0. If [arg height] is zero then the item's height is unspecified.
-Defaults to 0.
+Defaults to 0.  See also the widget options [option -itemheight] and
+[option -minitemheight].
 
 [opt_def [option -nextsibling] [arg itemDesc]]
 Specifies the item before which the new items will be inserted. The new items
@@ -1351,7 +1365,9 @@ Specifies whether the items should be open or closed. Default is true.
 
 [opt_def [option -parent] [arg itemDesc]]
 Specifies the item which the new items will be the children of. The new items
-will be appended to the list of children of [arg itemDesc].
+will be appended to the list of children of [arg itemDesc].  When no parent is
+specified, the new items are [emph orphan] items (see the widget command
+[cmd {orphans}]) and will not be displayed in the list.
 
 [opt_def [option -prevsibling] [arg itemDesc]]
 Specifies the item after which the new items will be inserted. The new items
@@ -1369,8 +1385,12 @@ console or to improve performance. Default is true.
 [arg Boolean] must have one of the forms accepted by [fun Tcl_GetBoolean]. It
 indicates that the item should be displayed in the list. The item will only be
 displayed if:
-a) each ancestor is a descendant of the root item (not an orphan);
-and b) each ancestor's [option -visible] option is true 
+[list_begin enum]
+[enum]
+each ancestor is a descendant of the root item (not an orphan), and
+[enum]
+each ancestor's [option -visible] option is true 
+[list_end]
 
 [opt_def [option -wrap] [arg boolean]]
 [arg Boolean] must have one of the forms accepted by [fun Tcl_GetBoolean]. It
@@ -1396,10 +1416,10 @@ There is no way to delete the root item of the treectrl widget;
 in all cases the specification of the root item is ignored.
 [para]
 For each call to this command, two events may be generated.
-If any of the deleted items are selected, then a [const <Selection>] event
-is generated just before the items are deleted.
-If any items are going to be deleted, then an [const <ItemDelete>] event event is generated just before the items
-are deleted.
+If any of the deleted items are selected, then they are removed from the selection
+and a [const <Selection>] event is generated just before the items are deleted.
+If any items are going to be deleted, then an [const <ItemDelete>] event is
+generated just before the items are deleted.
 
 [call [arg pathName] [cmd {item descendants}] [arg itemDesc]]
 Returns a list containing the item ids of the descendants
@@ -1407,7 +1427,7 @@ of the item specified by [arg itemDesc], i.e. the children, grandchildren,
 great-grandchildren etc, of the item.
 
 [call [arg pathName] [cmd {item dump}] [arg itemDesc]]
-Returns a list with 4 words in the form
+Debug command. Returns a list with 4 words in the form
 [const index] [emph index] [const indexVis] [emph indexVis].
 
 [call [arg pathName] [cmd {item element}] [arg command] [arg itemDesc] \
@@ -1479,14 +1499,14 @@ Returns 1 if the item described by [arg itemDesc] has the
 state [const enabled] switched on, 0 otherwise. If [arg boolean] is specified,
 then the [const enabled] state of every item described by the
 [sectref {ITEM DESCRIPTION} {item description}] [arg itemDesc] is set accordingly.
-All items are enabled when first created. Disabled items cannot be selected,
+New items are enabled by default when created. Disabled items cannot be selected,
 and are ignored by the default key-navigation and mouse bindings.
 
 [call [arg pathName] [cmd {item expand}] [arg itemDesc] [opt [option -animate]] [opt [option -recurse]]]
 Switches on the [const open] state of the item(s) described by [arg itemDesc].
 If an item has descendants, then they are now displayed.
 If an item is already open, then this command has no effect on that item.
-If [option -animate] is specified, then item's button will animate as it
+If [option -animate] is specified, then the item's button will animate as it
 transitions between states if the theme supports it; in this case only one item
 may be specified.
 If [option -recurse] is specified, then all descendants of the items described by
@@ -1812,7 +1832,7 @@ Changes the [const open] state of the item(s) described by [arg itemDesc].
 If the [const open] state is currently switched off, then
 this command does the same as the [cmd {item expand}] widget command;
 otherwise the same as the [cmd {item collapse}] widget command.
-If [option -animate] is specified, then item's button will animate as it
+If [option -animate] is specified, then the item's button will animate as it
 transitions between states if the theme supports it; in this case only one item
 may be specified.
 If [option -recurse] is specified, then the [const open] state of all descendants of
@@ -1828,9 +1848,9 @@ One corner point of the marquee is fixed as long as the marquee is visible
 and called the anchor; the diagonally opposite corner is dragged with the
 mouse while resizing the marquee and simply called the corner.
 [para]
-All coordinates handled by this widget command are treectrl coordinates,
-i.e. the [cmd canvasx] or [cmd canvasy] widget command should be
-used to translate any window coordinates to marquee coordinates.
+All coordinates handled by this widget command are [sectref {THE CANVAS} {canvas}]
+coordinates, i.e. the [cmd canvasx] or [cmd canvasy] widget command should be
+used to translate window coordinates to canvas coordinates.
 [para]
 By default, the marquee is displayed as a 1-pixel thick dotted rectangle.
 If either of the [option -fill] or [option -outline] options is specified, then
@@ -2351,7 +2371,7 @@ The following options are supported:
 [list_begin options]
 [opt_def [option -detach] [arg boolean]]
 Specifies whether the element should be positioned by itself,
-i.e. independent from the other elements.
+i.e. independent from the other elements.  The default is false.
 
 [opt_def [option -draw] [arg boolean]]
 This is a [sectref {PER-STATE OPTIONS} per-state] option that determines whether
@@ -2367,6 +2387,7 @@ to increase when a style has more screen space than it needs.
 Each letter refers to the padding on the top, bottom,
 left, or right that should be allowed to increase.
 This option is typically used to justify an element.
+The default is an empty string.
 
 [opt_def [option -iexpand] [arg flags]]
 This option allows the internal padding of the element
@@ -2382,39 +2403,40 @@ between the padding). Note that if the
 [option -union] option is specified for this element, then the [const x] and
 [const y] flags have no effect, since the size of an element with
 [option -union] layout is determined by the elements it surrounds.
+The default is an empty string.
 
 [opt_def [option -indent] [arg boolean]]
 Specifies whether the element should be positioned to the right of the
-button/line area in the tree column. This option is ignored unless the
-[option -detach] option is true.
-
+button/line area in the tree column.  When false, the element is displayed
+beneath the buttons and lines in the tree column.
+This option is ignored unless the [option -detach] option is true.
+The default is true.
+  
 [opt_def [option -ipadx] [arg amount]]
 [opt_def [option -ipady] [arg amount]]
-[arg Amount] specifies how much internal padding to
-leave on the left and right (for [option -ipadx])
-or top and bottom (for [option -ipady]) side of the element.
-[arg Amount] may be a list
-of two values to specify padding for the two sides separately,
-it defaults to 0.
+[arg Amount] specifies how much internal padding to leave on the left and
+right (for [option -ipadx]) or top and bottom (for [option -ipady]) sides of
+the element. [arg Amount] may be a list of two values to specify padding for
+the two sides separately.  The default value is 0.
 
 [opt_def [option -minheight] [arg pixels]]
 [opt_def [option -height] [arg pixels]]
 [opt_def [option -maxheight] [arg pixels]]
-Specifies the minimum, fixed, and maximum height of the element.
+Specifies the minimum, fixed, and maximum height of the display area of the element.
+The default is unspecified.
 
 [opt_def [option -minwidth] [arg pixels]]
 [opt_def [option -width] [arg pixels]]
 [opt_def [option -maxwidth] [arg pixels]]
-Specifies the minimum, fixed, and maximum width of the element.
+Specifies the minimum, fixed, and maximum width of the display area of the element.
+The default is unspecified.
 
 [opt_def [option -padx] [arg amount]]
 [opt_def [option -pady] [arg amount]]
-[arg Amount] specifies how much external padding to
-leave on the left and right (for [option -padx])
-or top and bottom (for [option -pady]) side of the element.
-[arg Amount] may be a list
-of two values to specify padding for the two sides separately,
-it defaults to 0.
+[arg Amount] specifies how much external padding to leave on the left and
+right (for [option -padx]) or top and bottom (for [option -pady]) sides of the
+element. [arg Amount] may be a list of two values to specify padding for the
+two sides separately.  The default value is 0.
 
 [opt_def [option -squeeze] [arg flags]]
 This option allows the display area of an element to decrease when a
@@ -2425,14 +2447,15 @@ style has less space than it needs.
 [const y] allows display area to decrease vertically.
 This option is typically used for [const text] elements and will cause
 the text element to display an ellipsis (...) and/or wrap lines.
+The default is an empty string.
 
 [opt_def [option -sticky] [arg flags]]
 This option controls how the actual display information (image, text, etc)
 of an element is positioned (or stretched) within its display area.
-[arg Flags] is a
-string that contains zero or more of the characters [const n], [const s],
-[const w] or [const e]. Each letter refers to the top, bottom, left or right
-side of the display area that the display information should "stick" to.
+[arg Flags] is a string that contains zero or more of the characters [const n],
+[const s], [const w] or [const e]. Each letter refers to the top, bottom, left
+or right side of the display area that the display information should "stick" to.
+The default is nswe.
 
 [opt_def [option -union] [arg elementList]]
 Specifies a list of other elements which this element will surround.
@@ -2589,11 +2612,11 @@ Indicates whether or not an arrow should be drawn in the column header.
 [const none] (the default), [const up], or [const down].
 
 [opt_def [option -arrowbitmap] [arg bitmap]]
-Specifies as a [sectref {PER-STATE OPTIONS} per-state] option the bitmap to
+Specifies as a [sectref {PER-STATE OPTIONS} per-state] option the name of a bitmap to
 use to draw the arrow if this column's -arrow option is not [const none].
 
 [opt_def [option -arrowimage] [arg image]]
-Specifies as a [sectref {PER-STATE OPTIONS} per-state] option the image to
+Specifies as a [sectref {PER-STATE OPTIONS} per-state] option the name of an image to
 use to draw the arrow if this column's -arrow option is not [const none].
 If an image is specified for a certain state, it overrides the -arrowbitmap option.
 
@@ -2621,8 +2644,7 @@ of two values to specify padding for top and bottom separately;
 it defaults to 0.
 
 [opt_def [option -bitmap] [arg bitmap]]
-Specifies the bitmap to display in the element
-to the left of the column title.
+Specifies the name of a bitmap to display to the left of the column title.
 
 [opt_def [option -background] [arg color]]
 Specifies as a [sectref {PER-STATE OPTIONS} per-state] option the color to
@@ -2649,9 +2671,15 @@ This option has no effect if the [option -width] option is set.
 [opt_def [option -font] [arg fontName]]
 Specifies the font to use for the column title inside the column header.
 
+[opt_def [option -gridleftcolor] [arg color]]
+[opt_def [option -gridrightcolor] [arg color]]
+Specifies the color of the lines drawn down the left and right edges of the
+column.  These so-called "grid lines" are drawn over the elements of each item
+style in the column and down into the whitespace region below any items.
+The default value for each option is an empty string meaning no lines are drawn.
+
 [opt_def [option -image] [arg image]]
-Specifies the image to display in the element
-to the left of the column title.
+Specifies the name of an image to display to the left of the column title.
 This option overrides the [option -bitmap] column option.
 
 [opt_def [option -imagepadx] [arg amount]]
@@ -3100,6 +3128,11 @@ height of the image, or zero if there is no image.
 Specifies as a [sectref {PER-STATE OPTIONS} per-state] option
 the image to display in the element.
 
+[opt_def [option -tiled] [arg boolean]]
+Specifies a boolean indicating whether or not the image should be tiled
+horizontally and vertically within the display area for the element.
+The default is false.
+
 [opt_def [option -width] [arg size]]
 Specifies the requested width of the display area for this element.
 If unspecified (the default), the element requests a width equal to the
@@ -3131,12 +3164,17 @@ Specifies the height of the rectangle. If this value is unspecified
 determined by the style layout options.
 
 [opt_def [option -open] [arg open]]
-This option may be used to get an incomplete drawing of the outline.
+Specifies as a [sectref {PER-STATE OPTIONS} per-state] option
+which edges of the rectangle should be left open.
+This option may be used to get an incomplete drawing of the outline and rounded
+corners, often to give the appearance of the rectangle extending over adjacent
+columns or items.
 [arg Open] is a string that contains zero or more of the characters
 [const n], [const s], [const e] or [const w].
-Each letter refers to a side (north, south, east, or west) that the outline
-will not be drawn. 
-The default is the empty string, which causes the outline to be drawn completely.
+Each letter refers to an edge (north, south, east, or west) on which the outline
+and rounded corners will not be drawn. 
+The default is the empty string, which causes all rounded corners and the outline
+to be drawn.
 
 [opt_def [option -outline] [arg color]]
 Specifies as a [sectref {PER-STATE OPTIONS} per-state] option the color to
@@ -3790,11 +3828,13 @@ with the gradient's first [option -stops] color.
 Gradients may be used in the following places:
 [list_begin enum]
 [enum]
+The -gridleftcolor and -gridrightcolor options of columns.
+[enum]
+The -itembackground option of columns.
+[enum]
 The -fill and -outline options of rect elements.
 [enum]
 The -fill and -outline options of the [cmd "marquee configure"] command.
-[enum]
-The -itembackground option of columns.
 [list_end]
 
 [para]
@@ -3835,7 +3875,7 @@ By specifying any of the [option -bottom], [option -left], [option -right] or
 [option -top] gradient options the size of the gradient brush does not need
 to match that of the rectangle being painted.  These options can be used to
 make a gradient appear to span across the entire width or height of the treectrl
-window, or across the entire canvas, for example.
+window, or across the entire [sectref {THE CANVAS} {canvas}], for example.
 [para]
 There is no point specifying [option -left] or [option -right] if the gradient
 is vertical, since the gradient's colors are constant horizontally, so changing
