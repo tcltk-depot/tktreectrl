@@ -7587,12 +7587,21 @@ reqSameRoot:
 		    mode = -1;
 		    break;
 	    }
-	    if (animate && tree->useTheme) {
+	    if (animate) {
+		Tk_Image image;
+		Pixmap bitmap;
 		int open;
 		if (IS_ALL(item) || TreeItemList_Count(&itemList) != 1) {
 		    FormatResult(interp,
 			"only 1 item may be specified with -animate");
 		    goto errorExit;
+		}
+		image = PerStateImage_ForState(tree, &tree->buttonImage, item->state, NULL);
+		bitmap = PerStateBitmap_ForState(tree, &tree->buttonBitmap, item->state, NULL);
+		if (image != NULL || bitmap != None || !tree->useTheme
+			|| !TreeItem_HasButton(tree, item)) {
+		    TreeItem_OpenClose(tree, item, mode);
+		    break;
 		}
 		open = (item->state & STATE_OPEN) != 0;
 		if (mode == -1 || open != mode) {
@@ -7622,7 +7631,7 @@ reqSameRoot:
 	case COMMAND_COMPARE: {
 	    static CONST char *opName[] = { "<", "<=", "==", ">=", ">", "!=", NULL };
 	    enum { COP_LT, COP_LE, COP_EQ, COP_GE, COP_GT, COP_NE };
-	    int op, compare = 0, index1, index2;
+	    int op, compare = 0, index1 = 0, index2 = 0;
 
 	    if (Tcl_GetIndexFromObj(interp, objv[4], opName, "comparison operator", 0,
 		    &op) != TCL_OK) {

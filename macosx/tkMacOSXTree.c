@@ -2561,7 +2561,7 @@ MakeRoundRectPath_OutlineFilled(
     int drawS = (open & RECT_OPEN_S) == 0;
     CGMutablePathRef p = CGPathCreateMutable();
     CGRect r;
-    CGAffineTransform t, it, *tp, *itp;
+    CGAffineTransform t, it = {0}, *tp, *itp;
 
     if (rx == ry) {
 	itp = tp = NULL;

@@ -1,6 +1,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<html><head>
-<!-- $Id$ -->
+<html><head><!-- $Id$ -->
+
+
 
 
 
@@ -64,6 +65,7 @@ Gtk+ build of treectrl.<br>
 </tbody>
 </table>
 <h2>Item Command</h2>
+
 <table style="text-align: left; width: 100%;" border="1" cellpadding="2" cellspacing="2">
 <tbody><tr><th style="background-color: rgb(255, 255, 204); width: 50%;">New<br>
 </th><th style="background-color: rgb(204, 255, 255);">Comment</th></tr><tr>
@@ -83,6 +85,12 @@ only when the Explorer theme is used (see the new <span style="font-weight: bold
 </th><th style="background-color: rgb(204, 255, 255);">What changed<br>
 </th></tr>
     <tr>
+      <td style="vertical-align: top;">create<br>
+      </td>
+      <td style="vertical-align: top;">New option <span style="font-weight: bold;">-enabled</span>.<br>
+      </td>
+    </tr>
+<tr>
       <td style="vertical-align: top;">collapse<br>
 expand<br>
 toggle<br>
@@ -338,8 +346,10 @@ columns.&nbsp; In previous versions that required 3 different states.</li>
 <h2>Library Scripts</h2>
 <ul>
   <li>The treectrl window gets the focus after a &lt;ButtonPress-2&gt; event begins scan-dragging.</li>
-  <li>The Escape key cancels any drag-and-drop in progress with the TreeCtrlFileList bindings.<br>
+  <li>The Escape key cancels any drag-and-drop in progress with the TreeCtrlFileList bindings.</li>
+  <li>With <span style="font-weight: bold;">-selectmode</span>=single the marquee is not used with the TreeCtrlFileList bindings.<br>
   </li>
+
 
   
   <li>Added some hackery to the TreeCtrlFileList bindings for emulating the complicated selection behavior of Windows 7 Explorer:<br>
