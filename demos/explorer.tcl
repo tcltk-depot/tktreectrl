@@ -758,7 +758,6 @@ proc ConfigTransparentMarquee {T} {
     set outline #3399ff
     set stops [list [list 0.0 #3399ff 0.3] [list 1.0 #3399ff 0.3]]
 
-    $T gradient api 1.0
     $T gradient create G_marquee -stops $stops
     $T marquee configure -fill G_marquee -outline $outline
     return
@@ -810,7 +809,6 @@ proc DemoExplorerDetailsWin7 {} {
     #
 
     set steps [expr {($height - 5)/2}]
-    $T gradient api 1.0
     $T gradient create G_mouseover       -steps $steps -stops {{0.0 white} {1.0 #ebf3fd}} -orient vertical
     $T gradient create G_selected_active -steps $steps -stops {{0.0 #dcebfc} {1.0 #c1dbfc}} -orient vertical
     $T gradient create G_selected        -steps $steps -stops {{0.0 #ebf4fe} {1.0 #cfe4fe}} -orient vertical
@@ -1091,7 +1089,6 @@ proc DemoExplorerLargeIconsWin7 {} {
     #
 
     set steps 8
-    $T gradient api 1.0
     $T gradient create G_mouseover       -steps $steps -stops {{0.0 white} {1.0 #ebf3fd}} -orient vertical
     $T gradient create G_selected_active -steps $steps -stops {{0.0 #dcebfc} {1.0 #c1dbfc}} -orient vertical
     $T gradient create G_selected        -steps $steps -stops {{0.0 #ebf4fe} {1.0 #cfe4fe}} -orient vertical

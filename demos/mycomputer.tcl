@@ -40,7 +40,6 @@ proc DemoMyComputer {} {
     $T element create txtOther text -lines 1
     $T element create elemRectSel rect -fill [list $::SystemHighlight {selected focus} gray {selected !focus}] -showfocus yes
 
-    $T gradient api 1.0
     $T gradient create G_divider -stops {{0.0 blue} {0.8 blue} {1.0 white}} \
 	-steps 12
     $T element create rectDivider rect -fill G_divider -height 1 -width 250

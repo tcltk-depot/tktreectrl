@@ -16,13 +16,28 @@
 
 
 
+
+
   <meta content="text/html; charset=ISO-8859-1" http-equiv="content-type"><title>What's New in TkTreeCtrl</title>
   
 
 
   <meta content="Tim Baker" name="author"></head><body>
 <h1>What's New in TkTreeCtrl 2.3</h1>
+<span style="font-weight: bold;">Changes since 2.3b1</span>
+<ul>
+  <li>Removed the <span style="font-weight: bold;">gradient api</span> command.</li>
+  <li>New option <span style="font-weight: bold;">-enabled</span> may be passed to the <span style="font-weight: bold;">item create</span> command.<br>
+  </li>
+  <li>The Escape key cancels any drag-and-drop in progress with the TreeCtrlFileList bindings.</li>
+  <li>With <span style="font-weight: bold;">-selectmode</span>=single the marquee is not used with the TreeCtrlFileList bindings.</li>
+  <li>Fixed the &lt;Escape&gt; key causing an error when the last visible item was selected.</li>
+  <li>Updated the documentation to include <span style="font-weight: bold;">-gridleftcolor</span> and <span style="font-weight: bold;">-gridrightcolor</span>.</li>
+  <li>Added a section to the documentation titled THE CANVAS and linked to that section wherever the canvas is mentioned.<br>
+  </li>
+</ul>
 <h2>Column Configuration Options</h2>
+
 <table style="text-align: left; width: 100%;" border="1" cellpadding="2" cellspacing="2">
 <tbody><tr>
 <th style="background-color: rgb(255, 255, 204); width: 50%;">New<br>
@@ -421,8 +436,10 @@ previously-highlighted column exists before configuring its state in
 MotionInHeader.</li>
   <li>Fixed &lt;Left&gt; and &lt;Right&gt; arrow keys not moving to adjacent items when some items had -<span style="font-weight: bold;">wrap</span>=true.</li>
   <li>Fixed error with autoscanning when the content area was completely obscurred by locked columns.</li>
-  <li>Fixed the ordering of some entries in the treectrl option table.<br>
+  <li>Fixed the ordering of some entries in the treectrl option table.</li>
+  <li>Fixed the &lt;Escape&gt; key causing an error when the last visible item was selected.<br>
   </li>
+
 </ul>
 
 

@@ -20,8 +20,6 @@ proc DemoGradients {} {
 	-xscrollsmoothing yes -yscrollsmoothing yes \
 	-canvaspadx 20
 
-    $T gradient api 1.0
-
     #
     # Create columns
     #

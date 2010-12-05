@@ -267,7 +267,6 @@ proc StyleEditor::SetPropertyList {} {
 
 	set headerBG #ACA899
 	if {[winfo depth $T] >= 16} {
-	    $T gradient api 1.0
 	    $T gradient create G_header -steps 16 \
 		-stops {{0.0 #ACA899} {0.5 #ACA899} {1.0 #d5d2ca}}
 	    set headerBG G_header
@@ -738,10 +737,7 @@ proc StyleEditor::StyleToCanvas {{scroll 0}} {
     eval $T state undefine [$T state names]
     eval $T style delete [$T style names]
     eval $T element delete [$T element names]
-
-    $T gradient api 1.0
     eval $T gradient delete [$T gradient names]
-
 
     # Copy states
     foreach state [$Tdemo state names] {

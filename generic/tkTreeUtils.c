@@ -7466,11 +7466,11 @@ TreeGradientCmd(
 {
     TreeCtrl *tree = clientData;
     static CONST char *commandNames[] = {
-	"api", "cget", "configure", "create", "delete", "names",
-	"native", (char *) NULL
+	"cget", "configure", "create", "delete", "names", "native",
+	(char *) NULL
     };
     enum {
-	COMMAND_API, COMMAND_CGET, COMMAND_CONFIGURE, COMMAND_CREATE,
+	COMMAND_CGET, COMMAND_CONFIGURE, COMMAND_CREATE,
 	COMMAND_DELETE, COMMAND_NAMES, COMMAND_NATIVE,
     };
     int index;
@@ -7486,43 +7486,6 @@ TreeGradientCmd(
     }
 
     switch (index) {
-	/* T gradient api ?version? */
-	case COMMAND_API: {
-	    char *string;
-	    int length, n, major, minor;
-	    if (objc == 3) {
-		char versionBuf[64];
-		strcpy(versionBuf, "{available 1.0} {current ");
-		if (tree->gradientAPI[0] != 0) {
-		    sprintf(versionBuf + strlen(versionBuf), "%d.%d}",
-			tree->gradientAPI[0], tree->gradientAPI[1]);
-		} else {
-		    strcpy(versionBuf + strlen(versionBuf), "unspecified}");
-		}
-		Tcl_SetResult(interp, versionBuf, TCL_VOLATILE);
-		break;
-	    }
-	    if (objc != 4) {
-		Tcl_WrongNumArgs(interp, 3, objv, "?version?");
-		return TCL_ERROR;
-	    }
-	    string = Tcl_GetStringFromObj(objv[3], &length);
-	    if ((sscanf(string, "%d.%d%n", &major, &minor, &n) == 2)
-		    && (n == length)) {
-		if (major == 1 && minor == 0) {
-		    tree->gradientAPI[0] = major;
-		    tree->gradientAPI[1] = minor;
-		} else {
-		    FormatResult(interp, "invalid api version \"%s\"",
-			string);
-		    return TCL_ERROR;
-		}
-		break;
-	    }
-	    FormatResult(interp, "expected api version string but got \"%s\"",
-		string);
-	    return TCL_ERROR;
-	}
 	case COMMAND_CGET: {
 	    Tcl_Obj *resultObjPtr = NULL;
 	    TreeGradient gradient;
@@ -7574,10 +7537,6 @@ TreeGradientCmd(
 	    int isNew;
 	    TreeGradient gradient;
 
-	    if (tree->gradientAPI[0] == 0) {
-		FormatResult(interp, "you must call the 'api' command before calling 'create'");
-		return TCL_ERROR;
-	    }
 	    if (objc < 4) {
 		Tcl_WrongNumArgs(interp, 3, objv, "name ?option value ...?");
 		return TCL_ERROR;
@@ -7749,7 +7708,6 @@ TreeGradient_Init(
     TreeCtrl *tree		/* Widget info. */
     )
 {
-    tree->gradientAPI[0] = tree->gradientAPI[1] = 0; /* UNSPECIFIED */
     tree->gradientOptionTable = Tk_CreateOptionTable(tree->interp,
 	gradientOptionSpecs); 
     tree->nativeGradients = 1; /* Preference, not availability */

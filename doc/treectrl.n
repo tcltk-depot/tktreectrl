@@ -354,8 +354,6 @@ package require \fBtreectrl  2.3\fR
 .sp
 \fIpathName\fR \fBgradient\fR \fIoption\fR ?\fIarg ...\fR?
 .sp
-\fIpathName\fR \fBgradient api\fR ?\fIversion\fR?
-.sp
 \fIpathName\fR \fBgradient cget\fR \fIgradient\fR \fIoption\fR
 .sp
 \fIpathName\fR \fBgradient configure\fR \fIgradient\fR ?\fIoption value ...\fR?
@@ -2009,24 +2007,6 @@ The exact behavior of the command depends on the \fIoption\fR argument
 that follows the \fBgradient\fR argument.
 The following forms of the command are supported:
 .RS
-.TP
-\fIpathName\fR \fBgradient api\fR ?\fIversion\fR?
-When \fIversion\fR is specified this command sets the API that is used
-by the \fBgradient\fR command.  You must call this command before any
-gradients can be created.  The purpose of this is to avoid breaking your
-application if the gradient API changes in the future.
-When \fIversion\fR is not given this command returns a list of the form:
-.nf
-
-{{available 1.0} {current 1.0}}
-
-.fi
-If this command has never been called for this treectrl widget the result is:
-.nf
-
-{{available 1.0} {current unspecified}}
-
-.fi
 .TP
 \fIpathName\fR \fBgradient cget\fR \fIgradient\fR \fIoption\fR
 Returns the current value of the configuration option for the gradient specified by
@@ -4834,7 +4814,6 @@ for a horizontal gradient.
 
 package require treectrl
 set T [treectrl .t -itemheight 20 -showheader no]
-$T gradient api 1.0
 $T gradient create G1 -orient vertical -top {0.0 canvas} -bottom {1.0 canvas} \\
 	-stops {{0.0 blue} {0.5 green} {1.0 red}} -steps 25
 $T column create -expand yes -itembackground G1

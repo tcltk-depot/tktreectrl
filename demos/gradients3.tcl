@@ -14,8 +14,6 @@ proc DemoGradients3 {} {
 	-xscrollsmoothing yes -yscrollsmoothing yes \
 	-canvaspady 5 -itemgapy 8
 
-    $T gradient api 1.0
-
     #
     # Create columns
     #
@@ -111,7 +109,6 @@ proc DemoGradients3 {} {
     
     set height 30
     set steps [expr {($height - 5)/2}]
-    $T gradient api 1.0
     $T gradient create G_mouseover       -steps $steps -stops {{0.0 white} {1.0 #ebf3fd}} -orient vertical
     $T gradient create G_selected_active -steps $steps -stops {{0.0 #dcebfc} {1.0 #c1dbfc}} -orient vertical
     $T gradient create G_selected        -steps $steps -stops {{0.0 #ebf4fe} {1.0 #cfe4fe}} -orient vertical

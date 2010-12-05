@@ -517,7 +517,6 @@ struct TreeCtrl
 
     Tk_OptionTable gradientOptionTable;
     Tcl_HashTable gradientHash;	/* TreeGradient.name -> TreeGradient */
-    int gradientAPI[2];		/* major.minor version */
     int nativeGradients;	/* Preference, not availability. */
 };
 
@@ -1345,9 +1344,6 @@ MODULE_SCOPE TreeGradient PerStateGradient_ForState(TreeCtrl *tree, PerStateInfo
     int state, int *match);
 
 /*****/
-
-#define TREECTRL_GRADIENT_API_MAJOR 1
-#define TREECTRL_GRADIENT_API_MINOR 0
 
 typedef struct GradientCoord GradientCoord;
 

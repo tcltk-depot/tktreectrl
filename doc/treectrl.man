@@ -1048,20 +1048,6 @@ The following forms of the command are supported:
 
 [list_begin definitions]
 
-[call [arg pathName] [cmd {gradient api}] [opt [arg version]]]
-When [arg version] is specified this command sets the API that is used
-by the [cmd gradient] command.  You must call this command before any
-gradients can be created.  The purpose of this is to avoid breaking your
-application if the gradient API changes in the future.
-When [arg version] is not given this command returns a list of the form:
-[example_begin]
-{{available 1.0} {current 1.0}}
-[example_end]
-If this command has never been called for this treectrl widget the result is:
-[example_begin]
-{{available 1.0} {current unspecified}}
-[example_end]
-
 [call [arg pathName] [cmd {gradient cget}] [arg gradient] [arg option]]
 Returns the current value of the configuration option for the gradient specified by
 [arg gradient] whose name is [arg option]. [arg Option] may have any of the
@@ -3886,7 +3872,6 @@ for a horizontal gradient.
 [example_begin]
 package require treectrl
 set T [lb]treectrl .t -itemheight 20 -showheader no[rb]
-$T gradient api 1.0
 $T gradient create G1 -orient vertical -top {0.0 canvas} -bottom {1.0 canvas} \
 	-stops {{0.0 blue} {0.5 green} {1.0 red}} -steps 25
 $T column create -expand yes -itembackground G1

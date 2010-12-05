@@ -843,33 +843,9 @@ test treectrl-19.1 {gradient: missing args} -body {
     .t gradient
 } -returnCodes error -result {wrong # args: should be ".t gradient command ?arg arg ...?"}
 
-test treectrl-19.2 {gradient api: too many args} -body {
-    .t gradient api foo bar
-} -returnCodes error -result {wrong # args: should be ".t gradient api ?version?"}
-
 test treectrl-19.3 {gradient: unknown command} -body {
     .t gradient foo
 } -returnCodes error -result {bad command "foo": must be *} -match glob
-
-test treectrl-19.4 {gradient api: unspecified} -body {
-    .t gradient api
-} -result {{available 1.0} {current unspecified}}
-
-test treectrl-19.5 {gradient api: NaN} -body {
-    .t gradient api foo
-} -returnCodes error -result {expected api version string but got "foo"}
-
-test treectrl-19.6 {gradient api: invalid} -body {
-    .t gradient api 1.1
-} -returnCodes error -result {invalid api version "1.1"}
-
-test treectrl-19.7 {gradient create: api not specified} -body {
-    .t gradient create G1
-} -returnCodes error -result {you must call the 'api' command before calling 'create'}
-
-test treectrl-19.8 {gradient api: valid} -body {
-    .t gradient api 1.0
-} -result {}
 
 test treectrl-19.9 {gradient create: missing args} -body {
     .t gradient create
