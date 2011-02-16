@@ -4709,7 +4709,7 @@ Column_Draw(
 	char staticStr[256], *text = staticStr;
 	int textLen = column->textLen;
 	char *ellipsis = "...";
-	int ellipsisLen = strlen(ellipsis);
+	int ellipsisLen = (int) strlen(ellipsis);
 	int tx, ty, h;
 
 	if (textLen + ellipsisLen > sizeof(staticStr))

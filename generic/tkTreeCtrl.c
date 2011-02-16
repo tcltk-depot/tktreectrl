@@ -1522,8 +1522,8 @@ badWrap:
 	}
     }
 
-    tree->itemPrefixLen = strlen(tree->itemPrefix);
-    tree->columnPrefixLen = strlen(tree->columnPrefix);
+    tree->itemPrefixLen = (int) strlen(tree->itemPrefix);
+    tree->columnPrefixLen = (int) strlen(tree->columnPrefix);
 
     Tk_SetWindowBackground(tree->tkwin,
 	    Tk_3DBorderColor(tree->border)->pixel);

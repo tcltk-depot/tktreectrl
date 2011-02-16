@@ -2652,7 +2652,7 @@ static void TextUpdateStringRep(TreeElementArgs *args)
     /* If -text is specified, then -data and -textvariable are ignored. */
     if (elemX->textCfg != NULL) {
 	elemX->text = elemX->textCfg;
-	elemX->textLen = strlen(elemX->textCfg);
+	elemX->textLen = (int) strlen(elemX->textCfg);
 	return;
     }
 
@@ -3370,7 +3370,7 @@ static void DisplayProcText(TreeElementArgs *args)
     if (bytesThatFit != textLen) {
 	char staticStr[256], *buf = staticStr;
 	int bufLen = abs(bytesThatFit);
-	int ellipsisLen = strlen(ellipsis);
+	int ellipsisLen = (int) strlen(ellipsis);
 
 	if (bufLen + ellipsisLen > sizeof(staticStr))
 	    buf = ckalloc(bufLen + ellipsisLen);
@@ -3387,7 +3387,7 @@ static void DisplayProcText(TreeElementArgs *args)
 	    CONST char *sndBytePtr = Tcl_UtfNext(fstBytePtr);
 	    Tk_UnderlineChars(tree->display, args->display.drawable, gc,
 		    tkfont, buf, x, y + fm.ascent, 
-		    fstBytePtr - buf, sndBytePtr - buf);
+		    (int) (fstBytePtr - buf), (int) (sndBytePtr - buf));
 	}
 #endif
 	if (buf != staticStr)
@@ -3401,7 +3401,7 @@ static void DisplayProcText(TreeElementArgs *args)
 	    CONST char *sndBytePtr = Tcl_UtfNext(fstBytePtr);
 	    Tk_UnderlineChars(tree->display, args->display.drawable, gc,
 		    tkfont, text, x, y + fm.ascent, 
-		    fstBytePtr - text, sndBytePtr - text);
+		    (int) (fstBytePtr - text), (int) (sndBytePtr - text));
 	}
 #endif
     }
@@ -3603,7 +3603,7 @@ TreeElement_GetSortData(
 
 		obj.refCount = 1;
 		obj.bytes = (char *) elemX->textCfg;
-		obj.length = strlen(elemX->textCfg);
+		obj.length = (int) strlen(elemX->textCfg);
 		obj.typePtr = NULL;
 
 		if (Tcl_GetLongFromObj(tree->interp, &obj, lv) != TCL_OK)

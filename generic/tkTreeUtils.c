@@ -214,7 +214,7 @@ Tree_Ellipsis(
 {
     char staticStr[256], *tmpStr = staticStr;
     int pixels, pixelsTest, bytesThatFit, bytesTest;
-    int ellipsisNumBytes = strlen(ellipsis);
+    int ellipsisNumBytes = (int) strlen(ellipsis);
     int bytesInFirstCh;
     Tcl_UniChar uniCh;
 
@@ -236,7 +236,7 @@ Tree_Ellipsis(
     if (force)
 	bytesTest = bytesThatFit;
     else
-	bytesTest = Tcl_UtfPrev(string + bytesThatFit, string) - string;
+	bytesTest = (int) (Tcl_UtfPrev(string + bytesThatFit, string) - string);
     if (bytesTest + ellipsisNumBytes > sizeof(staticStr))
 	tmpStr = ckalloc(bytesTest + ellipsisNumBytes);
     memcpy(tmpStr, string, bytesTest);
@@ -251,7 +251,7 @@ Tree_Ellipsis(
 		ckfree(tmpStr);
 	    return bytesTest;
 	}
-	bytesTest = Tcl_UtfPrev(string + bytesTest, string) - string;
+	bytesTest = (int) (Tcl_UtfPrev(string + bytesTest, string) - string);
     }
 
     singleChar:
@@ -633,7 +633,7 @@ static LayoutChunk *NewChunk(LayoutInfo **layoutPtrPtr, int *maxPtr,
     if (layoutPtr->numChunks == layoutPtr->maxChunks) {
 	layoutPtr->maxChunks *= 2;
 	s = sizeof(LayoutInfo) + ((layoutPtr->maxChunks - 1) * sizeof(LayoutChunk));
-	layoutPtr = (LayoutInfo *) ckrealloc((char *) layoutPtr, s);
+	layoutPtr = (LayoutInfo *) ckrealloc((char *) layoutPtr, (int) s);
 
 	*layoutPtrPtr = layoutPtr;
     }
@@ -752,7 +752,8 @@ TextLayout TextLayout_Compute(
 
 	chunkPtr = NULL;
 	if (start < special) {
-	    bytesThisChunk = Tk_MeasureChars(tkfont, start, special - start,
+	    bytesThisChunk = Tk_MeasureChars(tkfont, start,
+		(int) (special - start),
 		wrapLength - curX, flags, &newX);
 	    newX += curX;
 	    flags &= ~TK_AT_LEAST_ONE;
@@ -813,7 +814,7 @@ TextLayout TextLayout_Compute(
 	    CONST char *end;
 
 	    end = chunkPtr->start + chunkPtr->numBytes;
-	    bytesThisChunk = start - end;
+	    bytesThisChunk = (int) (start - end);
 	    if (bytesThisChunk > 0) {
 		bytesThisChunk =
 		    Tk_MeasureChars(tkfont, end, bytesThisChunk, -1, 0,
@@ -868,7 +869,7 @@ wrapLine:
      * text remaining */
     if ((start < end) && (layoutPtr->numChunks > 0)) {
 	char *ellipsis = "...";
-	int ellipsisLen = strlen(ellipsis);
+	int ellipsisLen = (int) strlen(ellipsis);
 	char staticStr[256], *buf = staticStr;
 	int pixelsForText;
 
@@ -1055,7 +1056,7 @@ void TextLayout_Draw(
 	    } else {
 		firstByte = Tcl_UtfAtIndex(chunkPtr->start, firstChar);
 		Tk_MeasureChars(layoutPtr->tkfont, chunkPtr->start,
-		    firstByte - chunkPtr->start, -1, 0, &drawX);
+		    (int) (firstByte - chunkPtr->start), -1, 0, &drawX);
 	    }
 	    if (lastChar < numDisplayChars)
 		numDisplayChars = lastChar;
@@ -1064,22 +1065,22 @@ void TextLayout_Draw(
 	    if (chunkPtr->ellipsis) {
 		char staticStr[256], *buf = staticStr;
 		char *ellipsis = "...";
-		int ellipsisLen = strlen(ellipsis);
+		int ellipsisLen = (int) strlen(ellipsis);
 
 		if ((lastByte - firstByte) + ellipsisLen > sizeof(staticStr))
-		    buf = ckalloc((lastByte - firstByte) + ellipsisLen);
+		    buf = ckalloc((int) (lastByte - firstByte) + ellipsisLen);
 		memcpy(buf, firstByte, (lastByte - firstByte));
 		memcpy(buf + (lastByte - firstByte), ellipsis, ellipsisLen);
 		Tk_DrawChars(display, drawable, gc, layoutPtr->tkfont,
-		    buf, (lastByte - firstByte) + ellipsisLen,
+		    buf, (int) (lastByte - firstByte) + ellipsisLen,
 		    x + chunkPtr->x + drawX, y + chunkPtr->y);
 		if (buf != staticStr)
 		    ckfree(buf);
 	    } else
 #endif
 	    Tk_DrawChars(display, drawable, gc, layoutPtr->tkfont,
-		firstByte, lastByte - firstByte, x + chunkPtr->x + drawX,
-		y + chunkPtr->y);
+		firstByte, (int) (lastByte - firstByte),
+		x + chunkPtr->x + drawX, y + chunkPtr->y);
 
 	    if (underline >= firstChar && underline < numDisplayChars) {
 		CONST char *fstBytePtr = Tcl_UtfAtIndex(chunkPtr->start, underline);
@@ -1087,7 +1088,8 @@ void TextLayout_Draw(
 		Tk_UnderlineChars(display, drawable, gc,
 			layoutPtr->tkfont, firstByte,
 			x + chunkPtr->x + drawX, y + chunkPtr->y, 
-			fstBytePtr - chunkPtr->start, sndBytePtr - chunkPtr->start);
+			(int) (fstBytePtr - chunkPtr->start),
+			(int) (sndBytePtr - chunkPtr->start));
 	    }
 	}
 	firstChar -= chunkPtr->numChars;
@@ -1646,7 +1648,7 @@ PerStateInfo_ObjForState(
 
     pData = PerStateInfo_ForState(tree, typePtr, pInfo, state, match);
     if (pData != NULL) {
-	i = ((char *) pData - (char *) pInfo->data) / typePtr->size;
+	i = (int) ((char *) pData - (char *) pInfo->data) / typePtr->size;
 	Tcl_ListObjIndex(tree->interp, pInfo->obj, i * 2, &obj);
 	return obj;
     }
@@ -2467,8 +2469,9 @@ struct AllocElem
 {
     AllocElem *next;
 #ifdef TREECTRL_DEBUG
-    int free;
-    int size;
+    char dbug[4];	/* "DBUG" */
+    int free;		/* 1 if elem is available for reuse. */
+    int size;		/* Number of bytes in body[]. */
 #endif
     char body[1];	/* First byte of client's space.  Actual
 			 * size of this field will be larger than
@@ -2523,8 +2526,11 @@ struct AllocStats {
  * body pointer that's used by clients.
  */
 
-#define BODY_OFFSET \
-    ((unsigned long) (&((AllocElem *) 0)->body))
+#ifdef offsetofXXX
+#define BODY_OFFSET ((size_t) offsetof(AllocElem, body))
+#else
+#define BODY_OFFSET ((size_t) (&((AllocElem *) 0)->body))
+#endif
 
 #ifdef ALLOC_STATS
 
@@ -2649,6 +2655,7 @@ TreeAlloc_Alloc(
 	elem = freeList->head;
 	for (i = 1; i < block->count - 1; i++) {
 #ifdef TREECTRL_DEBUG
+	    strncpy(elem->dbug, "DBUG", 4);
 	    elem->free = 1;
 	    elem->size = size;
 #endif
@@ -2658,6 +2665,7 @@ TreeAlloc_Alloc(
 	}
 	elem->next = NULL;
 #ifdef TREECTRL_DEBUG
+	strncpy(elem->dbug, "DBUG", 4);
 	elem->free = 1;
 	elem->size = size;
 #endif
@@ -2747,17 +2755,21 @@ TreeAlloc_Free(
     stats->size -= size;
 #endif
 
+    /* Comment from Tcl_DbCkfree: */
     /*
-     * Comment from Tcl_DbCkfree:
      * The following cast is *very* tricky.  Must convert the pointer
      * to an integer before doing arithmetic on it, because otherwise
      * the arithmetic will be done differently (and incorrectly) on
      * word-addressed machines such as Crays (will subtract only bytes,
      * even though BODY_OFFSET is in words on these machines).
      */
-    elem = (AllocElem *) (((unsigned long) ptr) - BODY_OFFSET);
+    /* Note: The Tcl source used to do "(unsigned long) ptr" but that
+     * results in pointer truncation on 64-bit Windows builds. */
+    elem = (AllocElem *) (((size_t) ptr) - BODY_OFFSET);
 
 #ifdef TREECTRL_DEBUG
+    if (strncmp(elem->dbug, "DBUG", 4) != 0)
+	panic("TreeAlloc_Free: element header != DBUG");
     if (elem->free)
 	panic("TreeAlloc_Free: element already marked free");
     if (elem->size != size)
