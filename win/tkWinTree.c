@@ -2528,7 +2528,7 @@ CreateThemeMonitorWindow(
     if (!hwnd)
 	return NULL;
 
-    SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG)interp);
+    SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)interp);
     ShowWindow(hwnd, SW_HIDE);
     UpdateWindow(hwnd);
 
@@ -2842,7 +2842,7 @@ TreeThemeCmd(
 
 /*** Gradients ***/
 
-#ifdef __MINGW32__
+#if defined(__MINGW32__) && !defined(__MINGW64__)
 #include <gdiplus.h> /* Works in C, MicroSoft's does not */
 #endif
 
@@ -2850,7 +2850,8 @@ TreeThemeCmd(
  * GDI+ flat api
  */
 
-#ifndef __MINGW32__ /* With MingW32 we can just #include <gdiplus.h> */
+/* With MingW32 we can just #include <gdiplus.h> */
+#if !defined(__MINGW32__) || defined(__MINGW64__)
 #define WINGDIPAPI __stdcall
 #define GDIPCONST const
 #define VOID void
