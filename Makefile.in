@@ -323,8 +323,8 @@ DIST_DEMOS	= biglist bitmaps column-lock demo explorer firefox gradients \
 		  outlook-folders outlook-newgroup random span style-editor \
 		  textvariable www-options
 
-DIST_DOCS	= man.macros treectrl.html treectrl.man treectrl.n
-DIST_DOCS2	= "What's New in TkTreeCtrl.html"
+DIST_DOCS	= man.macros treectrl.html treectrl.man treectrl.n \
+		  What-is-New-in-TkTreeCtrl.html
 
 DIST_LIBRARY	= filelist-bindings.tcl treectrl.tcl
 
@@ -365,8 +365,6 @@ dist: dist-clean
 	    cp -p $(srcdir)/doc/$$p $(DIST_DIR)/doc/$$p; \
 	    chmod 664 $(DIST_DIR)/doc/$$p; \
 	done
-	cp -p $(srcdir)/doc/$(DIST_DOCS2) $(DIST_DIR)/doc/$(DIST_DOCS2)
-	chmod 664 $(DIST_DIR)/doc/$(DIST_DOCS2)
 
 	list='generic macosx unix win'; for p in $$list; do \
 	    cp -p $(srcdir)/$$p/*.[ch] $(DIST_DIR)/$$p/; \
@@ -454,7 +452,6 @@ dist-win: dist-win-clean
 	list='$(DIST_DOCS)'; for p in $$list; do \
 	    cp -p $(srcdir)/doc/$$p $(DIST_WIN_DIR)/doc/$$p; \
 	done
-	cp -p $(srcdir)/doc/$(DIST_DOCS2) $(DIST_WIN_DIR)/doc/$(DIST_DOCS2)
 
 	TCL_TRIM_DOTS=`echo $(PACKAGE_VERSION) | tr -d .`; \
 	SHELLICON_DLL="shellicon$$TCL_TRIM_DOTS.dll"; \
