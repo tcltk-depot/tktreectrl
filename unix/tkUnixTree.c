@@ -2429,7 +2429,7 @@ TreeTheme_SetOptionDefault(
 
     if (!strcmp(specPtr->optionName, "-buttontracking"))
 	specPtr->defValue = "0";
-    if (!strcmp(specPtr->optionName, "-showlines"))
+    else if (!strcmp(specPtr->optionName, "-showlines"))
 	specPtr->defValue = "1";
 
 #ifdef TREECTRL_DEBUG
