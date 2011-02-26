@@ -344,6 +344,7 @@ struct TreeCtrl
     int bgImageTile;		/* -bgimagetile */
     int useIndent;		/* MAX of open/closed button width and
 				 * indent */
+    int buttonHeightMax;	/* Maximum height of a button in any state. */
 #define BG_MODE_COLUMN 0
 #define BG_MODE_ORDER 1
 #define BG_MODE_ORDERVIS 2
@@ -657,6 +658,7 @@ MODULE_SCOPE int TreeItem_ChangeState(TreeCtrl *tree, TreeItem item_, int stateO
 MODULE_SCOPE void TreeItem_UndefineState(TreeCtrl *tree, TreeItem item_, int state);
 
 MODULE_SCOPE int TreeItem_HasButton(TreeCtrl *tree, TreeItem item_);
+MODULE_SCOPE int TreeItem_IsPointInButton(TreeCtrl *tree, TreeItem item_, int x, int y);
 MODULE_SCOPE int TreeItem_GetDepth(TreeCtrl *tree, TreeItem item_);
 MODULE_SCOPE int TreeItem_GetID(TreeCtrl *tree, TreeItem item_);
 MODULE_SCOPE int TreeItem_SetID(TreeCtrl *tree, TreeItem item_, int id);
@@ -685,8 +687,8 @@ MODULE_SCOPE int TreeItem_SpansRedo(TreeCtrl *tree, TreeItem item_);
 MODULE_SCOPE void TreeItem_SpansRedoIfNeeded(TreeCtrl *tree, TreeItem item_);
 MODULE_SCOPE int *TreeItem_GetSpans(TreeCtrl *tree, TreeItem item_);
 MODULE_SCOPE void TreeItem_Draw(TreeCtrl *tree, TreeItem self, int lock, int x, int y, int width, int height, TreeDrawable td, int minX, int maxX, int index);
-MODULE_SCOPE void TreeItem_DrawLines(TreeCtrl *tree, TreeItem self, int x, int y, int width, int height, TreeDrawable td);
-MODULE_SCOPE void TreeItem_DrawButton(TreeCtrl *tree, TreeItem self, int x, int y, int width, int height, TreeDrawable td);
+MODULE_SCOPE void TreeItem_DrawLines(TreeCtrl *tree, TreeItem self, int x, int y, int width, int height, TreeDrawable td, TreeStyle style);
+MODULE_SCOPE void TreeItem_DrawButton(TreeCtrl *tree, TreeItem self, int x, int y, int width, int height, TreeDrawable td, TreeStyle style);
 MODULE_SCOPE int TreeItem_ReallyVisible(TreeCtrl *tree, TreeItem self);
 MODULE_SCOPE void TreeItem_FreeResources(TreeCtrl *tree, TreeItem self);
 MODULE_SCOPE void TreeItem_Release(TreeCtrl *tree, TreeItem item);
@@ -769,6 +771,7 @@ MODULE_SCOPE int TreeStyle_ElementActual(TreeCtrl *tree, TreeStyle style_, int s
 MODULE_SCOPE int TreeStyle_ElementCget(TreeCtrl *tree, TreeItem item, TreeItemColumn column, TreeStyle style_, Tcl_Obj *elemObj, Tcl_Obj *obj);
 MODULE_SCOPE int TreeStyle_ElementConfigure(TreeCtrl *tree, TreeItem item, TreeItemColumn column, TreeStyle style_, Tcl_Obj *elemObj, int objc, Tcl_Obj **objv, int *eMask);
 MODULE_SCOPE void TreeStyle_ListElements(TreeCtrl *tree, TreeStyle style_);
+MODULE_SCOPE int TreeStyle_GetButtonY(TreeCtrl *tree, TreeStyle style_);
 MODULE_SCOPE TreeStyle TreeStyle_GetMaster(TreeCtrl *tree, TreeStyle style_);
 MODULE_SCOPE char *TreeStyle_Identify(StyleDrawArgs *drawArgs, int x, int y);
 MODULE_SCOPE void TreeStyle_Identify2(StyleDrawArgs *drawArgs,
@@ -793,7 +796,7 @@ MODULE_SCOPE int TreeStyle_NumElements(TreeCtrl *tree, TreeStyle style_);
 MODULE_SCOPE void TreeStyle_UpdateWindowPositions(StyleDrawArgs *drawArgs);
 MODULE_SCOPE void TreeStyle_OnScreen(TreeCtrl *tree, TreeStyle style_, int onScreen);
 
-MODULE_SCOPE int Tree_ButtonMaxWidth(TreeCtrl *tree);
+MODULE_SCOPE void Tree_ButtonMaxSize(TreeCtrl *tree, int *maxWidth, int *maxHeight);
 MODULE_SCOPE int Tree_ButtonHeight(TreeCtrl *tree, int state);
 
 /* tkTreeNotify.c */

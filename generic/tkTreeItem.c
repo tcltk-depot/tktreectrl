@@ -1006,6 +1006,118 @@ TreeItem_HasButton(
 /*
  *----------------------------------------------------------------------
  *
+ * TreeItem_GetButtonBbox --
+ *
+ *	Determine the bounding box of the expand/collapse button
+ *	next to an item.
+ *
+ * Results:
+ *	If the -treecolumn is not visible, or the item is not visible,
+ *	or the item has no button, or the bounding box for the item
+ *	in the -treecolumn has zero size, then 0 is returned.
+ *
+ *	Otherwise, the bounding box of the biggest possible button
+ *	(considering -buttonbitmap, -buttonimage, -buttonsize and
+ *	any themed button) is returned.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TreeItem_GetButtonBbox(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeItem item,		/* Item token. */
+    TreeRectangle *tr		/* Returned bounds of the button in
+				 * item coordinates. */
+    )
+{
+    TreeItemColumn itemColumn;
+    TreeStyle style = NULL;
+    int indent, buttonY = -1;
+
+    if (!tree->columnTreeVis)
+	return 0;
+
+    if (!TreeItem_HasButton(tree, item))
+	return 0;
+
+    /* Get the bounding box in canvas coords of the tree-column for this
+     * item. */
+    if (TreeItem_GetRects(tree, item, tree->columnTree, 0, NULL, tr) == 0)
+	return 0;
+
+    itemColumn = TreeItem_FindColumn(tree, item,
+	TreeColumn_Index(tree->columnTree));
+    if (itemColumn != NULL)
+	style = TreeItemColumn_GetStyle(tree, itemColumn);
+
+    indent = TreeItem_Indent(tree, item);
+
+    if (style != NULL)
+	buttonY = TreeStyle_GetButtonY(tree, style);
+
+    /* FIXME? The button is as wide as the -indent option. */
+    tr->x = indent - tree->useIndent;
+    tr->width = tree->useIndent;
+
+    if (buttonY < 0)
+	tr->y = (tr->height - tree->buttonHeightMax) / 2;
+    else
+	tr->y = buttonY;
+    tr->height = tree->buttonHeightMax;
+
+    return 1;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeItem_IsPointInButton --
+ *
+ *	Determine if the given point is over the expand/collapse
+ *	button next to an item.
+ *
+ * Results:
+ *	1 if the point is over the button, 0 otherwise.
+ *
+ *	For the purposes of hit-testing, the button is considered to
+ *	be larger than what is displayed to make it easier to click.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TreeItem_IsPointInButton(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeItem item,		/* Item token. */
+    int x,			/* Item coords. */
+    int y			/* Item coords. */
+    )
+{
+    TreeRectangle tr;
+#define BUTTON_HITTEST_SLOP 11
+    int centerY, slop = MAX(tree->buttonHeightMax / 2, BUTTON_HITTEST_SLOP);
+
+    if (!TreeItem_GetButtonBbox(tree, item, &tr))
+	return 0;
+
+    centerY = TreeRect_Top(tr) + TreeRect_Height(tr) / 2;
+    if ((y < centerY - slop) ||
+	    (y >= centerY + slop + (tree->buttonHeightMax % 2)))
+	return 0;
+
+    return 1;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TreeItem_GetDepth --
  *
  *	Return the depth of an Item.
@@ -4205,10 +4317,12 @@ SpanWalkProc_Draw(
     if (spanPtr->treeColumn == tree->columnTree) {
 	if (tree->showLines)
 	    TreeItem_DrawLines(tree, item, drawArgs->x, drawArgs->y,
-		    drawArgs->width, drawArgs->height, data->td);
+		    drawArgs->width, drawArgs->height, data->td,
+		    drawArgs->style);
 	if (tree->showButtons)
 	    TreeItem_DrawButton(tree, item, drawArgs->x, drawArgs->y,
-		    drawArgs->width, drawArgs->height, data->td);
+		    drawArgs->width, drawArgs->height, data->td,
+		    drawArgs->style);
     }
 
     /* Stop walking if we went past the right edge of the dirty area. */
@@ -4284,15 +4398,21 @@ TreeItem_DrawLines(
     TreeItem item,		/* Item token. */
     int x, int y,		/* Drawable coordinates of columnTree. */
     int width, int height,	/* Total size of columnTree. */
-    TreeDrawable td		/* Where to draw. */
+    TreeDrawable td,		/* Where to draw. */
+    TreeStyle style		/* Instance style or NULL. Used to get
+				 * optional vertical offset of the button. */
     )
 {
     TreeItem parent, walk;
+    int buttonY = -1;
     int indent, left, lineLeft, lineTop;
     int hasPrev, hasNext;
     int i, vert = 0;
 
     indent = TreeItem_Indent(tree, item);
+
+    if (style != NULL)
+	buttonY = TreeStyle_GetButtonY(tree, style);
 
     /* Left edge of button/line area */
     left = x /* + tree->columnTreeLeft */ + indent - tree->useIndent;
@@ -4301,7 +4421,10 @@ TreeItem_DrawLines(
     lineLeft = left + (tree->useIndent - tree->lineThickness) / 2;
 
     /* Top edge of horizontal line */
-    lineTop = y + (height - tree->lineThickness) / 2;
+    if (buttonY < 0)
+	lineTop = y + (height - tree->lineThickness) / 2;
+    else
+	lineTop = y + buttonY + (tree->buttonHeightMax - tree->lineThickness) / 2;
 
     /* NOTE: The next three checks do not call TreeItem_ReallyVisible()
      * since 'item' is ReallyVisible */
@@ -4428,11 +4551,13 @@ TreeItem_DrawButton(
     TreeItem item,		/* Item token. */
     int x, int y,		/* Drawable coordinates of columnTree. */
     int width, int height,	/* Total size of columnTree. */
-    TreeDrawable td		/* Where to draw. */
+    TreeDrawable td,		/* Where to draw. */
+    TreeStyle style		/* Instance style or NULL. Used to get
+				 * optional vertical offset of the button. */
     )
 {
     int indent, left, lineLeft, lineTop;
-    int buttonLeft, buttonTop, w1;
+    int buttonLeft, buttonTop, buttonY = -1, w1;
     Tk_Image image;
     Pixmap bitmap;
 
@@ -4441,6 +4566,9 @@ TreeItem_DrawButton(
 
     indent = TreeItem_Indent(tree, item);
 
+    if (style != NULL)
+	buttonY = TreeStyle_GetButtonY(tree, style);
+
     /* Left edge of button/line area */
     left = x /* + tree->columnTreeLeft */ + indent - tree->useIndent;
 
@@ -4448,9 +4576,11 @@ TreeItem_DrawButton(
     if (image != NULL) {
 	int imgW, imgH;
 	Tk_SizeOfImage(image, &imgW, &imgH);
+	if (buttonY < 0)
+	    buttonY = (height - imgH) / 2;
 	Tree_RedrawImage(image, 0, 0, imgW, imgH, td,
 	    left + (tree->useIndent - imgW) / 2,
-	    y + (height - imgH) / 2);
+	    y + buttonY);
 	return;
     }
 
@@ -4459,8 +4589,10 @@ TreeItem_DrawButton(
 	int bmpW, bmpH;
 	int bx, by;
 	Tk_SizeOfBitmap(tree->display, bitmap, &bmpW, &bmpH);
+	if (buttonY < 0)
+	    buttonY = (height - bmpH) / 2;
 	bx = left + (tree->useIndent - bmpW) / 2;
-	by = y + (height - bmpH) / 2;
+	by = y + buttonY;
 	Tree_DrawBitmap(tree, bitmap, td.drawable, NULL, NULL,
 		0, 0, (unsigned int) bmpW, (unsigned int) bmpH,
 		bx, by);
@@ -4480,8 +4612,10 @@ TreeItem_DrawButton(
 
 	if (TreeTheme_GetButtonSize(tree, td.drawable,
 		(buttonState & STATE_OPEN) != 0, &bw, &bh) == TCL_OK) {
+	    if (buttonY < 0)
+		buttonY = (height - bh) / 2;
 	    if (TreeTheme_DrawButton(tree, td, item, buttonState,
-		    left + (tree->useIndent - bw) / 2, y + (height - bh) / 2,
+		    left + (tree->useIndent - bw) / 2, y + buttonY,
 		    bw, bh) == TCL_OK) {
 		return;
 	    }
@@ -4496,10 +4630,16 @@ TreeItem_DrawButton(
 
     /* Top edge of horizontal line */
     /* Make sure this matches TreeItem_DrawLines() */
-    lineTop = y + (height - tree->buttonThickness) / 2;
+    if (buttonY < 0)
+	lineTop = y + (height - tree->lineThickness) / 2;
+    else
+	lineTop = y + buttonY + (tree->buttonHeightMax - tree->lineThickness) / 2;
 
     buttonLeft = left + (tree->useIndent - tree->buttonSize) / 2;
-    buttonTop = y + (height - tree->buttonSize) / 2;
+    if (buttonY < 0)
+	buttonTop = y + (height - tree->buttonSize) / 2;
+    else
+	buttonTop = y + buttonY + (tree->buttonHeightMax - tree->buttonSize) / 2;
 
     /* Erase button background */
     XFillRectangle(tree->display, td.drawable,

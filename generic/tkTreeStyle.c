@@ -40,6 +40,8 @@ struct MStyle
     int numElements;		/* Size of elements[]. */
     MElementLink *elements;	/* Array of master elements. */
     int vertical;		/* -orient */
+    int buttonY;		/* -buttony */
+    Tcl_Obj *buttonYObj;	/* -buttony */
 };
 
 /*
@@ -139,6 +141,10 @@ static CONST char *MStyleUid = "MStyle", *IStyleUid = "IStyle",
 static char *orientStringTable[] = { "horizontal", "vertical", (char *) NULL };
 
 static Tk_OptionSpec styleOptionSpecs[] = {
+    {TK_OPTION_PIXELS, "-buttony", (char *) NULL, (char *) NULL,
+	(char *) NULL, Tk_Offset(MStyle, buttonYObj),
+	Tk_Offset(MStyle, buttonY),
+	TK_OPTION_NULL_OK, (ClientData) NULL, 0},
     {TK_OPTION_STRING_TABLE, "-orient", (char *) NULL, (char *) NULL,
 	"horizontal", -1, Tk_Offset(MStyle, vertical),
 	0, (ClientData) orientStringTable, 0},
@@ -4122,6 +4128,33 @@ Style_ElemChanged(
 /*
  *----------------------------------------------------------------------
  *
+ * TreeStyle_GetButtonY --
+ *
+ *	Return the value of the -buttony style option.
+ *
+ * Results:
+ *	Pixel value or -1 if unspecified.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TreeStyle_GetButtonY(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeStyle style_		/* Master or instance style token. */
+    )
+{
+    MStyle *style = (MStyle *) style_;
+    MStyle *master = (style->master != NULL) ? style->master : style;
+    return (master->buttonYObj == NULL) ? -1 : master->buttonY;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TreeStyle_GetMaster --
  *
  *	Return the master style for an instance style.
@@ -6229,7 +6262,7 @@ TreeStyleCmd(
 /*
  *----------------------------------------------------------------------
  *
- * Tree_ButtonMaxWidth --
+ * Tree_ButtonMaxSize --
  *
  *	Return the maximum possible size of a button in any state. This
  *	includes the size of the -buttonimage and -buttonbitmap options,
@@ -6244,29 +6277,38 @@ TreeStyleCmd(
  *----------------------------------------------------------------------
  */
 
-int
-Tree_ButtonMaxWidth(
-    TreeCtrl *tree		/* Widget info. */
+void
+Tree_ButtonMaxSize(
+    TreeCtrl *tree,		/* Widget info. */
+    int *maxWidth,		/* Returned maximum width. */
+    int *maxHeight		/* Returned maximum height. */
     )
 {
-    int w, h, width = 0;
+    int w, h, width = 0, height = 0;
 
     PerStateImage_MaxSize(tree, &tree->buttonImage, &w, &h);
     width = MAX(width, w);
+    height = MAX(height, h);
 
     PerStateBitmap_MaxSize(tree, &tree->buttonBitmap, &w, &h);
     width = MAX(width, w);
+    height = MAX(height, h);
 
     if (tree->useTheme) {
 	if (TreeTheme_GetButtonSize(tree, Tk_WindowId(tree->tkwin),
-	    TRUE, &w, &h) == TCL_OK)
+		TRUE, &w, &h) == TCL_OK) {
 	    width = MAX(width, w);
+	    height = MAX(height, h);
+	}
 	if (TreeTheme_GetButtonSize(tree, Tk_WindowId(tree->tkwin),
-	    FALSE, &w, &h) == TCL_OK)
+		FALSE, &w, &h) == TCL_OK) {
 	    width = MAX(width, w);
+	    height = MAX(height, h);
+	}
     }
 
-    return MAX(width, tree->buttonSize);
+    (*maxWidth) = MAX(width, tree->buttonSize);
+    (*maxHeight) = MAX(height, tree->buttonSize);
 }
 
 /*

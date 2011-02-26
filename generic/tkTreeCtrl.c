@@ -1012,7 +1012,7 @@ static int TreeWidgetCmd(
 		    (x < columnTreeLeft + depth * tree->useIndent)) {
 		int column = (x - columnTreeLeft) / tree->useIndent + 1;
 		if (column == depth) {
-		    if (TreeItem_HasButton(tree, item))
+		    if (TreeItem_IsPointInButton(tree, item, x, y))
 			sprintf(buf + strlen(buf), " button");
 		} else if (tree->showLines) {
 		    TreeItem sibling;
@@ -1274,6 +1274,7 @@ TreeConfigure(
     TreeCtrl saved;
     Tk_SavedOptions savedOptions;
     int oldShowRoot = tree->showRoot;
+    int buttonWidth, buttonHeight;
     int mask, maskFree = 0;
     XGCValues gcValues;
     unsigned long gcMask;
@@ -1598,7 +1599,9 @@ badWrap:
 	TreeRowProxy_Display(tree);
     }
 
-    tree->useIndent = MAX(tree->indent, Tree_ButtonMaxWidth(tree));
+    Tree_ButtonMaxSize(tree, &buttonWidth, &buttonHeight);
+    tree->useIndent = MAX(tree->indent, buttonWidth);
+    tree->buttonHeightMax = buttonHeight;
 
     if (createFlag)
 	mask |= TREE_CONF_BORDERS;

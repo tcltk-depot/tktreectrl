@@ -2374,9 +2374,14 @@ is specified).
 If one or more <i class="arg">option</i>-<i class="arg">value</i> pairs are specified, then the command
 modifies the given option(s) to have the given value(s) in <i class="arg">style</i>;
 in this case the command returns an empty string.</p>
-<p>The options of a style have effect on all elements managed by the style.
-The following options are supported:</p>
+<p>The following options are supported:</p>
 <dl class="options">
+<dt><b class="option"><b class="option">-buttony</b></b> <i class="arg">offset</i></dt>
+<dd><p>Specifies the distance from the top of the item that the expand/collapse button
+should be drawn.  If <i class="arg">offset</i> is an empty string (the default) then the button
+is centered vertically in the item.
+The value may have any of the forms acceptable to <b class="function">Tk_GetPixels</b>.
+This option only has effect when the style is set in an item in the tree column.</p></dd>
 <dt><b class="option"><b class="option">-orient</b></b> <i class="arg">varName</i></dt>
 <dd><p>This option specifies which orientation should be used
 when laying out the elements associated with this style.

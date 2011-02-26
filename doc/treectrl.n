@@ -62,7 +62,7 @@
 '\" .UL arg1 arg2
 '\"	Print arg1 underlined, then print arg2 normally.
 '\"
-'\" RCS: @(#) $Id$
+'\" RCS: @(#) $Id: man.macros,v 1.1 2009/01/30 04:56:47 andreas_kupries Exp $
 '\"
 '\"	# Set up traps and other miscellaneous stuff for Tcl/Tk man pages.
 .if t .wh -1.3i ^B
@@ -3214,9 +3214,15 @@ If one or more \fIoption\fR-\fIvalue\fR pairs are specified, then the command
 modifies the given option(s) to have the given value(s) in \fIstyle\fR;
 in this case the command returns an empty string.
 .sp
-The options of a style have effect on all elements managed by the style.
 The following options are supported:
 .RS
+.TP
+\fB\fB-buttony\fR\fR \fIoffset\fR
+Specifies the distance from the top of the item that the expand/collapse button
+should be drawn.  If \fIoffset\fR is an empty string (the default) then the button
+is centered vertically in the item.
+The value may have any of the forms acceptable to \fBTk_GetPixels\fR.
+This option only has effect when the style is set in an item in the tree column.
 .TP
 \fB\fB-orient\fR\fR \fIvarName\fR
 This option specifies which orientation should be used

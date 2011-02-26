@@ -66,7 +66,7 @@ test style-3.1 {style configure: invalid option} -body {
 
 test style-3.2 {style configure: all options} -body {
     .t style configure testStyle
-} -result {{-orient {} {} horizontal horizontal}}
+} -result {{-buttony {} {} {} {}} {-orient {} {} horizontal horizontal}}
 
 test style-3.3 {style configure: the only option} -body {
     .t style configure testStyle -orient
