@@ -1943,7 +1943,8 @@ Tree_UpdateScrollbarX(
     Tcl_Interp *interp = tree->interp;
     int result;
     double fractions[2];
-    char buffer[TCL_DOUBLE_SPACE * 2];
+    char buf1[TCL_DOUBLE_SPACE+1];
+    char buf2[TCL_DOUBLE_SPACE+1];
     char *xScrollCmd;
 
     Tree_GetScrollFractionsX(tree, fractions);
@@ -1957,8 +1958,10 @@ Tree_UpdateScrollbarX(
 
     xScrollCmd = tree->xScrollCmd;
     Tcl_Preserve((ClientData) xScrollCmd);
-    sprintf(buffer, "%g %g", fractions[0], fractions[1]);
-    result = Tcl_VarEval(interp, xScrollCmd, " ", buffer, (char *) NULL);
+    buf1[0] = buf2[0] = ' ';
+    Tcl_PrintDouble(NULL, fractions[0], buf1+1);
+    Tcl_PrintDouble(NULL, fractions[1], buf2+1);
+    result = Tcl_VarEval(interp, xScrollCmd, buf1, buf2, (char *) NULL);
     if (result != TCL_OK)
 	Tcl_BackgroundError(interp);
     Tcl_ResetResult(interp);
@@ -1999,7 +2002,8 @@ Tree_UpdateScrollbarY(
     Tcl_Interp *interp = tree->interp;
     int result;
     double fractions[2];
-    char buffer[TCL_DOUBLE_SPACE * 2];
+    char buf1[TCL_DOUBLE_SPACE+1];
+    char buf2[TCL_DOUBLE_SPACE+1];
     char *yScrollCmd;
 
     Tree_GetScrollFractionsY(tree, fractions);
@@ -2013,8 +2017,10 @@ Tree_UpdateScrollbarY(
 
     yScrollCmd = tree->yScrollCmd;
     Tcl_Preserve((ClientData) yScrollCmd);
-    sprintf(buffer, "%g %g", fractions[0], fractions[1]);
-    result = Tcl_VarEval(interp, yScrollCmd, " ", buffer, (char *) NULL);
+    buf1[0] = buf2[0] = ' ';
+    Tcl_PrintDouble(NULL, fractions[0], buf1+1);
+    Tcl_PrintDouble(NULL, fractions[1], buf2+1);
+    result = Tcl_VarEval(interp, yScrollCmd, buf1, buf2, (char *) NULL);
     if (result != TCL_OK)
 	Tcl_BackgroundError(interp);
     Tcl_ResetResult(interp);

@@ -1791,9 +1791,16 @@ TreeXviewCmd(
 
     if (objc == 2) {
 	double fractions[2];
+	Tcl_Obj *listObj;
 
 	Tree_GetScrollFractionsX(tree, fractions);
-	FormatResult(interp, "%g %g", fractions[0], fractions[1]);
+
+	listObj = Tcl_NewListObj(0, NULL);
+	Tcl_ListObjAppendElement(interp, listObj,
+	    Tcl_NewDoubleObj(fractions[0]));
+	Tcl_ListObjAppendElement(interp, listObj,
+	    Tcl_NewDoubleObj(fractions[1]));
+	Tcl_SetObjResult(interp, listObj);
     } else {
 	int count, index = 0, indexMax, offset, type;
 	double fraction;
@@ -1890,9 +1897,16 @@ TreeYviewCmd(
 
     if (objc == 2) {
 	double fractions[2];
+	Tcl_Obj *listObj;
 
 	Tree_GetScrollFractionsY(tree, fractions);
-	FormatResult(interp, "%g %g", fractions[0], fractions[1]);
+
+	listObj = Tcl_NewListObj(0, NULL);
+	Tcl_ListObjAppendElement(interp, listObj,
+	    Tcl_NewDoubleObj(fractions[0]));
+	Tcl_ListObjAppendElement(interp, listObj,
+	    Tcl_NewDoubleObj(fractions[1]));
+	Tcl_SetObjResult(interp, listObj);
     }
     else {
 	int count, index = 0, indexMax, offset, type;
