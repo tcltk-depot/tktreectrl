@@ -148,8 +148,8 @@ test column-3.12a {column configure/cget: 2 element -arrowpadx} -body {
 } -result {8 5}
 
 test column-3.13 {column configure: invalid -bitmap} -body {
-    .t column configure column1 -bitmap foo
-} -returnCodes error -result {bitmap "foo" not defined}
+    .t column configure column1 -bitmap no-such-bitmap
+} -returnCodes error -result {bitmap "no-such-bitmap" not defined}
 
 test column-3.14 {column configure/cget: -bitmap} -body {
     .t column configure column1 -bitmap questhead

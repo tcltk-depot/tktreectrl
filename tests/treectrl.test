@@ -76,8 +76,8 @@ test treectrl-1.12 {configure: -buttoncolor option} -body {
 } -result {-buttoncolor buttonColor ButtonColor #808080 red}
 
 test treectrl-1.13 {configure: invalid -buttonbitmap option} -body {
-    .t configure -buttonbitmap foo
-} -returnCodes error -result {bitmap "foo" not defined}
+    .t configure -buttonbitmap no-such-bitmap
+} -returnCodes error -result {bitmap "no-such-bitmap" not defined}
 
 test treectrl-1.14 {configure: -buttonbitmap option} -body {
     .t configure -buttonbitmap hourglass
@@ -191,7 +191,7 @@ test treectrl-1.41 {configure: invalid -showlines option} -body {
 test treectrl-1.42 {configure: -showlines option} -body {
     .t configure -showlines false
     .t configure -showlines
-} -result {-showlines showLines ShowLines 1 0}
+} -result {-showlines showLines ShowLines * 0} -match glob
 
 test treectrl-1.43 {configure: invalid -showroot option} -body {
     .t configure -showroot foo
@@ -658,22 +658,26 @@ test treectrl-15.7 {identify: tail} -body {
 } -result {header tail}
 
 test treectrl-15.8 {identify: item (to the left)} -body {
-    .t identify 4 10
+    scan [.t bbox header] "%d %d %d %d" left top right bottom
+    .t identify 4 $bottom
 } -result {item 1}
 
 test treectrl-15.9 {identify: button} -body {
-    .t identify 60 10
+    scan [.t bbox header] "%d %d %d %d" left top right bottom
+    .t identify 60 $bottom
 } -result {item 1 button}
 
 test treectrl-15.10 {identify: over element} -body {
-    .t identify 150 10
+    scan [.t bbox header] "%d %d %d %d" left top right bottom
+    .t identify 150 $bottom
 } -result {item 1 column 2 elem eRect2}
 
 test treectrl-15.11 {identify: item (to the right)} -body {
     # first make column wider, otherwise we can't get right of the item
     .t column configure column1 -width 250
     update idletasks 
-    .t identify 233 10
+    scan [.t bbox header] "%d %d %d %d" left top right bottom
+    .t identify 233 $bottom
 } -result {item 1 column 2}
 
 test treectrl-16.1 {dragimage: missing args} -body {
