@@ -241,7 +241,7 @@ static void LoadIconIfNeeded(TreeElementArgs *args)
     int overlays = 1;
     int type = -1;
     int useImgList = TRUE;
-    HRESULT result;
+    DWORD_PTR result;
 
     /* -useimagelist boolean */
     if (elemX->useImgList != -1)
