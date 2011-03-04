@@ -6682,7 +6682,7 @@ displayRetry:
 #if COLUMNGRID == 1
     /* If gridlines are drawn in the whitespace region then redraw all the
      * whitespace if:
-     * a) horizontall scrolling occurs
+     * a) horizontal scrolling occurs
      * b) all the display info was marked as invalid (such as when
      *    -itembackground colors change, or a column moves)
      * c) item/column sizes change (handled by Range_RedoIfNeeded).
