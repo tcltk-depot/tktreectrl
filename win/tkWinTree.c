@@ -2842,16 +2842,15 @@ TreeThemeCmd(
 
 /*** Gradients ***/
 
-#if defined(__MINGW32__) && !defined(__MINGW64__)
-#include <gdiplus.h> /* Works in C, MicroSoft's does not */
-#endif
-
 /*
  * GDI+ flat api
  */
 
-/* With MingW32 we can just #include <gdiplus.h> */
-#if !defined(__MINGW32__) || defined(__MINGW64__)
+/* gdiplus.h is a C++ header file with MSVC. */
+/* gdiplus.h works with C and C++ with MinGW. */
+/* However gdiplus.h is not included with MinGW-w64 for some reason and
+ * also does not come with the Linux i586-mingw32msvc cross-compiler. */
+#if 1
 #define WINGDIPAPI __stdcall
 #define GDIPCONST const
 #define VOID void
@@ -2930,7 +2929,7 @@ typedef void GpLineGradient;
 typedef void GpPath;
 typedef void GpPen;
 typedef void GpSolidFill;
-#endif /* not __MINGW32__ */
+#endif
 
 /* After gdiplus.dll is dynamically loaded, this structure is
  * filled in with pointers to functions that are used below. */
