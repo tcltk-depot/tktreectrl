@@ -4126,7 +4126,7 @@ TreeColumnCmd(
 			(column->gridLeftColor != NULL ||
 			column->gridRightColor != NULL)) {
 		    tree->columnsWithGridLines -= 1;
-dbwin("tree->columnsWithGridLines is now %d", tree->columnsWithGridLines);
+/*dbwin("tree->columnsWithGridLines is now %d", tree->columnsWithGridLines);*/
 		}
 #endif
 
