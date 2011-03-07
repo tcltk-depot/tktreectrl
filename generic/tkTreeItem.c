@@ -636,7 +636,7 @@ Item_Alloc(
  *
  * Item_AllocRoot --
  *
- *	Allocate an initialize a new Item record for the root item.
+ *	Allocate and initialize a new Item record for the root item.
  *
  * Results:
  *	Pointer to the allocated Item record.
@@ -2955,7 +2955,6 @@ TreeItem_ListDescendants(
     }
 }
 
-
 /*
  *----------------------------------------------------------------------
  *
@@ -3238,7 +3237,8 @@ TreeItem_RemoveColumns(
  *----------------------------------------------------------------------
  */
 
-void TreeItem_RemoveAllColumns(
+void
+TreeItem_RemoveAllColumns(
     TreeCtrl *tree,		/* Widget info. */
     TreeItem item		/* Item token. */
     )
@@ -3520,7 +3520,8 @@ Item_HeightOfStyles(
  *----------------------------------------------------------------------
  */
 
-int TreeItem_Height(
+int
+TreeItem_Height(
     TreeCtrl *tree,		/* Widget info. */
     TreeItem item		/* Item token. */
     )
@@ -3726,7 +3727,8 @@ TreeItem_ColumnFromObj(
  *----------------------------------------------------------------------
  */
 
-int TreeItem_Indent(
+int
+TreeItem_Indent(
     TreeCtrl *tree,		/* Widget info. */
     TreeItem item		/* Item token. */
     )
@@ -4803,7 +4805,8 @@ TreeItem_OnScreen(
  *----------------------------------------------------------------------
  */
 
-int TreeItem_ReallyVisible(
+int
+TreeItem_ReallyVisible(
     TreeCtrl *tree,		/* Widget info. */
     TreeItem item		/* Item token. */
     )
@@ -4846,7 +4849,8 @@ int TreeItem_ReallyVisible(
  *----------------------------------------------------------------------
  */
 
-TreeItem TreeItem_RootAncestor(
+TreeItem
+TreeItem_RootAncestor(
     TreeCtrl *tree,		/* Widget info. */
     TreeItem item		/* Item token. */
     )
@@ -4902,7 +4906,8 @@ TreeItem_IsAncestor(
  *----------------------------------------------------------------------
  */
 
-Tcl_Obj *TreeItem_ToObj(
+Tcl_Obj *
+TreeItem_ToObj(
     TreeCtrl *tree,		/* Widget info. */
     TreeItem item		/* Item token. */
     )
@@ -4935,7 +4940,8 @@ Tcl_Obj *TreeItem_ToObj(
  *----------------------------------------------------------------------
  */
 
-static int Item_Configure(
+static int
+Item_Configure(
     TreeCtrl *tree,		/* Widget info. */
     TreeItem item,		/* Item to configure. */
     int objc,			/* Number of arguments */

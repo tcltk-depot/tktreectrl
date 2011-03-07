@@ -29,6 +29,8 @@ typedef struct TreeDInfo_ TreeDInfo_;
 typedef struct RItem RItem;
 typedef struct Range Range;
 typedef struct DItem DItem;
+typedef struct DItemArea DItemArea;
+typedef struct DScrollIncrements DScrollIncrements;
 
 static void Range_RedoIfNeeded(TreeCtrl *tree);
 static int Range_TotalWidth(TreeCtrl *tree, Range *range_);
@@ -70,7 +72,8 @@ struct Range
     Range *next;
 };
 
-typedef struct DItemArea {
+struct DItemArea
+{
     int x;			/* Where it should be drawn, window coords. */
     int width;			/* Current width. */
     int dirty[4];		/* Dirty area in item coords. */
@@ -78,7 +81,7 @@ typedef struct DItemArea {
 #define DITEM_ALL_DIRTY 0x0002
 #define DITEM_DRAWN 0x0004
     int flags;
-} DItemArea;
+};
 
 /* Display information for a TreeItem that is onscreen. */
 struct DItem
@@ -110,10 +113,11 @@ struct TreeColumnDInfo_
     int width;			/* Last seen column width */
 };
 
-typedef struct DScrollIncrements {
+struct DScrollIncrements
+{
     int *increments;		/* When TreeCtrl.x|yScrollIncrement is zero */
     int count;			/* Size of increments[]. */
-} DScrollIncrements;
+};
 
 /* Display information for a TreeCtrl. */
 struct TreeDInfo_
