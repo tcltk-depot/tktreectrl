@@ -2350,7 +2350,7 @@ Column_Config(
 	    column->gridRightColor != NULL);
     if (gridLines != prevGridLines) {
 	tree->columnsWithGridLines += gridLines ? 1 : -1;
-dbwin("tree->columnsWithGridLines is now %d", tree->columnsWithGridLines);
+/*dbwin("tree->columnsWithGridLines is now %d", tree->columnsWithGridLines);*/
     }
 #endif
 
