@@ -8888,12 +8888,17 @@ Tree_ExposeArea(
 	    y1 = Tree_BorderTop(tree);
 	if (y2 > Tree_BorderBottom(tree))
 	    y2 = Tree_BorderBottom(tree);
+
+	/* Got some 0,0,0,0 expose events from Windows Tk. */
+	if (x1 >= x2 || y1 >= y2)
+	    return;
+
 	DblBufWinDirty(tree, x1, y1, x2, y2);
-        if (tree->debug.enable && tree->debug.display && tree->debug.eraseColor) {
-            XFillRectangle(tree->display, Tk_WindowId(tree->tkwin),
-                    tree->debug.gcErase, x1, y1, x2 - x1, y2 - y1);
+	if (tree->debug.enable && tree->debug.display && tree->debug.eraseColor) {
+	    XFillRectangle(tree->display, Tk_WindowId(tree->tkwin),
+		    tree->debug.gcErase, x1, y1, x2 - x1, y2 - y1);
 	    DisplayDelay(tree);
-        }
+	}
     } else {
 	Tree_InvalidateArea(tree, x1, y1, x2, y2);
     }
