@@ -1248,6 +1248,42 @@ TreeItem_GetSelected(
 /*
  *----------------------------------------------------------------------
  *
+ * TreeItem_CanAddToSelection --
+ *
+ *	Return whether an Item is selectable or not.
+ *
+ * Results:
+ *	TRUE if the item can be added to the selection, FALSE otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TreeItem_CanAddToSelection(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeItem item		/* Item token. */
+    )
+{
+    if (TreeItem_GetSelected(tree, item))
+	return FALSE;
+
+    if (!TreeItem_GetEnabled(tree, item))
+	return FALSE;
+
+#ifdef SELECTION_VISIBLE
+    if (!TreeItem_ReallyVisible(tree, item))
+	return FALSE;
+#endif
+
+    return TRUE;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TreeItem_GetParent --
  *
  *	Return the parent of an Item.

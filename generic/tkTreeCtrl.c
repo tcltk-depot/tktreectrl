@@ -2880,14 +2880,7 @@ TreeSelectionCmd(
 		hPtr = Tcl_FirstHashEntry(&tree->itemHash, &search);
 		while (hPtr != NULL) {
 		    item = (TreeItem) Tcl_GetHashValue(hPtr);
-#ifdef SELECTION_VISIBLE
-		    if (!TreeItem_GetSelected(tree, item) &&
-			    TreeItem_GetEnabled(tree, item) &&
-			    TreeItem_ReallyVisible(tree, item)) {
-#else
-		    if (!TreeItem_GetSelected(tree, item) &&
-			    TreeItem_GetEnabled(tree, item)) {
-#endif
+		    if (TreeItem_CanAddToSelection(tree, item)) {
 			Tree_AddToSelection(tree, item);
 			TreeItemList_Append(&items, item);
 		    }
@@ -2903,14 +2896,7 @@ TreeSelectionCmd(
 		    return TCL_ERROR;
 		TreeItemList_Init(tree, &items, count);
 		while (1) {
-#ifdef SELECTION_VISIBLE
-		    if (!TreeItem_GetSelected(tree, itemFirst) &&
-			    TreeItem_GetEnabled(tree, itemFirst) &&
-			    TreeItem_ReallyVisible(tree, itemFirst)) {
-#else
-		    if (!TreeItem_GetSelected(tree, itemFirst) &&
-			    TreeItem_GetEnabled(tree, itemFirst)) {
-#endif
+		    if (TreeItem_CanAddToSelection(tree, itemFirst)) {
 			Tree_AddToSelection(tree, itemFirst);
 			TreeItemList_Append(&items, itemFirst);
 		    }
@@ -2924,14 +2910,7 @@ TreeSelectionCmd(
 	    TreeItemList_Init(tree, &items, count);
 	    for (i = 0; i < count; i++) {
 		item = TreeItemList_Nth(&itemsFirst, i);
-#ifdef SELECTION_VISIBLE
-		if (!TreeItem_GetSelected(tree, item) &&
-			TreeItem_GetEnabled(tree, item) &&
-			TreeItem_ReallyVisible(tree, item)) {
-#else
-		if (!TreeItem_GetSelected(tree, item) &&
-			TreeItem_GetEnabled(tree, item)) {
-#endif
+		if (TreeItem_CanAddToSelection(tree, item)) {
 		    Tree_AddToSelection(tree, item);
 		    TreeItemList_Append(&items, item);
 		}
@@ -3234,8 +3213,7 @@ doneCLEAR:
 		if (!TreeItem_ReallyVisible(tree, item))
 		    item = TreeItem_NextVisible(tree, item);
 		while (item != NULL) {
-		    if (!TreeItem_GetSelected(tree, item) &&
-			    TreeItem_GetEnabled(tree, item)) {
+		    if (TreeItem_CanAddToSelection(tree, item)) {
 			TreeItemList_Append(&newS, item);
 		    }
 		    item = TreeItem_NextVisible(tree, item);
@@ -3245,8 +3223,7 @@ doneCLEAR:
 		hPtr = Tcl_FirstHashEntry(&tree->itemHash, &search);
 		while (hPtr != NULL) {
 		    item = (TreeItem) Tcl_GetHashValue(hPtr);
-		    if (!TreeItem_GetSelected(tree, item) &&
-			    TreeItem_GetEnabled(tree, item)) {
+		    if (TreeItem_CanAddToSelection(tree, item)) {
 			TreeItemList_Append(&newS, item);
 		    }
 		    hPtr = Tcl_NextHashEntry(&search);
@@ -3261,15 +3238,9 @@ doneCLEAR:
 		TreeItemList_Init(tree, &newS, objcS);
 		for (i = 0; i < TreeItemList_Count(&itemS); i++) {
 		    item = TreeItemList_Nth(&itemS, i);
-		    if (TreeItem_GetSelected(tree, item))
-			continue;
-		    if (!TreeItem_GetEnabled(tree, item))
-			continue;
-#ifdef SELECTION_VISIBLE
-		    if (!TreeItem_ReallyVisible(tree, item))
-			continue;
-#endif
-		    TreeItemList_Append(&newS, item);
+		    if (TreeItem_CanAddToSelection(tree, item)) {
+			TreeItemList_Append(&newS, item);
+		    }
 		}
 	    }
 

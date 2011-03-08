@@ -664,6 +664,7 @@ MODULE_SCOPE int TreeItem_GetID(TreeCtrl *tree, TreeItem item_);
 MODULE_SCOPE int TreeItem_SetID(TreeCtrl *tree, TreeItem item_, int id);
 MODULE_SCOPE int TreeItem_GetEnabled(TreeCtrl *tree, TreeItem item_);
 MODULE_SCOPE int TreeItem_GetSelected(TreeCtrl *tree, TreeItem item_);
+MODULE_SCOPE int TreeItem_CanAddToSelection(TreeCtrl *tree, TreeItem item_);
 MODULE_SCOPE int TreeItem_GetWrap(TreeCtrl *tree, TreeItem item_);
 MODULE_SCOPE TreeItem TreeItem_GetParent(TreeCtrl *tree, TreeItem item);
 MODULE_SCOPE TreeItem TreeItem_GetNextSibling(TreeCtrl *tree, TreeItem item);
