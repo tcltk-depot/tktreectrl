@@ -998,6 +998,20 @@ TreeTheme_GetHeaderContentMargins(
     int bounds[4]		/* Returned left-top-right-bottom padding. */
     )
 {
+#if 1
+    /* HIThemeGetButtonContentBounds() returns a weird result.
+     * The output rectangle starts 12 pixels from the *left* of the
+     * input rectangle whereas I expected it end 12 from the right - where
+     * the sort arrow is displayed.  Also, it returns the same result
+     * regardless of the arrow being displayed or not.
+     *
+     * Eyeballing the sort arrow shows a 5-pixel gap on the right and a
+     * 7-pixel arrow. */
+    bounds[0] = 0;
+    bounds[1] = 0;
+    bounds[2] = (arrow != COLUMN_ARROW_NONE) ? 12 : 0;
+    bounds[3] = 0;
+#else
     CGRect inBounds, outBounds;
     HIThemeButtonDrawInfo info;
     SInt32 metric;
@@ -1019,7 +1033,7 @@ TreeTheme_GetHeaderContentMargins(
     bounds[1] = CGRectGetMinY(outBounds) - CGRectGetMinY(inBounds);
     bounds[2] = CGRectGetMaxX(inBounds) - CGRectGetMaxX(outBounds);
     bounds[3] = CGRectGetMaxY(inBounds) - CGRectGetMaxY(outBounds);
-
+#endif
     return TCL_OK;
 }
 

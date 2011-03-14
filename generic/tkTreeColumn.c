@@ -2797,24 +2797,36 @@ Column_DoLayout(
     int iArrow = -1, iImage = -1, iText = -1;
     int left, right;
     int widthForText = 0;
-#if defined(MAC_OSX_TK)
-    int margins[4];
-    int arrow = column->arrow;
     int arrowSide = column->arrowSide;
     int arrowGravity = column->arrowGravity;
+#if defined(MAC_OSX_TK)
+    int margins[4];
 #endif
 
 #if defined(MAC_OSX_TK)
     /* Under Aqua, we let the Appearance Manager draw the sort arrow. */
     if (tree->useTheme) {
-	column->arrow = COLUMN_ARROW_NONE;
-	column->arrowSide = SIDE_RIGHT;
-	column->arrowGravity = SIDE_RIGHT;
+	arrowSide = SIDE_RIGHT;
+	arrowGravity = SIDE_RIGHT;
     }
 #endif
 
     padList[0] = 0;
 
+#if defined(MAC_OSX_TK)
+    if (tree->useTheme && (column->arrow != COLUMN_ARROW_NONE)) {
+	if (TreeTheme_GetHeaderContentMargins(tree, column->state,
+		column->arrow, margins) == TCL_OK) {
+	    partArrow.width = margins[2];
+	} else {
+	    partArrow.width = 12;
+	}
+	/* NOTE: -arrowpadx and -arrowpady ignored. */
+	partArrow.padX[PAD_TOP_LEFT] = partArrow.padX[PAD_BOTTOM_RIGHT] = 0;
+	partArrow.padY[PAD_TOP_LEFT] = partArrow.padY[PAD_BOTTOM_RIGHT] = 0;
+	partArrow.height = 1; /* bogus value */
+    }
+#else
     if (column->arrow != COLUMN_ARROW_NONE) {
 	Column_GetArrowSize(column, &partArrow.width, &partArrow.height);
 	partArrow.padX[PAD_TOP_LEFT] = column->arrowPadX[PAD_TOP_LEFT];
@@ -2822,7 +2834,8 @@ Column_DoLayout(
 	partArrow.padY[PAD_TOP_LEFT] = column->arrowPadY[PAD_TOP_LEFT];
 	partArrow.padY[PAD_BOTTOM_RIGHT] = column->arrowPadY[PAD_BOTTOM_RIGHT];
     }
-    if ((column->arrow != COLUMN_ARROW_NONE) && (column->arrowSide == SIDE_LEFT)) {
+#endif
+    if ((column->arrow != COLUMN_ARROW_NONE) && (arrowSide == SIDE_LEFT)) {
 	parts[n] = &partArrow;
 	padList[n] = partArrow.padX[PAD_TOP_LEFT];
 	padList[n + 1] = partArrow.padX[PAD_BOTTOM_RIGHT];
@@ -2857,7 +2870,7 @@ Column_DoLayout(
 	if (iImage != -1)
 	    parts2[n2++] = &partImage;
 	parts2[n2++] = &partText;
-	if ((column->arrow != COLUMN_ARROW_NONE) && (column->arrowSide == SIDE_RIGHT))
+	if ((column->arrow != COLUMN_ARROW_NONE) && (arrowSide == SIDE_RIGHT))
 	    parts2[n2++] = &partArrow;
 	widthForText = layout->width;
 	for (i = 0; i < n2; i++) {
@@ -2903,32 +2916,12 @@ Column_DoLayout(
 	    iText = n++;
 	}
     }
-    if ((column->arrow != COLUMN_ARROW_NONE) && (column->arrowSide == SIDE_RIGHT)) {
+    if ((column->arrow != COLUMN_ARROW_NONE) && (arrowSide == SIDE_RIGHT)) {
 	parts[n] = &partArrow;
 	padList[n] = MAX(partArrow.padX[PAD_TOP_LEFT], padList[n]);
 	padList[n + 1] = partArrow.padX[PAD_BOTTOM_RIGHT];
 	iArrow = n++;
     }
-
-#if defined(MAC_OSX_TK)
-    /* Under Aqua, we let the Appearance Manager draw the sort arrow. */
-    /* This code assumes the arrow is on the right. */
-    if (tree->useTheme && (arrow != COLUMN_ARROW_NONE)) {
-	if (TreeTheme_GetHeaderContentMargins(tree, column->state,
-		arrow, margins) == TCL_OK) {
-	    parts[n] = &partArrow;
-	    partArrow.width = margins[2];
-	    padList[n] = MAX(0, padList[n]); /* ignore -arrowpadx */
-	    padList[n + 1] = 0;
-	    iArrow = n++;
-	}
-    }
-    if (n == 0) {
-	column->arrow = arrow;
-	column->arrowSide = arrowSide;
-	column->arrowGravity = arrowGravity;
-    }
-#endif
 
     if (n == 0)
 	return;
@@ -2982,12 +2975,12 @@ Column_DoLayout(
 
     switch (column->justify) {
 	case TK_JUSTIFY_LEFT:
-	    switch (column->arrowSide) {
+	    switch (arrowSide) {
 		case SIDE_LEFT:
 		    partArrow.left = 0;
 		    break;
 		case SIDE_RIGHT:
-		    switch (column->arrowGravity) {
+		    switch (arrowGravity) {
 			case SIDE_LEFT:
 			    partArrow.left = 0;
 			    break;
@@ -2999,9 +2992,9 @@ Column_DoLayout(
 	    }
 	    break;
 	case TK_JUSTIFY_RIGHT:
-	    switch (column->arrowSide) {
+	    switch (arrowSide) {
 		case SIDE_LEFT:
-		    switch (column->arrowGravity) {
+		    switch (arrowGravity) {
 			case SIDE_LEFT:
 			    partArrow.left = 0;
 			    break;
@@ -3016,9 +3009,9 @@ Column_DoLayout(
 	    }
 	    break;
 	case TK_JUSTIFY_CENTER:
-	    switch (column->arrowSide) {
+	    switch (arrowSide) {
 		case SIDE_LEFT:
-		    switch (column->arrowGravity) {
+		    switch (arrowGravity) {
 			case SIDE_LEFT:
 			    partArrow.left = 0;
 			    break;
@@ -3037,7 +3030,7 @@ Column_DoLayout(
 		    }
 		    break;
 		case SIDE_RIGHT:
-		    switch (column->arrowGravity) {
+		    switch (arrowGravity) {
 			case SIDE_LEFT:
 			    if (n == 3)
 				partArrow.left =
@@ -3087,13 +3080,6 @@ finish:
 	layout->textLeft = partText.left;
 	layout->textWidth = partText.width;
     }
-
-#if defined(MAC_OSX_TK)
-    /* Under Aqua, we let the Appearance Manager draw the sort arrow. */
-    column->arrow = arrow;
-    column->arrowSide = arrowSide;
-    column->arrowGravity = arrowGravity;
-#endif
 }
 
 /*
