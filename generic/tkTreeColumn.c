@@ -2821,12 +2821,14 @@ Column_DoLayout(
 	} else {
 	    partArrow.width = 12;
 	}
-	/* NOTE: -arrowpadx and -arrowpady ignored. */
-	partArrow.padX[PAD_TOP_LEFT] = partArrow.padX[PAD_BOTTOM_RIGHT] = 0;
+	/* NOTE: -arrowpadx[1] and -arrowpady ignored. */
+	partArrow.padX[PAD_TOP_LEFT] = column->arrowPadX[PAD_TOP_LEFT];
+	partArrow.padX[PAD_BOTTOM_RIGHT] = 0;
 	partArrow.padY[PAD_TOP_LEFT] = partArrow.padY[PAD_BOTTOM_RIGHT] = 0;
 	partArrow.height = 1; /* bogus value */
     }
-#else
+    else
+#endif
     if (column->arrow != COLUMN_ARROW_NONE) {
 	Column_GetArrowSize(column, &partArrow.width, &partArrow.height);
 	partArrow.padX[PAD_TOP_LEFT] = column->arrowPadX[PAD_TOP_LEFT];
@@ -2834,7 +2836,6 @@ Column_DoLayout(
 	partArrow.padY[PAD_TOP_LEFT] = column->arrowPadY[PAD_TOP_LEFT];
 	partArrow.padY[PAD_BOTTOM_RIGHT] = column->arrowPadY[PAD_BOTTOM_RIGHT];
     }
-#endif
     if ((column->arrow != COLUMN_ARROW_NONE) && (arrowSide == SIDE_LEFT)) {
 	parts[n] = &partArrow;
 	padList[n] = partArrow.padX[PAD_TOP_LEFT];
@@ -3108,10 +3109,10 @@ TreeColumn_NeededWidth(
 {
     TreeCtrl *tree = column->tree;
     int i, widthList[3], padList[4], n = 0;
-    int arrowWidth, arrowHeight;
+    int arrowWidth, arrowHeight, arrowPadX[2];
+    int arrowSide = column->arrowSide;
 #if defined(MAC_OSX_TK)
     int margins[4];
-    int arrow = column->arrow;
 #endif
 
     if (!tree->showHeader)
@@ -3123,18 +3124,30 @@ TreeColumn_NeededWidth(
     for (i = 0; i < 3; i++) widthList[i] = 0;
     for (i = 0; i < 4; i++) padList[i] = 0;
 
-#if defined(MAC_OSX_TK)
-    /* Under OSX we let the Appearance Manager draw the sort arrow. */
-    if (tree->useTheme)
-	column->arrow = COLUMN_ARROW_NONE;
-#endif
+    for (i = 0; i < 2; i++) arrowPadX[i] = column->arrowPadX[i];
 
+#if defined(MAC_OSX_TK)
+    /* Under OSX we let the Appearance Manager draw the sort arrow. This code
+     * assumes the arrow is on the right. */
+    if (tree->useTheme && (column->arrow != COLUMN_ARROW_NONE)) {
+	if (TreeTheme_GetHeaderContentMargins(tree, column->state,
+		column->arrow, margins) == TCL_OK) {
+	    arrowWidth = margins[2];
+	} else {
+	    arrowWidth = 12;
+	}
+	arrowHeight = 1; /* bogus value */
+	arrowSide = SIDE_RIGHT;
+	arrowPadX[PAD_BOTTOM_RIGHT] = 0;
+    }
+    else
+#endif
     if (column->arrow != COLUMN_ARROW_NONE)
 	Column_GetArrowSize(column, &arrowWidth, &arrowHeight);
-    if ((column->arrow != COLUMN_ARROW_NONE) && (column->arrowSide == SIDE_LEFT)) {
+    if ((column->arrow != COLUMN_ARROW_NONE) && (arrowSide == SIDE_LEFT)) {
 	widthList[n] = arrowWidth;
-	padList[n] = column->arrowPadX[PAD_TOP_LEFT];
-	padList[n + 1] = column->arrowPadX[PAD_BOTTOM_RIGHT];
+	padList[n] = arrowPadX[PAD_TOP_LEFT];
+	padList[n + 1] = arrowPadX[PAD_BOTTOM_RIGHT];
 	n++;
     }
     if ((column->image != NULL) || (column->bitmap != None)) {
@@ -3162,10 +3175,10 @@ TreeColumn_NeededWidth(
 	    widthList[n] = column->textWidth;
 	n++;
     }
-    if ((column->arrow != COLUMN_ARROW_NONE) && (column->arrowSide == SIDE_RIGHT)) {
+    if ((column->arrow != COLUMN_ARROW_NONE) && (arrowSide == SIDE_RIGHT)) {
 	widthList[n] = arrowWidth;
-	padList[n] = MAX(column->arrowPadX[PAD_TOP_LEFT], padList[n]);
-	padList[n + 1] = column->arrowPadX[PAD_BOTTOM_RIGHT];
+	padList[n] = MAX(arrowPadX[PAD_TOP_LEFT], padList[n]);
+	padList[n + 1] = arrowPadX[PAD_BOTTOM_RIGHT];
 	n++;
     }
 
@@ -3173,19 +3186,6 @@ TreeColumn_NeededWidth(
     for (i = 0; i < n; i++)
 	column->neededWidth += widthList[i] + padList[i];
     column->neededWidth += padList[n];
-
-#if defined(MAC_OSX_TK)
-    if (tree->useTheme)
-	column->arrow = arrow;
-
-    /* Under OSX we let the Appearance Manager draw the sort arrow. This code
-     * assumes the arrow is on the right. */
-    if (tree->useTheme &&
-	(TreeTheme_GetHeaderContentMargins(tree, column->state, column->arrow,
-		margins) == TCL_OK)) {
-	column->neededWidth += margins[2];
-    }
-#endif
 
     /* Notice I'm not considering column->borderWidth. */
 
