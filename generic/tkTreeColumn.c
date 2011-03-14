@@ -2908,7 +2908,7 @@ Column_DoLayout(
 		partText.width = widthForText;
 		partText.height = layout->fm.linespace;
 		layout->bytesThatFit = Tree_Ellipsis(layout->tkfont,
-			column->text, column->textLen, &partText.width,
+			column->text, column->textLen, &widthForText,
 			"...", FALSE);
 	    }
 	    parts[n] = &partText;
@@ -4602,6 +4602,7 @@ Column_Draw(
     Tk_3DBorder border;
     int theme = TCL_ERROR;
     GC gc = None;
+    TkRegion clipRgn = NULL;
 
     layout.width = width;
     layout.height = height;
@@ -4665,6 +4666,8 @@ Column_Draw(
 	XColor *textColor = tree->defColumnTextColor;
 	XGCValues gcValues;
 	unsigned long mask;
+	TreeRectangle trClip;
+
 	tc = PerStateColor_ForState(tree, &column->textColor,
 	    Column_MakeState(column), NULL);
 	if (tc == NULL || tc->color == NULL) {
@@ -4680,6 +4683,11 @@ Column_Draw(
 	gcValues.graphics_exposures = False;
 	mask = GCFont | GCForeground | GCGraphicsExposures;
 	gc = Tree_GetGC(tree, mask, &gcValues);
+
+	TreeRect_SetXYWH(trClip, x + layout.textLeft, y,
+		layout.textWidth, height);
+	clipRgn = Tree_GetRectRegion(tree, &trClip);
+	TkSetRegion(tree->display, gc, clipRgn);
     }
 
     if ((column->text != NULL) && (column->textLayout != NULL)) {
@@ -4718,6 +4726,11 @@ Column_Draw(
 		layout.tkfont, text, textLen, tx, ty);
 	if (text != staticStr)
 	    ckfree(text);
+    }
+
+    if (clipRgn != NULL) {
+	Tree_UnsetClipMask(tree, td.drawable, gc);
+	Tree_FreeRegion(tree, clipRgn);
     }
 
     if (dragImage)
