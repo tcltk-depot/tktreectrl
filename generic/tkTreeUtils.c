@@ -1126,15 +1126,16 @@ void TextLayout_Draw(
  */
 
 int
-TreeCtrl_GetPadAmountFromObj(interp, tkwin, padObj, topLeftPtr, bottomRightPtr)
-    Tcl_Interp *interp;		/* Interpreter for error reporting, or NULL,
+TreeCtrl_GetPadAmountFromObj(
+    Tcl_Interp *interp,		/* Interpreter for error reporting, or NULL,
 				 * if no error message is wanted. */
-    Tk_Window tkwin;		/* A window.  Needed by Tk_GetPixels() */
-    Tcl_Obj *padObj;		/* Object containing a pad amount. */
-    int *topLeftPtr;		/* Pointer to the location, where to store the
+    Tk_Window tkwin,		/* A window.  Needed by Tk_GetPixels() */
+    Tcl_Obj *padObj,		/* Object containing a pad amount. */
+    int *topLeftPtr,		/* Pointer to the location, where to store the
 				   first component of the padding. */
-    int *bottomRightPtr;	/* Pointer to the location, where to store the
+    int *bottomRightPtr		/* Pointer to the location, where to store the
 				   second component of the padding. */
+    )
 {
     int padc;			/* Number of element objects in padv. */
     Tcl_Obj **padv;		/* Pointer to the element objects of the
@@ -1196,8 +1197,9 @@ TreeCtrl_GetPadAmountFromObj(interp, tkwin, padObj, topLeftPtr, bottomRightPtr)
  */
 
 Tcl_Obj *
-TreeCtrl_NewPadAmountObj(padAmounts)
-    int *padAmounts;		/* Internal form of a pad amount. */
+TreeCtrl_NewPadAmountObj(
+    int *padAmounts		/* Internal form of a pad amount. */
+    )
 {
     Tcl_Obj *newObj;
 
@@ -1255,34 +1257,41 @@ TreeCtrl_NewPadAmountObj(padAmounts)
  */
 
 static int
-PadAmountOptionSet(clientData, interp, tkwin, valuePtr, recordPtr,
-		   internalOffset, saveInternalPtr, flags)
-    ClientData clientData;	/* unused. */
-    Tcl_Interp *interp;		/* Interpreter for error reporting, or NULL,
+PadAmountOptionSet(
+    ClientData clientData,	/* unused. */
+    Tcl_Interp *interp,		/* Interpreter for error reporting, or NULL,
 				 * if no error message is wanted. */
-    Tk_Window tkwin;		/* A window.  Needed by Tk_GetPixels() */
-    Tcl_Obj **valuePtr;		/* The argument to "-padx", "-pady", "-ipadx",
+    Tk_Window tkwin,		/* A window.  Needed by Tk_GetPixels() */
+    Tcl_Obj **valuePtr,		/* The argument to "-padx", "-pady", "-ipadx",
 				 * or "-ipady".  The thing to be parsed. */
-    char *recordPtr;		/* Pointer to start of widget record. */
-    int internalOffset;		/* Offset of internal representation or
+    char *recordPtr,		/* Pointer to start of widget record. */
+    int internalOffset,		/* Offset of internal representation or
 				 * -1, if no internal repr is wanted. */
-    char *saveInternalPtr;	/* Pointer to the place, where the saved
+    char *saveInternalPtr,	/* Pointer to the place, where the saved
 				 * internal form (of type "int *") resides. */
-    int flags;			/* Flags as specified in Tk_OptionSpec. */
+    int flags			/* Flags as specified in Tk_OptionSpec. */
+    )
 {
+    int objEmpty;
     int topLeft, bottomRight;	/* The two components of the padding. */
     int *new;			/* Pointer to the allocated array of integers
 				 * containing the parsed pad amounts. */
     int **internalPtr;		/* Pointer to the place, where the internal
 				 * form (of type "int *") resides. */
 
-    /*
-     * Check that the given object indeed specifies a valid pad amount.
-     */
+    objEmpty = ObjectIsEmpty((*valuePtr));
 
-    if (TreeCtrl_GetPadAmountFromObj(interp, tkwin, *valuePtr,
-	    &topLeft, &bottomRight) != TCL_OK) {
-	return TCL_ERROR;
+    if ((flags & TK_OPTION_NULL_OK) && objEmpty)
+	(*valuePtr) = NULL;
+    else {
+	/*
+	* Check that the given object indeed specifies a valid pad amount.
+	*/
+
+	if (TreeCtrl_GetPadAmountFromObj(interp, tkwin, *valuePtr,
+		&topLeft, &bottomRight) != TCL_OK) {
+	    return TCL_ERROR;
+	}
     }
 
     /*
@@ -1293,44 +1302,53 @@ PadAmountOptionSet(clientData, interp, tkwin, valuePtr, recordPtr,
     if (internalOffset >= 0) {
 	internalPtr = (int **) (recordPtr + internalOffset);
 	*(int **) saveInternalPtr = *internalPtr;
-	new = (int *) ckalloc(2 * sizeof(int));
-	new[PAD_TOP_LEFT]     = topLeft;
-	new[PAD_BOTTOM_RIGHT] = bottomRight;
+	if (*valuePtr == NULL)
+	    new = NULL;
+	else {
+	    new = (int *) ckalloc(2 * sizeof(int));
+	    new[PAD_TOP_LEFT]     = topLeft;
+	    new[PAD_BOTTOM_RIGHT] = bottomRight;
+	}
 	*internalPtr = new;
     }
     return TCL_OK;
 }
 
 static Tcl_Obj *
-PadAmountOptionGet(clientData, tkwin, recordPtr, internalOffset)
-    ClientData clientData;	/* unused. */
-    Tk_Window tkwin;		/* A window; unused. */
-    char *recordPtr;		/* Pointer to start of widget record. */
-    int internalOffset;		/* Offset of internal representation. */
+PadAmountOptionGet(
+    ClientData clientData,	/* unused. */
+    Tk_Window tkwin,		/* A window; unused. */
+    char *recordPtr,		/* Pointer to start of widget record. */
+    int internalOffset		/* Offset of internal representation. */
+    )
 {
     int *padAmounts = *(int **)(recordPtr + internalOffset);
 
+    if (padAmounts == NULL)
+	return NULL;
     return TreeCtrl_NewPadAmountObj(padAmounts);
 }
 
 static void
-PadAmountOptionRestore(clientData, tkwin, internalPtr, saveInternalPtr)
-    ClientData clientData;	/* unused. */
-    Tk_Window tkwin;		/* A window; unused. */
-    char *internalPtr;		/* Pointer to the place, where the internal
+PadAmountOptionRestore(
+    ClientData clientData,	/* unused. */
+    Tk_Window tkwin,		/* A window; unused. */
+    char *internalPtr,		/* Pointer to the place, where the internal
 				 * form (of type "int *") resides. */
-    char *saveInternalPtr;	/* Pointer to the place, where the saved
+    char *saveInternalPtr	/* Pointer to the place, where the saved
 				 * internal form (of type "int *") resides. */
+    )
 {
     *(int **) internalPtr = *(int **) saveInternalPtr;
 }
 
 static void
-PadAmountOptionFree(clientData, tkwin, internalPtr)
-    ClientData clientData;	/* unused. */
-    Tk_Window tkwin;		/* A window; unused */
-    char *internalPtr;		/* Pointer to the place, where the internal
+PadAmountOptionFree(
+    ClientData clientData,	/* unused. */
+    Tk_Window tkwin,		/* A window; unused */
+    char *internalPtr		/* Pointer to the place, where the internal
 				 * form (of type "int *") resides. */
+    )
 {
     if (*(int **)internalPtr != NULL) {
 	ckfree((char *) *(int **)internalPtr);
