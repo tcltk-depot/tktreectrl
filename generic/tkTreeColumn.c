@@ -4684,8 +4684,8 @@ Column_Draw(
 	mask = GCFont | GCForeground | GCGraphicsExposures;
 	gc = Tree_GetGC(tree, mask, &gcValues);
 
-	TreeRect_SetXYWH(trClip, x + layout.textLeft, y,
-		layout.textWidth, height);
+	TreeRect_SetXYWH(trClip, x + layout.textLeft + sunken, y,
+		MIN(layout.textWidth, td.width), MIN(height, td.height));
 	clipRgn = Tree_GetRectRegion(tree, &trClip);
 	TkSetRegion(tree->display, gc, clipRgn);
     }
