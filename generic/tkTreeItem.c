@@ -8043,6 +8043,8 @@ reqSameRoot:
 
 	    count = TreeItemList_Count(&deleted);
 	    if (count) {
+		int redoColumns = 0;
+
 		/* Generate <ItemDelete> event for items being deleted. */
 		TreeNotify_ItemDeleted(tree, &deleted);
 
@@ -8050,6 +8052,12 @@ reqSameRoot:
 		 * are deleted recursively. */
 		for (i = 0; i < count; i++) {
 		    item = TreeItemList_Nth(&deleted, i);
+
+		    /* Deleting a visible item may change the needed width
+		     * of any column. */
+		    if (TreeItem_ReallyVisible(tree, item))
+			redoColumns = 1;
+
 		    TreeItem_RemoveFromParent(tree, item);
 		}
 
@@ -8060,6 +8068,9 @@ reqSameRoot:
 		    item = TreeItemList_Nth(&deleted, i);
 		    TreeItem_Delete(tree, item);
 		}
+
+		if (redoColumns)
+		    Tree_InvalidateColumnWidth(tree, NULL);
 	    }
 
 	    TreeItemList_Free(&selected);
