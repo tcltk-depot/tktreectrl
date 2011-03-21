@@ -32,6 +32,7 @@ typedef struct DItem DItem;
 typedef struct DItemArea DItemArea;
 typedef struct DScrollIncrements DScrollIncrements;
 
+static void CheckPendingHeaderUpdate(TreeCtrl *tree);
 static void Range_RedoIfNeeded(TreeCtrl *tree);
 static int Range_TotalWidth(TreeCtrl *tree, Range *range_);
 static int Range_TotalHeight(TreeCtrl *tree, Range *range_);
@@ -3804,6 +3805,8 @@ Range_RedoIfNeeded(
 {
     TreeDInfo dInfo = tree->dInfo;
 
+    CheckPendingHeaderUpdate(tree);
+
     if (dInfo->flags & DINFO_REDO_RANGES) {
 	dInfo->rangeFirstD = dInfo->rangeLastD = NULL;
 	dInfo->flags |= DINFO_OUT_OF_DATE;
@@ -6434,6 +6437,99 @@ DisplayGetPixmap(
 }
 
 /*
+ *--------------------------------------------------------------
+ *
+ * CheckPendingHeaderUpdate --
+ *
+ *	This block of code used to be in Tree_Display but it needs to
+ *	be checked wherever Range_RedoIfNeeded is called because it
+ *	may set the DINFO_REDO_RANGES flag.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *--------------------------------------------------------------
+ */
+
+static void
+CheckPendingHeaderUpdate(
+    TreeCtrl *tree
+    )
+{
+    TreeDInfo dInfo = tree->dInfo;
+
+    /* DINFO_REDO_COLUMN_WIDTH  - A column was created or deleted. */
+    /* DINFO_CHECK_COLUMN_WIDTH - The width, offset or visibility of one or
+     * 				  more columns *might* have changed. */
+    if (dInfo->flags & (DINFO_REDO_COLUMN_WIDTH | DINFO_CHECK_COLUMN_WIDTH)) {
+	TreeColumn treeColumn = tree->columns;
+	TreeColumnDInfo dColumn;
+	int force = (dInfo->flags & DINFO_REDO_COLUMN_WIDTH) != 0;
+	int redoRanges = force, drawItems = force, drawHeader = force;
+	int offset, width;
+
+	/* Set max -itembackground as well. */
+	tree->columnBgCnt = 0;
+
+	while (treeColumn != NULL) {
+	    offset = TreeColumn_Offset(treeColumn);
+	    width = TreeColumn_UseWidth(treeColumn);
+	    dColumn = TreeColumn_GetDInfo(treeColumn);
+
+	    /* Haven't seen this column before. */
+	    if (dColumn == NULL) {
+		dColumn = (TreeColumnDInfo) ckalloc(sizeof(TreeColumnDInfo_));
+		TreeColumn_SetDInfo(treeColumn, dColumn);
+		if (width > 0)
+		    redoRanges = drawItems = drawHeader = TRUE;
+	    } else {
+		/* Changes to observed width also detects column visibililty
+		 * changing. */
+		if (dColumn->width != width) {
+		    redoRanges = drawItems = drawHeader = TRUE;
+		} else if ((dColumn->offset != offset) && (width > 0)) {
+		    drawItems = drawHeader = TRUE;
+		}
+	    }
+	    dColumn->offset = offset;
+	    dColumn->width = width;
+	    if (TreeColumn_Visible(treeColumn) &&
+		    (TreeColumn_BackgroundCount(treeColumn) > tree->columnBgCnt))
+		tree->columnBgCnt = TreeColumn_BackgroundCount(treeColumn);
+	    treeColumn = TreeColumn_Next(treeColumn);
+	}
+	if (redoRanges) dInfo->flags |= DINFO_REDO_RANGES | DINFO_OUT_OF_DATE;
+	if (drawHeader) dInfo->flags |= DINFO_DRAW_HEADER;
+	if (drawItems)  dInfo->flags |= DINFO_INVALIDATE;
+	dInfo->flags &= ~(DINFO_REDO_COLUMN_WIDTH | DINFO_CHECK_COLUMN_WIDTH);
+    }
+    if (dInfo->headerHeight != Tree_HeaderHeight(tree)) {
+	dInfo->headerHeight = Tree_HeaderHeight(tree);
+	dInfo->flags |=
+	    DINFO_OUT_OF_DATE |
+	    DINFO_SET_ORIGIN_Y |
+	    DINFO_UPDATE_SCROLLBAR_Y |
+	    DINFO_DRAW_HEADER;
+	if (tree->vertical && (tree->wrapMode == TREE_WRAP_WINDOW))
+	    dInfo->flags |= DINFO_REDO_RANGES;
+    }
+    if (dInfo->widthOfColumnsLeft != Tree_WidthOfLeftColumns(tree) ||
+	    dInfo->widthOfColumnsRight != Tree_WidthOfRightColumns(tree)) {
+	dInfo->widthOfColumnsLeft = Tree_WidthOfLeftColumns(tree);
+	dInfo->widthOfColumnsRight = Tree_WidthOfRightColumns(tree);
+	dInfo->flags |=
+	    DINFO_SET_ORIGIN_X |
+	    DINFO_UPDATE_SCROLLBAR_X/* |
+	    DINFO_OUT_OF_DATE |
+	    DINFO_REDO_RANGES |
+	    DINFO_DRAW_HEADER*/;
+    }
+}
+
+/*
  *----------------------------------------------------------------------
  *
  * SetBuffering --
@@ -6560,72 +6656,6 @@ displayRetry:
 	dInfo->flags &= ~(DINFO_REDO_SELECTION);
     }
 
-    /* DINFO_REDO_COLUMN_WIDTH  - A column was created or deleted. */
-    /* DINFO_CHECK_COLUMN_WIDTH - The width, offset or visibility of one or
-     * 				  more columns *might* have changed. */
-    if (dInfo->flags & (DINFO_REDO_COLUMN_WIDTH | DINFO_CHECK_COLUMN_WIDTH)) {
-	TreeColumn treeColumn = tree->columns;
-	TreeColumnDInfo dColumn;
-	int force = (dInfo->flags & DINFO_REDO_COLUMN_WIDTH) != 0;
-	int redoRanges = force, drawItems = force, drawHeader = force;
-	int offset, width;
-
-	/* Set max -itembackground as well. */
-	tree->columnBgCnt = 0;
-
-	while (treeColumn != NULL) {
-	    offset = TreeColumn_Offset(treeColumn);
-	    width = TreeColumn_UseWidth(treeColumn);
-	    dColumn = TreeColumn_GetDInfo(treeColumn);
-
-	    /* Haven't seen this column before. */
-	    if (dColumn == NULL) {
-		dColumn = (TreeColumnDInfo) ckalloc(sizeof(TreeColumnDInfo_));
-		TreeColumn_SetDInfo(treeColumn, dColumn);
-		if (width > 0)
-		    redoRanges = drawItems = drawHeader = TRUE;
-	    } else {
-		/* Changes to observed width also detects column visibililty
-		 * changing. */
-		if (dColumn->width != width) {
-		    redoRanges = drawItems = drawHeader = TRUE;
-		} else if ((dColumn->offset != offset) && (width > 0)) {
-		    drawItems = drawHeader = TRUE;
-		}
-	    }
-	    dColumn->offset = offset;
-	    dColumn->width = width;
-	    if (TreeColumn_Visible(treeColumn) &&
-		    (TreeColumn_BackgroundCount(treeColumn) > tree->columnBgCnt))
-		tree->columnBgCnt = TreeColumn_BackgroundCount(treeColumn);
-	    treeColumn = TreeColumn_Next(treeColumn);
-	}
-	if (redoRanges) dInfo->flags |= DINFO_REDO_RANGES | DINFO_OUT_OF_DATE;
-	if (drawHeader) dInfo->flags |= DINFO_DRAW_HEADER;
-	if (drawItems)  dInfo->flags |= DINFO_INVALIDATE;
-	dInfo->flags &= ~(DINFO_REDO_COLUMN_WIDTH | DINFO_CHECK_COLUMN_WIDTH);
-    }
-    if (dInfo->headerHeight != Tree_HeaderHeight(tree)) {
-	dInfo->headerHeight = Tree_HeaderHeight(tree);
-	dInfo->flags |=
-	    DINFO_OUT_OF_DATE |
-	    DINFO_SET_ORIGIN_Y |
-	    DINFO_UPDATE_SCROLLBAR_Y |
-	    DINFO_DRAW_HEADER;
-	if (tree->vertical && (tree->wrapMode == TREE_WRAP_WINDOW))
-	    dInfo->flags |= DINFO_REDO_RANGES;
-    }
-    if (dInfo->widthOfColumnsLeft != Tree_WidthOfLeftColumns(tree) ||
-	    dInfo->widthOfColumnsRight != Tree_WidthOfRightColumns(tree)) {
-	dInfo->widthOfColumnsLeft = Tree_WidthOfLeftColumns(tree);
-	dInfo->widthOfColumnsRight = Tree_WidthOfRightColumns(tree);
-	dInfo->flags |=
-	    DINFO_SET_ORIGIN_X |
-	    DINFO_UPDATE_SCROLLBAR_X/* |
-	    DINFO_OUT_OF_DATE |
-	    DINFO_REDO_RANGES |
-	    DINFO_DRAW_HEADER*/;
-    }
     Range_RedoIfNeeded(tree);
     Increment_RedoIfNeeded(tree);
     if (dInfo->xOrigin != tree->xOrigin) {
