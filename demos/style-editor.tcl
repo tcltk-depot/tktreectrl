@@ -101,6 +101,28 @@ proc StyleEditor::Init {Tdemo} {
 
     Info canvas $canvas
 
+    Info selectedStyle ""
+    Info selectedElement ""
+
+    #
+    # Create some scale controls to test expansion and squeezing
+    #
+
+    $::scaleCmd $canvas.scaleX \
+	-orient horizontal -length 300 -from 5 -to 150 \
+	-command StyleEditor::ScaleX
+    if {!$::tile} {$canvas.scaleX configure -showvalue no}
+    place $canvas.scaleX -rely 1.0 -anchor sw
+    $::scaleCmd $canvas.scaleY \
+	-orient vertical -length 300 -from 5 -to 150 \
+	-command StyleEditor::ScaleY
+    if {!$::tile} {$canvas.scaleY configure -showvalue no}
+    place $canvas.scaleY -relx 1.0 -anchor ne
+    $canvas.scaleX set 150
+    $canvas.scaleY set 150
+    Info scaleX,widget $canvas.scaleX
+    Info scaleY,widget $canvas.scaleY
+
     # Create a new treectrl to copy the states/style/elements into, so I don't
     # have to worry about column width or item visibility in the demo list
     set T [treectrl $canvas.t]
@@ -121,9 +143,6 @@ proc StyleEditor::Init {Tdemo} {
     grid rowconfigure $w 0 -weight 1
     grid columnconfigure $w 0 -weight 1
     grid $w.pwH -row 0 -column 0 -sticky news
-
-    Info selectedStyle ""
-    Info selectedElement ""
 
     wm protocol $w WM_DELETE_WINDOW "ToggleStyleEditorWindow"
     if {[Platform macosx macintosh]} {
@@ -187,6 +206,8 @@ proc StyleEditor::SelectStyle {} {
     SetListOfElements $style
 
     Info -orient [$Tdemo style cget $style -orient]
+    [Info scaleX,widget] set 150
+    [Info scaleY,widget] set 150
 
     StyleToCanvas 1
 
@@ -861,8 +882,8 @@ if 0 {
 
     # Now give the style 1.5 times its needed space to test expansion
     scan [$T item bbox $I 0] "%d %d %d %d" x1 y1 x2 y2
-    $T column configure 0 -width [expr {($x2 - $x1) * 1.5}]
-    $T configure -itemheight [expr {($y2 - $y1) * 1.5}]
+    $T column configure 0 -width [expr {($x2 - $x1) * [Info scaleX]}]
+    $T configure -itemheight [expr {($y2 - $y1) * [Info scaleY]}]
 
     scan [$T item bbox $I 0] "%d %d %d %d" x1 y1 x2 y2
 
@@ -906,5 +927,15 @@ proc StyleEditor::CanvasSelectElement {} {
     }
 
     return
+}
+
+proc StyleEditor::ScaleX {value} {
+    Info scaleX [expr {$value / 100.0}]
+    StyleToCanvas
+}
+
+proc StyleEditor::ScaleY {value} {
+    Info scaleY [expr {$value / 100.0}]
+    StyleToCanvas
 }
 

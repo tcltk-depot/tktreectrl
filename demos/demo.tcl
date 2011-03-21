@@ -181,12 +181,14 @@ if {$tile} {
     set checkbuttonCmd ::ttk::checkbutton
     set radiobuttonCmd ttk::radiobutton
     set scrollbarCmd ::ttk::scrollbar
+    set scaleCmd ::ttk::scale
 } else {
     set entryCmd ::entry
     set buttonCmd ::button
     set checkbuttonCmd ::checkbutton
     set radiobuttonCmd ::radiobutton
     set scrollbarCmd ::scrollbar
+    set scaleCmd ::scale
 }
 
 option add *TreeCtrl.Background white
