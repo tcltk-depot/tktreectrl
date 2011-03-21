@@ -2229,22 +2229,8 @@ Style_NeededSize(
 	    continue;
 	}
 
-	if (eLink1->flags & ELF_SQUEEZE_X) {
-	    if ((eLink1->minWidth >= 0) &&
-		    (eLink1->minWidth <= layout->useWidth)) {
-		squeezeX += layout->useWidth - eLink1->minWidth;
-	    } else {
-		squeezeX += layout->useWidth;
-	    }
-	}
-	if (eLink1->flags & ELF_SQUEEZE_Y) {
-	    if ((eLink1->minHeight >= 0) &&
-		    (eLink1->minHeight <= layout->useHeight)) {
-		squeezeY += layout->useHeight - eLink1->minHeight;
-	    } else {
-		squeezeY += layout->useHeight;
-	    }
-	}
+	if (eLink1->flags & ELF_SQUEEZE_X) squeezeX++;
+	if (eLink1->flags & ELF_SQUEEZE_Y) squeezeY++;
 
 	/* -detach elements are positioned by themselves */
 	if (IS_DETACH(eLink1))
@@ -2301,8 +2287,55 @@ Style_NeededSize(
     Layout_Size(masterStyle->vertical, eLinkCount, layouts,
 	widthPtr, heightPtr);
 
-    *minWidthPtr = *widthPtr - squeezeX;
-    *minHeightPtr = *heightPtr - squeezeY;
+    if (squeezeX || squeezeY) {
+	for (i = 0; i < eLinkCount; i++) {
+	    struct Layout *layout = &layouts[i];
+	    int subtract;
+
+	    if (IS_HIDDEN(layout))
+		continue;
+
+	    eLink1 = &eLinks1[i];
+
+	    if (IS_UNION(eLink1))
+		continue;
+
+	    if (eLink1->flags & ELF_SQUEEZE_X) {
+		if ((eLink1->minWidth >= 0) &&
+			(eLink1->minWidth <= layout->useWidth)) {
+		    subtract = layout->useWidth - eLink1->minWidth;
+		} else {
+		    subtract = layout->useWidth;
+		}
+		layout->eWidth -= subtract;
+		if (!masterStyle->vertical && !IS_DETACH(eLink1)) {
+		    for (j = i + 1; j < eLinkCount; j++)
+			if (!IS_HIDDEN(&layouts[j]) && !DETACH_OR_UNION(&eLinks1[j]))
+			    layouts[j].x -= subtract;
+		}
+	    }
+	    if (eLink1->flags & ELF_SQUEEZE_Y) {
+		if ((eLink1->minHeight >= 0) &&
+			(eLink1->minHeight <= layout->useHeight)) {
+		    subtract = layout->useHeight - eLink1->minHeight;
+		} else {
+		    subtract = layout->useHeight;
+		}
+		layout->eHeight -= subtract;
+		if (masterStyle->vertical && !IS_DETACH(eLink1)) {
+		    for (j = i + 1; j < eLinkCount; j++)
+			if (!IS_HIDDEN(&layouts[j]) && !DETACH_OR_UNION(&eLinks1[j]))
+			    layouts[j].y -= subtract;
+		}
+	    }
+	}
+
+	Layout_Size(masterStyle->vertical, eLinkCount, layouts,
+	    minWidthPtr, minHeightPtr);
+    } else {
+	*minWidthPtr = *widthPtr;
+	*minHeightPtr = *heightPtr;
+    }
 
     STATIC_FREE(layouts, struct Layout, eLinkCount);
 }
@@ -6757,6 +6790,7 @@ TreeStyle_GetElemRects(
 	}
     }
 
+    Style_CheckNeededSize(drawArgs->tree, style, drawArgs->state);
 #ifdef CACHE_STYLE_SIZE
     minWidth = style->minWidth;
     minHeight = style->minHeight;

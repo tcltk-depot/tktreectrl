@@ -24,7 +24,7 @@ test style-0.1 {some needed preparations} -body {
     pack [treectrl .t]
 } -result {}
 
-test style-0.1 {some other preparations} -body {
+test style-0.2 {some other preparations} -body {
     .t element create eBorder border
     .t element create eText text
     .t element create eImage image
@@ -227,6 +227,138 @@ test style-6.18 {style layout: option -detach} -body {
     .t style layout testStyle eText -detach true
     .t style layout testStyle eText -detach
 } -result {yes}
+
+test style-7.1 {layout validation} -setup {
+    .t element create e1 rect -width 20 -height 25 -fill blue
+    .t element create e2 rect -width 40 -height 45 -fill green
+    .t style create s1 -orient horizontal
+    .t style elements s1 {e1 e2}
+    .t column delete all
+    .t item delete all
+    .t column create -tags C0
+    .t item style set root C0 s1
+    .t configure -showheader no -borderwidth 0 -highlightthickness 0
+} -body {
+    list [.t item bbox root C0 e1] [.t item bbox root C0 e2]
+} -result {{0 0 20 25} {20 0 60 45}}
+
+test style-7.2 {layout validation} -setup {
+    .t colu conf C0 -width 1
+} -body {
+    list [.t item bbox root C0 e1] [.t item bbox root C0 e2]
+} -result {{0 0 20 25} {20 0 60 45}}
+
+test style-7.3 {layout validation} -setup {
+    .t style layout s1 e1 -squeeze x
+} -body {
+    list [.t item bbox root C0 e1] [.t item bbox root C0 e2]
+} -result {{0 0 0 25} {0 0 40 45}}
+
+test style-7.4 {layout validation} -setup {
+    .t style layout s1 e1 -minwidth 10
+} -body {
+    list [.t item bbox root C0 e1] [.t item bbox root C0 e2]
+} -result {{0 0 10 25} {10 0 50 45}}
+
+test style-7.5 {layout validation} -setup {
+    .t style layout s1 e2 -minwidth 20 -squeeze x
+} -body {
+    list [.t item bbox root C0 e1] [.t item bbox root C0 e2]
+} -result {{0 0 10 25} {10 0 30 45}}
+
+test style-7.6 {layout validation} -setup {
+    .t column configure C0 -width ""
+    .t style layout s1 e1 -minwidth "" -squeeze ""
+    .t style layout s1 e2 -minwidth "" -squeeze ""
+    .t item configure root -height 1
+} -body {
+    list [.t item bbox root C0 e1] [.t item bbox root C0 e2]
+} -result {{0 0 20 25} {20 0 60 45}}
+
+test style-7.7 {layout validation} -setup {
+    .t style layout s1 e1 -squeeze y
+    .t style layout s1 e2 -squeeze ""
+} -body {
+    list [.t item bbox root C0 e1] [.t item bbox root C0 e2]
+} -result {{0 0 20 25} {20 0 60 45}}
+
+test style-7.8 {layout validation} -setup {
+    .t style layout s1 e1 -squeeze ""
+    .t style layout s1 e2 -squeeze y
+} -body {
+    list [.t item bbox root C0 e1] [.t item bbox root C0 e2]
+} -result {{0 0 20 25} {20 0 60 25}}
+
+test style-7.9 {layout validation} -setup {
+    .t style layout s1 e1 -squeeze y
+    .t style layout s1 e2 -squeeze y
+} -body {
+    list [.t item bbox root C0 e1] [.t item bbox root C0 e2]
+} -result {{0 0 20 1} {20 0 60 1}}
+
+test style-7.10 {layout validation} -setup {
+    .t style layout s1 e1 -squeeze ""
+    .t style layout s1 e2 -squeeze ""
+    .t style configure s1 -orient vertical
+    .t item configure root -height ""
+} -body {
+    list [.t item bbox root C0 e1] [.t item bbox root C0 e2]
+} -result {{0 0 20 25} {0 25 40 70}}
+
+test style-7.11 {layout validation} -setup {
+    .t column configure C0 -width 1
+} -body {
+    list [.t item bbox root C0 e1] [.t item bbox root C0 e2]
+} -result {{0 0 20 25} {0 25 40 70}}
+
+test style-7.12 {layout validation} -setup {
+    .t style layout s1 e2 -squeeze x
+} -body {
+    list [.t item bbox root C0 e1] [.t item bbox root C0 e2]
+} -result {{0 0 20 25} {0 25 20 70}}
+
+test style-7.13 {layout validation} -setup {
+    .t style layout s1 e1 -squeeze x
+} -body {
+    list [.t item bbox root C0 e1] [.t item bbox root C0 e2]
+} -result {{0 0 1 25} {0 25 1 70}}
+
+test style-7.14 {layout validation} -setup {
+    .t style layout s1 e1 -minwidth 10
+} -body {
+    list [.t item bbox root C0 e1] [.t item bbox root C0 e2]
+} -result {{0 0 10 25} {0 25 10 70}}
+
+test style-7.15 {layout validation} -setup {
+    .t column configure C0 -width ""
+} -body {
+    list [.t item bbox root C0 e1] [.t item bbox root C0 e2]
+} -result {{0 0 20 25} {0 25 40 70}}
+
+test style-7.16 {layout validation} -setup {
+    .t style layout s1 e1 -squeeze y
+    .t item configure root -height 1
+} -body {
+    list [.t item bbox root C0 e1] [.t item bbox root C0 e2]
+} -result {{0 0 20 0} {0 0 40 45}}
+
+test style-7.17 {layout validation} -setup {
+    .t style layout s1 e1 -minheight 10
+} -body {
+    list [.t item bbox root C0 e1] [.t item bbox root C0 e2]
+} -result {{0 0 20 10} {0 10 40 55}}
+
+test style-7.18 {layout validation} -setup {
+    .t style layout s1 e2 -squeeze y
+} -body {
+    list [.t item bbox root C0 e1] [.t item bbox root C0 e2]
+} -result {{0 0 20 10} {0 10 40 10}}
+
+test style-7.19 {layout validation} -setup {
+    .t style layout s1 e2 -minheight 10
+} -body {
+    list [.t item bbox root C0 e1] [.t item bbox root C0 e2]
+} -result {{0 0 20 10} {0 10 40 20}}
 
 test style-99.1 {some needed cleanup} -body {
     destroy .t
