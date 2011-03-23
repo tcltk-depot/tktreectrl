@@ -83,7 +83,7 @@ proc StyleEditor::Init {Tdemo} {
     #
 
     set fCanvas [frame $fRight.fCanvas -borderwidth 1 -relief sunken]
-    set canvas [canvas $fCanvas.canvas -background white \
+    set canvas [canvas $fCanvas.canvas -background white -height 300 \
 	-scrollregion {0 0 0 0} -borderwidth 0 -highlightthickness 0 \
 	-xscrollcommand [list sbset $fCanvas.xscroll] \
 	-yscrollcommand [list sbset $fCanvas.yscroll]]
