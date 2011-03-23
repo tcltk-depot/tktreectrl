@@ -5536,7 +5536,14 @@ DrawWhitespace(
      * color. */
     if (!ComplexWhitespace(tree)) {
 	GC gc = Tk_3DBorderGC(tree->tkwin, tree->border, TK_3D_FLAT_GC);
+
+	/* Handle the drawable offset from the top-left of the window */
+	Tree_OffsetRegion(dirtyRgn, -tree->drawableXOrigin, -tree->drawableYOrigin);
+
 	Tree_FillRegion(tree->display, td.drawable, gc, dirtyRgn);
+
+	/* Handle the drawable offset from the top-left of the window */
+	Tree_OffsetRegion(dirtyRgn, tree->drawableXOrigin, tree->drawableYOrigin);
 	return;
     }
 
@@ -5737,6 +5744,9 @@ DrawWhitespace(
 	Tree_OffsetRegion(columnRgn, -tree->drawableXOrigin, -tree->drawableYOrigin);
 
 	Tree_FillRegion(tree->display, td.drawable, gc, columnRgn);
+
+	/* Handle the drawable offset from the top-left of the window */
+	Tree_OffsetRegion(columnRgn, tree->drawableXOrigin, tree->drawableYOrigin);
 #else
 	/* Get the display index of the first visible item. */
 	if (range == NULL) {
