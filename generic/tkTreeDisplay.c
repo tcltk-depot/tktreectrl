@@ -5358,6 +5358,11 @@ DrawColumnBackground(
 		index = GetItemBgIndex(tree, rItem);
 	    }
 	    tc = TreeColumn_BackgroundColor(treeColumn, index);
+
+	    /* Handle the drawable offset from the top-left of the window */
+	    drawBox.x -= tree->drawableXOrigin;
+	    drawBox.y -= tree->drawableYOrigin;
+
 	    if (tc == NULL) {
 		gc = backgroundGC;
 		XFillRectangle(tree->display, td.drawable, gc,
@@ -5372,6 +5377,11 @@ DrawColumnBackground(
 		    XFillRectangle(tree->display, td.drawable, backgroundGC,
 			drawBox.x, drawBox.y, drawBox.width, drawBox.height);
 		}
+
+		/* Handle the drawable offset from the top-left of the window */
+		trBrush.x -= tree->drawableXOrigin;
+		trBrush.y -= tree->drawableYOrigin;
+
 		TreeColor_FillRect(tree, td, NULL, tc, trBrush, drawBox);
 	    }
 	}
@@ -5722,6 +5732,10 @@ DrawWhitespace(
 	columnBox.height = bottom - top;
 	Tree_SetRectRegion(columnRgn, &columnBox);
 	TkIntersectRegion(dirtyRgn, columnRgn, columnRgn);
+
+	/* Handle the drawable offset from the top-left of the window */
+	Tree_OffsetRegion(columnRgn, -tree->drawableXOrigin, -tree->drawableYOrigin);
+
 	Tree_FillRegion(tree->display, td.drawable, gc, columnRgn);
 #else
 	/* Get the display index of the first visible item. */
@@ -6941,7 +6955,6 @@ displayRetry:
 	}
 	Tree_GetRegionBounds(wsRgnDif, &wsBox);
 	if ((wsBox.width > 0) && (wsBox.height > 0)) {
-	    GC gc = Tk_3DBorderGC(tkwin, tree->border, TK_3D_FLAT_GC);
 	    TreeDrawable tdPixmap;
 	    TreeRectangle trPaint = wsBox;
 
@@ -6957,9 +6970,17 @@ displayRetry:
 	    }
 
 	    if (!Tree_IsBgImageOpaque(tree)) {
+#ifdef COMPLEX_WHITESPACE
+		/* The drawable offset from the top-left of the window */
+		tree->drawableXOrigin = wsBox.x;
+		tree->drawableYOrigin = wsBox.y;
+		DrawWhitespace(tree, tdPixmap, wsRgnDif);
+#else
+		GC gc = Tk_3DBorderGC(tkwin, tree->border, TK_3D_FLAT_GC);
 		Tree_OffsetRegion(wsRgnDif, -wsBox.x, -wsBox.y);
 		Tree_FillRegion(tree->display, tdPixmap.drawable, gc, wsRgnDif);
 		Tree_OffsetRegion(wsRgnDif, wsBox.x, wsBox.y);
+#endif
 	    }
 
 	    trPaint.x = trPaint.y = 0;
@@ -7009,6 +7030,9 @@ displayRetry:
 		DisplayDelay(tree);
 	    }
 #ifdef COMPLEX_WHITESPACE
+	    /* The drawable offset from the top-left of the window */
+	    tree->drawableXOrigin = 0;
+	    tree->drawableYOrigin = 0;
 	    DrawWhitespace(tree, tdrawable, wsRgnDif);
 #else
 	    Tree_FillRegion(tree->display, drawable, gc, wsRgnDif);
