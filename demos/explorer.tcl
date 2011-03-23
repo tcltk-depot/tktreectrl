@@ -78,15 +78,22 @@ proc DemoExplorerAux {scriptDir scriptFile {scriptFollowup ""}} {
 
 proc DemoExplorerBindings {{win7 0}} {
 
+    set T [DemoList]
+
     # Double-clicking a directory displays its contents.
     bind DemoExplorer <Double-ButtonPress-1> {
 	ExplorerDoubleButton1 %W %x %y
     }
 
-    TreeCtrl::FileListEmulateWin7 [DemoList] $win7
+    TreeCtrl::FileListEmulateWin7 $T $win7
 
     if {$win7} {
 	set ::Explorer(prev) ""
+	$T notify bind $T <ItemDelete> {
+	    if {[lsearch -exact %i $Explorer(prev)] != -1} {
+		set Explorer(prev) ""
+	    }
+	}
 	bind DemoExplorerWin7 <Motion> {
 	    ExplorerMotion %W %x %y
 	}
