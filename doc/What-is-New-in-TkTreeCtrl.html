@@ -1,6 +1,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<html><head>
-<!-- $Id$ -->
+<html><head><!-- $Id$ -->
+
+
 
 
 
@@ -24,7 +25,58 @@
 
 
   <meta content="Tim Baker" name="author"></head><body>
+<h1>What's New in TkTreeCtrl 2.3.1</h1>
+<h2>Style Configuration Options</h2>
+
+
+<table style="text-align: left; width: 100%;" border="1" cellpadding="2" cellspacing="2">
+<tbody><tr><th style="background-color: rgb(255, 255, 204); width: 50%;">New</th><th style="background-color: rgb(204, 255, 255);">Comment</th></tr><tr>
+      <td style="vertical-align: top;">-buttony<br>
+      </td>
+      <td style="vertical-align: top;">This
+option allows you to specify the distance from the top of an item that
+the expand/collapse button is drawn.&nbsp; When the value of this
+option is unspecified, the button is centered vertically in the item.<br>
+</td></tr></tbody>
+</table>
+<h2>Demo Changes</h2>
+<ul>
+  <li>The Style Editor now has 2 scale widgets to make testing expand/squeeze layout easier.<br>
+  </li>
+</ul>
+<h2>Bug Fixes</h2>
+<ul>
+  <li>64bit: Fixed pointer truncation leading to crashes when memory allocations exceeded 4GB.</li>
+  <li>64bit: Lots of casting to quiet MSVC compiler warnings.</li>
+  <li>64bit: Fixed shellicon debug build failure when using MSVC.<br>
+  </li>
+  <li>Removed the use of &lt;gdiplus.h&gt; which broke MinGW-w64 builds and MinGW32 cross-compilation.</li>
+  <li>Fixed panic() when running the X11 debug build.</li>
+  <li>Use Tcl_PrintDouble() and Tcl_NewDoubleObj() instead of the %g
+specifier to fix a bug reported on comp.lang.tcl where the floating
+point numbers passed to the scrollbar command contained a comma (due to
+a locale issue).<br>
+  </li>
+  <li>Hit-testing of buttons now considers the vertical placement and
+size of buttons. Previously, the [identify] command would report that
+the given coordinates were over a button no matter how tall the item
+was.</li>
+  <li>Mac OS X: Column header layout was broken, resulting in incorrect
+justification of the header bitmap/image/text as well as the sort arrow
+being drawn overtop thebitmap/image/text. </li>
+  <li>The needed width of columns was not being recalculated when deleting items.</li>
+  <li>Some commands, such as [item bbox], would return incorrect
+results if called after a column was resized but before the next
+display update.</li>
+  <li>The calculation of the minimum size needed by a style was broken
+when -squeeze layout was used except for -squeeze=x -orient=horizontal.</li>
+  <li>The -itembackground colors were not being drawn when a transparent -backgroundimage was used.<br>
+  </li>
+</ul>
+
+<hr style="width: 100%; height: 2px;">
 <h1>What's New in TkTreeCtrl 2.3</h1>
+
 <span style="font-weight: bold;">Changes since 2.3b1</span>
 <ul>
   <li>Removed the <span style="font-weight: bold;">gradient api</span> command.</li>
