@@ -193,7 +193,7 @@ doc-x:
 doc:
 	@echo "No docs to build"
 
-install: all install-binaries install-libraries install-doc
+install: all install-binaries install-libraries
 
 install-binaries: binaries install-lib-binaries install-bin-binaries
 	@mkdir -p $(DESTDIR)$(pkglibdir)
