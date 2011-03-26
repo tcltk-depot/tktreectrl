@@ -412,6 +412,9 @@ DIST_WIN_DIR	= $(DIST_ROOT)/$(DIST_WIN_NAME)
 DIST_WIN_ARC	= tktreectrl-$(PACKAGE_PATCHLEVEL)-Tk@TK_VERSION@-win32.zip
 COMPRESS_WIN	= zip -r -v -9 $(DIST_WIN_ARC) $(DIST_WIN_NAME)
 
+# Set this to 'strip' or 'x86_64-w64-mingw32-strip' for GCC builds
+STRIP		=
+
 # An update to the gcc tools adds support for TLS callbacks which upx chokes on
 # UPX		= upx -9 $(DIST_WIN_DIR)/$(PKG_LIB_FILE)
 UPX		=
@@ -436,7 +439,7 @@ dist-win: dist-win-clean
 	    cp -p $(srcdir)/$$p $(DIST_WIN_DIR)/$$p; \
 	done
 
-	strip -s $(DIST_WIN_DIR)/$(PKG_LIB_FILE)
+	test -z $(STRIP) || $(STRIP) -s $(DIST_WIN_DIR)/$(PKG_LIB_FILE)
 	$(UPX)
 
 	list='$(DIST_LIBRARY)'; for p in $$list; do \
@@ -456,7 +459,7 @@ dist-win: dist-win-clean
 	TCL_TRIM_DOTS=`echo $(PACKAGE_VERSION) | tr -d .`; \
 	SHELLICON_DLL="shellicon$$TCL_TRIM_DOTS.dll"; \
 	cp -p $(top_builddir)/shellicon/$$SHELLICON_DLL $(DIST_WIN_DIR)/shellicon/$$SHELLICON_DLL; \
-	strip -s $(DIST_WIN_DIR)/shellicon/$$SHELLICON_DLL;
+	test -z $(STRIP) || $(STRIP) -s $(DIST_WIN_DIR)/shellicon/$$SHELLICON_DLL;
 	cp -p $(top_builddir)/shellicon/pkgIndex.tcl $(DIST_WIN_DIR)/shellicon/pkgIndex.tcl
 
 	(cd $(DIST_ROOT); $(COMPRESS_WIN);)
