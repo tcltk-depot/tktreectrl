@@ -5294,6 +5294,16 @@ TreeColumn_TreeChanged(
 	}
 	tree->headerHeight = -1;
     }
+
+    /* Need to do this if the -usetheme option changes or the system
+     * theme changes. */
+    if (flagT & TREE_CONF_RELAYOUT) {
+	column = tree->columns;
+	while (column != NULL) {
+	    column->neededWidth = column->neededHeight = -1;
+	    column = column->next;
+	}
+    }
 }
 
 /*
