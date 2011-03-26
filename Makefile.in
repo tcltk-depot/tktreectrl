@@ -241,6 +241,13 @@ demo: binaries libraries
 gdb:
 	$(TCLSH_ENV) gdb --silent --args $(WISH_PROG) $(srcdir)/demos/demo.tcl
 
+# Type 'make vcexpress' from MSYS to launch the proper wish.exe in the Visual C++
+# 2008 Express Edition debugger.  Start the debugger then then 'source $env(DEMO)'
+# in the wish console to run the treectrl demo.
+VCEXPRESS	= C:/Program Files (x86)/Microsoft Visual Studio 9.0/Common7/IDE/VCExpress.exe
+vcexpress:
+	$(TCLSH_ENV) DEMO="$(srcdir)/demos/demo.tcl" "$(VCEXPRESS)" //DebugExe $(WISH_PROG) &
+
 depend:
 
 #========================================================================
