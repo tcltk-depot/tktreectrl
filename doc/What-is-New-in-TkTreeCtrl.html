@@ -20,6 +20,8 @@
 
 
 
+
+
   <meta content="text/html; charset=ISO-8859-1" http-equiv="content-type"><title>What's New in TkTreeCtrl</title>
   
 
@@ -41,8 +43,9 @@ option is unspecified, the button is centered vertically in the item.<br>
 </table>
 <h2>Demo Changes</h2>
 <ul>
-  <li>The Style Editor now has 2 scale widgets to make testing expand/squeeze layout easier.<br>
-  </li>
+  <li>The Style Editor now has 2 scale widgets to make testing the -expand and -squeeze layout options easier.</li>
+  <li>Fixed an off-by-1 error in the placement of the iMovie demo name-editing entry widget.</li>
+
 </ul>
 <h2>Bug Fixes</h2>
 <ul>
@@ -64,14 +67,16 @@ was.</li>
   <li>Mac OS X: Column header layout was broken, resulting in incorrect
 justification of the header bitmap/image/text as well as the sort arrow
 being drawn overtop thebitmap/image/text. </li>
-  <li>The needed width of columns was not being recalculated when deleting items.</li>
+  <li>The needed width of all item styles in a column was not being recalculated when deleting items.</li>
+  <li>The needed width of column headers was not being recalculated when the -usetheme option changed.<br>
+  </li>
+
   <li>Some commands, such as [item bbox], would return incorrect
 results if called after a column was resized but before the next
 display update.</li>
   <li>The calculation of the minimum size needed by a style was broken
 when -squeeze layout was used except for -squeeze=x -orient=horizontal.</li>
-  <li>The -itembackground colors were not being drawn when a transparent -backgroundimage was used.<br>
-  </li>
+  <li>The -itembackground colors were not being drawn when a transparent -backgroundimage was used.</li>
 </ul>
 
 <hr style="width: 100%; height: 2px;">
