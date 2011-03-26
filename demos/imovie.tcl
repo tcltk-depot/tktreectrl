@@ -137,9 +137,9 @@ proc iMovieButton1 {T x y} {
 			    place $T.entry -y [expr {$y1 - 1}]
 			}
 			$T.entry selection clear
-			scan [$T item bbox $I] "%d %d %d %d" x1 y1 x2 y2
-			set left [expr {$x1 + 6 - 1}]
-			set right [expr {$x2 - 2 - 6 + 1}]
+			scan [$T item bbox $I C0 elemImg] "%d %d %d %d" x1 y1 x2 y2
+			set left $x1
+			set right $x2
 			place $T.entry -x $left -width [expr {$right - $left}]
 			$T.entry icursor [$T.entry index @[expr {$x - ($x1 + 1)}]]
 			# Disable mouse tracking
