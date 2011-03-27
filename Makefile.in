@@ -416,7 +416,16 @@ dist: dist-clean
 
 DIST_WIN_NAME	= treectrl$(PACKAGE_PATCHLEVEL)
 DIST_WIN_DIR	= $(DIST_ROOT)/$(DIST_WIN_NAME)
-DIST_WIN_ARC	= tktreectrl-$(PACKAGE_PATCHLEVEL)-Tk@TK_VERSION@-win32.zip
+DIST_WIN_ARC	:= tktreectrl-$(PACKAGE_PATCHLEVEL)
+ifeq (@MACHINE@,X86)
+    DIST_WIN_ARC := ${DIST_WIN_ARC}-x86
+else ifeq (@MACHINE@,AMD64)
+    DIST_WIN_ARC := ${DIST_WIN_ARC}-x86_64
+endif
+ifeq (@TCL_THREADS@,1)
+    DIST_WIN_ARC := ${DIST_WIN_ARC}-threads
+endif
+DIST_WIN_ARC := ${DIST_WIN_ARC}-Tk@TK_VERSION@.zip
 COMPRESS_WIN	= zip -r -v -9 $(DIST_WIN_ARC) $(DIST_WIN_NAME)
 
 # Set this to 'strip' or 'x86_64-w64-mingw32-strip' for GCC builds
