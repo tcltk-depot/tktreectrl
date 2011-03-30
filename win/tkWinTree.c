@@ -1309,9 +1309,22 @@ Tree_Fill3DRectangle(
 #include <uxtheme.h>
 #ifdef __MINGW32__
 #include <tmschema.h>
-#else
-#include <vsstyle.h>
-#endif
+#else /* __MING32__ */
+/* <vsstyle.h> is part of the Windows SDK but not the Platform SDK. */
+/*#include <vsstyle.h>*/
+#ifndef HP_HEADERITEM
+#define HP_HEADERITEM 1
+#define HIS_NORMAL 1
+#define HIS_HOT 2
+#define HIS_PRESSED 3
+#define TVP_GLYPH 2
+#define TVP_HOTGLYPH 4
+#define GLPS_CLOSED 1
+#define GLPS_OPENED 2
+#define HGLPS_CLOSED 1
+#define HGLPS_OPENED 2
+#endif /* HP_HEADERITEM */
+#endif /* __MING32__ */
 #include <shlwapi.h>
 #include <basetyps.h> /* MingW32 */
 
@@ -2864,7 +2877,7 @@ typedef enum GpFillMode
     FillModeWinding
 } GpFillMode;
 typedef enum GpLineCap {
-    LineCapSquare = 1,
+    LineCapSquare = 1
 } GpLineCap;
 typedef enum GpUnit {
     UnitWorld = 0,
@@ -2881,7 +2894,7 @@ typedef enum GpStatus {
 typedef enum GpWrapMode
 {
     WrapModeTile = 0, /* repeat */
-    WrapModeTileFlipXY = 3, /* reflect */
+    WrapModeTileFlipXY = 3 /* reflect */
 } GpWrapMode;
 typedef enum LinearGradientMode
 {

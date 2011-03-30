@@ -605,6 +605,7 @@ MAKE_LIB
 TCL_DBGX
 LDFLAGS_DEFAULT
 CFLAGS_DEFAULT
+DIST_WIN_MACHINE
 LD_LIBRARY_PATH_VAR
 SHLIB_CFLAGS
 SHLIB_LD_LIBS
@@ -617,6 +618,7 @@ CFLAGS_DEBUG
 CELIB_DIR
 AR
 SHARED_BUILD
+DIST_WIN_THREADS
 TCL_THREADS
 GTK_LIBS
 GTK_CFLAGS
@@ -6799,6 +6801,18 @@ fi
 
 
     fi
+
+
+    vars="${MATH_LIBS}"
+    for i in $vars; do
+	if test "${TEA_PLATFORM}" = "windows" -a "$GCC" = "yes" ; then
+	    # Convert foo.lib to -lfoo for GCC.  No-op if not *.lib
+	    i=`echo "$i" | sed -e 's/^\([^-].*\)\.lib$/-l\1/i'`
+	fi
+	PKG_LIBS="$PKG_LIBS $i"
+    done
+
+
 fi
 
 #--------------------------------------------------------------------
@@ -7125,6 +7139,17 @@ $as_echo "$as_me: WARNING:
 	    ;;
     esac
 
+
+
+if test "${TCL_THREADS}" = "1"; then :
+
+    DIST_WIN_THREADS=-threads
+
+else
+
+    DIST_WIN_THREADS=""
+
+fi
 
 
 #--------------------------------------------------------------------
@@ -9177,6 +9202,17 @@ $as_echo "no" >&6; }
 	fi
     fi
 
+
+
+if test "$MACHINE" = "X86"; then :
+  DIST_WIN_MACHINE=x86
+fi
+if test "$MACHINE" = "AMD64"; then :
+  DIST_WIN_MACHINE=x86_64
+fi
+if test "$MACHINE" = "IA64"; then :
+  DIST_WIN_MACHINE=ia64
+fi
 
 
 #--------------------------------------------------------------------

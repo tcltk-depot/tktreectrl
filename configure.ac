@@ -204,6 +204,8 @@ if test "${TEA_WINDOWINGSYSTEM}" = "x11"; then
         TEA_ADD_CFLAGS([-DTREECTRL_GTK $GTK_CFLAGS])
         TEA_ADD_LIBS([$GTK_LIBS])
     fi
+
+    TEA_ADD_LIBS([${MATH_LIBS}])
 fi
 
 #--------------------------------------------------------------------
@@ -211,6 +213,13 @@ fi
 #--------------------------------------------------------------------
 
 TEA_ENABLE_THREADS
+
+AS_IF([test "${TCL_THREADS}" = "1"], [
+    DIST_WIN_THREADS=-threads
+], [
+    DIST_WIN_THREADS=""
+])
+AC_SUBST(DIST_WIN_THREADS)
 
 #--------------------------------------------------------------------
 # The statement below defines a collection of symbols related to
@@ -226,6 +235,11 @@ TEA_ENABLE_SHARED
 #--------------------------------------------------------------------
 
 TEA_CONFIG_CFLAGS
+
+AS_IF([test "$MACHINE" = "X86"], [DIST_WIN_MACHINE=x86])
+AS_IF([test "$MACHINE" = "AMD64"], [DIST_WIN_MACHINE=x86_64])
+AS_IF([test "$MACHINE" = "IA64"], [DIST_WIN_MACHINE=ia64])
+AC_SUBST(DIST_WIN_MACHINE)
 
 #--------------------------------------------------------------------
 # Set the default compiler switches based on the --enable-symbols option.

@@ -15,6 +15,20 @@
 #import <Cocoa/Cocoa.h>
 #endif
 
+/* This block borrowed from tkMacOSXInt.h in Tk 8.6 */
+/* CGFloat is available Mac OS X v10.5 and later. */
+/* CGSize is available in Mac OS X v10.0 and later, even though it uses CGFloat??? */
+#ifndef CGGEOMETRY_H_
+#  ifndef CGFLOAT_DEFINED
+#    if __LP64__
+#      define CGFloat double
+#    else
+#      define CGFloat float
+#    endif
+#  endif
+#  define CGSize struct {CGFloat width; CGFloat height;}
+#endif
+
 #define radians(d) ((d) * (M_PI/180.0))
 
 #if MAC_TK_COCOA /*(TK_MAJOR_VERSION == 8) && (TK_MINOR_VERSION >= 6)*/
