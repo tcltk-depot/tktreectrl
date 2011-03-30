@@ -797,9 +797,9 @@ Layout_ExpandUnionV(
 
 #ifdef TREECTRL_DEBUG
     if (IS_HIDDEN(layout))
-	panic("Layout_ExpandUnionH: element is hidden");
+	panic("Layout_ExpandUnionV: element is hidden");
     if (!IS_UNION(eLink1))
-	panic("Layout_ExpandUnionH: element is !union");
+	panic("Layout_ExpandUnionV: element is !union");
 #endif
 
     if (!(eLink1->flags & ELF_EXPAND_NS))
