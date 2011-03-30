@@ -1265,12 +1265,9 @@ Style_DoLayoutH(
 	    layout->iWidth +
 	    MAX(ePadX[PAD_BOTTOM_RIGHT], uPadX[PAD_BOTTOM_RIGHT]);
 
-	if (masterStyle->vertical)
-	    rightEdge = MAX(rightEdge, right);
-	else {
-	    rightEdge = right;
+	rightEdge = MAX(rightEdge, right);
+	if (!masterStyle->vertical)
 	    x = layout->x + layout->eWidth;
-	}
 
 	/* Count number that want to expand */
 	if (eLink1->flags & (ELF_EXPAND_WE | ELF_iEXPAND_X))
