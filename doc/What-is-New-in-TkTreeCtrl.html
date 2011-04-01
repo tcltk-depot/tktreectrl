@@ -23,12 +23,30 @@
 
 
 
+
+
   <meta content="text/html; charset=ISO-8859-1" http-equiv="content-type"><title>What's New in TkTreeCtrl</title>
   
 
 
   <meta content="Tim Baker" name="author"></head><body>
-<h1>What's New in TkTreeCtrl 2.3.1</h1>
+<h1>What's New in TkTreeCtrl 2.3.2</h1>
+<h2>Bug Fixes</h2>
+<ul>
+  <li>Fixed a bug where elements could expand too much, due to not accounting for the padding of elements in a -union correctly.</li>
+  <li>Build fix: don't use GNU Make conditionals in the Makefile.&nbsp;
+Instead, parts of the name of the archive created by the 'dist-win'
+target are calculated in configure.ac.<br>
+  </li>
+  <li>Build fix: make sure $MATH_LIBS (including -lm on AIX) is added to the list of link libraries on Unix platforms.</li>
+  <li>Build fix: removed trailing commas from some enum declarations to make strict C89 compilers happy (i.e., AIX).</li>
+  <li>Build fix: the Mac OS X SDK prior to version 10.5 does not have CGFloat defined.</li>
+  <li>Build fix: the Microsoft Platform SDK does not include
+&lt;vsstyle.h&gt;, unlike the Windows SDK, therefore that header file
+is no longer used.<br>
+  </li>
+</ul>
+<hr style="width: 100%; height: 2px;"><h1>What's New in TkTreeCtrl 2.3.1</h1>
 <h2>Style Configuration Options</h2>
 
 
