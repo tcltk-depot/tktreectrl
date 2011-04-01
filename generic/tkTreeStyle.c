@@ -1604,6 +1604,7 @@ Style_DoLayoutV(
     /* Layout elements top-to-bottom */
     for (i = 0; i < eLinkCount; i++) {
 	struct Layout *layout = &layouts[i];
+	int bottom;
 
 	if (IS_HIDDEN(layout))
 	    continue;
@@ -1626,9 +1627,10 @@ Style_DoLayoutV(
 	    y = layout->y + layout->eHeight;
 
 	if (masterStyle->vertical) {
-	    bottomEdge = layout->y + layout->ePadY[PAD_TOP_LEFT] +
+	    bottom = layout->y + layout->ePadY[PAD_TOP_LEFT] +
 		layout->iHeight +
 		MAX(ePadY[PAD_BOTTOM_RIGHT], uPadY[PAD_BOTTOM_RIGHT]);
+	    bottomEdge = MAX(bottomEdge, bottom);
 	}
 
 	/* Count number that want to expand */
