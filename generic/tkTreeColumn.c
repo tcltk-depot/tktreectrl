@@ -4355,10 +4355,16 @@ doneDELETE:
 		    break;
 	    }
 	    if (before->index < first->index || before->index > last->index) {
-		FormatResult(tree->interp,
-		    "column %s%d and column %s%d -lock options conflict",
-		    tree->columnPrefix, move->id,
-		    tree->columnPrefix, before->id);
+		if (before == tree->columnTail) {
+		    FormatResult(tree->interp,
+			"can't move column %s%d before tail: -lock options conflict",
+			tree->columnPrefix, move->id);
+		} else {
+		    FormatResult(tree->interp,
+			"can't move column %s%d before column %s%d: -lock options conflict",
+			tree->columnPrefix, move->id,
+			tree->columnPrefix, before->id);
+		}
 		return TCL_ERROR;
 	    }
 	    Column_Move(move, before);
