@@ -328,7 +328,8 @@ proc ::TreeCtrl::ColumnDragFindBefore {w x y dragColumn indColumn_ indSide_} {
     upvar $indColumn_ indColumn
     upvar $indSide_ indSide
 
-    switch -- [$w column cget $dragColumn -lock] {
+    set lock [$w column cget $dragColumn -lock]
+    switch -- $lock {
 	left {set area left}
 	none {set area content}
 	right {set area right}
@@ -366,6 +367,9 @@ proc ::TreeCtrl::ColumnDragFindBefore {w x y dragColumn indColumn_ indSide_} {
 	    set before [$w column id "$indColumn next visible"]
 	    set indSide right
 	}
+    }
+    if {$before eq "" || [$w column compare $before > "last lock $lock next"]} {
+	set before [$w column id "last lock $lock next"]
     }
     return [ColumnCanMoveHere $w $dragColumn $before]
 }
@@ -957,6 +961,10 @@ proc ::TreeCtrl::Release1 {w x y} {
 		set side [$w column dragcget -indicatorside]
 		if {$side eq "right"} {
 		    set column [$w column id "$column next visible"]
+		}
+		set lock [$w column cget $Priv(column) -lock]
+		if {$column eq "" || [$w column compare $column > "last lock $lock next"]} {
+		    set column [$w column id "last lock $lock next"]
 		}
 		TryEvent $w ColumnDrag receive [list C $Priv(column) b $column]
 	    }
