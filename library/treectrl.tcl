@@ -443,6 +443,10 @@ proc ::TreeCtrl::CursorAction {w x y} {
 proc ::TreeCtrl::CursorCheck {w x y} {
     variable Priv
     set action [CursorAction $w $x $y]
+    # If we are in the middle of resizing a column, don't cancel the cursor
+    if {[info exists Priv(buttonMode)] && $Priv(buttonMode) eq "resize"} {
+	set action {column resize XXX}
+    }
     if {[lindex $action 1] ne "resize"} {
 	CursorCancel $w
 	return
@@ -986,7 +990,11 @@ set Priv(prev) ""
 		$w configure -columnproxy {}
 		$w column configure $Priv(column) -width $width
 	    }
+	    # Clear buttonMode early so CursorCheck doesn't exit
+	    unset Priv(buttonMode)
 	    CursorCheck $w $x $y
+	    MotionInHeader $w $x $y
+	    return
 	}
     }
     unset Priv(buttonMode)
