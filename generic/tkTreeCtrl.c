@@ -460,6 +460,7 @@ TreeObjCmd(
     TreeDragImage_Init(tree);
     TreeDInfo_Init(tree);
     TreeGradient_Init(tree);
+    TreeHeader_Init(tree);
 
     Tk_CreateEventHandler(tree->tkwin,
 #ifdef USE_TTK
@@ -581,7 +582,7 @@ static int TreeWidgetCmd(
 #ifdef DEPRECATED
 	"expand",
 #endif
-	"gradient",
+	"gradient", "header",
 	"identify", "index", "item", "marquee", "notify",
 #ifdef DEPRECATED
 	"numcolumns", "numitems",
@@ -611,7 +612,7 @@ static int TreeWidgetCmd(
 #ifdef DEPRECATED
 	COMMAND_EXPAND,
 #endif
-	COMMAND_GRADIENT,
+	COMMAND_GRADIENT, COMMAND_HEADER,
 	COMMAND_IDENTIFY, COMMAND_INDEX, COMMAND_ITEM, COMMAND_MARQUEE,
 	COMMAND_NOTIFY,
 #ifdef DEPRECATED
@@ -921,6 +922,11 @@ static int TreeWidgetCmd(
 
 	case COMMAND_GRADIENT: {
 	    result = TreeGradientCmd(clientData, interp, objc, objv);
+	    break;
+	}
+
+	case COMMAND_HEADER: {
+	    result = TreeHeaderCmd(clientData, interp, objc, objv);
 	    break;
 	}
 

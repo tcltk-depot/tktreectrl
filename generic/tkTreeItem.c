@@ -22,6 +22,7 @@ struct Column {
 			 * [item state forcolumn] command */
     int span;		/* Number of tree-columns this column covers */
     TreeStyle style;	/* Instance style. */
+    TreeHeaderColumn headerColumn;
     Column *next;	/* Column to the right of this one */
 };
 
@@ -66,6 +67,8 @@ struct TreeItem_ {
 #define ITEM_FLAG_BUTTONSTATE_PRESSED	0x0100 /* buttonstate "pressed" */
     int flags;
     TagInfo *tagInfo;	/* Tags. May be NULL. */
+
+    TreeHeader header;
 };
 
 #define ITEM_FLAGS_BUTTONSTATE (ITEM_FLAG_BUTTONSTATE_ACTIVE | \
@@ -133,7 +136,8 @@ static Tk_OptionSpec itemOptionSpecs[] = {
 
 static Column *
 Column_Alloc(
-    TreeCtrl *tree		/* Widget info. */
+    TreeCtrl *tree,		/* Widget info. */
+    TreeItem item
     )
 {
 #ifdef ALLOC_HAX
@@ -144,6 +148,13 @@ Column_Alloc(
 #endif
     memset(column, '\0', sizeof(Column));
     column->span = 1;
+
+    if (item->header != NULL) {
+	column->headerColumn = TreeHeaderColumn_CreateWithItemColumn(item->header, (TreeItemColumn) column);
+	if (column->headerColumn == NULL)
+	    panic("TreeHeaderColumn_CreateWithItemColumn failed");
+    }
+    
     return column;
 }
 
@@ -460,6 +471,8 @@ Column_FreeResources(
 
     if (self->style != NULL)
 	TreeStyle_FreeResources(tree, self->style);
+    if (self->headerColumn != NULL)
+	TreeHeaderColumn_FreeResources(tree, self->headerColumn);
 #ifdef ALLOC_HAX
     TreeAlloc_Free(tree->allocData, ItemColumnUid, (char *) self, sizeof(Column));
 #else
@@ -3322,13 +3335,13 @@ Item_CreateColumn(
     if (isNew != NULL) (*isNew) = FALSE;
     column = item->columns;
     if (column == NULL) {
-	column = Column_Alloc(tree);
+	column = Column_Alloc(tree, item);
 	item->columns = column;
 	if (isNew != NULL) (*isNew) = TRUE;
     }
     for (i = 0; i < columnIndex; i++) {
 	if (column->next == NULL) {
-	    column->next = Column_Alloc(tree);
+	    column->next = Column_Alloc(tree, item);
 	    if (isNew != NULL) (*isNew) = TRUE;
 	}
 	column = column->next;
@@ -3392,7 +3405,7 @@ TreeItem_MoveColumn(
     if (move == NULL && before == NULL)
 	return;
     if (move == NULL)
-	move = Column_Alloc(tree);
+	move = Column_Alloc(tree, item);
     else {
 	if (before == NULL) {
 	    prevB = Item_CreateColumn(tree, item, beforeIndex - 1, NULL);
@@ -3448,6 +3461,8 @@ TreeItem_FreeResources(
 	Tree_FreeItemRInfo(tree, item);
     if (item->spans != NULL)
 	ckfree((char *) item->spans);
+    if (item->header != NULL)
+	TreeHeader_FreeResources(item->header);
     Tk_FreeConfigOptions((char *) item, tree->itemOptionTable, tree->tkwin);
 
     /* Add the item record to the "preserved" list. It will be freed later. */
@@ -4300,6 +4315,18 @@ SpanWalkProc_Draw(
 	return 0;
 
     drawArgs->td = data->td;
+
+    if (item->header != NULL) {
+	TreeHeaderColumn_Draw(item->header, itemColumn->headerColumn,
+	    TreeColumn_Lock(treeColumn), drawArgs->td, drawArgs->x, drawArgs->y, drawArgs->width, drawArgs->height);
+
+	if (drawArgs->style != NULL) {
+	    StyleDrawArgs drawArgsCopy = *drawArgs;
+	    TreeStyle_Draw(&drawArgsCopy);
+	}
+
+	return drawArgs->x + drawArgs->width >= data->maxX;
+    }
 
     /* Draw background colors. */
     if (spanPtr->span == 1) {
@@ -9055,6 +9082,44 @@ TreeItem_GetRects(
 	    SpanWalkProc_GetRects, (ClientData) &clientData);
 
     return clientData.result;
+}
+
+TreeItem
+TreeItem_CreateHeader(
+    TreeCtrl *tree		/* Widget info. */
+    )
+{
+    TreeItem item;
+    TreeHeader header;
+
+    item = Item_Alloc(tree);
+    tree->itemCount--;
+    header = TreeHeader_CreateWithItem(tree, item);
+    if (header == NULL) {
+    }
+    item->header = header;
+    /* This will create a TreeItemColumn and TreeHeaderColumn for every
+     * TreeColumn. */
+    (void) Item_CreateColumn(tree, item, tree->columnCount - 1, NULL);
+    return item;
+}
+
+TreeHeader
+TreeItem_GetHeader(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeItem item		/* Item token. */
+    )
+{
+    return item->header;
+}
+
+TreeHeaderColumn
+TreeItemColumn_GetHeaderColumn(
+    TreeCtrl *tree,
+    TreeItemColumn column
+    )
+{
+    return ((Column *)column)->headerColumn;
 }
 
 /*

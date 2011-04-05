@@ -92,6 +92,8 @@ typedef struct TreeStyle_ *TreeStyle;
 typedef struct TreeElement_ *TreeElement;
 typedef struct TreeThemeData_ *TreeThemeData;
 typedef struct TreeGradient_ *TreeGradient;
+typedef struct TreeHeader_ *TreeHeader;
+typedef struct TreeHeaderColumn_ *TreeHeaderColumn;
 
 /*****/
 
@@ -519,6 +521,9 @@ struct TreeCtrl
     Tk_OptionTable gradientOptionTable;
     Tcl_HashTable gradientHash;	/* TreeGradient.name -> TreeGradient */
     int nativeGradients;	/* Preference, not availability. */
+
+    Tk_OptionTable headerOptionTable;
+    Tk_OptionTable headerColumnOptionTable;
 };
 
 #define TREE_CONF_FONT 0x0001
@@ -595,6 +600,23 @@ MODULE_SCOPE int Tree_StateFromListObj(TreeCtrl *tree, Tcl_Obj *obj, int states[
     (Tree_ContentRight(tree) - Tree_ContentLeft(tree))
 #define Tree_ContentHeight(tree) \
     (Tree_ContentBottom(tree) - Tree_ContentTop(tree))
+
+/* tkTreeHeader.c */
+MODULE_SCOPE int TreeHeader_Init(TreeCtrl *tree);
+MODULE_SCOPE int TreeHeaderCmd(ClientData clientData, Tcl_Interp *interp,
+    int objc, Tcl_Obj *CONST objv[]);
+
+MODULE_SCOPE TreeHeader TreeHeader_CreateWithItem(TreeCtrl *tree,
+    TreeItem item);
+MODULE_SCOPE void TreeHeader_FreeResources(TreeHeader header);
+
+MODULE_SCOPE TreeHeaderColumn TreeHeaderColumn_CreateWithItemColumn(
+    TreeHeader header, TreeItemColumn itemColumn);
+MODULE_SCOPE void TreeHeaderColumn_FreeResources(TreeCtrl *tree,
+    TreeHeaderColumn column);
+MODULE_SCOPE void TreeHeaderColumn_Draw(TreeHeader header,
+    TreeHeaderColumn column, int lock, TreeDrawable td,
+    int x, int y, int width, int height);
 
 /* tkTreeItem.c */
 
@@ -673,6 +695,10 @@ MODULE_SCOPE void TreeItem_SetDInfo(TreeCtrl *tree, TreeItem item, TreeItemDInfo
 MODULE_SCOPE TreeItemDInfo TreeItem_GetDInfo(TreeCtrl *tree, TreeItem item);
 MODULE_SCOPE void TreeItem_SetRInfo(TreeCtrl *tree, TreeItem item, TreeItemRInfo rInfo);
 MODULE_SCOPE TreeItemRInfo TreeItem_GetRInfo(TreeCtrl *tree, TreeItem item);
+
+MODULE_SCOPE TreeItem TreeItem_CreateHeader(TreeCtrl *tree);
+MODULE_SCOPE TreeHeader TreeItem_GetHeader(TreeCtrl *tree, TreeItem item_);
+MODULE_SCOPE TreeHeaderColumn TreeItemColumn_GetHeaderColumn(TreeCtrl *tree, TreeItemColumn itemColumn);
 
 MODULE_SCOPE void TreeItem_AppendChild(TreeCtrl *tree, TreeItem self, TreeItem child);
 MODULE_SCOPE void TreeItem_RemoveFromParent(TreeCtrl *tree, TreeItem self);
