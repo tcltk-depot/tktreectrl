@@ -524,6 +524,8 @@ struct TreeCtrl
 
     Tk_OptionTable headerOptionTable;
     Tk_OptionTable headerColumnOptionTable;
+    TreeItem headerItems;
+    int heightOfHeaderItems;
 };
 
 #define TREE_CONF_FONT 0x0001
@@ -583,14 +585,14 @@ MODULE_SCOPE int Tree_StateFromListObj(TreeCtrl *tree, Tcl_Obj *obj, int states[
 #define Tree_HeaderRight(tree) \
     Tree_BorderRight(tree)
 #define Tree_HeaderBottom(tree) \
-    (Tree_BorderTop(tree) + Tree_HeaderHeight(tree))
+    (Tree_BorderTop(tree) + Tree_HeaderHeight(tree) + Tree_HeightOfHeaderItems(tree))
 #define Tree_HeaderWidth(tree) \
     (Tree_HeaderRight(tree) - Tree_HeaderLeft(tree))
 
 #define Tree_ContentLeft(tree) \
     (Tree_BorderLeft(tree) + Tree_WidthOfLeftColumns(tree))
 #define Tree_ContentTop(tree) \
-    (Tree_BorderTop(tree) + Tree_HeaderHeight(tree))
+    (Tree_BorderTop(tree) + Tree_HeaderHeight(tree) + Tree_HeightOfHeaderItems(tree))
 #define Tree_ContentRight(tree) \
     (Tree_BorderRight(tree) - Tree_WidthOfRightColumns(tree))
 #define Tree_ContentBottom(tree) \
@@ -605,6 +607,7 @@ MODULE_SCOPE int Tree_StateFromListObj(TreeCtrl *tree, Tcl_Obj *obj, int states[
 MODULE_SCOPE int TreeHeader_Init(TreeCtrl *tree);
 MODULE_SCOPE int TreeHeaderCmd(ClientData clientData, Tcl_Interp *interp,
     int objc, Tcl_Obj *CONST objv[]);
+MODULE_SCOPE int Tree_HeightOfHeaderItems(TreeCtrl *tree);
 
 MODULE_SCOPE TreeHeader TreeHeader_CreateWithItem(TreeCtrl *tree,
     TreeItem item);
@@ -976,7 +979,10 @@ TREE_AREA_NONE = 0,
 TREE_AREA_HEADER,
 TREE_AREA_CONTENT,
 TREE_AREA_LEFT,
-TREE_AREA_RIGHT
+TREE_AREA_RIGHT,
+TREE_AREA_HEADER_LEFT,
+TREE_AREA_HEADER_NONE,
+TREE_AREA_HEADER_RIGHT,
 };
 MODULE_SCOPE int Tree_HitTest(TreeCtrl *tree, int x, int y);
 

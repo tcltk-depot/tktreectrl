@@ -1280,6 +1280,9 @@ TreeItem_CanAddToSelection(
     TreeItem item		/* Item token. */
     )
 {
+    if (item->header != NULL)
+	return FALSE;
+
     if (TreeItem_GetSelected(tree, item))
 	return FALSE;
 
@@ -2874,6 +2877,20 @@ TreeItem_Delete(
     while (item->numChildren > 0)
 	TreeItem_Delete(tree, item->firstChild);
 
+    /* Remove from tree->headerItems. */
+    if (item->header != NULL) {
+	if (item != tree->headerItems) {
+	    item->prevSibling->nextSibling = item->nextSibling;
+	    if (item->nextSibling != NULL)
+		item->nextSibling->prevSibling = item->prevSibling;
+	} else {
+	    tree->headerItems = item->nextSibling;
+	    if (item->nextSibling != NULL)
+		item->nextSibling->prevSibling = NULL;
+	}
+	item->prevSibling = item->nextSibling = NULL;
+    }
+
     TreeItem_RemoveFromParent(tree, item);
     TreeDisplay_ItemDeleted(tree, item);
     TreeGradient_ItemDeleted(tree, item);
@@ -3583,6 +3600,12 @@ TreeItem_Height(
     if (!IS_VISIBLE(item) || (IS_ROOT(item) && !tree->showRoot))
 	return 0;
 
+    if (item->header != NULL) {
+	if (item->fixedHeight > 0)
+	    return item->fixedHeight;
+	return MAX(TreeHeader_NeededHeight(item->header), Item_HeightOfStyles(tree, item));
+    }
+
     /* Get requested height of the style in each column */
     useHeight = Item_HeightOfStyles(tree, item);
 
@@ -3789,6 +3812,9 @@ TreeItem_Indent(
     if (IS_ROOT(item))
 	return (tree->showRoot && tree->showButtons && tree->showRootButton)
 	    ? tree->useIndent : 0;
+
+    if (item->header != NULL)
+	return 0;
 
     Tree_UpdateItemIndex(tree);
 
@@ -4213,6 +4239,20 @@ TreeItem_WalkSpans(
 	    columnCount = tree->columnCountVisRight;
 	    area = TREE_AREA_RIGHT;
 	    break;
+    }
+
+    if (item->header != NULL) {
+	switch (lock) {
+	    case COLUMN_LOCK_LEFT:
+		area = TREE_AREA_HEADER_LEFT;
+		break;
+	    case COLUMN_LOCK_NONE:
+		area = TREE_AREA_HEADER_NONE;
+		break;
+	    case COLUMN_LOCK_RIGHT:
+		area = TREE_AREA_HEADER_RIGHT;
+		break;
+	}
     }
 
     if (!Tree_AreaBbox(tree, area, &drawArgs.bounds)) {
@@ -4875,6 +4915,10 @@ TreeItem_ReallyVisible(
     )
 {
     TreeItem parent = item->parent;
+
+    if (item->header != NULL) {
+	return IS_VISIBLE(item);
+    }
 
     if (!tree->updateIndex)
 	return item->indexVis != -1;
@@ -9089,7 +9133,7 @@ TreeItem_CreateHeader(
     TreeCtrl *tree		/* Widget info. */
     )
 {
-    TreeItem item;
+    TreeItem item, walk;
     TreeHeader header;
 
     item = Item_Alloc(tree);
@@ -9101,6 +9145,16 @@ TreeItem_CreateHeader(
     /* This will create a TreeItemColumn and TreeHeaderColumn for every
      * TreeColumn. */
     (void) Item_CreateColumn(tree, item, tree->columnCount - 1, NULL);
+    if (tree->headerItems == NULL)
+	tree->headerItems = item;
+    else {
+	walk = tree->headerItems;
+	while (walk->nextSibling != NULL) {
+	    walk = walk->nextSibling;
+	}
+	walk->nextSibling = item;
+	item->prevSibling = walk;
+    }
     return item;
 }
 

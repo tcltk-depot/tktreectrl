@@ -2082,10 +2082,10 @@ Tree_AreaBbox(
 
     switch (area) {
 	case TREE_AREA_HEADER:
-	    x1 = Tree_BorderLeft(tree);
-	    y1 = Tree_BorderTop(tree);
-	    x2 = Tree_BorderRight(tree);
-	    y2 = Tree_ContentTop(tree);
+	    x1 = Tree_HeaderLeft(tree);
+	    y1 = Tree_HeaderTop(tree);
+	    x2 = Tree_HeaderRight(tree);
+	    y2 = Tree_HeaderBottom(tree);
 	    break;
 	case TREE_AREA_CONTENT:
 	    x1 = Tree_ContentLeft(tree);
@@ -2107,6 +2107,27 @@ Tree_AreaBbox(
 	    y1 = Tree_ContentTop(tree);
 	    x2 = Tree_BorderRight(tree);
 	    y2 = Tree_ContentBottom(tree);
+	    break;
+	case TREE_AREA_HEADER_NONE:
+	    x1 = Tree_ContentLeft(tree);
+	    y1 = Tree_HeaderTop(tree);
+	    x2 = Tree_ContentRight(tree);
+	    y2 = Tree_HeaderBottom(tree);
+	    break;
+	case TREE_AREA_HEADER_LEFT:
+	    x1 = Tree_BorderLeft(tree);
+	    y1 = Tree_HeaderTop(tree);
+	    x2 = Tree_ContentLeft(tree);
+	    y2 = Tree_HeaderBottom(tree);
+	    /* Don't overlap right-locked columns. */
+	    if (x2 > Tree_ContentRight(tree))
+		x2 = Tree_ContentRight(tree);
+	    break;
+	case TREE_AREA_HEADER_RIGHT:
+	    x1 = Tree_ContentRight(tree);
+	    y1 = Tree_HeaderTop(tree);
+	    x2 = Tree_BorderRight(tree);
+	    y2 = Tree_HeaderBottom(tree);
 	    break;
     }
 
@@ -2204,6 +2225,39 @@ Tree_ItemBbox(
 
     if (!TreeItem_ReallyVisible(tree, item))
 	return -1;
+
+    if (TreeItem_GetHeader(tree, item) != NULL) {
+	TreeItem walk = tree->headerItems;
+	tr->y = W2Cy(Tree_BorderTop(tree) + Tree_HeaderHeight(tree));
+	while (walk != item) {
+	    tr->y += TreeItem_Height(tree, walk);
+	    walk = TreeItem_NextSiblingVisible(tree, walk);
+	}
+	tr->height = TreeItem_Height(tree, item);
+
+	/* Update columnCountVisXXX if needed */
+	(void) Tree_WidthOfColumns(tree);
+
+	switch (lock) {
+	    case COLUMN_LOCK_LEFT:
+		if (tree->columnCountVisLeft == 0)
+		    return -1;
+		tr->x = W2Cx(Tree_BorderLeft(tree));
+		tr->width = Tree_WidthOfLeftColumns(tree);
+		break;
+	    case COLUMN_LOCK_NONE:
+		tr->x = tree->canvasPadX[PAD_TOP_LEFT];
+		tr->width = Tree_WidthOfColumns(tree);
+		break;
+	    case COLUMN_LOCK_RIGHT:
+		if (tree->columnCountVisRight == 0)
+		    return -1;
+		tr->x = W2Cx(Tree_ContentRight(tree));
+		tr->width = Tree_WidthOfRightColumns(tree);
+		break;
+	}
+	return 0;
+    }
 
     /* Update columnCountVisXXX if needed */
     (void) Tree_WidthOfColumns(tree);
@@ -2929,6 +2983,23 @@ GetOnScreenColumnsForItem(
     )
 {
     TreeDInfo dInfo = tree->dInfo;
+
+    if (TreeItem_GetHeader(tree, dItem->item) != NULL) {
+	TreeRectangle bounds;
+	if (Tree_AreaBbox(tree, TREE_AREA_HEADER_LEFT, &bounds)) {
+	    GetOnScreenColumnsForItemAux(tree, dItem, &dItem->left,
+		    bounds, COLUMN_LOCK_LEFT, columns);
+	}
+	if (Tree_AreaBbox(tree, TREE_AREA_HEADER_NONE, &bounds)) {
+	    GetOnScreenColumnsForItemAux(tree, dItem, &dItem->area,
+		    bounds, COLUMN_LOCK_NONE, columns);
+	}
+	if (Tree_AreaBbox(tree, TREE_AREA_HEADER_RIGHT, &bounds)) {
+	    GetOnScreenColumnsForItemAux(tree, dItem, &dItem->right,
+		    bounds, COLUMN_LOCK_RIGHT, columns);
+	}
+	return TreeColumnList_Count(columns);
+    }
 
     if (!dInfo->emptyL) {
 	GetOnScreenColumnsForItemAux(tree, dItem, &dItem->left,
@@ -6330,6 +6401,96 @@ DisplayDItem(
     return 1;
 }
 
+/*
+ *--------------------------------------------------------------
+ *
+ * MakeDItemsForHeaderItems --
+ *
+ *	Creates a linked list of DItems for the header TreeItems.
+ *
+ * Results:
+ *	Head of a list of DItems, or NULL if there are no visible
+ *	locked items.
+ *
+ * Side effects:
+ *	None.
+ *
+ *--------------------------------------------------------------
+ */
+
+static DItem *
+MakeDItemsForHeaderItems(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeItem item		/* First header item. */
+    )
+{
+    DItem *dItem, *head = NULL, *last = NULL;
+    RItem fakeRItem;
+    TreeRectangle itemBbox, boundsL, bounds, boundsR, tr;
+    int emptyL, empty, emptyR;
+
+    if (item == NULL)
+	return NULL;
+
+    emptyL = !Tree_AreaBbox(tree, TREE_AREA_HEADER_LEFT, &boundsL);
+    empty  = !Tree_AreaBbox(tree, TREE_AREA_HEADER_NONE, &bounds);
+    emptyR = !Tree_AreaBbox(tree, TREE_AREA_HEADER_RIGHT, &boundsR);
+
+    boundsL.x = W2Cx(boundsL.x), boundsL.y = W2Cy(boundsL.y);
+    bounds.x  = W2Cx(bounds.x),  bounds.y  = W2Cy(bounds.y);
+    boundsR.x = W2Cx(boundsR.x), boundsR.y = W2Cy(boundsR.y);
+
+    while (item != NULL) {
+	if (TreeItem_Height(tree, item) > 0) {
+	    dItem = NULL;
+	    fakeRItem.item = item;
+	    if (!emptyL &&
+		    Tree_ItemBbox(tree, item, COLUMN_LOCK_LEFT, &itemBbox) != -1 &&
+		    TreeRect_Intersect(&tr, &boundsL, &itemBbox)) {
+		if (dItem == NULL) {
+		    dItem = DItem_Alloc(tree, &fakeRItem);
+		}
+		dItem->left.x = C2Wx(itemBbox.x);
+		dItem->left.width = itemBbox.width;
+		dItem->y = C2Wy(itemBbox.y);
+		dItem->height = itemBbox.height;
+	    }
+	    if (!empty &&
+		    Tree_ItemBbox(tree, item, COLUMN_LOCK_NONE, &itemBbox) != -1 &&
+		    TreeRect_Intersect(&tr, &bounds, &itemBbox)) {
+		if (dItem == NULL) {
+		    dItem = DItem_Alloc(tree, &fakeRItem);
+		}
+		dItem->area.x = C2Wx(itemBbox.x);
+		dItem->area.width = itemBbox.width;
+		dItem->y = C2Wy(itemBbox.y);
+		dItem->height = itemBbox.height;
+	    }
+	    if (!emptyR &&
+		    Tree_ItemBbox(tree, item, COLUMN_LOCK_RIGHT, &itemBbox) != -1 &&
+		    TreeRect_Intersect(&tr, &boundsR, &itemBbox)) {
+		if (dItem == NULL) {
+		    dItem = DItem_Alloc(tree, &fakeRItem);
+		}
+		dItem->right.x = C2Wx(itemBbox.x);
+		dItem->right.width = itemBbox.width;
+		dItem->y = C2Wy(itemBbox.y);
+		dItem->height = itemBbox.height;
+	    }
+	    if (dItem != NULL) {
+		dItem->spans = TreeItem_GetSpans(tree, item);
+		if (head == NULL)
+		    head = dItem;
+		else
+		    last->next = dItem;
+		last = dItem;
+	    }
+	}
+	item = TreeItem_GetNextSibling(tree, item);
+    }
+    return head;
+}
+
 static void
 DebugDrawBorder(
     TreeCtrl *tree,
@@ -6530,8 +6691,8 @@ CheckPendingHeaderUpdate(
 	if (drawItems)  dInfo->flags |= DINFO_INVALIDATE;
 	dInfo->flags &= ~(DINFO_REDO_COLUMN_WIDTH | DINFO_CHECK_COLUMN_WIDTH);
     }
-    if (dInfo->headerHeight != Tree_HeaderHeight(tree)) {
-	dInfo->headerHeight = Tree_HeaderHeight(tree);
+    if (dInfo->headerHeight != Tree_HeaderHeight(tree) + Tree_HeightOfHeaderItems(tree)) {
+	dInfo->headerHeight = Tree_HeaderHeight(tree) + Tree_HeightOfHeaderItems(tree);
 	dInfo->flags |=
 	    DINFO_OUT_OF_DATE |
 	    DINFO_SET_ORIGIN_Y |
@@ -6651,6 +6812,7 @@ Tree_Display(
 #endif
     TreeRectangle wsBox;
     int requests;
+DItem *dItemHeader = NULL;
 
     if (tree->debug.enable && tree->debug.display && 0)
 	dbwin("Tree_Display %s\n", Tk_PathName(tkwin));
@@ -6786,6 +6948,10 @@ displayRetry:
 	dInfo->flags &= ~DINFO_INVALIDATE;
     }
 
+if (dItemHeader != NULL)
+    FreeDItems(tree, dItemHeader, NULL, 0);
+dItemHeader = MakeDItemsForHeaderItems(tree, tree->headerItems);
+
     /*
      * When an item goes from visible to hidden, "window" elements in the
      * item must be hidden. An item may become hidden because of scrolling,
@@ -6798,11 +6964,18 @@ displayRetry:
 	TreeItemList newV, newH;
 	TreeItem item;
 	int isNew, i, count;
+	DItem *dItemHead = dInfo->dItem;
 
 	TreeItemList_Init(tree, &newV, 0);
 	TreeItemList_Init(tree, &newH, 0);
 
-	for (dItem = dInfo->dItem;
+if (dInfo->dItemLast != NULL) {
+    dInfo->dItemLast->next = dItemHeader;
+} else {
+    dItemHead = dItemHeader;
+}
+
+	for (dItem = dItemHead;
 	    dItem != NULL;
 	    dItem = dItem->next) {
 
@@ -6820,6 +6993,10 @@ displayRetry:
 	    }
 #endif /* DCOLUMN */
 	}
+
+if (dInfo->dItemLast != NULL) {
+    dInfo->dItemLast->next = NULL;
+}
 
 	hPtr = Tcl_FirstHashEntry(&dInfo->itemVisHash, &search);
 	while (hPtr != NULL) {
@@ -6918,6 +7095,98 @@ displayRetry:
 #endif /* REDRAW_RGN */
 	}
 	dInfo->flags &= ~DINFO_DRAW_HEADER;
+    }
+
+    /* FIXME: only redraw header items if needed. */
+    if (dItemHeader != NULL) {
+	TreeDrawable tpixmap = tdrawable;
+
+	/* Erase whitespace to left and right. */
+	if (Tree_AreaBbox(tree, TREE_AREA_HEADER_NONE, &tr)) {
+	    tr.y += Tree_HeaderHeight(tree);
+	    tr.height -= Tree_HeaderHeight(tree);
+	    Tree_FillRectangle(tree, tdrawable, NULL,
+		Tk_3DBorderGC(tree->tkwin, tree->border, TK_3D_FLAT_GC), tr);
+	    if (tree->doubleBuffer == DOUBLEBUFFER_WINDOW) {
+		DblBufWinDirty(tree, TreeRect_Left(tr), TreeRect_Top(tr),
+		    TreeRect_Right(tr), TreeRect_Bottom(tr));
+	    }
+	}
+
+	for (dItem = dItemHeader;
+	    dItem != NULL;
+	    dItem = dItem->next) {
+
+	    int drawn = 0;
+	    TreeRectangle bounds;
+
+#if USE_ITEM_PIXMAP == 1
+	    /* Allocate pixmap for largest item */
+	    tpixmap.width = /*MIN(*/Tk_Width(tkwin)/*, dItem->width)*/;
+	    tpixmap.height = MIN(Tk_Height(tkwin), dItem->height);
+	    tpixmap.drawable = DisplayGetPixmap(tree, &dInfo->pixmapI,
+		tpixmap.width, tpixmap.height);
+#endif
+
+	    if (Tree_AreaBbox(tree, TREE_AREA_HEADER_NONE, &bounds)) {
+		tree->drawableXOrigin = tree->xOrigin;
+		tree->drawableYOrigin = tree->yOrigin;
+		TreeItem_UpdateWindowPositions(tree, dItem->item, COLUMN_LOCK_NONE,
+		    dItem->area.x, dItem->y, dItem->area.width, dItem->height);
+		if (TreeDisplay_WasThereTrouble(tree, requests)) {
+		    if (tree->deleted || !Tk_IsMapped(tree->tkwin))
+			goto displayExit;
+		    goto displayRetry;
+		}
+		if (dItem->area.flags & DITEM_DIRTY) {
+		    drawn += DisplayDItem(tree, dItem, &dItem->area,
+			    COLUMN_LOCK_NONE, bounds, tpixmap, tdrawable);
+		}
+	    } else {
+		dItem->area.flags &= ~DITEM_DRAWN;
+	    }
+	    if (Tree_AreaBbox(tree, TREE_AREA_HEADER_LEFT, &bounds)) {
+		tree->drawableXOrigin = tree->xOrigin;
+		tree->drawableYOrigin = tree->yOrigin;
+		TreeItem_UpdateWindowPositions(tree, dItem->item,
+		    COLUMN_LOCK_LEFT, dItem->left.x, dItem->y,
+		    dItem->left.width, dItem->height);
+		if (TreeDisplay_WasThereTrouble(tree, requests)) {
+		    if (tree->deleted || !Tk_IsMapped(tree->tkwin))
+			goto displayExit;
+		    goto displayRetry;
+		}
+		if (dItem->left.flags & DITEM_DIRTY) {
+		    drawn += DisplayDItem(tree, dItem, &dItem->left, COLUMN_LOCK_LEFT,
+			    bounds, tpixmap, tdrawable);
+		}
+	    } else {
+		dItem->left.flags &= ~DITEM_DRAWN;
+	    }
+	    if (Tree_AreaBbox(tree, TREE_AREA_HEADER_RIGHT, &bounds)) {
+		tree->drawableXOrigin = tree->xOrigin;
+		tree->drawableYOrigin = tree->yOrigin;
+		TreeItem_UpdateWindowPositions(tree, dItem->item,
+		    COLUMN_LOCK_RIGHT, dItem->right.x, dItem->y,
+		    dItem->right.width, dItem->height);
+		if (TreeDisplay_WasThereTrouble(tree, requests)) {
+		    if (tree->deleted || !Tk_IsMapped(tree->tkwin))
+			goto displayExit;
+		    goto displayRetry;
+		}
+		if (dItem->right.flags & DITEM_DIRTY) {
+		    drawn += DisplayDItem(tree, dItem, &dItem->right, COLUMN_LOCK_RIGHT,
+			    bounds, tpixmap, tdrawable);
+		}
+	    } else {
+		dItem->right.flags &= ~DITEM_DRAWN;
+	    }
+	    numDraw += drawn ? 1 : 0;
+
+	    dItem->oldX = dItem->area.x; /* FIXME: could have dInfo->empty */
+	    dItem->oldY = dItem->y;
+	    dItem->oldIndex = dItem->index;
+	}
     }
 
     if (tree->vertical) {
@@ -7304,6 +7573,8 @@ displayRetry:
     }
 
 displayExit:
+if (dItemHeader != NULL)
+    FreeDItems(tree, dItemHeader, NULL, 0);
 #if CACHE_BG_IMG
     if (dInfo->pixmapBgImg.drawable != None) {
 	Tk_FreePixmap(tree->display, dInfo->pixmapBgImg.drawable);
@@ -8260,11 +8531,16 @@ Tree_FreeItemDInfo(
     int changed = 0;
 
     while (item != NULL) {
+	if (TreeItem_GetHeader(tree, item) != NULL) {
+	    changed = 1; /* redisplay */
+	    goto next;
+	}
 	dItem = (DItem *) TreeItem_GetDInfo(tree, item);
 	if (dItem != NULL) {
 	    FreeDItems(tree, dItem, dItem->next, 1);
 	    changed = 1;
 	}
+next:
 	if (item == item2 || item2 == NULL)
 	    break;
 	item = TreeItem_Next(tree, item);

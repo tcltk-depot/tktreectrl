@@ -1647,6 +1647,56 @@ TreeHeader_FreeResources(
 }
 
 int
+TreeHeader_NeededHeight(
+    TreeHeader header
+    )
+{
+    TreeCtrl *tree = header->tree;
+    TreeItemColumn itemColumn;
+    int maxHeight = 0;
+
+    for (itemColumn = TreeItem_GetFirstColumn(tree, header->item);
+	    itemColumn != NULL;
+	    itemColumn = TreeItemColumn_GetNext(tree, itemColumn)) {
+	maxHeight = MAX(maxHeight, TreeHeaderColumn_NeededHeight(header,
+	    TreeItemColumn_GetHeaderColumn(tree, itemColumn)));
+    }
+    return maxHeight;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tree_HeightOfHeaderItems --
+ *
+ *	Returns the height of the header items.
+ *
+ * Results:
+ *	Pixel height.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tree_HeightOfHeaderItems(
+    TreeCtrl *tree		/* Widget info. */
+    )
+{
+    TreeItem item = tree->headerItems;
+    int totalHeight = 0;
+
+    while (item != NULL) {
+	totalHeight += TreeItem_Height(tree, item);
+	item = TreeItem_GetNextSibling(tree, item);
+    }
+
+    return totalHeight;
+}
+
+int
 TreeHeaderColumn_FromObj(
     TreeHeader header,		/* Header token. */
     Tcl_Obj *objPtr,		/* Object to parse to a column. */
@@ -1703,6 +1753,8 @@ cmd_header_create(
 	TreeItem_Delete(tree, item);
 	return TCL_ERROR;
     }
+    tree->headerHeight = -1;
+    Tree_DInfoChanged(tree, DINFO_DRAW_HEADER);
     Tcl_SetObjResult(interp, TreeItem_ToObj(tree, item));
     return TCL_OK;
 }
