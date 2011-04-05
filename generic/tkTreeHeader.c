@@ -216,6 +216,7 @@ static int
 Column_Configure(
     TreeHeader header,
     TreeHeaderColumn column,	/* Column record. */
+    TreeColumn treeColumn,
     int objc,			/* Number of arguments. */
     Tcl_Obj *CONST objv[],	/* Argument values. */
     int createFlag		/* TRUE if the Column is being created. */
@@ -360,8 +361,9 @@ Column_Configure(
 
     /* Redraw everything */
     if (mask & (COLU_CONF_TWIDTH | COLU_CONF_NWIDTH | COLU_CONF_NHEIGHT)) {
-	tree->widthOfColumns = -1;
-	tree->widthOfColumnsLeft = tree->widthOfColumnsRight = -1;
+	Tree_InvalidateColumnWidth(tree, treeColumn); /* invalidate width of items */
+/*	tree->widthOfColumns = -1;
+	tree->widthOfColumnsLeft = tree->widthOfColumnsRight = -1;*/
 	Tree_DInfoChanged(tree, DINFO_CHECK_COLUMN_WIDTH | DINFO_DRAW_HEADER);
     }
 
@@ -1716,22 +1718,55 @@ TreeHeaderColumn_FromObj(
 }
 
 int
-TreeHeader_FromObj(
+TreeHeaderList_FromObj(
     TreeCtrl *tree,		/* Widget info. */
     Tcl_Obj *objPtr,		/* Object to parse to a header. */
-    TreeHeader *headerPtr	/* Returned header. */
+    TreeItemList *items,	/* Uninitialized item list. Caller must free
+				 * it with TreeItemList_Free unless the
+				 * result of this function is TCL_ERROR. */
+    int flags			/* IFO_xxx flags */
     )
 {
     TreeItem item;
+    ItemForEach iter;
 
-    if (TreeItem_FromObj(tree, objPtr, &item, IFO_NOT_NULL) != TCL_OK)
+    if (TreeItemList_FromObj(tree, objPtr, items, flags) != TCL_OK)
 	return TCL_ERROR;
-    (*headerPtr) = TreeItem_GetHeader(tree, item);
-    if ((*headerPtr) == NULL) {
-	FormatResult(tree->interp, "item %s%d is not a header",
-	    tree->itemPrefix, TreeItem_GetID(tree, item));
-	return TCL_ERROR;
+    item = TreeItemList_Nth(items, 0);
+    if (item == ITEM_ALL) {
+	TreeItemList_Free(items);
+	TreeItemList_Init(tree, items, 0);
+	for (item = tree->headerItems; item != NULL; item = TreeItem_GetNextSibling(tree, item)) {
+	    TreeItemList_Append(items, item);
+	}
+	return TCL_OK;
     }
+    ITEM_FOR_EACH(item, items, NULL, &iter) {
+	if (TreeItem_GetHeader(tree, item) == NULL) {
+	    FormatResult(tree->interp, "item %s%d is not a header",
+		tree->itemPrefix, TreeItem_GetID(tree, item));
+	    TreeItemList_Free(items);
+	    return TCL_ERROR;
+	}
+    }
+    return TCL_OK;
+}
+
+int
+TreeHeader_FromObj(
+    TreeCtrl *tree,		/* Widget info. */
+    Tcl_Obj *objPtr,		/* Object to parse to a header. */
+    TreeHeader *headerPtr
+    )
+{
+    TreeItemList items;
+    TreeItem item;
+
+    if (TreeHeaderList_FromObj(tree, objPtr, &items, IFO_NOT_MANY | IFO_NOT_NULL) != TCL_OK)
+	return TCL_ERROR;
+    item = TreeItemList_Nth(&items, 0);
+    (*headerPtr) = TreeItem_GetHeader(tree, item);
+    TreeItemList_Free(&items);
     return TCL_OK;
 }
 
@@ -1772,17 +1807,22 @@ cmd_header_configure(
     TreeHeaderColumn column;
     Tcl_Obj *resultObjPtr;
     CONST char *s;
+    TreeItem item;
+    TreeItemList items;
+    ItemForEach iter;
+    TreeColumnList columns;
+    TreeColumn treeColumn;
+    ColumnForEach citer;
 
     if (objc < 4) {
 	Tcl_WrongNumArgs(interp, 3, objv, "header ?column? ?option? ?value? ?option value ...?");
 	return TCL_ERROR;
     }
 
-    if (TreeHeader_FromObj(tree, objv[3], &header) != TCL_OK)
-	return TCL_ERROR;
-
     /* T header configure H */
     if (objc == 4) {
+	if (TreeHeader_FromObj(tree, objv[3], &header) != TCL_OK)
+	    return TCL_ERROR;
 	resultObjPtr = Tk_GetOptionInfo(interp, (char *) header,
 	    tree->headerOptionTable,(Tcl_Obj *) NULL, tree->tkwin);
 	if (resultObjPtr == NULL)
@@ -1794,6 +1834,8 @@ cmd_header_configure(
 
 	    /* T header configure H -option */
 	    if (objc == 5) {
+		if (TreeHeader_FromObj(tree, objv[3], &header) != TCL_OK)
+		    return TCL_ERROR;
 		resultObjPtr = Tk_GetOptionInfo(interp, (char *) header,
 		    tree->headerOptionTable, objv[4], tree->tkwin);
 		if (resultObjPtr == NULL)
@@ -1802,14 +1844,25 @@ cmd_header_configure(
 
 	    /* T header configure H -option value ... */
 	    } else {
-		return Header_Configure(header, objc - 4, objv + 4, FALSE);
+		if (TreeHeaderList_FromObj(tree, objv[3], &items, 0) != TCL_OK)
+		    return TCL_ERROR;
+		ITEM_FOR_EACH(item, &items, NULL, &iter) {
+		    header = TreeItem_GetHeader(tree, item);
+		    if (Header_Configure(header, objc - 4, objv + 4, FALSE) != TCL_OK) {
+			TreeItemList_Free(&items);
+			return TCL_ERROR;
+		    }
+		}
+		TreeItemList_Free(&items);
 	    }
 	} else {
-	    if (TreeHeaderColumn_FromObj(header, objv[4], &column) != TCL_OK)
-		return TCL_ERROR;
 
 	    /* T header configure H C ?-option? */
 	    if (objc <= 6) {
+		if (TreeHeader_FromObj(tree, objv[3], &header) != TCL_OK)
+		    return TCL_ERROR;
+		if (TreeHeaderColumn_FromObj(header, objv[4], &column) != TCL_OK)
+		    return TCL_ERROR;
 		resultObjPtr = Tk_GetOptionInfo(interp, (char *) column,
 		    tree->headerColumnOptionTable,
 		    (objc == 5) ? (Tcl_Obj *) NULL : objv[5], tree->tkwin);
@@ -1819,7 +1872,24 @@ cmd_header_configure(
 
 	    /* T header configure H C -option value ... */
 	    } else {
-		return Column_Configure(header, column, objc - 5, objv + 5, FALSE);
+		if (TreeHeaderList_FromObj(tree, objv[3], &items, 0) != TCL_OK)
+		    return TCL_ERROR;
+		if (TreeColumnList_FromObj(tree, objv[4], &columns, CFO_NOT_TAIL) != TCL_OK)
+		    return TCL_ERROR;
+		ITEM_FOR_EACH(item, &items, NULL, &iter) {
+		    header = TreeItem_GetHeader(tree, item);
+		    COLUMN_FOR_EACH(treeColumn, &columns, NULL, &citer) {
+			TreeItemColumn itemColumn = TreeItem_FindColumn(tree, item, TreeColumn_Index(treeColumn));
+			column = TreeItemColumn_GetHeaderColumn(tree, itemColumn);
+			if (Column_Configure(header, column, treeColumn, objc - 5, objv + 5, FALSE) != TCL_OK) {
+			    TreeItemList_Free(&items);
+			    TreeColumnList_Free(&columns);
+			    return TCL_ERROR;
+			}
+		    }
+		}
+		TreeItemList_Free(&items);
+		TreeColumnList_Free(&columns);
 	    }
 	}
     }

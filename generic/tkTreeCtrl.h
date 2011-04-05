@@ -620,6 +620,8 @@ MODULE_SCOPE void TreeHeaderColumn_FreeResources(TreeCtrl *tree,
 MODULE_SCOPE void TreeHeaderColumn_Draw(TreeHeader header,
     TreeHeaderColumn column, int lock, TreeDrawable td,
     int x, int y, int width, int height);
+MODULE_SCOPE int TreeHeaderColumn_NeededWidth(TreeHeader header,
+    TreeHeaderColumn column);
 
 /* tkTreeItem.c */
 

@@ -5178,6 +5178,30 @@ TreeColumn_WidthOfItems(
 	item = TreeItem_NextVisible(tree, item);
     }
 
+    item = tree->headerItems;
+    if ((item != NULL) && !TreeItem_ReallyVisible(tree, item))
+	item = TreeItem_NextVisible(tree, item);
+    while (item != NULL) {
+#ifdef EXPENSIVE_SPAN_WIDTH /* NOT USED */
+	width = TreeItem_NeededWidthOfColumn(tree, item, column->index);
+	if (column == tree->columnTree)
+	    width += TreeItem_Indent(tree, item);
+	column->widthOfItems = MAX(column->widthOfItems, width);
+#else
+	itemColumn = TreeItem_FindColumn(tree, item, column->index);
+	if (itemColumn != NULL) {
+	    width = TreeItemColumn_NeededWidth(tree, item, itemColumn);
+	    width = MAX(width, TreeHeaderColumn_NeededWidth(
+		TreeItem_GetHeader(tree, item),
+		TreeItemColumn_GetHeaderColumn(tree, itemColumn)));
+	    if (column == tree->columnTree)
+		width += TreeItem_Indent(tree, item);
+	    column->widthOfItems = MAX(column->widthOfItems, width);
+	}
+#endif
+	item = TreeItem_NextVisible(tree, item);
+    }
+
     return column->widthOfItems;
 }
 
