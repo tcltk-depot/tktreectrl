@@ -1755,6 +1755,46 @@ Tree_HeightOfHeaderItems(
     return totalHeight;
 }
 
+TreeItem
+Tree_HeaderUnderPoint(
+    TreeCtrl *tree,		/* Widget info. */
+    int *x_, int *y_,		/* In: window coordinates.
+				 * Out: coordinates relative to top-left
+				 * corner of the returned column. */
+    int *lock			/* Returned COLUMN_LOCK_XXX. */
+    )
+{
+    int y;
+    TreeItem item;
+
+    if (Tree_HitTest(tree, *x_, *y_) != TREE_AREA_HEADER)
+	return NULL;
+
+    y = Tree_BorderTop(tree);
+    item = tree->headerItems;
+    if (!TreeItem_ReallyVisible(tree, item))
+	item = TreeItem_NextSiblingVisible(tree, item);
+    while (item != NULL) {
+	if (*y_ < y + TreeItem_Height(tree, item)) {
+	    if (*x_ < Tree_ContentLeft(tree)) {
+		(*x_) -= Tree_BorderLeft(tree);
+		*lock = COLUMN_LOCK_LEFT;
+	    } else if (*x_ >= Tree_ContentRight(tree)) {
+		(*x_) -= Tree_ContentRight(tree);
+		*lock = COLUMN_LOCK_RIGHT;
+	    } else {
+		(*x_) += tree->xOrigin - tree->canvasPadX[PAD_TOP_LEFT];
+		*lock = COLUMN_LOCK_NONE;
+	    }
+	    (*y_) = (*y_) - y;
+	    return item;
+	}
+	y += TreeItem_Height(tree, item);
+	item = TreeItem_NextSiblingVisible(tree, item);
+    }
+    return NULL;
+}
+
 int
 TreeHeaderColumn_FromObj(
     TreeHeader header,		/* Header token. */
@@ -1848,6 +1888,48 @@ cmd_header_create(
     tree->headerHeight = -1;
     Tree_DInfoChanged(tree, DINFO_DRAW_HEADER);
     Tcl_SetObjResult(interp, TreeItem_ToObj(tree, item));
+    return TCL_OK;
+}
+
+static int
+cmd_header_cget(
+    ClientData clientData,	/* Widget info. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *CONST objv[]	/* Argument values. */
+    )
+{
+    TreeCtrl *tree = clientData;
+    TreeHeader header;
+    TreeHeaderColumn column;
+    Tcl_Obj *resultObjPtr;
+
+    if (objc < 5 || objc > 6) {
+	Tcl_WrongNumArgs(interp, 3, objv, "header ?column? option");
+	return TCL_ERROR;
+    }
+
+    if (TreeHeader_FromObj(tree, objv[3], &header) != TCL_OK)
+	return TCL_ERROR;
+
+    /* T header cget H option */
+    if (objc == 5) {
+	resultObjPtr = Tk_GetOptionValue(interp, (char *) header,
+		tree->headerOptionTable, objv[4], tree->tkwin);
+	if (resultObjPtr == NULL)
+	    return TCL_ERROR;
+	Tcl_SetObjResult(interp, resultObjPtr);
+    } else {
+	/* T header cget H C option */
+	if (TreeHeaderColumn_FromObj(header, objv[4], &column) != TCL_OK)
+	    return TCL_ERROR;
+	resultObjPtr = Tk_GetOptionValue(interp, (char *) column,
+	    tree->headerColumnOptionTable, objv[5], tree->tkwin);
+	if (resultObjPtr == NULL)
+	    return TCL_ERROR;
+	Tcl_SetObjResult(interp, resultObjPtr);
+    }
+
     return TCL_OK;
 }
 
@@ -2008,6 +2090,10 @@ TreeHeaderCmd(
     switch (index) {
 	case COMMAND_CREATE:
 	    return cmd_header_create(clientData, interp, objc, objv);
+
+	/* T header cget H ?C? option */
+	case COMMAND_CGET:
+	    return cmd_header_cget(clientData, interp, objc, objv);
 
 	/* T header configure H ?C? ?option? ?value? ?option value ...? */
 	case COMMAND_CONFIGURE:

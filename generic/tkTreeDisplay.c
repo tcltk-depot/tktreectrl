@@ -2002,6 +2002,7 @@ Tree_ItemUnderPoint(
     int *x_, int *y_,		/* In: window coordinates.
 				 * Out: coordinates relative to top-left
 				 * corner of the returned item. */
+    int *lock,			/* Out: COLUMN_LOCK_XXX */
     int nearest			/* TRUE if the item nearest the coordinates
 				 * should be returned. */
     )
@@ -2030,8 +2031,10 @@ Tree_ItemUnderPoint(
 
 	    if (hit == TREE_AREA_RIGHT) {
 		x -= Tree_ContentRight(tree);
+		if (lock != NULL) (*lock) = COLUMN_LOCK_RIGHT;
 	    } else {
 		x -= Tree_BorderLeft(tree);
+		if (lock != NULL) (*lock) = COLUMN_LOCK_LEFT;
 	    }
 
 	    y = W2Cy(y) - range->offset.y;
@@ -2046,6 +2049,7 @@ Tree_ItemUnderPoint(
 	return NULL;
     }
 
+    if (lock != NULL) (*lock) = COLUMN_LOCK_NONE;
     range = Range_UnderPoint(tree, x_, y_, nearest);
     if (range == NULL)
 	return NULL;

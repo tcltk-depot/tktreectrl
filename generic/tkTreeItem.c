@@ -2179,7 +2179,7 @@ TreeItemList_FromObj(
 			objv[listIndex + 2], &y) != TCL_OK) {
 		    goto errorExit;
 		}
-		item = Tree_ItemUnderPoint(tree, &x, &y, TRUE);
+		item = Tree_ItemUnderPoint(tree, &x, &y, NULL, TRUE);
 		break;
 	    }
 	    case INDEX_RANGE: {
@@ -8825,21 +8825,19 @@ SpanWalkProc_Identify(
     struct {
 	int x;
 	int y;
-	char *buf;
+	TreeColumn *columnPtr;
+	TreeElement *elemPtr;
     } *data = clientData;
 
     if ((data->x < drawArgs->x + drawArgs->indent) ||
 	    (data->x >= drawArgs->x + drawArgs->width))
 	return 0;
 
-    sprintf(data->buf + strlen(data->buf), " column %s%d",
-	    tree->columnPrefix, TreeColumn_GetID(spanPtr->treeColumn));
+    (*data->columnPtr) = spanPtr->treeColumn;
 
-    if (drawArgs->style != NULL) {
-	char *elem = TreeStyle_Identify(drawArgs, data->x, data->y);
-	if (elem != NULL)
-	    sprintf(data->buf + strlen(data->buf), " elem %s", elem);
-    }
+    if (drawArgs->style != NULL)
+	(*data->elemPtr) = TreeStyle_Identify(drawArgs, data->x, data->y);
+
     return 1; /* stop */
 }
 
@@ -8869,16 +8867,20 @@ TreeItem_Identify(
     TreeItem item,		/* Item token. */
     int lock,			/* Columns to hit-test. */
     int x, int y,		/* Item coords to hit-test with. */
-    char *buf			/* NULL-terminated string which may be
-				 * appended. */
+    TreeColumn *columnPtr,
+    TreeElement *elemPtr
     )
 {
     TreeRectangle tr;
     struct {
 	int x;
 	int y;
-	char *buf;
+	TreeColumn *columnPtr;
+	TreeElement *elemPtr;
     } clientData;
+
+    (*columnPtr) = NULL;
+    (*elemPtr) = NULL;
 
     if (Tree_ItemBbox(tree, item, lock, &tr) < 0)
 	return;
@@ -8886,7 +8888,8 @@ TreeItem_Identify(
     /* Tree_ItemBbox returns canvas coords. x/y are item coords. */
     clientData.x = x;
     clientData.y = y;
-    clientData.buf = buf;
+    clientData.columnPtr = columnPtr;
+    clientData.elemPtr = elemPtr;
 
     TreeItem_WalkSpans(tree, item, lock,
 	    0, 0, TreeRect_Width(tr), TreeRect_Height(tr),

@@ -3647,7 +3647,7 @@ TreeStyle_FromObj(
 /*
  *----------------------------------------------------------------------
  *
- * Element_ToObj --
+ * TreeElement_ToObj --
  *
  *	Create a new Tcl_Obj representing an element.
  *
@@ -3660,8 +3660,8 @@ TreeStyle_FromObj(
  *----------------------------------------------------------------------
  */
 
-static Tcl_Obj *
-Element_ToObj(
+Tcl_Obj *
+TreeElement_ToObj(
     TreeElement elem		/* Element to create Tcl_Obj from. */
     )
 {
@@ -5272,7 +5272,7 @@ TreeElementCmd(
 		return TCL_ERROR;
 	    hPtr = Tcl_CreateHashEntry(&tree->elementHash, name, &isNew);
 	    Tcl_SetHashValue(hPtr, elem);
-	    Tcl_SetObjResult(interp, Element_ToObj(elem));
+	    Tcl_SetObjResult(interp, TreeElement_ToObj(elem));
 	    break;
 	}
 
@@ -5303,7 +5303,7 @@ TreeElementCmd(
 	    hPtr = Tcl_FirstHashEntry(&tree->elementHash, &search);
 	    while (hPtr != NULL) {
 		elem = (TreeElement) Tcl_GetHashValue(hPtr);
-		Tcl_ListObjAppendElement(interp, listObj, Element_ToObj(elem));
+		Tcl_ListObjAppendElement(interp, listObj, TreeElement_ToObj(elem));
 		hPtr = Tcl_NextHashEntry(&search);
 	    }
 	    Tcl_SetObjResult(interp, listObj);
@@ -5455,7 +5455,7 @@ TreeStyle_ListElements(
 	} else {
 	    elem = masterStyle->elements[i].elem;
 	}
-	Tcl_ListObjAppendElement(tree->interp, listObj, Element_ToObj(elem));
+	Tcl_ListObjAppendElement(tree->interp, listObj, TreeElement_ToObj(elem));
     }
     Tcl_SetObjResult(tree->interp, listObj);
 }
@@ -5553,7 +5553,7 @@ LayoutOptionToObj(
 	    objPtr = Tcl_NewListObj(0, NULL);
 	    for (i = 0; i < eLink->onionCount; i++)
 		Tcl_ListObjAppendElement(interp, objPtr,
-		    Element_ToObj(style->elements[eLink->onion[i]].elem));
+		    TreeElement_ToObj(style->elements[eLink->onion[i]].elem));
 	    return objPtr;
 	}
 	case OPTION_MAXHEIGHT: {
@@ -6405,7 +6405,7 @@ Tree_ButtonHeight(
  *----------------------------------------------------------------------
  */
 
-char *
+TreeElement
 TreeStyle_Identify(
     StyleDrawArgs *drawArgs,	/* Various args. */
     int x,			/* Window x-coord to hit-test against. */
@@ -6455,7 +6455,7 @@ TreeStyle_Identify(
 done:
     STATIC_FREE(layouts, struct Layout, masterStyle->numElements);
     if (eLink != NULL)
-	return (char *) eLink->elem->name;
+	return eLink->elem;
     return NULL;
 }
 

@@ -623,6 +623,8 @@ MODULE_SCOPE void TreeHeaderColumn_Draw(TreeHeader header,
 MODULE_SCOPE int TreeHeaderColumn_NeededWidth(TreeHeader header,
     TreeHeaderColumn column);
 
+MODULE_SCOPE TreeItem Tree_HeaderUnderPoint(TreeCtrl *tree, int *x_, int *y_, int *lock);
+
 /* tkTreeItem.c */
 
 #define ITEM_ALL ((TreeItem) -1)
@@ -732,7 +734,7 @@ MODULE_SCOPE TreeItem TreeItem_Next(TreeCtrl *tree, TreeItem item);
 MODULE_SCOPE TreeItem TreeItem_NextVisible(TreeCtrl *tree, TreeItem item);
 MODULE_SCOPE TreeItem TreeItem_Prev(TreeCtrl *tree, TreeItem item);
 MODULE_SCOPE TreeItem TreeItem_PrevVisible(TreeCtrl *tree, TreeItem item);
-MODULE_SCOPE void TreeItem_Identify(TreeCtrl *tree, TreeItem item_, int lock, int x, int y, char *buf);
+MODULE_SCOPE void TreeItem_Identify(TreeCtrl *tree, TreeItem item_, int lock, int x, int y, TreeColumn *columnPtr, TreeElement *elemPtr);
 MODULE_SCOPE void TreeItem_Identify2(TreeCtrl *tree, TreeItem item_,
 	int x1, int y1, int x2, int y2, Tcl_Obj *listObj);
 MODULE_SCOPE int TreeItem_GetRects(TreeCtrl *tree, TreeItem item_,
@@ -789,6 +791,7 @@ MODULE_SCOPE int TreeStyle_UseHeight(StyleDrawArgs *drawArgs);
 MODULE_SCOPE void TreeStyle_Draw(StyleDrawArgs *args);
 MODULE_SCOPE void TreeStyle_FreeResources(TreeCtrl *tree, TreeStyle style_);
 MODULE_SCOPE void TreeStyle_Free(TreeCtrl *tree);
+MODULE_SCOPE Tcl_Obj *TreeElement_ToObj(TreeElement elem);
 MODULE_SCOPE int TreeElement_FromObj(TreeCtrl *tree, Tcl_Obj *obj, TreeElement *elemPtr);
 MODULE_SCOPE int TreeElement_IsType(TreeCtrl *tree, TreeElement elem, CONST char *type);
 MODULE_SCOPE int TreeStyle_FromObj(TreeCtrl *tree, Tcl_Obj *obj, TreeStyle *stylePtr);
@@ -805,7 +808,7 @@ MODULE_SCOPE int TreeStyle_ElementConfigure(TreeCtrl *tree, TreeItem item, TreeI
 MODULE_SCOPE void TreeStyle_ListElements(TreeCtrl *tree, TreeStyle style_);
 MODULE_SCOPE int TreeStyle_GetButtonY(TreeCtrl *tree, TreeStyle style_);
 MODULE_SCOPE TreeStyle TreeStyle_GetMaster(TreeCtrl *tree, TreeStyle style_);
-MODULE_SCOPE char *TreeStyle_Identify(StyleDrawArgs *drawArgs, int x, int y);
+MODULE_SCOPE TreeElement TreeStyle_Identify(StyleDrawArgs *drawArgs, int x, int y);
 MODULE_SCOPE void TreeStyle_Identify2(StyleDrawArgs *drawArgs,
 	int x1, int y1, int x2, int y2, Tcl_Obj *listObj);
 MODULE_SCOPE int TreeStyle_Remap(TreeCtrl *tree, TreeStyle styleFrom_, TreeStyle styleTo_, int objc, Tcl_Obj *CONST objv[]);
@@ -925,7 +928,9 @@ MODULE_SCOPE void Tree_InvalidateColumnWidth(TreeCtrl *tree, TreeColumn column);
 MODULE_SCOPE void Tree_InvalidateColumnHeight(TreeCtrl *tree, TreeColumn column);
 MODULE_SCOPE int Tree_HeaderHeight(TreeCtrl *tree);
 MODULE_SCOPE int TreeColumn_Bbox(TreeColumn column, int *x, int *y, int *w, int *h);
+#if 0
 MODULE_SCOPE TreeColumn Tree_HeaderUnderPoint(TreeCtrl *tree, int *x_, int *y_, int *w, int *h, int nearest);
+#endif
 MODULE_SCOPE int TreeColumn_Lock(TreeColumn column_);
 MODULE_SCOPE int Tree_WidthOfColumns(TreeCtrl *tree);
 MODULE_SCOPE int Tree_WidthOfLeftColumns(TreeCtrl *tree);
@@ -959,7 +964,7 @@ MODULE_SCOPE int TreeMarqueeCmd(ClientData clientData, Tcl_Interp *interp, int o
 /* tkTreeDisplay.c */
 MODULE_SCOPE int Tree_CanvasWidth(TreeCtrl *tree);
 MODULE_SCOPE int Tree_CanvasHeight(TreeCtrl *tree);
-MODULE_SCOPE TreeItem Tree_ItemUnderPoint(TreeCtrl *tree, int *x, int *y, int nearest);
+MODULE_SCOPE TreeItem Tree_ItemUnderPoint(TreeCtrl *tree, int *x, int *y, int *lock, int nearest);
 MODULE_SCOPE void Tree_FreeItemRInfo(TreeCtrl *tree, TreeItem item);
 MODULE_SCOPE int Tree_ItemBbox(TreeCtrl *tree, TreeItem item, int lock, TreeRectangle *tr);
 MODULE_SCOPE TreeItem Tree_ItemLARB(TreeCtrl *tree, TreeItem item, int vertical, int prev);
