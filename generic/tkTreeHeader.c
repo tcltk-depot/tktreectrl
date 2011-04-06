@@ -1835,29 +1835,100 @@ TreeHeaderList_FromObj(
     int flags			/* IFO_xxx flags */
     )
 {
-    TreeItem item;
-    ItemForEach iter;
+    Tcl_Interp *interp = tree->interp;
+    static CONST char *indexName[] = {
+	"all", "end", "first", "last", (char *) NULL
+    };
+    enum indexEnum {
+	INDEX_ALL, INDEX_END, INDEX_FIRST, INDEX_LAST
+    };
+    int id, index, listIndex, objc;
+    Tcl_Obj **objv, *elemPtr;
+    TreeItem item = NULL;
 
-    if (TreeItemList_FromObj(tree, objPtr, items, flags) != TCL_OK)
-	return TCL_ERROR;
-    item = TreeItemList_Nth(items, 0);
-    if (item == ITEM_ALL) {
-	TreeItemList_Free(items);
-	TreeItemList_Init(tree, items, 0);
-	for (item = tree->headerItems; item != NULL; item = TreeItem_GetNextSibling(tree, item)) {
-	    TreeItemList_Append(items, item);
+    TreeItemList_Init(tree, items, 0);
+
+    if (Tcl_ListObjGetElements(NULL, objPtr, &objc, &objv) != TCL_OK)
+	goto baditem;
+    if (objc == 0)
+	goto baditem;
+
+    listIndex = 0;
+    elemPtr = objv[listIndex];
+    if (Tcl_GetIndexFromObj(NULL, elemPtr, indexName, NULL, 0, &index)
+	    == TCL_OK) {
+	switch ((enum indexEnum) index) {
+	    case INDEX_ALL: {
+		item = tree->headerItems;
+		while (item != NULL) {
+		    TreeItemList_Append(items, item);
+		    item = TreeItem_GetNextSibling(tree, item);
+		}
+		item = NULL;
+		break;
+	    }
+	    case INDEX_FIRST: {
+		item = tree->headerItems;
+		break;
+	    }
+	    case INDEX_END:
+	    case INDEX_LAST: {
+		item = tree->headerItems;
+		while (item != NULL && TreeItem_GetNextSibling(tree, item) != NULL) {
+		    item = TreeItem_GetNextSibling(tree, item);
+		}
+		break;
+	    }
 	}
-	return TCL_OK;
-    }
-    ITEM_FOR_EACH(item, items, NULL, &iter) {
-	if (TreeItem_GetHeader(tree, item) == NULL) {
-	    FormatResult(tree->interp, "item %s%d is not a header",
-		tree->itemPrefix, TreeItem_GetID(tree, item));
-	    TreeItemList_Free(items);
-	    return TCL_ERROR;
+
+    /* No indexName[] was found. */
+    } else {
+	int gotId = FALSE;
+
+	/* Try an item ID. */
+	if (Tcl_GetIntFromObj(NULL, elemPtr, &id) == TCL_OK)
+	    gotId = TRUE;
+
+	if (gotId) {
+	    item = tree->headerItems;
+	    while (item != NULL) {
+		if (TreeItem_GetID(tree, item) == id)
+		    break;
+		item = TreeItem_GetNextSibling(tree, item);
+	    }
 	}
     }
+
+    /* This means a valid specification was given, but there is no such item */
+    if ((TreeItemList_Count(items) == 0) && (item == NULL)) {
+	if (flags & IFO_NOT_NULL)
+	    goto noitem;
+	/* Empty list returned */
+	goto goodExit;
+    }
+
+    if ((flags & IFO_NOT_MANY) && (TreeItemList_Count(items) > 1)) {
+	FormatResult(interp, "can't specify > 1 header for this command");
+	goto errorExit;
+    }
+
+    TreeItemList_Append(items, item);
+
+goodExit:
     return TCL_OK;
+
+baditem:
+    Tcl_AppendResult(interp, "bad header description \"", Tcl_GetString(objPtr),
+	    "\"", NULL);
+    goto errorExit;
+
+noitem:
+    Tcl_AppendResult(interp, "header \"", Tcl_GetString(objPtr),
+	    "\" doesn't exist", NULL);
+
+errorExit:
+    TreeItemList_Free(items);
+    return TCL_ERROR;
 }
 
 int
@@ -2076,17 +2147,18 @@ TreeHeaderCmd(
     TreeCtrl *tree = clientData;
     static CONST char *commandNames[] = {
 	"bbox", "cget", "configure", "create", "delete",
-	"dragcget", "dragconfigure", "id",
+	"dragcget", "dragconfigure", "id", "span",
 	 "tag", (char *) NULL
     };
     enum {
 	COMMAND_BBOX, COMMAND_CGET, COMMAND_CONFIGURE,
 	COMMAND_CREATE, COMMAND_DELETE, COMMAND_DRAGCGET,
-	COMMAND_DRAGCONF, COMMAND_ID,
+	COMMAND_DRAGCONF, COMMAND_ID, COMMAND_SPAN,
 	COMMAND_TAG
     };
     int index;
     TreeHeader header;
+    TreeItemList items;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 2, objv, "command ?arg arg ...?");
@@ -2097,6 +2169,8 @@ TreeHeaderCmd(
 		&index) != TCL_OK) {
 	return TCL_ERROR;
     }
+
+    /* FIXME: Tree_PreserveItems? */
 
     switch (index) {
 	case COMMAND_CREATE:
@@ -2117,7 +2191,23 @@ TreeHeaderCmd(
 	    }
 	    if (TreeHeader_FromObj(tree, objv[3], &header) != TCL_OK)
 		return TCL_ERROR;
+	    /* FIXME: ITEM_FLAG_DELETED */
 	    TreeItem_Delete(tree, header->item);
+	    break;
+	}
+
+	/* T header span H ?C? ?span? ?C span ...? */
+	case COMMAND_SPAN: {
+	    if (objc < 4) {
+		Tcl_WrongNumArgs(interp, 3, objv, "header ?column? ?span? ?column span ...?");
+		return TCL_ERROR;
+	    }
+	    if (TreeHeaderList_FromObj(tree, objv[3], &items, IFO_NOT_NULL) != TCL_OK)
+		return TCL_ERROR;
+	    if (TreeItem_ConfigureSpans(tree, &items, objc - 4, objv + 4) != TCL_OK) {
+		TreeItemList_Free(&items);
+		return TCL_ERROR;
+	    }
 	    break;
 	}
     }
@@ -2186,6 +2276,8 @@ TreeHeader_Init(
     Tk_OptionSpec *specPtr;
     Tcl_DString dString;
 
+    Tcl_InitHashTable(&tree->headerHash, TCL_ONE_WORD_KEYS);
+
     specPtr = Tree_FindOptionSpec(columnSpecs, "-background");
     if (specPtr->defValue == NULL) {
 	Tcl_DStringInit(&dString);
@@ -2209,4 +2301,20 @@ TreeHeader_Init(
     tree->headerItems = TreeItem_CreateHeader(tree);
 
     return TCL_OK;
+}
+
+void
+TreeHeader_Free(
+    TreeCtrl *tree		/* Widget info. */
+    )
+{
+    TreeItem item;
+
+    item = tree->headerItems;
+    while (item != NULL) {
+	TreeItem_FreeResources(tree, item);
+	item = TreeItem_GetNextSibling(tree, item);
+    }
+
+    Tcl_DeleteHashTable(&tree->headerHash);
 }

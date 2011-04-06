@@ -8446,6 +8446,13 @@ Tree_FocusChanged(
 	stateOff = STATE_FOCUS, stateOn = 0;
 
     /* Slow. Change state of every item */
+    item = tree->headerItems;
+    while (item != NULL) {
+	TreeItem_ChangeState(tree, item, stateOff, stateOn);
+	item = TreeItem_GetNextSibling(tree, item);
+    }
+
+    /* Slow. Change state of every item */
     hPtr = Tcl_FirstHashEntry(&tree->itemHash, &search);
     while (hPtr != NULL) {
 	item = (TreeItem) Tcl_GetHashValue(hPtr);

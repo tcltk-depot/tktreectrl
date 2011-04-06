@@ -525,7 +525,8 @@ struct TreeCtrl
     Tk_OptionTable headerOptionTable;
     Tk_OptionTable headerColumnOptionTable;
     TreeItem headerItems;
-    int heightOfHeaderItems;
+    int nextHeaderId;
+    Tcl_HashTable headerHash;	/* TreeItem.id -> TreeItem */
 };
 
 #define TREE_CONF_FONT 0x0001
@@ -605,6 +606,7 @@ MODULE_SCOPE int Tree_StateFromListObj(TreeCtrl *tree, Tcl_Obj *obj, int states[
 
 /* tkTreeHeader.c */
 MODULE_SCOPE int TreeHeader_Init(TreeCtrl *tree);
+MODULE_SCOPE void TreeHeader_Free(TreeCtrl *tree);
 MODULE_SCOPE int TreeHeaderCmd(ClientData clientData, Tcl_Interp *interp,
     int objc, Tcl_Obj *CONST objv[]);
 MODULE_SCOPE int Tree_HeightOfHeaderItems(TreeCtrl *tree);
@@ -706,6 +708,8 @@ MODULE_SCOPE TreeItemRInfo TreeItem_GetRInfo(TreeCtrl *tree, TreeItem item);
 MODULE_SCOPE TreeItem TreeItem_CreateHeader(TreeCtrl *tree);
 MODULE_SCOPE TreeHeader TreeItem_GetHeader(TreeCtrl *tree, TreeItem item_);
 MODULE_SCOPE TreeHeaderColumn TreeItemColumn_GetHeaderColumn(TreeCtrl *tree, TreeItemColumn itemColumn);
+MODULE_SCOPE int TreeItem_ConfigureSpans(TreeCtrl *tree, TreeItemList *itemList,
+    int objc, Tcl_Obj *CONST objv[]);
 
 MODULE_SCOPE void TreeItem_AppendChild(TreeCtrl *tree, TreeItem self, TreeItem child);
 MODULE_SCOPE void TreeItem_RemoveFromParent(TreeCtrl *tree, TreeItem self);

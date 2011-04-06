@@ -1966,6 +1966,13 @@ Column_Move(
     if (move->index == before->index - 1)
 	goto renumber;
 
+    /* Move the column in every header */
+    item = tree->headerItems;
+    while (item != NULL) {
+	TreeItem_MoveColumn(tree, item, move->index, before->index);
+	item = TreeItem_GetNextSibling(tree, item);
+    }
+
     /* Move the column in every item */
     hPtr = Tcl_FirstHashEntry(&tree->itemHash, &search);
     while (hPtr != NULL) {
@@ -4227,6 +4234,13 @@ TreeColumnCmd(
 		    tree->columnLockRight = NULL;
 
 		    /* Delete all TreeItemColumns */
+		    item = tree->headerItems;
+		    while (item != NULL) {
+			TreeItem_RemoveAllColumns(tree, item);
+			item = TreeItem_GetNextSibling(tree, item);
+		    }
+
+		    /* Delete all TreeItemColumns */
 		    hPtr = Tcl_FirstHashEntry(&tree->itemHash, &search);
 		    while (hPtr != NULL) {
 			item = (TreeItem) Tcl_GetHashValue(hPtr);
@@ -4240,6 +4254,14 @@ TreeColumnCmd(
 		    tree->widthOfColumnsLeft = tree->widthOfColumnsRight = -1;
 		    Tree_DInfoChanged(tree, DINFO_REDO_COLUMN_WIDTH);
 		    goto doneDELETE;
+		}
+
+		/* Delete all TreeItemColumns */
+		item = tree->headerItems;
+		while (item != NULL) {
+		    TreeItem_RemoveColumns(tree, item, column->index,
+			column->index);
+		    item = TreeItem_GetNextSibling(tree, item);
 		}
 
 		/* Delete all TreeItemColumns */

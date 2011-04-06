@@ -620,7 +620,8 @@ Tree_UpdateItemIndex(
 
 static TreeItem
 Item_Alloc(
-    TreeCtrl *tree		/* Widget info. */
+    TreeCtrl *tree,		/* Widget info. */
+    int isHeader
     )
 {
 #ifdef ALLOC_HAX
@@ -640,7 +641,16 @@ Item_Alloc(
     item->indexVis = -1;
     /* In the typical case all spans are 1. */
     item->flags |= ITEM_FLAG_SPANS_SIMPLE;
-    Tree_AddItem(tree, item);
+    if (isHeader) {
+	Tcl_HashEntry *hPtr;
+	int id, isNew;
+
+	id = TreeItem_SetID(tree, item, tree->nextHeaderId++);
+	hPtr = Tcl_CreateHashEntry(&tree->headerHash, (char *) INT2PTR(id), &isNew);
+	Tcl_SetHashValue(hPtr, item);
+    } else {
+	Tree_AddItem(tree, item);
+    }
     return item;
 }
 
@@ -667,7 +677,7 @@ Item_AllocRoot(
 {
     TreeItem item;
 
-    item = Item_Alloc(tree);
+    item = Item_Alloc(tree, FALSE);
     item->depth = -1;
     item->state |= STATE_ACTIVE;
     return item;
@@ -2895,6 +2905,18 @@ TreeItem_Delete(
     TreeDisplay_ItemDeleted(tree, item);
     TreeGradient_ItemDeleted(tree, item);
     TreeTheme_ItemDeleted(tree, item);
+    if (item->header != NULL) {
+	Tcl_HashEntry *hPtr;
+	hPtr = Tcl_FindHashEntry(&tree->itemSpansHash, (char *) item);
+	if (hPtr != NULL)
+	    Tcl_DeleteHashEntry(hPtr);
+
+	hPtr = Tcl_FindHashEntry(&tree->headerHash,
+		(char *) INT2PTR(TreeItem_GetID(tree, item)));
+	Tcl_DeleteHashEntry(hPtr);
+	if (tree->headerItems->nextSibling == NULL)
+	    tree->nextHeaderId = TreeItem_GetID(tree, tree->headerItems) + 1;
+    } else
     Tree_RemoveItem(tree, item);
     TreeItem_FreeResources(tree, item);
     if (tree->activeItem == item) {
@@ -5312,7 +5334,7 @@ ItemCreateCmd(
 	parent = prevSibling = nextSibling = NULL;
 
     for (i = 0; i < count; i++) {
-	item = Item_Alloc(tree);
+	item = Item_Alloc(tree, FALSE);
 	item->flags &= ~(ITEM_FLAG_BUTTON | ITEM_FLAG_BUTTON_AUTO);
 	item->flags |= button;
 	if (enabled) item->state |= STATE_ENABLED;
@@ -7023,6 +7045,114 @@ TreeItemList_Sort(
 	    TILSCompare);
 }
 
+int
+TreeItem_ConfigureSpans(
+    TreeCtrl *tree,
+    TreeItemList *itemList,
+    int objc,
+    Tcl_Obj *CONST objv[]
+    )
+{
+    Tcl_Interp *interp = tree->interp;
+    TreeColumn treeColumn = tree->columns;
+    TreeItem item = TreeItemList_Nth(itemList, 0);
+    Column *column;
+    Tcl_Obj *listObj;
+    struct columnSpan {
+	TreeColumnList columns;
+	int span;
+    } staticCS[STATIC_SIZE], *cs = staticCS;
+    int i, count = 0, span, changed = FALSE;
+    ItemForEach iter;
+    ColumnForEach citer;
+    int result = TCL_OK;
+
+    if ((objc < 2) && (IS_ALL(item) ||
+	    (TreeItemList_Count(itemList) > 1))) {
+	FormatResult(interp, "can't specify > 1 %s for this command",
+	    item->header ? "header" : "item");
+	return TCL_ERROR;
+    }
+    if (objc == 0) {
+	listObj = Tcl_NewListObj(0, NULL);
+	column = item->columns;
+	while (treeColumn != NULL) {
+	    Tcl_ListObjAppendElement(interp, listObj,
+		    Tcl_NewIntObj(column ? column->span : 1));
+	    treeColumn = TreeColumn_Next(treeColumn);
+	    if (column != NULL)
+		column = column->next;
+	}
+	Tcl_SetObjResult(interp, listObj);
+	return TCL_OK;
+    }
+    if (objc == 1) {
+	if (Item_FindColumnFromObj(tree, item, objv[0], &column, NULL) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	Tcl_SetObjResult(interp, Tcl_NewIntObj(column ? column->span : 1));
+	return TCL_OK;
+    }
+    if (objc & 1) {
+	FormatResult(interp, "missing argument after column \"%s\"",
+		Tcl_GetString(objv[objc - 1]));
+	return TCL_ERROR;
+    }
+    /* Gather column/span pairs. */
+    STATIC_ALLOC(cs, struct columnSpan, objc / 2);
+    for (i = 0; i < objc; i += 2) {
+	if (TreeColumnList_FromObj(tree, objv[i], &cs[count].columns,
+		CFO_NOT_NULL | CFO_NOT_TAIL) != TCL_OK) {
+	    result = TCL_ERROR;
+	    goto doneSPAN;
+	}
+	if (Tcl_GetIntFromObj(interp, objv[i + 1], &span) != TCL_OK) {
+	    result = TCL_ERROR;
+	    goto doneSPAN;
+	}
+	if (span <= 0) {
+	    FormatResult(interp, "bad span \"%d\": must be > 0", span);
+	    result = TCL_ERROR;
+	    goto doneSPAN;
+	}
+	cs[count].span = span;
+	count++;
+    }
+    ITEM_FOR_EACH(item, itemList, NULL, &iter) {
+	int changedI = FALSE;
+	for (i = 0; i < count; i++) {
+	    COLUMN_FOR_EACH(treeColumn, &cs[i].columns, NULL, &citer) {
+		column = Item_CreateColumn(tree, item,
+			TreeColumn_Index(treeColumn), NULL);
+		if (column->span != cs[i].span) {
+		    if (cs[i].span > 1) {
+			item->flags &= ~ITEM_FLAG_SPANS_SIMPLE;
+		    }
+		    TreeItem_SpansInvalidate(tree, item);
+		    column->span = cs[i].span;
+		    TreeItemColumn_InvalidateSize(tree,
+			(TreeItemColumn) column);
+		    changedI = TRUE;
+		    Tree_InvalidateColumnWidth(tree, treeColumn);
+		}
+	    }
+	}
+	if (changedI) {
+	    TreeItem_InvalidateHeight(tree, item);
+	    Tree_FreeItemDInfo(tree, item, NULL);
+	    changed = TRUE;
+	}
+    }
+    if (changed)
+	Tree_DInfoChanged(tree, DINFO_REDO_RANGES);
+doneSPAN:
+    for (i = 0; i < count; i++) {
+	TreeColumnList_Free(&cs[i].columns);
+    }
+    STATIC_FREE(cs, struct columnSpan, objc / 2);
+    return result;
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -8408,6 +8538,11 @@ if (item == tree->headerItems) continue; /* Don't delete the default header item
 
 	/* T item span I ?C? ?span? ?C span ...? */
 	case COMMAND_SPAN: {
+#if 1
+	    if (TreeItem_ConfigureSpans(tree, &itemList, objc - 4, objv + 4) != TCL_OK)
+		goto errorExit;
+	    break;
+#else
 	    TreeColumn treeColumn = tree->columns;
 	    Column *column;
 	    Tcl_Obj *listObj;
@@ -8501,6 +8636,7 @@ doneSPAN:
 	    }
 	    STATIC_FREE(cs, struct columnSpan, objc / 2);
 	    break;
+#endif
 	}
 
 	/* T item image I ?C? ?image? ?C image ...? */
@@ -9170,10 +9306,7 @@ TreeItem_CreateHeader(
     TreeItem item, walk;
     TreeHeader header;
 
-    item = Item_Alloc(tree);
-#if 0
-    tree->itemCount--;
-#endif
+    item = Item_Alloc(tree, TRUE);
     header = TreeHeader_CreateWithItem(tree, item);
     if (header == NULL) {
     }

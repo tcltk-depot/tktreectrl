@@ -1900,6 +1900,7 @@ TreeDestroy(
     TreeMarquee_Free(tree->marquee);
     TreeDInfo_Free(tree);
     TreeTheme_Free(tree);
+    TreeHeader_Free(tree);
 
     if (tree->copyGC != None)
 	Tk_FreeGC(tree->display, tree->copyGC);
@@ -2175,13 +2176,8 @@ Tree_RemoveItem(
 	    (char *) INT2PTR(TreeItem_GetID(tree, item)));
     Tcl_DeleteHashEntry(hPtr);
     tree->itemCount--;
-#if 1
-    if (tree->headerItems != NULL && tree->itemCount == 2)
-	tree->nextItemId = TreeItem_GetID(tree, tree->root) + 2;
-#else
     if (tree->itemCount == 1)
 	tree->nextItemId = TreeItem_GetID(tree, tree->root) + 1;
-#endif
 }
 
 /*

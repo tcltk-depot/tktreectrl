@@ -3763,6 +3763,7 @@ Style_Changed(
 	    updateDInfo = TRUE;
 	}
 	hPtr = Tcl_NextHashEntry(&search);
+if (hPtr == NULL && TreeItem_GetHeader(tree, item) == NULL) hPtr = Tcl_FirstHashEntry(&tree->headerHash, &search);
     }
     if (updateDInfo)
 	Tree_DInfoChanged(tree, DINFO_REDO_RANGES);
@@ -4045,6 +4046,7 @@ Style_ChangeElements(
 	    updateDInfo = TRUE;
 	}
 	hPtr = Tcl_NextHashEntry(&search);
+if (hPtr == NULL && TreeItem_GetHeader(tree, item) == NULL) hPtr = Tcl_FirstHashEntry(&tree->headerHash, &search);
     }
     if (updateDInfo)
 	Tree_DInfoChanged(tree, DINFO_REDO_RANGES);
@@ -4152,6 +4154,7 @@ Style_ElemChanged(
 	else if (iMask & CS_DISPLAY) {
 	}
 	hPtr = Tcl_NextHashEntry(&search);
+if (hPtr == NULL && TreeItem_GetHeader(tree, item) == NULL) hPtr = Tcl_FirstHashEntry(&tree->headerHash, &search);
     }
     if (updateDInfo)
 	Tree_DInfoChanged(tree, DINFO_REDO_RANGES);
@@ -4508,6 +4511,7 @@ Style_Deleted(
 	    treeColumn = TreeColumn_Next(treeColumn);
 	}
 	hPtr = Tcl_NextHashEntry(&search);
+if (hPtr == NULL && TreeItem_GetHeader(tree, item) == NULL) hPtr = Tcl_FirstHashEntry(&tree->headerHash, &search);
     }
 
     /* Update each column's -itemstyle option */
@@ -7027,6 +7031,7 @@ Tree_UndefineState(
 	Tree_FreeItemDInfo(tree, item, NULL);
 	TreeItem_UndefineState(tree, item, state);
 	hPtr = Tcl_NextHashEntry(&search);
+if (hPtr == NULL && TreeItem_GetHeader(tree, item) == NULL) hPtr = Tcl_FirstHashEntry(&tree->headerHash, &search);
     }
     Tree_InvalidateColumnWidth(tree, NULL);
     Tree_DInfoChanged(tree, DINFO_REDO_RANGES);

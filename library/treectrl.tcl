@@ -324,7 +324,7 @@ proc ::TreeCtrl::IdentifyArray {T x y var_} {
 	if {[lindex $id 2] eq "column" || [lindex $id 2] eq "elem"} {
 	    set var(header) [lindex $id 1]
 	} else {
-	    set var(header) 1 ; # FIXME: default header id
+	    set var(header) 0 ; # default header id
 	    set var(column) [lindex $id 1]
 	}
 	if {[lindex $id 2] eq "column"} {
