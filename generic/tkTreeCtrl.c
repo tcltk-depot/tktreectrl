@@ -966,6 +966,7 @@ static int TreeWidgetCmd(
 
 	    if (hit == TREE_AREA_HEADER) {
 #if 1
+		int wx = x;
 		item = Tree_HeaderUnderPoint(tree, &x, &y, &lock);
 		if (item == NULL) /* impossible */
 		    break;
@@ -984,9 +985,9 @@ static int TreeWidgetCmd(
 		    Tcl_ListObjAppendElement(interp, listObj, TreeElement_ToObj(elem));
 		}
 		if (TreeItem_GetRects(tree, item, treeColumn, 0, NULL, &tr) == 1) {
-		    if (x < TreeRect_Left(tr) + 4)
+		    if (W2Cx(wx) < TreeRect_Left(tr) + 4)
 			Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("left", -1));
-		    else if (x >= TreeRect_Right(tr) - 4)
+		    else if (W2Cx(wx) >= TreeRect_Right(tr) - 4)
 			Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("right", -1));
 		}
 		Tcl_SetObjResult(interp, listObj);

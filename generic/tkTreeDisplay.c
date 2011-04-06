@@ -2252,6 +2252,8 @@ Tree_ItemBbox(
 	    case COLUMN_LOCK_NONE:
 		tr->x = tree->canvasPadX[PAD_TOP_LEFT];
 		tr->width = Tree_WidthOfColumns(tree);
+		tr->x = 0/*tree->canvasPadX[PAD_TOP_LEFT]*/;
+		tr->width = tree->canvasPadX[PAD_TOP_LEFT] + Tree_WidthOfColumns(tree);
 		break;
 	    case COLUMN_LOCK_RIGHT:
 		if (tree->columnCountVisRight == 0)
@@ -8536,15 +8538,16 @@ Tree_FreeItemDInfo(
 
     while (item != NULL) {
 	if (TreeItem_GetHeader(tree, item) != NULL) {
-	    changed = 1; /* redisplay */
-	    goto next;
+	    tree->headerHeight = -1;
+	    dInfo->flags |= DINFO_DRAW_HEADER;
+	    Tree_EventuallyRedraw(tree);
+	    return; /* should only be a range of header items */
 	}
 	dItem = (DItem *) TreeItem_GetDInfo(tree, item);
 	if (dItem != NULL) {
 	    FreeDItems(tree, dItem, dItem->next, 1);
 	    changed = 1;
 	}
-next:
 	if (item == item2 || item2 == NULL)
 	    break;
 	item = TreeItem_Next(tree, item);
@@ -8588,6 +8591,12 @@ Tree_InvalidateItemDInfo(
     DItem *dItem;
     TreeItem item = item1;
     int changed = 0;
+
+    if (item != NULL && TreeItem_GetHeader(tree, item) != NULL) {
+	dInfo->flags |= DINFO_DRAW_HEADER;
+	Tree_EventuallyRedraw(tree);
+	return; /* should only be a range of header items */
+    }
 
     if (dInfo->flags & (DINFO_INVALIDATE | DINFO_REDO_COLUMN_WIDTH))
 	return;

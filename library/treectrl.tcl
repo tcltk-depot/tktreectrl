@@ -826,7 +826,6 @@ proc ::TreeCtrl::Motion1 {w x y} {
 		    $id(header) ne $Priv(header) ||
 		    $id(column) ne $Priv(column)} {
 		if {[$w header cget $Priv(header) $Priv(column) -state] eq "pressed"} {
-parray id
 		    $w header configure $Priv(header) $Priv(column) -state normal
 		}
 	    } else {
@@ -960,8 +959,8 @@ proc ::TreeCtrl::Leave1 {w x y} {
     if {![info exists Priv(buttonMode)]} return
     switch $Priv(buttonMode) {
 	header {
-	    if {[$w column cget $Priv(column) -state] eq "pressed"} {
-		$w column configure $Priv(column) -state normal
+	    if {[$w header cget $Priv(header) $Priv(column) -state] eq "pressed"} {
+		$w header configure $Priv(header) $Priv(column) -state normal
 	    }
 	}
     }
@@ -1004,6 +1003,8 @@ proc ::TreeCtrl::Release1 {w x y} {
 		$w header configure $Priv(header) $Priv(column) -state active
 		TryEvent $w Header invoke [list C $Priv(column)]
 	    }
+	    CursorCheck $w $x $y
+	    MotionInHeader $w $x $y
 	}
 	buttonTracking {
 	    set id [$w identify $x $y]
@@ -1019,7 +1020,7 @@ proc ::TreeCtrl::Release1 {w x y} {
 	}
 	dragColumn {
 	    AutoScanCancel $w
-	    $w column configure $Priv(column) -state normal
+	    $w header configure $Priv(header) $Priv(column) -state normal
 	    if {[$w column dragcget -imagecolumn] ne ""} {
 		set visible 1
 	    } else {
@@ -1040,10 +1041,11 @@ proc ::TreeCtrl::Release1 {w x y} {
 	    }
 	    IdentifyArray $w $x $y id
 	    if {$id(where) eq "header"} {
+		set header $id(header)
 		set column $id(column)
 		if {($column ne "") && [$w column compare $column != "tail"]} {
-		    if {[$w column cget $column -button]} {
-			$w column configure $column -state active
+		    if {[$w header cget $header $column -button]} {
+			$w header configure $header $column -state active
 		    }
 		}
 	    }

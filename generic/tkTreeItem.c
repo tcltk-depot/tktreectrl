@@ -4124,6 +4124,8 @@ typedef struct SpanInfo {
     TreeItemColumn itemColumn;	/* May be null. */
     int span;			/* Number of tree-columns spanned. */
     int width;			/* Width of the span. */
+    int visIndex;		/* 0-based index into list of
+				 * spans.  Used by header items. */
 } SpanInfo;
 
 /*
@@ -4170,6 +4172,8 @@ Item_GetSpans(
 		spanPtr->itemColumn = (TreeItemColumn) column;
 		spanPtr->span = 0;
 		spanPtr->width = 0;
+if (spanCount == 0 && item->header != NULL && TreeColumn_Lock(treeColumn) == COLUMN_LOCK_NONE) spanPtr->width += tree->canvasPadX[PAD_TOP_LEFT];
+		spanPtr->visIndex = spanCount;
 		spanCount++;
 	    } else {
 		span = 1;
@@ -4297,6 +4301,7 @@ TreeItem_WalkSpans(
 	    drawArgs.state = item->state;
 	    drawArgs.style = NULL;
 	}
+if (item->header != NULL && TreeColumn_Lock(treeColumn)==COLUMN_LOCK_NONE && spanIndex==0) drawArgs.indent = tree->canvasPadX[PAD_TOP_LEFT]; else
 	if (treeColumn == tree->columnTree)
 	    drawArgs.indent = TreeItem_Indent(tree, item);
 	else
@@ -4364,7 +4369,8 @@ SpanWalkProc_Draw(
 
     if (item->header != NULL) {
 	TreeHeaderColumn_Draw(item->header, itemColumn->headerColumn,
-	    TreeColumn_Lock(treeColumn), drawArgs->td, drawArgs->x, drawArgs->y, drawArgs->width, drawArgs->height);
+	    spanPtr->visIndex, TreeColumn_Lock(treeColumn), drawArgs->td,
+	    drawArgs->x, drawArgs->y, drawArgs->width, drawArgs->height);
 
 	if (drawArgs->style != NULL) {
 	    StyleDrawArgs drawArgsCopy = *drawArgs;
@@ -8829,6 +8835,11 @@ SpanWalkProc_Identify(
 	TreeElement *elemPtr;
     } *data = clientData;
 
+if (item->header != NULL) {
+    if ((data->x < drawArgs->x /*+ drawArgs->indent*/) ||
+	    (data->x >= drawArgs->x + drawArgs->width))
+	return 0;
+} else
     if ((data->x < drawArgs->x + drawArgs->indent) ||
 	    (data->x >= drawArgs->x + drawArgs->width))
 	return 0;
@@ -8851,9 +8862,11 @@ SpanWalkProc_Identify(
  *
  * Results:
  *	If the Item is not ReallyVisible() or no columns are visible
- *	then buf[] is untouched. Otherwise the given string may be
- *	appended with "column C" followed by "elem E" although both
- *	are optional.
+ *	or the given coordinates are not in a span then both the returned
+ *	column and element are NULL. Otherwise the returned column is
+ *	set to the column at the start of the span containing the coordinate;
+ *	the returned element may be NULL if the item-column has no style or
+ *	if the coordinates are not over an element.
  *
  * Side effects:
  *	None.
@@ -9042,6 +9055,7 @@ SpanWalkProc_GetRects(
 	data->rects[0].y = drawArgs->y;
 	data->rects[0].width = drawArgs->width - drawArgs->indent;
 	data->rects[0].height = drawArgs->height;
+if (item->header != NULL) { data->rects[0].x = drawArgs->x; data->rects[0].width = drawArgs->width; }
 	data->result = 1; /* # of rects */
 	return 1; /* stop */
     }

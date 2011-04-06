@@ -427,6 +427,9 @@ TreeHeader_ConsumeColumnConfig(
 	FormatResult(tree->interp, "the default header was deleted!");
 	return TCL_ERROR;
     }
+    /* FIXME: If the column is being created, and invalid option/values are
+     * passed as arguments, the tree-column will go away but this item-column
+     * will not! */
     itemColumn = TreeItem_MakeColumnExist(tree, tree->headerItems, TreeColumn_Index(treeColumn));
     column = TreeItemColumn_GetHeaderColumn(tree, itemColumn);
     return Column_Configure(TreeItem_GetHeader(tree, tree->headerItems), column, treeColumn, objc, objv, FALSE);
@@ -1272,7 +1275,7 @@ Column_DrawArrow(
     )
 {
     TreeCtrl *tree = header->tree;
-    int height = tree->headerHeight;
+    int height = TreeItem_Height(tree, header->item);
     int sunken = column->state == COLUMN_STATE_PRESSED;
     Tk_Image image = NULL;
     Pixmap bitmap;
@@ -1409,9 +1412,21 @@ Column_Draw(
     GC gc = None;
     TkRegion clipRgn = NULL;
 
+    /* Hack on */
+    if (visIndex == 0 && lock == COLUMN_LOCK_NONE) {
+	x += tree->canvasPadX[PAD_TOP_LEFT];
+	width -= tree->canvasPadX[PAD_TOP_LEFT];
+    }
+
     layout.width = width;
     layout.height = height;
     Column_DoLayout(tree, column, &layout);
+
+    /* Hack off */
+    if (visIndex == 0 && lock == COLUMN_LOCK_NONE) {
+	x -= tree->canvasPadX[PAD_TOP_LEFT];
+	width += tree->canvasPadX[PAD_TOP_LEFT];
+    }
 
     border = PerStateBorder_ForState(tree, &column->border,
 	Column_MakeState(column), NULL);
@@ -1422,11 +1437,6 @@ Column_Draw(
 	GC gc = Tk_GCForColor(tree->columnDrag.color, Tk_WindowId(tree->tkwin));
 	XFillRectangle(tree->display, td.drawable, gc, x, y, width, height);
     } else {
-	/* Hack on */
-	if (visIndex == 0 && lock == COLUMN_LOCK_NONE) {
-	    x -= tree->canvasPadX[PAD_TOP_LEFT];
-	    width += tree->canvasPadX[PAD_TOP_LEFT];
-	}
 	if (tree->useTheme) {
 	    theme = TreeTheme_DrawHeaderItem(tree, td, column->state,
 		    column->arrow, visIndex, x, y, width, height);
@@ -1435,11 +1445,12 @@ Column_Draw(
 	    Tk_Fill3DRectangle(tree->tkwin, td.drawable, border,
 		    x, y, width, height, 0, TK_RELIEF_FLAT);
 	}
-	/* Hack off */
-	if (visIndex == 0 && lock == COLUMN_LOCK_NONE) {
-	    x += tree->canvasPadX[PAD_TOP_LEFT];
-	    width -= tree->canvasPadX[PAD_TOP_LEFT];
-	}
+    }
+
+    /* Hack on */
+    if (visIndex == 0 && lock == COLUMN_LOCK_NONE) {
+	x += tree->canvasPadX[PAD_TOP_LEFT];
+	width -= tree->canvasPadX[PAD_TOP_LEFT];
     }
 
     if (column->image != NULL) {
@@ -1562,13 +1573,13 @@ void
 TreeHeaderColumn_Draw(
     TreeHeader header,		/* Header token. */
     TreeHeaderColumn column,	/* Column token. */
+    int visIndex,
     int lock,			/* COLUMN_LOCK_XXX */
     TreeDrawable td,		/* Where to draw. */
     int x, int y,		/* Area of the column header to draw. */
     int width, int height	/* ^ */
     )
 {
-    int visIndex = 0; /* FIXME */
     Column_Draw(header, column, lock, td, x, y, width, height, visIndex, FALSE);
 }
 
@@ -1778,13 +1789,13 @@ Tree_HeaderUnderPoint(
 	if (*y_ < y + TreeItem_Height(tree, item)) {
 	    if (*x_ < Tree_ContentLeft(tree)) {
 		(*x_) -= Tree_BorderLeft(tree);
-		*lock = COLUMN_LOCK_LEFT;
+		(*lock) = COLUMN_LOCK_LEFT;
 	    } else if (*x_ >= Tree_ContentRight(tree)) {
 		(*x_) -= Tree_ContentRight(tree);
-		*lock = COLUMN_LOCK_RIGHT;
+		(*lock) = COLUMN_LOCK_RIGHT;
 	    } else {
-		(*x_) += tree->xOrigin - tree->canvasPadX[PAD_TOP_LEFT];
-		*lock = COLUMN_LOCK_NONE;
+		(*x_) += tree->xOrigin /*- tree->canvasPadX[PAD_TOP_LEFT]*/;
+		(*lock) = COLUMN_LOCK_NONE;
 	    }
 	    (*y_) = (*y_) - y;
 	    return item;
