@@ -2228,7 +2228,7 @@ Tree_ItemBbox(
 
     if (TreeItem_GetHeader(tree, item) != NULL) {
 	TreeItem walk = tree->headerItems;
-	tr->y = W2Cy(Tree_BorderTop(tree) + Tree_HeaderHeight(tree));
+	tr->y = W2Cy(Tree_BorderTop(tree));
 	while (walk != item) {
 	    tr->y += TreeItem_Height(tree, walk);
 	    walk = TreeItem_NextSiblingVisible(tree, walk);
@@ -6691,8 +6691,8 @@ CheckPendingHeaderUpdate(
 	if (drawItems)  dInfo->flags |= DINFO_INVALIDATE;
 	dInfo->flags &= ~(DINFO_REDO_COLUMN_WIDTH | DINFO_CHECK_COLUMN_WIDTH);
     }
-    if (dInfo->headerHeight != Tree_HeaderHeight(tree) + Tree_HeightOfHeaderItems(tree)) {
-	dInfo->headerHeight = Tree_HeaderHeight(tree) + Tree_HeightOfHeaderItems(tree);
+    if (dInfo->headerHeight != Tree_HeaderHeight(tree)) {
+	dInfo->headerHeight = Tree_HeaderHeight(tree);
 	dInfo->flags |=
 	    DINFO_OUT_OF_DATE |
 	    DINFO_SET_ORIGIN_Y |
@@ -7076,6 +7076,7 @@ if (dInfo->dItemLast != NULL) {
     Tree_SetEmptyRegion(dInfo->redrawRgn);
 #endif /* REDRAW_RGN */
 
+#if 0
     if (dInfo->flags & DINFO_DRAW_HEADER) {
 	if (Tree_AreaBbox(tree, TREE_AREA_HEADER, &tr)) {
 	    if (tree->debug.enable && tree->debug.display && tree->debug.drawColor) {
@@ -7096,15 +7097,13 @@ if (dInfo->dItemLast != NULL) {
 	}
 	dInfo->flags &= ~DINFO_DRAW_HEADER;
     }
-
+#endif
     /* FIXME: only redraw header items if needed. */
-    if (dItemHeader != NULL) {
+    if ((dInfo->flags & DINFO_DRAW_HEADER) && (dItemHeader != NULL)) {
 	TreeDrawable tpixmap = tdrawable;
 
 	/* Erase whitespace to left and right. */
 	if (Tree_AreaBbox(tree, TREE_AREA_HEADER_NONE, &tr)) {
-	    tr.y += Tree_HeaderHeight(tree);
-	    tr.height -= Tree_HeaderHeight(tree);
 	    Tree_FillRectangle(tree, tdrawable, NULL,
 		Tk_3DBorderGC(tree->tkwin, tree->border, TK_3D_FLAT_GC), tr);
 	    if (tree->doubleBuffer == DOUBLEBUFFER_WINDOW) {
@@ -7187,6 +7186,7 @@ if (dInfo->dItemLast != NULL) {
 	    dItem->oldY = dItem->y;
 	    dItem->oldIndex = dItem->index;
 	}
+	dInfo->flags &= ~DINFO_DRAW_HEADER;
     }
 
     if (tree->vertical) {

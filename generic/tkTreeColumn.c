@@ -22,14 +22,18 @@ typedef struct UniformGroup {
 } UniformGroup;
 #endif
 
+#define HEADERS 1
+
 /*
  * The following structure holds information about a single
  * column in a TreeCtrl.
  */
 struct TreeColumn_
 {
+#if HEADERS == 0
     Tcl_Obj *textObj;		/* -text */
     char *text;			/* -text */
+#endif
     int width;			/* -width */
     Tcl_Obj *widthObj;		/* -width */
     int minWidth;		/* -minwidth */
@@ -41,24 +45,31 @@ struct TreeColumn_
     Tcl_Obj *stepWidthObj;	/* -stepwidth */
     int widthHack;		/* -widthhack */
 #endif /* DEPRECATED */
+#if HEADERS == 0
     Tk_Font tkfont;		/* -font */
+#endif
     Tk_Justify justify;		/* -justify */
     int itemJustify;		/* -itemjustify */
+#if HEADERS == 0
     PerStateInfo border;	/* -background */
     Tcl_Obj *borderWidthObj;	/* -borderwidth */
     int borderWidth;		/* -borderwidth */
     PerStateInfo textColor;	/* -textcolor */
+#endif
     int expand;			/* -expand */
     int squeeze;		/* -squeeze */
     int visible;		/* -visible */
     int resize;			/* -resize */
     TagInfo *tagInfo;		/* -tags */
+#if HEADERS == 0
     char *imageString;		/* -image */
     PerStateInfo arrowBitmap;	/* -arrowbitmap */
     PerStateInfo arrowImage;	/* -arrowimage */
     Pixmap bitmap;		/* -bitmap */
+#endif
     Tcl_Obj *itemBgObj;		/* -itembackground */
     TreeStyle itemStyle;	/* -itemstyle */
+#if HEADERS == 0
     int button;			/* -button */
     Tcl_Obj *textPadXObj;	/* -textpadx */
     int *textPadX;		/* -textpadx */
@@ -81,13 +92,14 @@ struct TreeColumn_
     int arrowGravity;		/* -arrowgravity */
 
     int state;			/* -state */
-
+#endif
     int lock;			/* -lock */
 
     TreeCtrl *tree;
     Tk_OptionTable optionTable;
     int id;			/* unique column identifier */
     int index;			/* order in list of columns */
+#if HEADERS == 0
     int textLen;
     int textWidth;
     Tk_Image image;
@@ -95,14 +107,18 @@ struct TreeColumn_
 				 * text + arrow */
     int neededHeight;		/* calculated from borders + image/bitmap +
 				 * text */
+#endif
     int offset;			/* Total width of preceding columns */
     int useWidth;		/* -width, -minwidth, or required+expansion */
     int widthOfItems;		/* width of all TreeItemColumns */
     int itemBgCount;		/* -itembackground colors */
     TreeColor **itemBgColor;	/* -itembackground colors */
+#if HEADERS == 0
     GC bitmapGC;
+#endif
     TreeColumn prev;
     TreeColumn next;
+#if HEADERS == 0
     TextLayout textLayout;	/* multi-line titles */
     int textLayoutWidth;	/* width passed to TextLayout_Compute */
     int textLayoutInvalid;
@@ -111,6 +127,7 @@ struct TreeColumn_
 #define TEXT_WRAP_WORD 1
     int textWrap;		/* -textwrap */
     int textLines;		/* -textlines */
+#endif
 #ifdef UNIFORM_GROUP
     UniformGroup *uniform;	/* -uniform */
     int weight;			/* -weight */
@@ -260,9 +277,13 @@ static Tk_ObjCustomOption uniformGroupCO =
 };
 #endif /* UNIFORM_GROUP */
 
+#if HEADERS == 0
 static CONST char *arrowST[] = { "none", "up", "down", (char *) NULL };
+#endif
 static CONST char *arrowSideST[] = { "left", "right", (char *) NULL };
+#if HEADERS == 0
 static CONST char *stateST[] = { "normal", "active", "pressed", (char *) NULL };
+#endif
 static CONST char *lockST[] = { "left", "none", "right", (char *) NULL };
 static CONST char *justifyStrings[] = {
     "left", "right", "center", (char *) NULL
@@ -284,6 +305,7 @@ static CONST char *justifyStrings[] = {
 #endif
 
 static Tk_OptionSpec columnSpecs[] = {
+#if HEADERS == 0
     {TK_OPTION_STRING_TABLE, "-arrow", (char *) NULL, (char *) NULL,
      "none", -1, Tk_Offset(TreeColumn_, arrow),
      0, (ClientData) arrowST, COLU_CONF_NWIDTH | COLU_CONF_NHEIGHT | COLU_CONF_DISPLAY},
@@ -325,13 +347,16 @@ static Tk_OptionSpec columnSpecs[] = {
     {TK_OPTION_BOOLEAN, "-button", (char *) NULL, (char *) NULL,
      "1", -1, Tk_Offset(TreeColumn_, button),
      0, (ClientData) NULL, 0},
+#endif
     {TK_OPTION_BOOLEAN, "-expand", (char *) NULL, (char *) NULL,
      "0", -1, Tk_Offset(TreeColumn_, expand),
      0, (ClientData) NULL, COLU_CONF_TWIDTH},
+#if HEADERS == 0
     {TK_OPTION_FONT, "-font", (char *) NULL, (char *) NULL,
      (char *) NULL, -1, Tk_Offset(TreeColumn_, tkfont),
      TK_OPTION_NULL_OK, (ClientData) NULL, COLU_CONF_NWIDTH |
      COLU_CONF_NHEIGHT | COLU_CONF_DISPLAY | COLU_CONF_TEXT},
+#endif
 #if COLUMNGRID==1
     {TK_OPTION_CUSTOM, "-gridleftcolor", (char *) NULL, (char *) NULL, (char *) NULL,
 	Tk_Offset(TreeColumn_, gridLeftColorObj),
@@ -344,6 +369,7 @@ static Tk_OptionSpec columnSpecs[] = {
 	TK_OPTION_NULL_OK, (ClientData) &TreeCtrlCO_treecolor,
 	COLU_CONF_GRIDLINES},
 #endif
+#if HEADERS == 0
     {TK_OPTION_STRING, "-image", (char *) NULL, (char *) NULL,
      (char *) NULL, -1, Tk_Offset(TreeColumn_, imageString),
      TK_OPTION_NULL_OK, (ClientData) NULL,
@@ -356,6 +382,7 @@ static Tk_OptionSpec columnSpecs[] = {
      "0", Tk_Offset(TreeColumn_, imagePadYObj),
      Tk_Offset(TreeColumn_, imagePadY), 0, (ClientData) &TreeCtrlCO_pad,
      COLU_CONF_NHEIGHT | COLU_CONF_DISPLAY},
+#endif
     {TK_OPTION_STRING, "-itembackground", (char *) NULL, (char *) NULL,
      (char *) NULL, Tk_Offset(TreeColumn_, itemBgObj), -1,
      TK_OPTION_NULL_OK, (ClientData) NULL, COLU_CONF_ITEMBG},
@@ -383,9 +410,11 @@ static Tk_OptionSpec columnSpecs[] = {
     {TK_OPTION_BOOLEAN, "-squeeze", (char *) NULL, (char *) NULL,
      "0", -1, Tk_Offset(TreeColumn_, squeeze),
      0, (ClientData) NULL, COLU_CONF_TWIDTH},
+#if HEADERS == 0
     {TK_OPTION_STRING_TABLE, "-state", (char *) NULL, (char *) NULL,
      "normal", -1, Tk_Offset(TreeColumn_, state), 0, (ClientData) stateST,
      COLU_CONF_NWIDTH | COLU_CONF_NHEIGHT | COLU_CONF_DISPLAY},
+#endif
 #ifdef DEPRECATED
     {TK_OPTION_PIXELS, "-stepwidth", (char *) NULL, (char *) NULL,
      (char *) NULL, Tk_Offset(TreeColumn_, stepWidthObj),
@@ -395,6 +424,7 @@ static Tk_OptionSpec columnSpecs[] = {
     {TK_OPTION_CUSTOM, "-tags", (char *) NULL, (char *) NULL,
      (char *) NULL, -1, Tk_Offset(TreeColumn_, tagInfo),
      TK_OPTION_NULL_OK, (ClientData) &TreeCtrlCO_tagInfo, COLU_CONF_TAGS},
+#if HEADERS == 0
     {TK_OPTION_STRING, "-text", (char *) NULL, (char *) NULL,
      (char *) NULL, Tk_Offset(TreeColumn_, textObj), Tk_Offset(TreeColumn_, text),
      TK_OPTION_NULL_OK, (ClientData) NULL,
@@ -415,6 +445,7 @@ static Tk_OptionSpec columnSpecs[] = {
      "0", Tk_Offset(TreeColumn_, textPadYObj),
      Tk_Offset(TreeColumn_, textPadY), 0, (ClientData) &TreeCtrlCO_pad,
      COLU_CONF_NHEIGHT | COLU_CONF_DISPLAY},
+#endif
 #ifdef UNIFORM_GROUP
     {TK_OPTION_CUSTOM, "-uniform", (char *) NULL, (char *) NULL,
      (char *) NULL, -1, Tk_Offset(TreeColumn_, uniform), TK_OPTION_NULL_OK,
@@ -628,6 +659,8 @@ static Tk_OptionSpec dragSpecs[] = {
      (char *) NULL, 0, -1, 0, 0, 0}
 };
 
+#if HEADERS == 0
+
 /*
  *----------------------------------------------------------------------
  *
@@ -661,8 +694,10 @@ ImageChangedProc(
     TreeCtrl *tree = column->tree;
 
     /* Duplicate the effects of configuring the -image option. */
+#if HEADERS == 0
     column->neededWidth = -1;
     column->neededHeight = -1;
+#endif
     tree->headerHeight = -1;
     tree->widthOfColumns = -1;
     tree->widthOfColumnsLeft = tree->widthOfColumnsRight = -1;
@@ -792,6 +827,8 @@ Column_MakeState(
     return state;
 }
 
+#endif /* HEADERS == 0 */
+
 /*
  *----------------------------------------------------------------------
  *
@@ -874,7 +911,9 @@ typedef struct Qualifiers {
     int visible;		/* 1 for -visible TRUE,
 				   0 for -visible FALSE,
 				   -1 for unspecified. */
+#if HEADERS == 0
     int states[3];		/* States that must be on or off. */
+#endif
     TagExpr expr;		/* Tag expression. */
     int exprOK;			/* TRUE if expr is valid. */
     int lock;			/* COLUMN_LOCK_xxx or -1 */
@@ -907,7 +946,9 @@ Qualifiers_Init(
 {
     q->tree = tree;
     q->visible = -1;
+#if HEADERS == 0
     q->states[0] = q->states[1] = q->states[2] = 0;
+#endif
     q->exprOK = FALSE;
     q->lock = -1;
     q->ntail = 0;
@@ -945,15 +986,27 @@ Qualifiers_Scan(
     int qual, j = startIndex;
 
     static CONST char *qualifiers[] = {
-	"lock", "state", "tag", "visible", "!tail", "!visible", NULL
+	"lock",
+#if HEADERS == 0
+	"state",
+#endif
+	"tag", "visible", "!tail", "!visible", NULL
     };
     enum qualEnum {
-	QUAL_LOCK, QUAL_STATE, QUAL_TAG, QUAL_VISIBLE, QUAL_NOT_TAIL,
+	QUAL_LOCK,
+#if HEADERS == 0
+	QUAL_STATE,
+#endif
+	QUAL_TAG, QUAL_VISIBLE, QUAL_NOT_TAIL,
 	QUAL_NOT_VISIBLE
     };
     /* Number of arguments used by qualifiers[]. */
     static int qualArgs[] = {
-	2, 2, 2, 1, 1, 1
+	2,
+#if HEADERS == 0
+	2,
+#endif
+	2, 1, 1, 1
     };
 
     *argsUsed = 0;
@@ -974,6 +1027,7 @@ Qualifiers_Scan(
 		    goto errorExit;
 		break;
 	    }
+#if HEADERS == 0
 	    case QUAL_STATE: {
 		int i, listObjc;
 		Tcl_Obj **listObjv;
@@ -990,6 +1044,7 @@ Qualifiers_Scan(
 		}
 		break;
 	    }
+#endif
 	    case QUAL_TAG: {
 		if (tree->columnTagExpr) {
 		    if (q->exprOK)
@@ -1057,10 +1112,12 @@ Qualifies(
 	return 0;
     else if ((q->visible == 0) && column->visible)
 	return 0;
+#if HEADERS == 0
     if (q->states[STATE_OP_OFF] & Column_MakeState(column))
 	return 0;
     if ((q->states[STATE_OP_ON] & Column_MakeState(column)) != q->states[STATE_OP_ON])
 	return 0;
+#endif
     if (q->exprOK && !TagExpr_Eval(&q->expr, column->tagInfo))
 	return 0;
     if ((q->lock != -1) && (column->lock != q->lock))
@@ -2077,8 +2134,10 @@ Column_Config(
     int error;
     Tcl_Obj *errorResult = NULL;
     int mask, maskFree = 0;
+#if HEADERS == 0
     XGCValues gcValues;
     unsigned long gcMask;
+#endif
     int visible = column->visible;
     int lock = column->lock;
 #if COLUMNGRID == 1
@@ -2088,16 +2147,52 @@ Column_Config(
 	    
 #endif
 
+#if HEADERS == 1
+    int objC = 0, hObjC = 0;
+    Tcl_Obj **objV = (Tcl_Obj **) ckalloc(sizeof(Tcl_Obj *) * objc);
+    Tcl_Obj **hObjV = (Tcl_Obj **) ckalloc(sizeof(Tcl_Obj *) * objc);
+    int i;
+    for (i = 0; i < objc; i += 2) {
+	Tk_OptionSpec *specPtr = columnSpecs;
+	int length;
+	CONST char *optionName = Tcl_GetStringFromObj(objv[i], &length);
+	while (specPtr->type != TK_OPTION_END) {
+	    if (strncmp(specPtr->optionName, optionName, length) == 0) {
+		objV[objC++] = objv[i];
+		if (i + 1 < objc)
+		    objV[objC++] = objv[i + 1];
+		break;
+	    }
+	    specPtr++;
+	}
+	if (specPtr->type == TK_OPTION_END) {
+	    hObjV[hObjC++] = objv[i];
+	    if (i + 1 < objc)
+		hObjV[hObjC++] = objv[i + 1];
+	}
+    }
+    if (TreeHeader_ConsumeColumnConfig(tree, column, hObjC, hObjV) != TCL_OK) {
+	ckfree((char *) objV);
+	ckfree((char *) hObjV);
+	return TCL_ERROR;
+    }
+#endif
+
     /* Init these to prevent compiler warnings */
+#if HEADERS == 0
     saved.image = NULL;
+#endif
     saved.itemBgCount = 0;
     saved.itemBgColor = NULL;
-
 
     for (error = 0; error <= 1; error++) {
 	if (error == 0) {
 	    if (Tk_SetOptions(tree->interp, (char *) column,
+#if HEADERS == 1
+			column->optionTable, objC, objV, tree->tkwin,
+#else
 			column->optionTable, objc, objv, tree->tkwin,
+#endif
 			&savedOptions, &mask) != TCL_OK) {
 		mask = 0;
 		continue;
@@ -2106,8 +2201,10 @@ Column_Config(
 	    /* Wouldn't have to do this if Tk_InitOptions() would return
 	     * a mask of configured options like Tk_SetOptions() does. */
 	    if (createFlag) {
+#if HEADERS == 0
 		if (column->imageString != NULL)
 		    mask |= COLU_CONF_IMAGE;
+#endif
 		if (column->itemBgObj != NULL)
 		    mask |= COLU_CONF_ITEMBG;
 	    }
@@ -2116,8 +2213,10 @@ Column_Config(
 	     * Step 1: Save old values
 	     */
 
+#if HEADERS == 0
 	    if (mask & COLU_CONF_IMAGE)
 		saved.image = column->image;
+#endif
 	    if (mask & COLU_CONF_ITEMBG) {
 		saved.itemBgColor = column->itemBgColor;
 		saved.itemBgCount = column->itemBgCount;
@@ -2140,6 +2239,7 @@ Column_Config(
 	     * Step 2: Process new values
 	     */
 
+#if HEADERS == 0
 	    if (mask & COLU_CONF_IMAGE) {
 		if (column->imageString == NULL) {
 		    column->image = NULL;
@@ -2152,7 +2252,7 @@ Column_Config(
 		    maskFree |= COLU_CONF_IMAGE;
 		}
 	    }
-
+#endif
 	    if (mask & COLU_CONF_ITEMBG) {
 		if (column->itemBgObj == NULL) {
 		    column->itemBgColor = NULL;
@@ -2191,10 +2291,12 @@ Column_Config(
 	     * Step 3: Free saved values
 	     */
 
+#if HEADERS == 0
 	    if (mask & COLU_CONF_IMAGE) {
 		if (saved.image != NULL)
 		    Tk_FreeImage(saved.image);
 	    }
+#endif
 	    if (mask & COLU_CONF_ITEMBG)
 		Column_FreeColors(column, saved.itemBgColor, saved.itemBgCount);
 	    Tk_FreeSavedOptions(&savedOptions);
@@ -2207,16 +2309,20 @@ Column_Config(
 	    /*
 	     * Free new values.
 	     */
+#if HEADERS == 0
 	    if (maskFree & COLU_CONF_IMAGE)
 		Tk_FreeImage(column->image);
+#endif
 	    if (maskFree & COLU_CONF_ITEMBG)
 		Column_FreeColors(column, column->itemBgColor, column->itemBgCount);
 
 	    /*
 	     * Restore old values.
 	     */
+#if HEADERS == 0
 	    if (mask & COLU_CONF_IMAGE)
 		column->image = saved.image;
+#endif
 	    if (mask & COLU_CONF_ITEMBG) {
 		column->itemBgColor = saved.itemBgColor;
 		column->itemBgCount = saved.itemBgCount;
@@ -2224,6 +2330,10 @@ Column_Config(
 
 	    Tcl_SetObjResult(tree->interp, errorResult);
 	    Tcl_DecrRefCount(errorResult);
+#if HEADERS == 0
+	    ckfree((char *) objV);
+	    ckfree((char *) hObjV);
+#endif
 	    return TCL_ERROR;
 	}
     }
@@ -2232,6 +2342,7 @@ Column_Config(
     if (visible != column->visible || lock != column->lock)
 	TreeItem_SpansInvalidate(tree, NULL);
 
+#if HEADERS == 0
     /* Wouldn't have to do this if Tk_InitOptions() would return
     * a mask of configured options like Tk_SetOptions() does. */
     if (createFlag) {
@@ -2265,6 +2376,7 @@ Column_Config(
 	    column->bitmapGC = Tk_GetGC(tree->tkwin, gcMask, &gcValues);
 	}
     }
+#endif
 
     if (mask & COLU_CONF_ITEMBG) {
 	if (!createFlag) {
@@ -2310,6 +2422,7 @@ Column_Config(
 
     if (mask & (COLU_CONF_NWIDTH | COLU_CONF_TWIDTH))
 	mask |= COLU_CONF_NHEIGHT;
+#if HEADERS == 0
     if (mask & (COLU_CONF_JUSTIFY | COLU_CONF_TEXT))
 	column->textLayoutInvalid = TRUE;
 
@@ -2319,6 +2432,7 @@ Column_Config(
 	column->neededHeight = -1;
 	tree->headerHeight = -1;
     }
+#endif
 
     /* FIXME: only this column needs to be redisplayed. */
     if (mask & COLU_CONF_JUSTIFY)
@@ -2352,6 +2466,11 @@ Column_Config(
 	tree->columnsWithGridLines += gridLines ? 1 : -1;
 /*dbwin("tree->columnsWithGridLines is now %d", tree->columnsWithGridLines);*/
     }
+#endif
+
+#if HEADERS == 0
+    ckfree((char *) objV);
+    ckfree((char *) hObjV);
 #endif
 
     return TCL_OK;
@@ -2399,7 +2518,9 @@ Column_Alloc(
 	return NULL;
     }
 #endif
+#if HEADERS == 0
     column->neededWidth = column->neededHeight = -1;
+#endif
     tree->headerHeight = tree->widthOfColumns = -1;
     tree->widthOfColumnsLeft = tree->widthOfColumnsRight = -1;
     column->id = tree->nextColumnId++;
@@ -2433,12 +2554,14 @@ Column_Free(
     TreeColumn next = column->next;
 
     Column_FreeColors(column, column->itemBgColor, column->itemBgCount);
+#if HEADERS == 0
     if (column->bitmapGC != None)
 	Tk_FreeGC(tree->display, column->bitmapGC);
     if (column->image != NULL)
 	Tk_FreeImage(column->image);
     if (column->textLayout != NULL)
 	TextLayout_Free(column->textLayout);
+#endif
     TreeDisplay_FreeColumnDInfo(tree, column);
     Tk_FreeConfigOptions((char *) column, column->optionTable, tree->tkwin);
     WFREE(column, TreeColumn_);
@@ -2597,6 +2720,8 @@ TreeColumn_StepWidth(
     return column->stepWidthObj ? column->stepWidth : -1;
 }
 #endif /* DEPRECATED */
+
+#if HEADERS == 0
 
 /*
  *----------------------------------------------------------------------
@@ -3286,6 +3411,8 @@ TreeColumn_NeededHeight(
     return column->neededHeight;
 }
 
+#endif /* HEADERS == 0 */
+
 /*
  *----------------------------------------------------------------------
  *
@@ -3910,6 +4037,22 @@ TreeColumnCmd(
 	    if (TreeColumn_FromObj(tree, objv[3], &column,
 			CFO_NOT_NULL) != TCL_OK)
 		return TCL_ERROR;
+#if HEADERS == 1
+	    {
+	    Tk_OptionSpec *specPtr = columnSpecs;
+	    int length;
+	    CONST char *optionName = Tcl_GetStringFromObj(objv[4], &length);
+	    while (specPtr->type != TK_OPTION_END) {
+		if (strncmp(specPtr->optionName, optionName, length) == 0) {
+		    break;
+		}
+		specPtr++;
+	    }
+	    if (specPtr->type == TK_OPTION_END) {
+		return TreeHeader_ConsumeColumnCget(tree, column, objv[4]);
+	    }
+	    }
+#endif
 	    resultObjPtr = Tk_GetOptionValue(interp, (char *) column,
 		    column->optionTable, objv[4], tree->tkwin);
 	    if (resultObjPtr == NULL)
@@ -3988,6 +4131,9 @@ TreeColumnCmd(
 
 	    /* FIXME: -count N -tags $tags */
 	    column = Column_Alloc(tree);
+#if HEADERS == 1
+	    column->index = tree->columnCount - 1;
+#endif
 	    if (Column_Config(column, objc - 3, objv + 3, TRUE) != TCL_OK) {
 		Column_Free(column);
 		return TCL_ERROR;
@@ -4389,7 +4535,9 @@ doneDELETE:
 	    /* Update layout if needed */
 	    (void) Tree_CanvasWidth(tree);
 	    width = TreeColumn_WidthOfItems(column);
+#if HEADERS == 0
 	    width = MAX(width, TreeColumn_NeededWidth(column));
+#endif
 	    Tcl_SetObjResult(interp, Tcl_NewIntObj(width));
 	    break;
 	}
@@ -4448,6 +4596,8 @@ errorExit:
     TreeColumnList_Free(&columns);
     return TCL_ERROR;
 }
+
+#if HEADERS == 0
 
 /*
  *----------------------------------------------------------------------
@@ -5124,6 +5274,8 @@ Tree_DrawHeader(
     }
 }
 
+#endif /* HEADERS == 0 */
+
 /*
  *----------------------------------------------------------------------
  *
@@ -5273,6 +5425,7 @@ Tree_InvalidateColumnHeight(
 				 * modify every column. */
     )
 {
+#if HEADERS == 0
     if (column == NULL) {
 	column = tree->columns;
 	while (column != NULL) {
@@ -5282,6 +5435,7 @@ Tree_InvalidateColumnHeight(
     } else {
 	column->neededHeight = -1;
     }
+#endif
     tree->headerHeight = -1;
 }
 
@@ -5308,6 +5462,7 @@ TreeColumn_TreeChanged(
     int flagT			/* TREE_CONF_xxx flags. */
     )
 {
+#if HEADERS == 0
     TreeColumn column;
 
     /* Column widths are invalidated elsewhere */
@@ -5334,6 +5489,7 @@ TreeColumn_TreeChanged(
 	    column = column->next;
 	}
     }
+#endif
 }
 
 /*
@@ -5358,6 +5514,15 @@ Tree_HeaderHeight(
     TreeCtrl *tree		/* Widget info. */
     )
 {
+#if HEADERS == 1
+    if (!tree->showHeader)
+	return 0;
+
+    if (tree->headerHeight >= 0)
+	return tree->headerHeight;
+
+    return tree->headerHeight = Tree_HeightOfHeaderItems(tree);
+#else
     TreeColumn column;
     int height;
 
@@ -5375,6 +5540,7 @@ Tree_HeaderHeight(
 	column = column->next;
     }
     return tree->headerHeight = height;
+#endif
 }
 
 /*
@@ -5599,7 +5765,9 @@ LayoutColumns(
 		width = column->width;
 	    else {
 		width = TreeColumn_WidthOfItems(column);
+#if HEADERS == 0
 		width = MAX(width, TreeColumn_NeededWidth(column));
+#endif
 		width = MAX(width, TreeColumn_MinWidth(column));
 		if (TreeColumn_MaxWidth(column) != -1)
 		    width = MIN(width, TreeColumn_MaxWidth(column));
@@ -6001,6 +6169,7 @@ TreeColumn_InitInterp(
     Tcl_Interp *interp		/* Current interpreter. */
     )
 {
+#if HEADERS == 0
     Tk_OptionSpec *specPtr;
     Tcl_DString dString;
 
@@ -6020,6 +6189,7 @@ TreeColumn_InitInterp(
     PerStateCO_Init(columnSpecs, "-arrowimage", &pstImage, ColumnStateFromObj);
     PerStateCO_Init(columnSpecs, "-background", &pstBorder, ColumnStateFromObj);
     PerStateCO_Init(columnSpecs, "-textcolor", &pstColor, ColumnStateFromObj);
+#endif
     StringTableCO_Init(columnSpecs, "-itemjustify", justifyStrings);
 
     return TCL_OK;

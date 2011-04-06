@@ -3349,6 +3349,12 @@ Item_CreateColumn(
     Column *column;
     int i;
 
+#ifdef TREECTRL_DEBUG
+    if (columnIndex < 0 || columnIndex >= tree->columnCount) {
+	panic("Item_CreateColumn with index %d, must be from 0-%d", columnIndex, tree->columnCount - 1);
+    }
+#endif
+
     if (isNew != NULL) (*isNew) = FALSE;
     column = item->columns;
     if (column == NULL) {
@@ -8072,6 +8078,7 @@ reqSameRoot:
 		    continue;
 		if (IS_DELETED(item))
 		    continue;
+if (item == tree->headerItems) continue; /* Don't delete the default header item */
 		item->flags |= ITEM_FLAG_DELETED;
 		TreeItemList_Append(&deleted, item);
 		if (TreeItem_GetSelected(tree, item))
@@ -9128,6 +9135,16 @@ TreeItem_GetRects(
     return clientData.result;
 }
 
+TreeItemColumn
+TreeItem_MakeColumnExist(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeItem item,
+    int columnIndex
+    )
+{
+    return (TreeItemColumn) Item_CreateColumn(tree, item, columnIndex, NULL);
+}
+
 TreeItem
 TreeItem_CreateHeader(
     TreeCtrl *tree		/* Widget info. */
@@ -9137,14 +9154,17 @@ TreeItem_CreateHeader(
     TreeHeader header;
 
     item = Item_Alloc(tree);
+#if 0
     tree->itemCount--;
+#endif
     header = TreeHeader_CreateWithItem(tree, item);
     if (header == NULL) {
     }
     item->header = header;
     /* This will create a TreeItemColumn and TreeHeaderColumn for every
      * TreeColumn. */
-    (void) Item_CreateColumn(tree, item, tree->columnCount - 1, NULL);
+    if (tree->columnCount > 0)
+	(void) Item_CreateColumn(tree, item, tree->columnCount - 1, NULL);
     if (tree->headerItems == NULL)
 	tree->headerItems = item;
     else {

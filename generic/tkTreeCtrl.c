@@ -2137,8 +2137,13 @@ Tree_RemoveItem(
 	    (char *) INT2PTR(TreeItem_GetID(tree, item)));
     Tcl_DeleteHashEntry(hPtr);
     tree->itemCount--;
+#if 1
+    if (tree->headerItems != NULL && tree->itemCount == 2)
+	tree->nextItemId = TreeItem_GetID(tree, tree->root) + 2;
+#else
     if (tree->itemCount == 1)
 	tree->nextItemId = TreeItem_GetID(tree, tree->root) + 1;
+#endif
 }
 
 /*

@@ -375,6 +375,63 @@ Column_Configure(
     return TCL_OK;
 }
 
+TreeItemColumn
+TreeItem_MakeColumnExist(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeItem item,
+    int columnIndex
+    );
+
+int
+TreeHeader_ConsumeColumnCget(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeColumn treeColumn,
+    Tcl_Obj *objPtr		/* Option name. */
+    )
+{
+    TreeItemColumn itemColumn;
+    TreeHeaderColumn column;
+    Tcl_Obj *resultObjPtr;
+
+    if (treeColumn == tree->columnTail) return TCL_OK;
+
+    if (tree->headerItems == NULL) {
+	FormatResult(tree->interp, "the default header was deleted!");
+	return TCL_ERROR;
+    }
+    itemColumn = TreeItem_MakeColumnExist(tree, tree->headerItems, TreeColumn_Index(treeColumn));
+    column = TreeItemColumn_GetHeaderColumn(tree, itemColumn);
+
+    resultObjPtr = Tk_GetOptionValue(tree->interp, (char *) column,
+	    tree->headerColumnOptionTable, objPtr, tree->tkwin);
+    if (resultObjPtr == NULL)
+	return TCL_ERROR;
+    Tcl_SetObjResult(tree->interp, resultObjPtr);
+    return TCL_OK;
+}
+
+int
+TreeHeader_ConsumeColumnConfig(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeColumn treeColumn,
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *CONST objv[]	/* Argument values. */
+    )
+{
+    TreeItemColumn itemColumn;
+    TreeHeaderColumn column;
+
+    if (objc <= 0 || treeColumn == tree->columnTail) return TCL_OK;
+
+    if (tree->headerItems == NULL) {
+	FormatResult(tree->interp, "the default header was deleted!");
+	return TCL_ERROR;
+    }
+    itemColumn = TreeItem_MakeColumnExist(tree, tree->headerItems, TreeColumn_Index(treeColumn));
+    column = TreeItemColumn_GetHeaderColumn(tree, itemColumn);
+    return Column_Configure(TreeItem_GetHeader(tree, tree->headerItems), column, treeColumn, objc, objv, FALSE);
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1971,6 +2028,59 @@ TreeHeaderCmd(
     return TCL_OK;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeHeader_TreeChanged --
+ *
+ *	Called when a TreeCtrl is configured. Performs any relayout
+ *	necessary on column headers.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TreeHeader_TreeChanged(
+    TreeCtrl *tree,		/* Widget info. */
+    int flagT			/* TREE_CONF_xxx flags. */
+    )
+{
+#if 0
+    TreeColumn column;
+
+    /* Column widths are invalidated elsewhere */
+    if (flagT & TREE_CONF_FONT) {
+	column = tree->columns;
+	while (column != NULL) {
+	    if ((column->tkfont == NULL) && (column->textLen > 0)) {
+		column->textWidth = Tk_TextWidth(tree->tkfont, column->text,
+		    column->textLen);
+		column->neededWidth = column->neededHeight = -1;
+		column->textLayoutInvalid = TRUE;
+	    }
+	    column = column->next;
+	}
+	tree->headerHeight = -1;
+    }
+
+    /* Need to do this if the -usetheme option changes or the system
+     * theme changes. */
+    if (flagT & TREE_CONF_RELAYOUT) {
+	column = tree->columns;
+	while (column != NULL) {
+	    column->neededWidth = column->neededHeight = -1;
+	    column = column->next;
+	}
+    }
+#endif
+}
+
 int
 TreeHeader_Init(
     TreeCtrl *tree		/* Widget info. */
@@ -1998,6 +2108,8 @@ TreeHeader_Init(
 
     tree->headerOptionTable = Tk_CreateOptionTable(tree->interp, headerSpecs);
     tree->headerColumnOptionTable = Tk_CreateOptionTable(tree->interp, columnSpecs);
+
+    tree->headerItems = TreeItem_CreateHeader(tree);
 
     return TCL_OK;
 }
