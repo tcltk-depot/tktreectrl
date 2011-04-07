@@ -2159,8 +2159,9 @@ TreeHeaderCmd(
 	COMMAND_STYLE, COMMAND_TAG
     };
     int index;
-    TreeHeader header;
     TreeItemList items;
+    TreeItem item;
+    ItemForEach iter;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 2, objv, "command ?arg arg ...?");
@@ -2191,16 +2192,40 @@ TreeHeaderCmd(
 		Tcl_WrongNumArgs(interp, 3, objv, "header");
 		return TCL_ERROR;
 	    }
-	    if (TreeHeader_FromObj(tree, objv[3], &header) != TCL_OK)
+	    if (TreeHeaderList_FromObj(tree, objv[3], &items, 0) != TCL_OK)
 		return TCL_ERROR;
 
-	    if (TreeItem_ReallyVisible(tree, header->item)) {
-		tree->headerHeight = -1;
-		Tree_InvalidateColumnWidth(tree, NULL);
-	    }
+	    ITEM_FOR_EACH(item, &items, NULL, &iter) {
+		/* The default header can't be deleted */
+		if (item == tree->headerItems)
+		    continue;
 
-	    /* FIXME: ITEM_FLAG_DELETED */
-	    TreeItem_Delete(tree, header->item);
+		if (TreeItem_ReallyVisible(tree, item)) {
+		    tree->headerHeight = -1;
+		    Tree_InvalidateColumnWidth(tree, NULL);
+		}
+
+		/* FIXME: ITEM_FLAG_DELETED */
+		TreeItem_Delete(tree, item);
+	    }
+	    TreeItemList_Free(&items);
+	    break;
+	}
+
+	/* T header id H */
+	case COMMAND_ID: {
+	    Tcl_Obj *listObj;
+
+	    if (TreeHeaderList_FromObj(tree, objv[3], &items, IFO_NOT_NULL) != TCL_OK)
+		return TCL_ERROR;
+
+	    listObj = Tcl_NewListObj(0, NULL);
+	    ITEM_FOR_EACH(item, &items, NULL, &iter) {
+		Tcl_ListObjAppendElement(interp, listObj,
+			TreeItem_ToObj(tree, item));
+	    }
+	    TreeItemList_Free(&items);
+	    Tcl_SetObjResult(interp, listObj);
 	    break;
 	}
 
