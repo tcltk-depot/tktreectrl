@@ -375,13 +375,6 @@ Column_Configure(
     return TCL_OK;
 }
 
-TreeItemColumn
-TreeItem_MakeColumnExist(
-    TreeCtrl *tree,		/* Widget info. */
-    TreeItem item,
-    int columnIndex
-    );
-
 int
 TreeHeader_ConsumeColumnCget(
     TreeCtrl *tree,		/* Widget info. */
@@ -400,9 +393,13 @@ TreeHeader_ConsumeColumnCget(
 	FormatResult(tree->interp, "the default header was deleted!");
 	return TCL_ERROR;
     }
-    itemColumn = TreeItem_MakeColumnExist(tree, tree->headerItems, TreeColumn_Index(treeColumn));
+    itemColumn = TreeItem_FindColumn(tree, tree->headerItems, TreeColumn_Index(treeColumn));
+    if (itemColumn == NULL) {
+	FormatResult(tree->interp, "the default header is missing column %s%d!",
+	    tree->columnPrefix, TreeColumn_GetID(treeColumn));
+	return TCL_ERROR;
+    }
     column = TreeItemColumn_GetHeaderColumn(tree, itemColumn);
-
     resultObjPtr = Tk_GetOptionValue(tree->interp, (char *) column,
 	    tree->headerColumnOptionTable, objPtr, tree->tkwin);
     if (resultObjPtr == NULL)
@@ -422,15 +419,19 @@ TreeHeader_ConsumeColumnConfig(
     TreeItemColumn itemColumn;
     TreeHeaderColumn column;
 
-    if (treeColumn == tree->columnTail) return TCL_OK;
+    if ((objc <= 0) || (treeColumn == tree->columnTail))
+	return TCL_OK;
 
     if (tree->headerItems == NULL) {
 	FormatResult(tree->interp, "the default header was deleted!");
 	return TCL_ERROR;
     }
-    itemColumn = TreeItem_MakeColumnExist(tree, tree->headerItems, TreeColumn_Index(treeColumn));
-    if (objc <= 0)
-	return TCL_OK;
+    itemColumn = TreeItem_FindColumn(tree, tree->headerItems, TreeColumn_Index(treeColumn));
+    if (itemColumn == NULL) {
+	FormatResult(tree->interp, "the default header is missing column %s%d!",
+	    tree->columnPrefix, TreeColumn_GetID(treeColumn));
+	return TCL_ERROR;
+    }
     column = TreeItemColumn_GetHeaderColumn(tree, itemColumn);
     return Column_Configure(TreeItem_GetHeader(tree, tree->headerItems), column, treeColumn, objc, objv, FALSE);
 }

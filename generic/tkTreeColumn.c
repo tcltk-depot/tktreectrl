@@ -4135,16 +4135,26 @@ TreeColumnCmd(
 
 	case COMMAND_CREATE: {
 	    TreeColumn column, last = tree->columnLast;
+#if HEADERS == 1
+	    TreeItem item;
+#endif
 
 	    /* FIXME: -count N -tags $tags */
 	    column = Column_Alloc(tree);
 #if HEADERS == 1
 	    column->index = tree->columnCount - 1;
+
+	    /* Create the item-column and header-column in every header */
+	    item = tree->headerItems;
+	    while (item != NULL) {
+		(void) TreeItem_MakeColumnExist(tree, item, column->index);
+		item = TreeItem_GetNextSibling(tree, item);
+	    }
 #endif
 	    if (Column_Config(column, objc - 3, objv + 3, TRUE) != TCL_OK) {
 #if HEADERS == 1
-		/* Delete the header-column in every header */
-		TreeItem item = tree->headerItems;
+		/* Delete the item-column and header-column in every header */
+		item = tree->headerItems;
 		while (item != NULL) {
 		    TreeItem_RemoveColumns(tree, item, column->index, column->index);
 		    item = TreeItem_GetNextSibling(tree, item);

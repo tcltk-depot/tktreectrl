@@ -712,6 +712,8 @@ MODULE_SCOPE TreeItemDInfo TreeItem_GetDInfo(TreeCtrl *tree, TreeItem item);
 MODULE_SCOPE void TreeItem_SetRInfo(TreeCtrl *tree, TreeItem item, TreeItemRInfo rInfo);
 MODULE_SCOPE TreeItemRInfo TreeItem_GetRInfo(TreeCtrl *tree, TreeItem item);
 
+MODULE_SCOPE TreeItemColumn TreeItem_MakeColumnExist(TreeCtrl *tree,
+    TreeItem item, int columnIndex);
 MODULE_SCOPE TreeItem TreeItem_CreateHeader(TreeCtrl *tree);
 MODULE_SCOPE TreeHeader TreeItem_GetHeader(TreeCtrl *tree, TreeItem item_);
 MODULE_SCOPE TreeHeaderColumn TreeItemColumn_GetHeaderColumn(TreeCtrl *tree, TreeItemColumn itemColumn);
