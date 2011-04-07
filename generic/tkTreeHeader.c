@@ -94,7 +94,6 @@ static CONST char *stateST[] = { "normal", "active", "pressed", (char *) NULL };
 #define COLU_CONF_JUSTIFY	0x0080
 #define COLU_CONF_TEXT		0x0200
 #define COLU_CONF_BITMAP	0x0400
-#define COLU_CONF_RANGES	0x0800
 
 static Tk_OptionSpec columnSpecs[] = {
     {TK_OPTION_STRING_TABLE, "-arrow", (char *) NULL, (char *) NULL,
@@ -184,6 +183,7 @@ static Tk_OptionSpec columnSpecs[] = {
      (char *) NULL, 0, -1, 0, 0, 0}
 };
 
+/* We can also configure -height, -tags and -visible item options */
 static Tk_OptionSpec headerSpecs[] = {
     {TK_OPTION_BOOLEAN, "-ownerdrawn", (char *) NULL, (char *) NULL,
      "0", -1, Tk_Offset(TreeHeader_, ownerDrawn),
@@ -350,14 +350,6 @@ Column_Configure(
 	column->neededHeight = -1;
 	tree->headerHeight = -1;
     }
-
-    /* FIXME: only this column needs to be redisplayed. */
-    if (mask & COLU_CONF_JUSTIFY)
-	Tree_DInfoChanged(tree, DINFO_INVALIDATE);
-
-    /* -stepwidth and -widthhack */
-    if (mask & COLU_CONF_RANGES)
-	Tree_DInfoChanged(tree, DINFO_REDO_RANGES);
 
     /* Redraw everything */
     if (mask & (COLU_CONF_TWIDTH | COLU_CONF_NWIDTH | COLU_CONF_NHEIGHT)) {
@@ -1581,6 +1573,16 @@ TreeHeaderColumn_Draw(
     int width, int height	/* ^ */
     )
 {
+    TreeCtrl *tree = header->tree;
+
+    if (header->ownerDrawn) {
+	GC gc = Tk_3DBorderGC(tree->tkwin, tree->border, TK_3D_FLAT_GC);
+	TreeRectangle tr;
+
+	TreeRect_SetXYWH(tr, x, y, width, height);
+	Tree_FillRectangle(tree, td, NULL, gc, tr);
+	return;
+    }
     Column_Draw(header, column, lock, td, x, y, width, height, visIndex, FALSE);
 }
 
