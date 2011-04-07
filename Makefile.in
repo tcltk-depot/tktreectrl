@@ -239,7 +239,7 @@ demo: binaries libraries
 	@$(WISH) `@CYGPATH@ $(srcdir)/demos/demo.tcl` | cat
 
 gdb:
-	$(TCLSH_ENV) gdb --silent --args $(WISH_PROG) $(srcdir)/demos/demo.tcl
+	@$(TCLSH_ENV) gdb --silent --args $(WISH_PROG) $(srcdir)/demos/demo.tcl
 
 # Type 'make vcexpress' from MSYS to launch the proper wish.exe in the Visual C++
 # 2008 Express Edition debugger.  Start the debugger then type 'source $env(DEMO)'
