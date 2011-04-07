@@ -393,7 +393,8 @@ TreeHeader_ConsumeColumnCget(
     TreeHeaderColumn column;
     Tcl_Obj *resultObjPtr;
 
-    if (treeColumn == tree->columnTail) return TCL_OK;
+    if (treeColumn == tree->columnTail)
+	return TCL_OK;
 
     if (tree->headerItems == NULL) {
 	FormatResult(tree->interp, "the default header was deleted!");
@@ -421,16 +422,15 @@ TreeHeader_ConsumeColumnConfig(
     TreeItemColumn itemColumn;
     TreeHeaderColumn column;
 
-    if (objc <= 0 || treeColumn == tree->columnTail) return TCL_OK;
+    if (treeColumn == tree->columnTail) return TCL_OK;
 
     if (tree->headerItems == NULL) {
 	FormatResult(tree->interp, "the default header was deleted!");
 	return TCL_ERROR;
     }
-    /* FIXME: If the column is being created, and invalid option/values are
-     * passed as arguments, the tree-column will go away but this item-column
-     * will not! */
     itemColumn = TreeItem_MakeColumnExist(tree, tree->headerItems, TreeColumn_Index(treeColumn));
+    if (objc <= 0)
+	return TCL_OK;
     column = TreeItemColumn_GetHeaderColumn(tree, itemColumn);
     return Column_Configure(TreeItem_GetHeader(tree, tree->headerItems), column, treeColumn, objc, objv, FALSE);
 }
@@ -1665,6 +1665,7 @@ TreeHeaderColumn_CreateWithItemColumn(
     }
     column->itemColumn = itemColumn;
     column->neededWidth = column->neededHeight = -1;
+tree->headerHeight = -1;
     return column;
 }
 
@@ -2307,6 +2308,7 @@ TreeHeader_Init(
     tree->headerOptionTable = Tk_CreateOptionTable(tree->interp, headerSpecs);
     tree->headerColumnOptionTable = Tk_CreateOptionTable(tree->interp, columnSpecs);
 
+    /* Create the default/topmost header item.  It can't be deleted. */
     tree->headerItems = TreeItem_CreateHeader(tree);
 
     return TCL_OK;
