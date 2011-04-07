@@ -2248,34 +2248,38 @@ TreeHeader_TreeChanged(
     int flagT			/* TREE_CONF_xxx flags. */
     )
 {
-#if 0
-    TreeColumn column;
+    TreeItem item = tree->headerItems;
+    TreeItemColumn itemColumn;
+    TreeHeaderColumn column;
 
-    /* Column widths are invalidated elsewhere */
-    if (flagT & TREE_CONF_FONT) {
-	column = tree->columns;
-	while (column != NULL) {
-	    if ((column->tkfont == NULL) && (column->textLen > 0)) {
+    if (!(flagT & (TREE_CONF_FONT | TREE_CONF_RELAYOUT)))
+	return;
+
+    while (item != NULL) {
+	itemColumn = TreeItem_GetFirstColumn(tree, item);
+	while (itemColumn != NULL) {
+	    column = TreeItemColumn_GetHeaderColumn(tree, itemColumn);
+	    if (column == NULL)
+		panic("TreeHeader_TreeChanged: item-column is missing its associated header-column");
+	    if ((flagT & TREE_CONF_FONT) && (column->tkfont == NULL) &&
+		    (column->textLen > 0)) {
 		column->textWidth = Tk_TextWidth(tree->tkfont, column->text,
 		    column->textLen);
 		column->neededWidth = column->neededHeight = -1;
 		column->textLayoutInvalid = TRUE;
 	    }
-	    column = column->next;
+	    /* Need to do this if the -usetheme option changes or the system
+	    * theme changes. */
+	    if (flagT & TREE_CONF_RELAYOUT) {
+		column->neededWidth = column->neededHeight = -1;
+	    }
+	    itemColumn = TreeItemColumn_GetNext(tree, itemColumn);
 	}
-	tree->headerHeight = -1;
+	item = TreeItem_GetNextSibling(tree, item);
     }
 
-    /* Need to do this if the -usetheme option changes or the system
-     * theme changes. */
-    if (flagT & TREE_CONF_RELAYOUT) {
-	column = tree->columns;
-	while (column != NULL) {
-	    column->neededWidth = column->neededHeight = -1;
-	    column = column->next;
-	}
-    }
-#endif
+    if (flagT & TREE_CONF_FONT)
+	tree->headerHeight = -1;
 }
 
 int

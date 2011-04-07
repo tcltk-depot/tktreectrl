@@ -611,6 +611,7 @@ MODULE_SCOPE int TreeHeaderCmd(ClientData clientData, Tcl_Interp *interp,
     int objc, Tcl_Obj *CONST objv[]);
 MODULE_SCOPE int Tree_HeightOfHeaderItems(TreeCtrl *tree);
 MODULE_SCOPE int TreeHeaderList_FromObj(TreeCtrl *tree, Tcl_Obj *objPtr, TreeItemList *items, int flags);
+MODULE_SCOPE void TreeHeader_TreeChanged(TreeCtrl *tree, int flagT);
 
 MODULE_SCOPE int TreeHeader_ConsumeColumnCget(TreeCtrl *tree,
     TreeColumn treeColumn, Tcl_Obj *objPtr);

@@ -5492,7 +5492,6 @@ TreeColumn_TreeChanged(
     int flagT			/* TREE_CONF_xxx flags. */
     )
 {
-#if HEADERS == 0
     TreeColumn column;
 
     /* Column widths are invalidated elsewhere */
@@ -5519,8 +5518,9 @@ TreeColumn_TreeChanged(
 	    column = column->next;
 	}
     }
-#endif
 }
+
+#endif /* HEADERS == 0 */
 
 /*
  *----------------------------------------------------------------------

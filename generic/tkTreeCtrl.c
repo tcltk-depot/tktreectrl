@@ -1668,7 +1668,7 @@ badWrap:
     }
 
     TreeStyle_TreeChanged(tree, mask);
-    TreeColumn_TreeChanged(tree, mask);
+    TreeHeader_TreeChanged(tree, mask);
 
     if ((tree->scrollSmoothing & SMOOTHING_X) && !tree->xScrollSmoothing)
 	Tree_SetScrollSmoothingX(tree, FALSE);
@@ -1723,7 +1723,7 @@ TreeWorldChanged(
     tree->textGC = Tk_GetGC(tree->tkwin, gcMask, &gcValues);
 
     TreeStyle_TreeChanged(tree, TREE_CONF_FONT | TREE_CONF_RELAYOUT);
-    TreeColumn_TreeChanged(tree, TREE_CONF_FONT | TREE_CONF_RELAYOUT);
+    TreeHeader_TreeChanged(tree, TREE_CONF_FONT | TREE_CONF_RELAYOUT);
 
     TreeComputeGeometry(tree);
     Tree_InvalidateColumnWidth(tree, NULL);
