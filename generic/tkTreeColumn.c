@@ -2151,14 +2151,16 @@ Column_Config(
     int gridLines, prevGridLines = visible &&
 	    (column->gridLeftColor != NULL ||
 	    column->gridRightColor != NULL);
-	    
 #endif
 
 #if HEADERS == 1
     int objC = 0, hObjC = 0;
-    Tcl_Obj **objV = (Tcl_Obj **) ckalloc(sizeof(Tcl_Obj *) * objc);
-    Tcl_Obj **hObjV = (Tcl_Obj **) ckalloc(sizeof(Tcl_Obj *) * objc);
+    Tcl_Obj *staticObjV[STATIC_SIZE], **objV = staticObjV;
+    Tcl_Obj *staticHObjV[STATIC_SIZE], **hObjV = staticHObjV;
     int i;
+
+    STATIC_ALLOC(objV, Tcl_Obj *, objc);
+    STATIC_ALLOC(hObjV, Tcl_Obj *, objc);
     for (i = 0; i < objc; i += 2) {
 	Tk_OptionSpec *specPtr = columnSpecs;
 	int length;
@@ -2168,6 +2170,12 @@ Column_Config(
 		objV[objC++] = objv[i];
 		if (i + 1 < objc)
 		    objV[objC++] = objv[i + 1];
+		/* Pass -justify to the default header as well */
+		if (strcmp(specPtr->optionName, "-justify") == 0) {
+		    hObjV[hObjC++] = objv[i];
+		    if (i + 1 < objc)
+			hObjV[hObjC++] = objv[i + 1];
+		}
 		break;
 	    }
 	    specPtr++;
@@ -2179,8 +2187,8 @@ Column_Config(
 	}
     }
     if (TreeHeader_ConsumeColumnConfig(tree, column, hObjC, hObjV) != TCL_OK) {
-	ckfree((char *) objV);
-	ckfree((char *) hObjV);
+	STATIC_FREE(objV, Tcl_Obj *, objc);
+	STATIC_FREE(hObjV, Tcl_Obj *, objc);
 	return TCL_ERROR;
     }
 #endif
@@ -2475,9 +2483,9 @@ Column_Config(
     }
 #endif
 
-#if HEADERS == 0
-    ckfree((char *) objV);
-    ckfree((char *) hObjV);
+#if HEADERS == 1
+    STATIC_FREE(objV, Tcl_Obj *, objc);
+    STATIC_FREE(hObjV, Tcl_Obj *, objc);
 #endif
 
     return TCL_OK;
@@ -5478,6 +5486,8 @@ Tree_InvalidateColumnHeight(
 #endif
     tree->headerHeight = -1;
 }
+
+#if HEADERS == 0
 
 /*
  *----------------------------------------------------------------------
