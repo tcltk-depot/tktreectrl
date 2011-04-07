@@ -321,17 +321,18 @@ proc ::TreeCtrl::IdentifyArray {T x y var_} {
 	    elem ""
 	    side ""
 	}
-	if {[lindex $id 2] eq "column" || [lindex $id 2] eq "elem"} {
+	if {[lindex $id 2] eq "column"} {
 	    set var(header) [lindex $id 1]
+	    set var(column) [lindex $id 3]
+	    if {[lindex $id 4] eq "elem"} {
+		set var(elem) [lindex $id 5]
+	    }
 	} else {
 	    set var(header) 0 ; # default header id
 	    set var(column) [lindex $id 1]
-	}
-	if {[lindex $id 2] eq "column"} {
-	    set var(column) [lindex $id 3]
-	}
-	if {[lindex $id 4] eq "elem"} {
-	    set var(elem) [lindex $id 5]
+	    if {[lindex $id 2] eq "elem"} {
+		set var(elem) [lindex $id 3]
+	    }
 	}
 	if {[llength $id] % 2} {
 	    set var(side) [lindex $id end]
