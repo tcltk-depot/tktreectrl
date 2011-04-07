@@ -161,6 +161,7 @@ struct TreeDInfo_
     int complexWhitespace;
 #endif
     Tcl_HashTable itemVisHash;	/* Table of visible items */
+    Tcl_HashTable headerVisHash;/* Table of visible header items */
     int requests;		/* Incremented for every call to
 				   Tree_EventuallyRedraw */
     TreeRectangle bounds;	/* Bounds of TREE_AREA_CONTENT. */
@@ -6720,6 +6721,109 @@ CheckPendingHeaderUpdate(
     }
 }
 
+enum {
+    DISPLAY_OK,
+    DISPLAY_RETRY,
+    DISPLAY_EXIT
+};
+
+static int
+TrackItemVisibility(
+    TreeCtrl *tree,
+    DItem *dItemHead,
+    int isHeaders
+    )
+{
+    TreeDInfo dInfo = tree->dInfo;
+    Tcl_HashTable *tablePtr = isHeaders ? &dInfo->headerVisHash : &dInfo->itemVisHash;
+    DItem *dItem;
+    int requests;
+    Tcl_HashEntry *hPtr;
+    Tcl_HashSearch search;
+    TreeItemList newV, newH;
+    TreeItem item;
+    int isNew, i, count;
+
+    TreeItemList_Init(tree, &newV, 0);
+    TreeItemList_Init(tree, &newH, 0);
+
+    TreeDisplay_GetReadyForTrouble(tree, &requests);
+
+    for (dItem = dItemHead;
+	dItem != NULL;
+	dItem = dItem->next) {
+
+	hPtr = Tcl_FindHashEntry(tablePtr, (char *) dItem->item);
+	if (hPtr == NULL) {
+	    /* This item is now visible, wasn't before */
+	    TreeItemList_Append(&newV, dItem->item);
+	    TreeItem_OnScreen(tree, dItem->item, TRUE);
+	}
+#ifdef DCOLUMN
+	/* The item was onscreen and still is. Figure out which
+	* item-columns have become visible or hidden. */
+	else {
+	    TrackOnScreenColumnsForItem(tree, dItem->item, hPtr);
+	}
+#endif /* DCOLUMN */
+    }
+
+    hPtr = Tcl_FirstHashEntry(tablePtr, &search);
+    while (hPtr != NULL) {
+	item = (TreeItem) Tcl_GetHashKey(tablePtr, hPtr);
+	if (TreeItem_GetDInfo(tree, item) == NULL) {
+	    /* This item was visible but isn't now */
+	    TreeItemList_Append(&newH, item);
+	    TreeItem_OnScreen(tree, item, FALSE);
+	}
+	hPtr = Tcl_NextHashEntry(&search);
+    }
+
+    /* Remove newly-hidden items from itemVisHash */
+    count = TreeItemList_Count(&newH);
+    for (i = 0; i < count; i++) {
+	item = TreeItemList_Nth(&newH, i);
+	hPtr = Tcl_FindHashEntry(tablePtr, (char *) item);
+#ifdef DCOLUMN
+	TrackOnScreenColumnsForItem(tree, item, hPtr);
+	ckfree((char *) Tcl_GetHashValue(hPtr));
+#endif
+	Tcl_DeleteHashEntry(hPtr);
+    }
+
+    /* Add newly-visible items to itemVisHash */
+    count = TreeItemList_Count(&newV);
+    for (i = 0; i < count; i++) {
+	item = TreeItemList_Nth(&newV, i);
+	hPtr = Tcl_CreateHashEntry(tablePtr, (char *) item, &isNew);
+#ifdef DCOLUMN
+	TrackOnScreenColumnsForItem(tree, item, hPtr);
+#endif /* DCOLUMN */
+    }
+
+    if (!isHeaders) {
+	/*
+	 * Generate an <ItemVisibility> event here. This can be used to set
+	 * an item's styles when the item is about to be displayed, and to
+	 * clear an item's styles when the item is no longer displayed.
+	 */
+	if (TreeItemList_Count(&newV) || TreeItemList_Count(&newH)) {
+	    TreeNotify_ItemVisibility(tree, &newV, &newH);
+	}
+    }
+
+    TreeItemList_Free(&newV);
+    TreeItemList_Free(&newH);
+
+    if (tree->deleted || !Tk_IsMapped(tree->tkwin))
+	return DISPLAY_EXIT;
+
+    if (TreeDisplay_WasThereTrouble(tree, requests))
+	return DISPLAY_RETRY;
+
+    return DISPLAY_OK;
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -6958,6 +7062,26 @@ if (dItemHeader != NULL)
     FreeDItems(tree, dItemHeader, NULL, 0);
 dItemHeader = MakeDItemsForHeaderItems(tree, tree->headerItems);
 
+#if 1
+    /*
+     * When an item goes from visible to hidden, "window" elements in the
+     * item must be hidden. An item may become hidden because of scrolling,
+     * or because an ancestor was collapsed, or because the -visible option
+     * of the item changed.
+     */
+    switch (TrackItemVisibility(tree, dInfo->dItem, FALSE)) {
+	case DISPLAY_RETRY: goto displayRetry; break;
+	case DISPLAY_EXIT: goto displayExit; break;
+    }
+
+    /* Also track visibility of header items, but don't generate an
+     * <ItemVisibility> event.  Just make sure that window elements
+     * in any displayed styles in the headers know when they go offscreen. */
+    switch (TrackItemVisibility(tree, dItemHeader, TRUE)) {
+	case DISPLAY_RETRY: goto displayRetry; break;
+	case DISPLAY_EXIT: goto displayExit; break;
+    }
+#else
     /*
      * When an item goes from visible to hidden, "window" elements in the
      * item must be hidden. An item may become hidden because of scrolling,
@@ -7055,6 +7179,7 @@ if (dInfo->dItemLast != NULL) {
 	if (TreeDisplay_WasThereTrouble(tree, requests))
 	    goto displayRetry;
     }
+#endif /* 0 */
 
     tdrawable.width = Tk_Width(tkwin);
     tdrawable.height = Tk_Height(tkwin);
@@ -8725,6 +8850,14 @@ TreeDisplay_ItemDeleted(
 #endif
 	Tcl_DeleteHashEntry(hPtr);
     }
+
+    hPtr = Tcl_FindHashEntry(&dInfo->headerVisHash, (char *) item);
+    if (hPtr != NULL) {
+#ifdef DCOLUMN
+	ckfree((char *) Tcl_GetHashValue(hPtr));
+#endif
+	Tcl_DeleteHashEntry(hPtr);
+    }
 }
 
 /*
@@ -8752,12 +8885,13 @@ TreeDisplay_ColumnDeleted(
 {
 #ifdef DCOLUMN
     TreeDInfo dInfo = tree->dInfo;
+Tcl_HashTable *tablePtr = &dInfo->itemVisHash;
     Tcl_HashSearch search;
     Tcl_HashEntry *hPtr;
     TreeColumn *value;
     int i;
 
-    hPtr = Tcl_FirstHashEntry(&dInfo->itemVisHash, &search);
+    hPtr = Tcl_FirstHashEntry(tablePtr, &search);
     while (hPtr != NULL) {
 	value = (TreeColumn *) Tcl_GetHashValue(hPtr);
 	for (i = 0; value[i] != NULL; i++) {
@@ -8769,12 +8903,16 @@ TreeDisplay_ColumnDeleted(
 		if (tree->debug.enable && tree->debug.span)
 		    dbwin("TreeDisplay_ColumnDeleted item %d column %d\n",
 			TreeItem_GetID(tree, (TreeItem) Tcl_GetHashKey(
-			    &dInfo->itemVisHash, hPtr)),
+			    tablePtr, hPtr)),
 			TreeColumn_GetID(column));
 		break;
 	    }
 	}
 	hPtr = Tcl_NextHashEntry(&search);
+if (hPtr == NULL && tablePtr == &dInfo->itemVisHash) {
+    tablePtr = &dInfo->headerVisHash;
+    hPtr = Tcl_FirstHashEntry(tablePtr, &search);
+}
     }
 #endif
 }
@@ -9298,6 +9436,7 @@ TreeDInfo_Init(
     dInfo->wsRgn = Tree_GetRegion(tree);
     dInfo->dirtyRgn = TkCreateRegion();
     Tcl_InitHashTable(&dInfo->itemVisHash, TCL_ONE_WORD_KEYS);
+    Tcl_InitHashTable(&dInfo->headerVisHash, TCL_ONE_WORD_KEYS);
 #if REDRAW_RGN == 1
     dInfo->redrawRgn = TkCreateRegion();
 #endif /* REDRAW_RGN */
@@ -9371,8 +9510,14 @@ TreeDInfo_Free(
 	ckfree((char *) Tcl_GetHashValue(hPtr));
 	hPtr = Tcl_NextHashEntry(&search);
     }
+    hPtr = Tcl_FirstHashEntry(&dInfo->headerVisHash, &search);
+    while (hPtr != NULL) {
+	ckfree((char *) Tcl_GetHashValue(hPtr));
+	hPtr = Tcl_NextHashEntry(&search);
+    }
 #endif
     Tcl_DeleteHashTable(&dInfo->itemVisHash);
+    Tcl_DeleteHashTable(&dInfo->headerVisHash);
 #if REDRAW_RGN == 1
     TkDestroyRegion(dInfo->redrawRgn);
 #endif /* REDRAW_RGN */
