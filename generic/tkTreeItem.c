@@ -5816,15 +5816,15 @@ doneCONF:
  *----------------------------------------------------------------------
  */
 
-static int
-ItemStyleCmd(
-    ClientData clientData,	/* Widget info. */
-    Tcl_Interp *interp,		/* Current interpreter. */
+int
+TreeItem_StyleCmd(
+    TreeCtrl *tree,
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[]	/* Argument values. */
+    Tcl_Obj *CONST objv[],	/* Argument values. */
+    int doHeaders
     )
 {
-    TreeCtrl *tree = clientData;
+    Tcl_Interp *interp = tree->interp;
     static CONST char *commandNames[] = { "elements", "map", "set", (char *) NULL };
     enum { COMMAND_ELEMENTS, COMMAND_MAP, COMMAND_SET };
     int index;
@@ -5847,8 +5847,14 @@ ItemStyleCmd(
      * [style set] only works on a single item without a column-style pair. */
     if ((index == COMMAND_ELEMENTS) || (index == COMMAND_SET && objc < 7))
 	flags |= IFO_NOT_MANY;
-    if (TreeItemList_FromObj(tree, objv[4], &itemList, flags) != TCL_OK) {
-	return TCL_ERROR;
+    if (doHeaders) {
+	if (TreeHeaderList_FromObj(tree, objv[4], &itemList, flags) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+    } else {
+	if (TreeItemList_FromObj(tree, objv[4], &itemList, flags) != TCL_OK) {
+	    return TCL_ERROR;
+	}
     }
     item = TreeItemList_Nth(&itemList, 0);
 
@@ -6060,6 +6066,18 @@ doneSET:
 
     TreeItemList_Free(&itemList);
     return result;
+}
+
+static int
+ItemStyleCmd(
+    ClientData clientData,	/* Widget info. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *CONST objv[]	/* Argument values. */
+    )
+{
+    TreeCtrl *tree = clientData;
+    return TreeItem_StyleCmd(tree, objc, objv, FALSE);
 }
 
 /* Quicksort is not a "stable" sorting algorithm, but it can become a

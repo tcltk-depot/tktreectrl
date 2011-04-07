@@ -610,6 +610,7 @@ MODULE_SCOPE void TreeHeader_Free(TreeCtrl *tree);
 MODULE_SCOPE int TreeHeaderCmd(ClientData clientData, Tcl_Interp *interp,
     int objc, Tcl_Obj *CONST objv[]);
 MODULE_SCOPE int Tree_HeightOfHeaderItems(TreeCtrl *tree);
+MODULE_SCOPE int TreeHeaderList_FromObj(TreeCtrl *tree, Tcl_Obj *objPtr, TreeItemList *items, int flags);
 
 MODULE_SCOPE TreeHeader TreeHeader_CreateWithItem(TreeCtrl *tree,
     TreeItem item);
@@ -710,6 +711,8 @@ MODULE_SCOPE TreeHeader TreeItem_GetHeader(TreeCtrl *tree, TreeItem item_);
 MODULE_SCOPE TreeHeaderColumn TreeItemColumn_GetHeaderColumn(TreeCtrl *tree, TreeItemColumn itemColumn);
 MODULE_SCOPE int TreeItem_ConfigureSpans(TreeCtrl *tree, TreeItemList *itemList,
     int objc, Tcl_Obj *CONST objv[]);
+MODULE_SCOPE int TreeItem_StyleCmd(TreeCtrl *tree, int objc,
+    Tcl_Obj *CONST objv[], int doHeaders);
 
 MODULE_SCOPE void TreeItem_AppendChild(TreeCtrl *tree, TreeItem self, TreeItem child);
 MODULE_SCOPE void TreeItem_RemoveFromParent(TreeCtrl *tree, TreeItem self);

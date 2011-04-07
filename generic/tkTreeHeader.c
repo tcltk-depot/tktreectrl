@@ -2148,13 +2148,13 @@ TreeHeaderCmd(
     static CONST char *commandNames[] = {
 	"bbox", "cget", "configure", "create", "delete",
 	"dragcget", "dragconfigure", "id", "span",
-	 "tag", (char *) NULL
+	"style", "tag", (char *) NULL
     };
     enum {
 	COMMAND_BBOX, COMMAND_CGET, COMMAND_CONFIGURE,
 	COMMAND_CREATE, COMMAND_DELETE, COMMAND_DRAGCGET,
 	COMMAND_DRAGCONF, COMMAND_ID, COMMAND_SPAN,
-	COMMAND_TAG
+	COMMAND_STYLE, COMMAND_TAG
     };
     int index;
     TreeHeader header;
@@ -2191,6 +2191,12 @@ TreeHeaderCmd(
 	    }
 	    if (TreeHeader_FromObj(tree, objv[3], &header) != TCL_OK)
 		return TCL_ERROR;
+
+	    if (TreeItem_ReallyVisible(tree, header->item)) {
+		tree->headerHeight = -1;
+		Tree_InvalidateColumnWidth(tree, NULL);
+	    }
+
 	    /* FIXME: ITEM_FLAG_DELETED */
 	    TreeItem_Delete(tree, header->item);
 	    break;
@@ -2210,6 +2216,9 @@ TreeHeaderCmd(
 	    }
 	    break;
 	}
+
+	case COMMAND_STYLE:
+	    return TreeItem_StyleCmd(tree, objc, objv, TRUE);
     }
 
     return TCL_OK;
