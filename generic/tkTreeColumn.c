@@ -4142,6 +4142,14 @@ TreeColumnCmd(
 	    column->index = tree->columnCount - 1;
 #endif
 	    if (Column_Config(column, objc - 3, objv + 3, TRUE) != TCL_OK) {
+#if HEADERS == 1
+		/* Delete the header-column in every header */
+		TreeItem item = tree->headerItems;
+		while (item != NULL) {
+		    TreeItem_RemoveColumns(tree, item, column->index, column->index);
+		    item = TreeItem_GetNextSibling(tree, item);
+		}
+#endif
 		Column_Free(column);
 		return TCL_ERROR;
 	    }
