@@ -661,7 +661,7 @@ proc ::TreeCtrl::MotionInHeader {w args} {
 	set column [GetSpanStartColumn $w $header $action(column)]
     }
     if {$header ne $headerPrev || $column ne $columnPrev} {
-	if {$headerPrev ne "" && [$w item id $headerPrev] ne ""} {
+	if {$headerPrev ne "" && [$w header id $headerPrev] ne ""} {
 	    if {$columnPrev ne "" && [$w column id $columnPrev] ne ""} {
 		$w header configure $headerPrev $columnPrev -state normal
 	    }
