@@ -473,6 +473,17 @@ proc ::TreeCtrl::CursorAction {w x y var_} {
 		}
 	    }
 	} elseif {$side eq "right"} {
+	    set span [$w header span $id(header) $column]
+	    for {set index [$w column order $column]} {
+		    $index + 1 < [$w column count] && $span > 1} {incr span -1} {
+		if {[$w column cget "order $index next" -lock] ne
+		    [$w column cget $column -lock]} break
+		if {[$w column cget "order $index next" -visible]} {
+		    incr index
+		}
+	    }
+	    set column [$w column id "order $index"]
+
 	    if {![ColumnCanResizeLeft $w $column]} {
 		if {[$w column cget $column -resize]} {
 		    array set var [list action "header-resize" header $id(header) \
@@ -572,6 +583,49 @@ proc ::TreeCtrl::CursorCancel {w} {
     return
 }
 
+# ::TreeCtrl::GetSpanStarts --
+#
+# This procedure returns a list of column ids, one per tree column.
+# Each column id indicates the column at the start of a span.
+#
+# Arguments:
+# T		The treectrl widget.
+# I		An item id
+
+proc ::TreeCtrl::GetSpanStarts {T H} {
+    set columns [list]
+    set spans [$T header span $H]
+    for {set index 0} {$index < [$T column count]} {}  {
+	set Cspan [$T column id "order $index"]
+	set span [lindex $spans $index]
+	if {![$T column cget $Cspan -visible]} {
+	    set span 1
+	}
+	while {$span > 0 && $index < [$T column count]} {
+	    if {[$T column cget "order $index" -lock] ne [$T column cget $Cspan -lock]} break
+	    lappend columns $Cspan
+	    incr span -1
+	    incr index
+	}
+    }
+    return $columns
+}
+
+# ::TreeCtrl::GetSpanStartColumn --
+#
+# This procedure returns the column at the start of a span which covers the
+# given column.
+#
+# Arguments:
+# T		The treectrl widget.
+# I		An item id
+# C		A column id
+
+proc ::TreeCtrl::GetSpanStartColumn {T H C} {
+    set columns [GetSpanStarts $T $H]
+    return [lindex $columns [$T column order $C]]
+}
+
 # ::TreeCtrl::MotionInHeader --
 #
 # This procedure updates the active/normal states of columns as the pointer
@@ -598,9 +652,12 @@ proc ::TreeCtrl::MotionInHeader {w args} {
     }
     set header ""
     set column ""
-    if {$action(action) eq "header-button" || $action(action) eq "header-resize"} {
+    if {$action(action) eq "header-button"} {
 	set header $action(header)
 	set column $action(column)
+    } elseif {$action(action) eq "header-resize"} {
+	set header $action(header)
+	set column [GetSpanStartColumn $w $header $action(column)]
     }
     if {$header ne $headerPrev || $column ne $columnPrev} {
 	if {$headerPrev ne "" && [$w item id $headerPrev] ne ""} {
