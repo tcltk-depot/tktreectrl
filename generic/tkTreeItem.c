@@ -9292,6 +9292,17 @@ TreeItem_GetRects(
     if (Tree_ItemBbox(tree, item, lock, &tr) < 0)
 	return 0;
 
+if (treeColumn == tree->columnTail) {
+    /* Hack for [identify] */
+    if (item->header != NULL && count == 0) {
+	rects[0].x = tr.x + tr.width;
+	rects[0].y = tr.y;
+	rects[0].width = Tree_ContentRight(tree) - (rects[0].x - tree->xOrigin);
+	rects[0].height = tr.height;
+	return tr.width > 0;
+    }
+}
+
     clientData.treeColumn = treeColumn;
     clientData.count = count;
     clientData.objv = objv;

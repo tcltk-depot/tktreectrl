@@ -987,7 +987,7 @@ static int TreeWidgetCmd(
 		if (TreeItem_GetRects(tree, item, treeColumn, 0, NULL, &tr) == 1) {
 		    if (W2Cx(wx) < TreeRect_Left(tr) + 4)
 			Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("left", -1));
-		    else if (W2Cx(wx) >= TreeRect_Right(tr) - 4)
+		    else if (treeColumn != tree->columnTail && W2Cx(wx) >= TreeRect_Right(tr) - 4)
 			Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("right", -1));
 		}
 		Tcl_SetObjResult(interp, listObj);
