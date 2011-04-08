@@ -352,7 +352,7 @@ proc ::TreeCtrl::ColumnDragFindBefore {w x y dragColumn indColumn_ indSide_} {
     set next [$w column id "$dragColumn next visible"]
     if {[$w column compare $indColumn == "tail"]} {
 	set indSide left
-set indColumn [$w column id "tail prev visible"]
+set indColumn [$w column id "last lock none visible"]
 set indSide right
     } elseif {$prev ne "" && [$w column compare $prev == $indColumn]} {
 	set indSide left

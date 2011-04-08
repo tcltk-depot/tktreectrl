@@ -736,6 +736,31 @@ TreeItem_GetState(
 /*
  *----------------------------------------------------------------------
  *
+ * TreeItemColumn_GetState --
+ *
+ *	Return the state flags for an item-column.
+ *
+ * Results:
+ *	Bit mask of STATE_xxx flags.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TreeItemColumn_GetState(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeItemColumn column	/* Column token. */
+    )
+{
+    return ((Column *) column)->cstate;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Column_ChangeState --
  *
  *	Toggles zero or more STATE_xxx flags for a Column. If the
@@ -4390,15 +4415,9 @@ SpanWalkProc_Draw(
     drawArgs->td = data->td;
 
     if (item->header != NULL) {
+	StyleDrawArgs drawArgsCopy = *drawArgs;
 	TreeHeaderColumn_Draw(item->header, itemColumn->headerColumn,
-	    spanPtr->visIndex, TreeColumn_Lock(treeColumn), drawArgs->td,
-	    drawArgs->x, drawArgs->y, drawArgs->width, drawArgs->height);
-
-	if (drawArgs->style != NULL) {
-	    StyleDrawArgs drawArgsCopy = *drawArgs;
-	    TreeStyle_Draw(&drawArgsCopy);
-	}
-
+	    spanPtr->visIndex, TreeColumn_Lock(treeColumn), &drawArgsCopy);
 	return drawArgs->x + drawArgs->width >= data->maxX;
     }
 
@@ -5496,15 +5515,15 @@ NoStyleMsg(
  *----------------------------------------------------------------------
  */
 
-static int
-ItemElementCmd(
-    ClientData clientData,	/* Widget info. */
-    Tcl_Interp *interp,		/* Current interpreter. */
+int
+TreeItem_ElementCmd(
+    TreeCtrl *tree,
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[]	/* Argument values. */
+    Tcl_Obj *CONST objv[],	/* Argument values. */
+    int doHeaders
     )
 {
-    TreeCtrl *tree = clientData;
+    Tcl_Interp *interp = tree->interp;
     static CONST char *commandNames[] = {
 #ifdef DEPRECATED
 	"actual",
@@ -5540,8 +5559,14 @@ ItemElementCmd(
     if ((index != COMMAND_CONFIGURE) || (objc < 9))
 	flags |= IFO_NOT_MANY;
 
-    if (TreeItemList_FromObj(tree, objv[4], &itemList, flags) != TCL_OK)
-	return TCL_ERROR;
+    if (doHeaders) {
+	if (TreeHeaderList_FromObj(tree, objv[4], &itemList, flags) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+    } else {
+	if (TreeItemList_FromObj(tree, objv[4], &itemList, flags) != TCL_OK)
+	    return TCL_ERROR;
+    }
     item = TreeItemList_Nth(&itemList, 0);
 
     switch (index) {
@@ -5799,6 +5824,18 @@ doneCONF:
 
     TreeItemList_Free(&itemList);
     return result;
+}
+
+static int
+ItemElementCmd(
+    ClientData clientData,	/* Widget info. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *CONST objv[]	/* Argument values. */
+    )
+{
+    TreeCtrl *tree = clientData;
+    return TreeItem_ElementCmd(tree, objc, objv, FALSE);
 }
 
 /*

@@ -94,6 +94,7 @@ typedef struct TreeThemeData_ *TreeThemeData;
 typedef struct TreeGradient_ *TreeGradient;
 typedef struct TreeHeader_ *TreeHeader;
 typedef struct TreeHeaderColumn_ *TreeHeaderColumn;
+typedef struct StyleDrawArgs StyleDrawArgs;
 
 /*****/
 
@@ -627,8 +628,7 @@ MODULE_SCOPE TreeHeaderColumn TreeHeaderColumn_CreateWithItemColumn(
 MODULE_SCOPE void TreeHeaderColumn_FreeResources(TreeCtrl *tree,
     TreeHeaderColumn column);
 MODULE_SCOPE void TreeHeaderColumn_Draw(TreeHeader header,
-    TreeHeaderColumn column, int visIndex, int lock, TreeDrawable td,
-    int x, int y, int width, int height);
+    TreeHeaderColumn column, int visIndex, int lock, StyleDrawArgs *drawArgs);
 MODULE_SCOPE int TreeHeaderColumn_NeededWidth(TreeHeader header,
     TreeHeaderColumn column);
 
@@ -683,6 +683,7 @@ MODULE_SCOPE int TreeItem_Deleted(TreeCtrl *tree, TreeItem item);
 #define STATE_FOCUS	0x0010
 #define STATE_USER	6		/* first user bit */
 MODULE_SCOPE int TreeItem_GetState(TreeCtrl *tree, TreeItem item_);
+MODULE_SCOPE int TreeItemColumn_GetState(TreeCtrl *tree, TreeItemColumn itemColumn);
 
 /* State flags for button state, needed by themes */
 /* FIXME: These may conflict with [state define] states */
@@ -719,6 +720,8 @@ MODULE_SCOPE TreeHeader TreeItem_GetHeader(TreeCtrl *tree, TreeItem item_);
 MODULE_SCOPE TreeHeaderColumn TreeItemColumn_GetHeaderColumn(TreeCtrl *tree, TreeItemColumn itemColumn);
 MODULE_SCOPE int TreeItem_ConfigureSpans(TreeCtrl *tree, TreeItemList *itemList,
     int objc, Tcl_Obj *CONST objv[]);
+MODULE_SCOPE int TreeItem_ElementCmd(TreeCtrl *tree, int objc,
+    Tcl_Obj *CONST objv[], int doHeaders);
 MODULE_SCOPE int TreeItem_StyleCmd(TreeCtrl *tree, int objc,
     Tcl_Obj *CONST objv[], int doHeaders);
 
@@ -780,7 +783,6 @@ MODULE_SCOPE int TreeElement_Init(Tcl_Interp *interp);
 MODULE_SCOPE int TreeStateFromObj(TreeCtrl *tree, Tcl_Obj *obj, int *stateOff, int *stateOn);
 MODULE_SCOPE int StringTableCO_Init(Tk_OptionSpec *optionTable, CONST char *optionName, CONST char **tablePtr);
 
-typedef struct StyleDrawArgs StyleDrawArgs;
 struct StyleDrawArgs
 {
     TreeCtrl *tree;

@@ -1573,12 +1573,12 @@ TreeHeaderColumn_Draw(
     TreeHeaderColumn column,	/* Column token. */
     int visIndex,
     int lock,			/* COLUMN_LOCK_XXX */
-    TreeDrawable td,		/* Where to draw. */
-    int x, int y,		/* Area of the column header to draw. */
-    int width, int height	/* ^ */
+    StyleDrawArgs *drawArgs
     )
 {
     TreeCtrl *tree = header->tree;
+    TreeDrawable td = drawArgs->td;
+    int x = drawArgs->x, y = drawArgs->y, width = drawArgs->width, height = drawArgs->height;
     int isDragColumn = 0;
 
     if (tree->columnDrag.column != NULL) {
@@ -1593,6 +1593,7 @@ TreeHeaderColumn_Draw(
 	int index2 = TreeColumn_Index(tree->columnDrag.indColumn);
 	int index3 = TreeItemColumn_Index(tree, header->item, column->itemColumn);
 	TreeRectangle bbox;
+#if 0
 	if (isDragColumn) {
 	    if (TreeItem_GetRects(tree, header->item, tree->columnDrag.indColumn,
 		    0, NULL, &bbox) == 1) {
@@ -1602,7 +1603,9 @@ TreeHeaderColumn_Draw(
 		    x = bbox.x + bbox.width - width;
 		x -= tree->drawableXOrigin;
 	    }
-	} else if (index3 >= MIN(index1,index2) && index3 <= MAX(index1,index2)) {
+	} else
+#endif
+	if (index3 >= MIN(index1,index2) && index3 <= MAX(index1,index2)) {
 	    if (TreeItem_GetRects(tree, header->item, tree->columnDrag.column,
 		    0, NULL, &bbox) == 1) {
 		if (index1 < index2)
@@ -1610,6 +1613,7 @@ TreeHeaderColumn_Draw(
 		else
 		    x += bbox.width;
 	    }
+	    drawArgs->x = x;
 	}
     }
     if (header->ownerDrawn || isDragColumn) {
@@ -1618,9 +1622,13 @@ TreeHeaderColumn_Draw(
 
 	TreeRect_SetXYWH(tr, x, y, width, height);
 	Tree_FillRectangle(tree, td, NULL, gc, tr);
-	return;
+    } else {
+	Column_Draw(header, column, lock, td, x, y, width, height, visIndex, FALSE);
     }
-    Column_Draw(header, column, lock, td, x, y, width, height, visIndex, FALSE);
+
+    if (!isDragColumn && (drawArgs->style != NULL)) {
+	TreeStyle_Draw(drawArgs); /* may change drawArgs! */
+    }
 }
 
 /*
@@ -1654,6 +1662,7 @@ SetImageForColumn(
     )
 {
     TreeCtrl *tree = header->tree;
+    TreeItem item = header->item;
     Tk_PhotoHandle photoH;
     TreeDrawable td;
     XImage *ximage;
@@ -1672,7 +1681,50 @@ SetImageForColumn(
     td.drawable = Tk_GetPixmap(tree->display, Tk_WindowId(tree->tkwin),
 	    width, height, Tk_Depth(tree->tkwin));
 
-    Column_Draw(header, column, lock, td, 0, 0, width, height, visIndex, TRUE);
+    if (header->ownerDrawn) {
+	GC gc = Tk_3DBorderGC(tree->tkwin, tree->border, TK_3D_FLAT_GC);
+	TreeRectangle tr;
+
+	TreeRect_SetXYWH(tr, 0, 0, width, height);
+	Tree_FillRectangle(tree, td, NULL, gc, tr);
+    } else
+	Column_Draw(header, column, lock, td, 0, 0, width, height, visIndex, TRUE);
+
+    if (TreeItemColumn_GetStyle(tree, column->itemColumn) != NULL) {
+	StyleDrawArgs drawArgs;
+	int area;
+	switch (lock) {
+	    case COLUMN_LOCK_LEFT:
+		area = TREE_AREA_HEADER_LEFT;
+		break;
+	    case COLUMN_LOCK_NONE:
+		area = TREE_AREA_HEADER_NONE;
+		break;
+	    case COLUMN_LOCK_RIGHT:
+		area = TREE_AREA_HEADER_RIGHT;
+		break;
+	}
+	if (!Tree_AreaBbox(tree, area, &drawArgs.bounds)) {
+	    TreeRect_SetXYWH(drawArgs.bounds, 0, 0, 0, 0);
+	}
+	drawArgs.tree = tree;
+	drawArgs.item = item; /* needed for gradients */
+	drawArgs.td = td;
+	drawArgs.state = TreeItem_GetState(tree, item) |
+	    TreeItemColumn_GetState(tree, column->itemColumn);
+	drawArgs.style = TreeItemColumn_GetStyle(tree, column->itemColumn);
+	if (lock == COLUMN_LOCK_NONE && visIndex == 0)
+	    drawArgs.indent = tree->canvasPadX[PAD_TOP_LEFT];
+	else
+	    drawArgs.indent = 0;
+	drawArgs.x = 0;
+	drawArgs.y = 0;
+	drawArgs.width = width,
+	drawArgs.height = height;
+	drawArgs.justify = column->justify;
+	drawArgs.column = Tree_FindColumn(tree, TreeItemColumn_Index(tree, item, column->itemColumn));
+	TreeStyle_Draw(&drawArgs);
+    }
 
     /* Pixmap -> XImage */
     ximage = XGetImage(tree->display, td.drawable, 0, 0,
@@ -1843,9 +1895,10 @@ Header_Configure(
     }
 
     if ((oldVisible != TreeItem_ReallyVisible(tree, header->item)) ||
-	(ownerDrawn != header->ownerDrawn)) {
+	    (ownerDrawn != header->ownerDrawn)) {
 	tree->headerHeight = -1;
 	Tree_InvalidateColumnWidth(tree, NULL);
+	Tree_DInfoChanged(tree, DINFO_DRAW_HEADER);
     }
 
     return TCL_OK;
@@ -2355,13 +2408,13 @@ TreeHeaderCmd(
     TreeCtrl *tree = clientData;
     static CONST char *commandNames[] = {
 	"bbox", "cget", "configure", "create", "delete",
-	"dragcget", "dragconfigure", "id", "span",
+	"dragcget", "dragconfigure", "element", "id", "span",
 	"style", "tag", (char *) NULL
     };
     enum {
 	COMMAND_BBOX, COMMAND_CGET, COMMAND_CONFIGURE,
 	COMMAND_CREATE, COMMAND_DELETE, COMMAND_DRAGCGET,
-	COMMAND_DRAGCONF, COMMAND_ID, COMMAND_SPAN,
+	COMMAND_DRAGCONF, COMMAND_ELEMENT, COMMAND_ID, COMMAND_SPAN,
 	COMMAND_STYLE, COMMAND_TAG
     };
     int index;
@@ -2417,6 +2470,9 @@ TreeHeaderCmd(
 	    TreeItemList_Free(&items);
 	    break;
 	}
+
+	case COMMAND_ELEMENT:
+	    return TreeItem_ElementCmd(tree, objc, objv, TRUE);
 
 	/* T header id H */
 	case COMMAND_ID: {
