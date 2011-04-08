@@ -520,10 +520,11 @@ TreeArea_FromObj(
     int *areaPtr		/* Returned TREE_AREA_xxx constant. */
     )
 {
-    static CONST char *areaName[] = { "content", "header", "left",
-	    "right", (char *) NULL };
-    static CONST int area[4] = { TREE_AREA_CONTENT, TREE_AREA_HEADER,
-	    TREE_AREA_LEFT, TREE_AREA_RIGHT };
+    static CONST char *areaName[] = { "content", "header", "header.left",
+	"header.none", "header.right", "left", "right", (char *) NULL };
+    static CONST int area[] = { TREE_AREA_CONTENT, TREE_AREA_HEADER,
+	TREE_AREA_HEADER_LEFT, TREE_AREA_HEADER_NONE, TREE_AREA_HEADER_RIGHT,
+	TREE_AREA_LEFT, TREE_AREA_RIGHT };
     int index;
 
     if (Tcl_GetIndexFromObj(tree->interp, objPtr, areaName, "area", 0,

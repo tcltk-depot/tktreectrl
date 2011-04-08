@@ -267,49 +267,6 @@ proc ::TreeCtrl::ColumnCanMoveHere {w column before} {
 	[$w column compare $before <= "last lock $lock next"]}]
 }
 
-# ::TreeCtrl::ColumnsBbox --
-#
-# Returns the bounding box of an area of the header.  The [bbox] command
-# can't be used if the items area is completely obscured. [BUG 2355369]
-#
-# Arguments:
-# w		The treectrl widget.
-# area		left, content or right
-
-proc ::TreeCtrl::ColumnsBbox {w area} {
-    if {[$w bbox header] eq ""} return
-    scan [$w bbox header] "%d %d %d %d" x1 y1 x2 y2
-
-    # If the items area is not obscured then use the [bbox] command.
-    if {[$w bbox $area] ne ""} {
-	scan [$w bbox $area] "%d %d %d %d" x1 dummy x2 dummy
-	return "$x1 $y1 $x2 $y2"
-    }
-
-    set contentLeft $x1
-    if {[$w column id "last visible lock left"] ne ""} {
-	scan [$w column bbox "last visible lock left"] "%d %d %d %d" a b c d
-	set contentLeft $c
-    } elseif {$area eq "left"} {
-	return ""
-    }
-
-    set contentRight $x2
-    if {[$w column id "first visible lock right"] ne ""} {
-	scan [$w column bbox "first visible lock right"] "%d %d %d %d" a b c d
-	set contentRight $a
-    } elseif {$area eq "right"} {
-	return ""
-    }
-
-    switch -- $area {
-	left { set result "$x1 $y1 $contentLeft $y2" }
-	content { set result "$contentLeft $y1 $contentRight $y2" }
-	right { set result "$contentRight $y1 $x2 $y2" }
-    }
-    return $result
-}
-
 proc ::TreeCtrl::IdentifyArray {T x y var_} {
     upvar $var_ var
     set id [$T identify $x $y]
@@ -378,15 +335,7 @@ proc ::TreeCtrl::ColumnDragFindBefore {w x y dragColumn indColumn_ indSide_} {
     upvar $indSide_ indSide
 
     set lock [$w column cget $dragColumn -lock]
-    switch -- $lock {
-	left {set area left}
-	none {set area content}
-	right {set area right}
-    }
-
-# BUG 2355369
-#    scan [$w bbox $area] "%d %d %d %d" minX y1 maxX y2
-    scan [ColumnsBbox $w $area] "%d %d %d %d" minX y1 maxX y2
+    scan [$w bbox header.$lock] "%d %d %d %d" minX y1 maxX y2
     if {$x < $minX} {
 	set x $minX
     }
@@ -1402,9 +1351,7 @@ proc ::TreeCtrl::AutoScanCancel {w} {
 proc ::TreeCtrl::ColumnDragScrollCheck {w x y} {
     variable Priv
 
-# BUG 2355369
-#    scan [$w contentbox] "%d %d %d %d" x1 y1 x2 y2
-    scan [ColumnsBbox $w content] "%d %d %d %d" x1 y1 x2 y2
+    scan [$w bbox header.none] "%d %d %d %d" x1 y1 x2 y2
 
     if {($x < $x1) || ($x >= $x2)} {
 	if {![info exists Priv(autoscan,afterId,$w)]} {
