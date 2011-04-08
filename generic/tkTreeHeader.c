@@ -1431,7 +1431,7 @@ Column_Draw(
     if (border == NULL)
 	border = tree->border;
 
-    if (dragImage) {
+    if (0 && dragImage) {
 	GC gc = Tk_GCForColor(tree->columnDrag.color, Tk_WindowId(tree->tkwin));
 	XFillRectangle(tree->display, td.drawable, gc, x, y, width, height);
     } else {
@@ -1547,7 +1547,7 @@ Column_Draw(
 	Tree_FreeRegion(tree, clipRgn);
     }
 
-    if (dragImage)
+    if (0 && dragImage)
 	return;
 
 #if defined(MAC_OSX_TK)
@@ -1579,8 +1579,40 @@ TreeHeaderColumn_Draw(
     )
 {
     TreeCtrl *tree = header->tree;
+    int isDragColumn = 0;
 
-    if (header->ownerDrawn) {
+    if (tree->columnDrag.column != NULL) {
+	TreeColumn treeColumn = Tree_FindColumn(tree, TreeItemColumn_Index(tree, header->item, column->itemColumn));
+	if (tree->columnDrag.column == treeColumn)
+	    isDragColumn = 1;
+    }
+    if (isDragColumn && tree->columnDrag.indColumn != NULL)
+	return;
+    if (tree->columnDrag.indColumn != NULL && tree->columnDrag.column != NULL) {
+	int index1 = TreeColumn_Index(tree->columnDrag.column);
+	int index2 = TreeColumn_Index(tree->columnDrag.indColumn);
+	int index3 = TreeItemColumn_Index(tree, header->item, column->itemColumn);
+	TreeRectangle bbox;
+	if (isDragColumn) {
+	    if (TreeItem_GetRects(tree, header->item, tree->columnDrag.indColumn,
+		    0, NULL, &bbox) == 1) {
+		if (index1 > index2)
+		    x = bbox.x;
+		else
+		    x = bbox.x + bbox.width - width;
+		x -= tree->drawableXOrigin;
+	    }
+	} else if (index3 >= MIN(index1,index2) && index3 <= MAX(index1,index2)) {
+	    if (TreeItem_GetRects(tree, header->item, tree->columnDrag.column,
+		    0, NULL, &bbox) == 1) {
+		if (index1 < index2)
+		    x -= bbox.width;
+		else
+		    x += bbox.width;
+	    }
+	}
+    }
+    if (header->ownerDrawn || isDragColumn) {
 	GC gc = Tk_3DBorderGC(tree->tkwin, tree->border, TK_3D_FLAT_GC);
 	TreeRectangle tr;
 
@@ -1589,6 +1621,125 @@ TreeHeaderColumn_Draw(
 	return;
     }
     Column_Draw(header, column, lock, td, x, y, width, height, visIndex, FALSE);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SetImageForColumn --
+ *
+ *	Set a photo image containing a simplified picture of the header
+ *	of a column. This image is used when dragging and dropping a column
+ *	header.
+ *
+ * Results:
+ *	Token for a photo image, or NULL if the image could not be
+ *	created.
+ *
+ * Side effects:
+ *	A photo image called "::TreeCtrl::ImageColumn" will be created if
+ *	it doesn't exist. The image is set to contain a picture of the
+ *	column header.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static Tk_Image
+SetImageForColumn(
+    TreeHeader header,		/* Header token. */
+    TreeHeaderColumn column,	/* Column record. */
+    int lock,
+    int width,
+    int height
+    )
+{
+    TreeCtrl *tree = header->tree;
+    Tk_PhotoHandle photoH;
+    TreeDrawable td;
+    XImage *ximage;
+    int visIndex = 0; /* FIXME */
+
+    photoH = Tk_FindPhoto(tree->interp, "::TreeCtrl::ImageColumn");
+    if (photoH == NULL) {
+	Tcl_GlobalEval(tree->interp, "image create photo ::TreeCtrl::ImageColumn");
+	photoH = Tk_FindPhoto(tree->interp, "::TreeCtrl::ImageColumn");
+	if (photoH == NULL)
+	    return NULL;
+    }
+
+    td.width = width;
+    td.height = height;
+    td.drawable = Tk_GetPixmap(tree->display, Tk_WindowId(tree->tkwin),
+	    width, height, Tk_Depth(tree->tkwin));
+
+    Column_Draw(header, column, lock, td, 0, 0, width, height, visIndex, TRUE);
+
+    /* Pixmap -> XImage */
+    ximage = XGetImage(tree->display, td.drawable, 0, 0,
+	    (unsigned int)width, (unsigned int)height, AllPlanes, ZPixmap);
+    if (ximage == NULL)
+	panic("tkTreeColumn.c:SetImageForColumn() ximage is NULL");
+
+    /* XImage -> Tk_Image */
+    Tree_XImage2Photo(tree->interp, photoH, ximage, 0, tree->columnDrag.alpha);
+
+    XDestroyImage(ximage);
+    Tk_FreePixmap(tree->display, td.drawable);
+
+    return Tk_GetImage(tree->interp, tree->tkwin, "::TreeCtrl::ImageColumn",
+	NULL, (ClientData) NULL);
+}
+
+void
+TreeHeader_DrawDragImagery(
+    TreeHeader header,		/* Header token. */
+    int lock,			/* COLUMN_LOCK_XXX */
+    TreeDrawable td,		/* Where to draw. */
+    int x, int y,		/* Item bbox. */
+    int width, int height	/* ^ */
+    )
+{
+    TreeCtrl *tree = header->tree;
+    TreeRectangle bbox;
+    Tk_Image image;
+    TreeItemColumn itemColumn;
+    TreeHeaderColumn column;
+
+    if (tree->columnDrag.column == NULL)
+	return;
+
+    if (lock != TreeColumn_Lock(tree->columnDrag.column))
+	return;
+
+    if (TreeItem_GetRects(tree, header->item, tree->columnDrag.column,
+	    0, NULL, &bbox) == 1) {
+	int ix = 0, iy = 0, iw = bbox.width, ih = bbox.height;
+
+	/* Erase the area to be occupied by the dragged column. */
+	if (tree->columnDrag.indColumn != NULL) {
+	    int index1 = TreeColumn_Index(tree->columnDrag.column);
+	    int index2 = TreeColumn_Index(tree->columnDrag.indColumn);
+	    TreeRectangle bbox2;
+	    if (TreeItem_GetRects(tree, header->item, tree->columnDrag.indColumn,
+		    0, NULL, &bbox2) == 1) {
+		GC gc = Tk_3DBorderGC(tree->tkwin, tree->border, TK_3D_FLAT_GC);
+		if (index1 > index2)
+		    bbox.x = bbox2.x;
+		else
+		    bbox.x = bbox2.x + bbox2.width - bbox.width;
+		bbox.x -= tree->drawableXOrigin;
+		bbox.y = y;
+		Tree_FillRectangle(tree, td, NULL, gc, bbox);
+	    }
+	}
+
+	itemColumn = TreeItem_FindColumn(tree, header->item, TreeColumn_Index(tree->columnDrag.column));
+	column = TreeItemColumn_GetHeaderColumn(tree, itemColumn);
+	image = SetImageForColumn(header, column, TreeColumn_Lock(tree->columnDrag.column), iw, ih);
+	x += tree->columnDrag.offset;
+	Tree_RedrawImage(image, ix, iy, iw, ih, td, x + TreeColumn_Offset(tree->columnDrag.column), y);
+	Tk_FreeImage(image);
+    }
 }
 
 static int

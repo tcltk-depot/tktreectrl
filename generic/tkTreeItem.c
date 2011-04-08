@@ -4512,6 +4512,9 @@ TreeItem_Draw(
     TreeItem_WalkSpans(tree, item, lock,
 	    x, y, width, height,
 	    SpanWalkProc_Draw, (ClientData) &clientData);
+
+    if (item->header != NULL)
+	TreeHeader_DrawDragImagery(item->header, lock, td, x, y, width, height);
 }
 
 /*

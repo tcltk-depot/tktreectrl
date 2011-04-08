@@ -352,6 +352,8 @@ proc ::TreeCtrl::ColumnDragFindBefore {w x y dragColumn indColumn_ indSide_} {
     set next [$w column id "$dragColumn next visible"]
     if {[$w column compare $indColumn == "tail"]} {
 	set indSide left
+set indColumn [$w column id "tail prev visible"]
+set indSide right
     } elseif {$prev ne "" && [$w column compare $prev == $indColumn]} {
 	set indSide left
     } elseif {$next ne "" && [$w column compare $next == $indColumn]} {
@@ -1037,9 +1039,15 @@ proc ::TreeCtrl::Release1 {w x y} {
 	    $w column dragconfigure -imagecolumn "" -indicatorcolumn ""
 	    if {$visible && ($column ne "")} {
 		set side [$w column dragcget -indicatorside]
+if 1 {
+		if {[$w column order $Priv(column)] < [$w column order $column]} {
+		    set column [$w column id "$column next visible"]
+		}
+} else {
 		if {$side eq "right"} {
 		    set column [$w column id "$column next visible"]
 		}
+}
 		set lock [$w column cget $Priv(column) -lock]
 		if {$column eq "" || [$w column compare $column > "last lock $lock next"]} {
 		    set column [$w column id "last lock $lock next"]
