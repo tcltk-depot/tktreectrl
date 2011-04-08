@@ -183,11 +183,13 @@ static Tk_OptionSpec columnSpecs[] = {
      (char *) NULL, 0, -1, 0, 0, 0}
 };
 
+#define HEADER_CONF_DISPLAY 0x0001
+
 /* We can also configure -height, -tags and -visible item options */
 static Tk_OptionSpec headerSpecs[] = {
     {TK_OPTION_BOOLEAN, "-ownerdrawn", (char *) NULL, (char *) NULL,
      "0", -1, Tk_Offset(TreeHeader_, ownerDrawn),
-     0, (ClientData) NULL, 0},
+     0, (ClientData) NULL, HEADER_CONF_DISPLAY},
     {TK_OPTION_END, (char *) NULL, (char *) NULL, (char *) NULL,
      (char *) NULL, 0, -1, 0, 0, 0}
 };
@@ -1071,6 +1073,9 @@ TreeHeaderColumn_NeededWidth(
     if (!tree->showHeader)
 	return 0;
 
+    if (header->ownerDrawn)
+	return 0;
+
     if (column->neededWidth >= 0)
 	return column->neededWidth;
 
@@ -1599,11 +1604,44 @@ Header_Configure(
     int error;
     Tcl_Obj *errorResult = NULL;
     int mask;
+    int objC = 0, iObjC = 0;
+    Tcl_Obj *staticObjV[STATIC_SIZE], **objV = staticObjV;
+    Tcl_Obj *staticIObjV[STATIC_SIZE], **iObjV = staticIObjV;
+    int i, oldVisible = TreeItem_ReallyVisible(tree, header->item);
+    int ownerDrawn = header->ownerDrawn;
+
+    /* Hack -- Pass some options to the underlying item. */
+    STATIC_ALLOC(objV, Tcl_Obj *, objc);
+    STATIC_ALLOC(iObjV, Tcl_Obj *, objc);
+    for (i = 0; i < objc; i += 2) {
+	Tk_OptionSpec *specPtr = headerSpecs;
+	int length;
+	CONST char *optionName = Tcl_GetStringFromObj(objv[i], &length);
+	while (specPtr->type != TK_OPTION_END) {
+	    if (strncmp(specPtr->optionName, optionName, length) == 0) {
+		objV[objC++] = objv[i];
+		if (i + 1 < objc)
+		    objV[objC++] = objv[i + 1];
+		break;
+	    }
+	    specPtr++;
+	}
+	if (specPtr->type == TK_OPTION_END) {
+	    iObjV[iObjC++] = objv[i];
+	    if (i + 1 < objc)
+		iObjV[iObjC++] = objv[i + 1];
+	}
+    }
+    if (TreeItem_ConsumeHeaderConfig(tree, header->item, iObjC, iObjV) != TCL_OK) {
+	STATIC_FREE(objV, Tcl_Obj *, objc);
+	STATIC_FREE(iObjV, Tcl_Obj *, objc);
+	return TCL_ERROR;
+    }
 
     for (error = 0; error <= 1; error++) {
 	if (error == 0) {
 	    if (Tk_SetOptions(tree->interp, (char *) header,
-			tree->headerOptionTable, objc, objv, tree->tkwin,
+			tree->headerOptionTable, objC, objV, tree->tkwin,
 			&savedOptions, &mask) != TCL_OK) {
 		mask = 0;
 		continue;
@@ -1627,6 +1665,9 @@ Header_Configure(
 	     */
 
 	    Tk_FreeSavedOptions(&savedOptions);
+
+	    STATIC_FREE(objV, Tcl_Obj *, objc);
+	    STATIC_FREE(iObjV, Tcl_Obj *, objc);
 	    break;
 	} else {
 	    errorResult = Tcl_GetObjResult(tree->interp);
@@ -1643,8 +1684,17 @@ Header_Configure(
 
 	    Tcl_SetObjResult(tree->interp, errorResult);
 	    Tcl_DecrRefCount(errorResult);
+
+	    STATIC_FREE(objV, Tcl_Obj *, objc);
+	    STATIC_FREE(iObjV, Tcl_Obj *, objc);
 	    return TCL_ERROR;
 	}
+    }
+
+    if ((oldVisible != TreeItem_ReallyVisible(tree, header->item)) ||
+	(ownerDrawn != header->ownerDrawn)) {
+	tree->headerHeight = -1;
+	Tree_InvalidateColumnWidth(tree, NULL);
     }
 
     return TCL_OK;
@@ -1728,6 +1778,9 @@ TreeHeader_NeededHeight(
     TreeCtrl *tree = header->tree;
     TreeItemColumn itemColumn;
     int maxHeight = 0;
+
+    if (header->ownerDrawn)
+	return 0;
 
     for (itemColumn = TreeItem_GetFirstColumn(tree, header->item);
 	    itemColumn != NULL;

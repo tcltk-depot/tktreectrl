@@ -9375,6 +9375,20 @@ TreeItemColumn_GetHeaderColumn(
     return ((Column *)column)->headerColumn;
 }
 
+int
+TreeItem_ConsumeHeaderConfig(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeItem item,		/* Item token. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *CONST objv[]	/* Argument values. */
+    )
+{
+    if (objc <= 0)
+	return TCL_OK;
+
+    return Item_Configure(tree, item, objc, objv);
+}
+
 /*
  *----------------------------------------------------------------------
  *
