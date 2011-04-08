@@ -2159,6 +2159,7 @@ Column_Config(
     Tcl_Obj *staticHObjV[STATIC_SIZE], **hObjV = staticHObjV;
     int i;
 
+    /* Hack -- Pass some options to the underlying header */
     STATIC_ALLOC(objV, Tcl_Obj *, objc);
     STATIC_ALLOC(hObjV, Tcl_Obj *, objc);
     for (i = 0; i < objc; i += 2) {
@@ -2315,6 +2316,10 @@ Column_Config(
 	    if (mask & COLU_CONF_ITEMBG)
 		Column_FreeColors(column, saved.itemBgColor, saved.itemBgCount);
 	    Tk_FreeSavedOptions(&savedOptions);
+#if HEADERS == 1
+	    STATIC_FREE(objV, Tcl_Obj *, objc);
+	    STATIC_FREE(hObjV, Tcl_Obj *, objc);
+#endif
 	    break;
 	} else {
 	    errorResult = Tcl_GetObjResult(tree->interp);
@@ -2345,9 +2350,9 @@ Column_Config(
 
 	    Tcl_SetObjResult(tree->interp, errorResult);
 	    Tcl_DecrRefCount(errorResult);
-#if HEADERS == 0
-	    ckfree((char *) objV);
-	    ckfree((char *) hObjV);
+#if HEADERS == 1
+	    STATIC_FREE(objV, Tcl_Obj *, objc);
+	    STATIC_FREE(hObjV, Tcl_Obj *, objc);
 #endif
 	    return TCL_ERROR;
 	}
@@ -2481,11 +2486,6 @@ Column_Config(
 	tree->columnsWithGridLines += gridLines ? 1 : -1;
 /*dbwin("tree->columnsWithGridLines is now %d", tree->columnsWithGridLines);*/
     }
-#endif
-
-#if HEADERS == 1
-    STATIC_FREE(objV, Tcl_Obj *, objc);
-    STATIC_FREE(hObjV, Tcl_Obj *, objc);
 #endif
 
     return TCL_OK;
