@@ -844,10 +844,11 @@ proc ::TreeCtrl::Motion1 {w x y} {
 		if {[$w column dragcget -enable] &&
 		    (abs($Priv(columnDrag,x) - $x) > 4)} {
 		    $w column dragconfigure \
+			-header $Priv(header) \
 			-imagecolumn $Priv(column) \
 			-imageoffset [expr {$x - $Priv(columnDrag,x)}]
 		    set Priv(buttonMode) dragColumn
-		    TryEvent $w ColumnDrag begin [list C $Priv(column)]
+		    TryEvent $w ColumnDrag begin [list H $Priv(header) C $Priv(column)]
 		}
 	    }
 	}
@@ -874,7 +875,7 @@ proc ::TreeCtrl::Motion1 {w x y} {
 		    -imagecolumn $Priv(column) \
 		    -imageoffset [expr {$x - $Priv(columnDrag,x)}]
 		set Priv(buttonMode) dragColumn
-		TryEvent $w ColumnDrag begin [list C $Priv(column)]
+		TryEvent $w ColumnDrag begin [list H $Priv(header) C C $Priv(column)]
 	    }
 	}
 	dragColumn {
@@ -1052,7 +1053,7 @@ if 1 {
 		if {$column eq "" || [$w column compare $column > "last lock $lock next"]} {
 		    set column [$w column id "last lock $lock next"]
 		}
-		TryEvent $w ColumnDrag receive [list C $Priv(column) b $column]
+		TryEvent $w ColumnDrag receive [list H $Priv(header) C $Priv(column) b $column]
 	    }
 	    IdentifyArray $w $x $y id
 	    if {$id(where) eq "header"} {
@@ -1064,7 +1065,7 @@ if 1 {
 		    }
 		}
 	    }
-	    TryEvent $w ColumnDrag end [list C $Priv(column)]
+	    TryEvent $w ColumnDrag end [list H $Priv(header) C $Priv(column)]
 	}
 	normal {
 	    AutoScanCancel $w

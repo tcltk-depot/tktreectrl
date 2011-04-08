@@ -237,6 +237,7 @@ struct TreeCtrlColumnDrag
 {
     Tk_OptionTable optionTable;
     int enable;			/* -enable */
+    TreeHeader header;		/* -header */
     TreeColumn column;		/* -imagecolumn */
     Tcl_Obj *offsetObj;		/* -imageoffset */
     int offset;			/* -imageoffset */
@@ -606,6 +607,7 @@ MODULE_SCOPE int Tree_StateFromListObj(TreeCtrl *tree, Tcl_Obj *obj, int states[
     (Tree_ContentBottom(tree) - Tree_ContentTop(tree))
 
 /* tkTreeHeader.c */
+
 MODULE_SCOPE int TreeHeader_Init(TreeCtrl *tree);
 MODULE_SCOPE void TreeHeader_Free(TreeCtrl *tree);
 MODULE_SCOPE int TreeHeaderCmd(ClientData clientData, Tcl_Interp *interp,
@@ -618,11 +620,9 @@ MODULE_SCOPE int TreeHeader_ConsumeColumnCget(TreeCtrl *tree,
     TreeColumn treeColumn, Tcl_Obj *objPtr);
 MODULE_SCOPE int TreeHeader_ConsumeColumnConfig(TreeCtrl *tree,
     TreeColumn treeColumn, int objc, Tcl_Obj *CONST objv[]);
-
 MODULE_SCOPE TreeHeader TreeHeader_CreateWithItem(TreeCtrl *tree,
     TreeItem item);
 MODULE_SCOPE void TreeHeader_FreeResources(TreeHeader header);
-
 MODULE_SCOPE TreeHeaderColumn TreeHeaderColumn_CreateWithItemColumn(
     TreeHeader header, TreeItemColumn itemColumn);
 MODULE_SCOPE void TreeHeaderColumn_FreeResources(TreeCtrl *tree,
@@ -631,8 +631,12 @@ MODULE_SCOPE void TreeHeaderColumn_Draw(TreeHeader header,
     TreeHeaderColumn column, int visIndex, int lock, StyleDrawArgs *drawArgs);
 MODULE_SCOPE int TreeHeaderColumn_NeededWidth(TreeHeader header,
     TreeHeaderColumn column);
-
 MODULE_SCOPE TreeItem Tree_HeaderUnderPoint(TreeCtrl *tree, int *x_, int *y_, int *lock);
+MODULE_SCOPE int TreeHeader_FromObj(TreeCtrl *tree, Tcl_Obj *objPtr,
+    TreeHeader *headerPtr);
+MODULE_SCOPE Tcl_Obj* TreeHeader_ToObj(TreeCtrl *tree, TreeHeader header);
+
+MODULE_SCOPE Tk_ObjCustomOption TreeCtrlCO_header;
 
 /* tkTreeItem.c */
 

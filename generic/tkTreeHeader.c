@@ -197,6 +197,147 @@ static Tk_OptionSpec headerSpecs[] = {
 /*
  *----------------------------------------------------------------------
  *
+ * HeaderCO_Set --
+ *
+ *	Tk_ObjCustomOption.setProc(). Converts a Tcl_Obj holding a
+ *	header description into a TreeHeader.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	May store a TreeHeader pointer into the internal representation
+ *	pointer.  May change the pointer to the Tcl_Obj to NULL to indicate
+ *	that the specified string was empty and that is acceptable.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+HeaderCO_Set(
+    ClientData clientData,	/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    Tk_Window tkwin,		/* Window for which option is being set. */
+    Tcl_Obj **value,		/* Pointer to the pointer to the value object.
+				 * We use a pointer to the pointer because
+				 * we may need to return a value (NULL). */
+    char *recordPtr,		/* Pointer to storage for the widget record. */
+    int internalOffset,		/* Offset within *recordPtr at which the
+				 * internal value is to be stored. */
+    char *saveInternalPtr,	/* Pointer to storage for the old value. */
+    int flags			/* Flags for the option, set Tk_SetOptions. */
+    )
+{
+    TreeCtrl *tree = (TreeCtrl *) ((TkWindow *) tkwin)->instanceData;
+    int objEmpty;
+    TreeHeader new, *internalPtr;
+
+    if (internalOffset >= 0)
+	internalPtr = (TreeHeader *) (recordPtr + internalOffset);
+    else
+	internalPtr = NULL;
+
+    objEmpty = ObjectIsEmpty((*value));
+
+    if ((flags & TK_OPTION_NULL_OK) && objEmpty)
+	(*value) = NULL;
+    else {
+	if (TreeHeader_FromObj(tree, (*value), &new) != TCL_OK)
+	    return TCL_ERROR;
+    }
+    if (internalPtr != NULL) {
+	if ((*value) == NULL)
+	    new = NULL;
+	*((TreeHeader *) saveInternalPtr) = *internalPtr;
+	*internalPtr = new;
+    }
+
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * HeaderCO_Get --
+ *
+ *	Tk_ObjCustomOption.getProc(). Converts a TreeHeader into a
+ *	Tcl_Obj string representation.
+ *
+ * Results:
+ *	Tcl_Obj containing the string representation of the header.
+ *	Returns NULL if the TreeHeader is NULL.
+ *
+ * Side effects:
+ *	May create a new Tcl_Obj.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static Tcl_Obj *
+HeaderCO_Get(
+    ClientData clientData,	/* Not used. */
+    Tk_Window tkwin,		/* Window for which option is being set. */
+    char *recordPtr,		/* Pointer to widget record. */
+    int internalOffset		/* Offset within *recordPtr containing the
+				 * sticky value. */
+    )
+{
+    TreeHeader value = *(TreeHeader *) (recordPtr + internalOffset);
+    TreeCtrl *tree = (TreeCtrl *) ((TkWindow *) tkwin)->instanceData;
+    if (value == NULL)
+	return NULL;
+#if 0
+    if (value == COLUMN_ALL)
+	return Tcl_NewStringObj("all", -1);
+#endif
+    return TreeHeader_ToObj(tree, value);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * HeaderCO_Restore --
+ *
+ *	Tk_ObjCustomOption.restoreProc(). Restores a TreeHeader value
+ *	from a saved value.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Restores the old value.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+HeaderCO_Restore(
+    ClientData clientData,	/* Not used. */
+    Tk_Window tkwin,		/* Not used. */
+    char *internalPtr,		/* Where to store old value. */
+    char *saveInternalPtr)	/* Pointer to old value. */
+{
+    *(TreeHeader *) internalPtr = *(TreeHeader *) saveInternalPtr;
+}
+
+/*
+ * The following structure contains pointers to functions used for processing
+ * a custom config option that handles Tcl_Obj<->TreeHeader conversion.
+ * A header description must refer to a single header.
+ */
+Tk_ObjCustomOption TreeCtrlCO_header =
+{
+    "header",
+    HeaderCO_Set,
+    HeaderCO_Get,
+    HeaderCO_Restore,
+    NULL,
+    (ClientData) 0
+};
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Column_Configure --
  *
  *	This procedure is called to process an objc/objv list to set
@@ -1579,16 +1720,17 @@ TreeHeaderColumn_Draw(
     TreeCtrl *tree = header->tree;
     TreeDrawable td = drawArgs->td;
     int x = drawArgs->x, y = drawArgs->y, width = drawArgs->width, height = drawArgs->height;
+    int isDragHeader = tree->columnDrag.header == header;
     int isDragColumn = 0;
 
-    if (tree->columnDrag.column != NULL) {
+    if (isDragHeader && tree->columnDrag.column != NULL) {
 	TreeColumn treeColumn = Tree_FindColumn(tree, TreeItemColumn_Index(tree, header->item, column->itemColumn));
 	if (tree->columnDrag.column == treeColumn)
 	    isDragColumn = 1;
     }
     if (isDragColumn && tree->columnDrag.indColumn != NULL)
 	return;
-    if (tree->columnDrag.indColumn != NULL && tree->columnDrag.column != NULL) {
+    if (isDragHeader && tree->columnDrag.indColumn != NULL && tree->columnDrag.column != NULL) {
 	int index1 = TreeColumn_Index(tree->columnDrag.column);
 	int index2 = TreeColumn_Index(tree->columnDrag.indColumn);
 	int index3 = TreeItemColumn_Index(tree, header->item, column->itemColumn);
@@ -1756,6 +1898,9 @@ TreeHeader_DrawDragImagery(
     Tk_Image image;
     TreeItemColumn itemColumn;
     TreeHeaderColumn column;
+
+    if (tree->columnDrag.header != header)
+	return;
 
     if (tree->columnDrag.column == NULL)
 	return;
@@ -2210,6 +2355,38 @@ TreeHeader_FromObj(
     return TCL_OK;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeHeader_ToObj --
+ *
+ *	Convert a TreeHeader to a Tcl_Obj.
+ *
+ * Results:
+ *	A new Tcl_Obj representing the TreeHeader.
+ *
+ * Side effects:
+ *	Memory is allocated.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+TreeHeader_ToObj(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeHeader header		/* Header token. */
+    )
+{
+#if 0
+    if (tree->itemPrefixLen) {
+	char buf[100 + TCL_INTEGER_SPACE];
+	(void) sprintf(buf, "%s%d", tree->itemPrefix, item->id);
+	return Tcl_NewStringObj(buf, -1);
+    }
+#endif
+    return Tcl_NewIntObj(TreeItem_GetID(tree, header->item));
+}
+
 static int
 cmd_header_create(
     ClientData clientData,	/* Widget info. */
@@ -2463,6 +2640,9 @@ TreeHeaderCmd(
 		    tree->headerHeight = -1;
 		    Tree_InvalidateColumnWidth(tree, NULL);
 		}
+
+		if (tree->columnDrag.header == TreeItem_GetHeader(tree, item))
+		    tree->columnDrag.header = NULL;
 
 		/* FIXME: ITEM_FLAG_DELETED */
 		TreeItem_Delete(tree, item);
