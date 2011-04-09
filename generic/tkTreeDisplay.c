@@ -2255,8 +2255,8 @@ Tree_ItemBbox(
 		tr->width = Tree_WidthOfColumns(tree);
 		tr->x = 0/*tree->canvasPadX[PAD_TOP_LEFT]*/;
 		tr->width = tree->canvasPadX[PAD_TOP_LEFT] + Tree_WidthOfColumns(tree);
-		if (tr->width < Tree_ContentWidth(tree)) {
-		    tr->width = Tree_ContentWidth(tree);
+		if (tr->width < Tree_FakeCanvasWidth(tree)) {
+		    tr->width = Tree_FakeCanvasWidth(tree);
 		}
 		break;
 	    case COLUMN_LOCK_RIGHT:
@@ -2918,8 +2918,9 @@ GetOnScreenColumnsForItemAux(
     )
 {
     int minX, maxX, columnIndex = 0, x = 0, i, width;
-    TreeColumn column = NULL, column2;
+    TreeColumn column = NULL, column2, column3;
     int columnCount = tree->columnCount;
+    int tailOK = TreeItem_GetHeader(tree, dItem->item) != NULL;
 
     minX = MAX(area->x, TreeRect_Left(bounds));
     maxX = MIN(area->x + area->width, TreeRect_Right(bounds));
@@ -2928,32 +2929,38 @@ GetOnScreenColumnsForItemAux(
     maxX -= area->x;
 
 #if 1
+    if (TreeItem_GetHeader(tree, dItem->item) != NULL)
+	x += tree->canvasPadX[PAD_TOP_LEFT];
     for (column = Tree_FirstColumn(tree, lock, TRUE);
 	    column != NULL;
-	    column = Tree_ColumnToTheRight(column, TRUE, TRUE)) {
+	    column = Tree_ColumnToTheRight(column, TRUE, tailOK)) {
 	if (TreeColumn_Lock(column) != lock)
 	    break;
 	width = TreeColumn_GetDInfo(column)->width;
 	if (width == 0) /* also handles hidden columns */
 	    continue;
+	column3 = column;
 	if (dItem->spans != NULL) {
 	    columnIndex = TreeColumn_Index(column);
 	    /* FIXME: not possible since I skip over the entire span. */
 	    if (dItem->spans[columnIndex] != columnIndex)
 		continue;
 	    /* Calculate the width of the span. */
-	    for (i = columnIndex, column2 = Tree_ColumnToTheRight(column, TRUE, TRUE);
+	    for (i = columnIndex + 1, column2 = Tree_ColumnToTheRight(column, TRUE, tailOK);
 		    column2 != NULL && dItem->spans[i] == columnIndex;
-		    i++, column2 = Tree_ColumnToTheRight(column2, TRUE, TRUE)) {
+		    i++, column2 = Tree_ColumnToTheRight(column2, TRUE, tailOK)) {
 		width += TreeColumn_GetDInfo(column2)->width;
+		column3 = column2;
 	    }
 	}
 	if (x < maxX && x + width > minX) {
 	    TreeColumnList_Append(columns, column);
+if (columns->count > columnCount) DebugBreak();
 	}
 	x += width;
 	if (x >= maxX)
 	    break;
+	column = column3;
     }
 #else
     switch (lock) {
@@ -8609,7 +8616,7 @@ Tree_FocusChanged(
     else
 	stateOff = STATE_FOCUS, stateOn = 0;
 
-    /* Slow. Change state of every item */
+    /* Slow. Change state of every header */
     item = tree->headerItems;
     while (item != NULL) {
 	TreeItem_ChangeState(tree, item, stateOff, stateOn);
@@ -8931,6 +8938,10 @@ Tcl_HashTable *tablePtr = &dInfo->itemVisHash;
     int i;
 
     hPtr = Tcl_FirstHashEntry(tablePtr, &search);
+if (hPtr == NULL) {
+    tablePtr = &dInfo->headerVisHash;
+    hPtr = Tcl_FirstHashEntry(tablePtr, &search);
+}
     while (hPtr != NULL) {
 	value = (TreeColumn *) Tcl_GetHashValue(hPtr);
 	for (i = 0; value[i] != NULL; i++) {

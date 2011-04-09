@@ -4220,7 +4220,7 @@ TreeColumnCmd(
 		/* Delete the item-column and header-column in every header */
 		item = tree->headerItems;
 		while (item != NULL) {
-		    TreeItem_RemoveColumns(tree, item, column->index-1, column->index-1);
+		    TreeItem_RemoveColumns(tree, item, column->index, column->index);
 		    item = TreeItem_GetNextSibling(tree, item);
 		}
 #endif

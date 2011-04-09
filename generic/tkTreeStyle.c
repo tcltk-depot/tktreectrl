@@ -3724,13 +3724,18 @@ Style_Changed(
     TreeItem item;
     TreeItemColumn column;
     TreeColumn treeColumn;
+    Tcl_HashTable *tablePtr = &tree->itemHash;
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
     int columnIndex, layout;
     int updateDInfo = FALSE;
     IStyle *style;
 
-    hPtr = Tcl_FirstHashEntry(&tree->itemHash, &search);
+    hPtr = Tcl_FirstHashEntry(tablePtr, &search);
+if (hPtr == NULL) {
+    tablePtr = &tree->headerHash;
+    hPtr = Tcl_FirstHashEntry(tablePtr, &search);
+}
     while (hPtr != NULL) {
 	item = (TreeItem) Tcl_GetHashValue(hPtr);
 	treeColumn = Tree_FirstColumn(tree, -1, TreeItem_GetHeader(tree, item) != NULL);
@@ -3763,7 +3768,10 @@ Style_Changed(
 	    updateDInfo = TRUE;
 	}
 	hPtr = Tcl_NextHashEntry(&search);
-if (hPtr == NULL && TreeItem_GetHeader(tree, item) == NULL) hPtr = Tcl_FirstHashEntry(&tree->headerHash, &search);
+if (hPtr == NULL && tablePtr == &tree->itemHash) {
+    tablePtr = &tree->headerHash;
+    hPtr = Tcl_FirstHashEntry(&tree->headerHash, &search);
+}
     }
     if (updateDInfo)
 	Tree_DInfoChanged(tree, DINFO_REDO_RANGES);
@@ -3962,6 +3970,7 @@ Style_ChangeElements(
     TreeItem item;
     TreeItemColumn column;
     TreeColumn treeColumn;
+    Tcl_HashTable *tablePtr = &tree->itemHash;
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
     int columnIndex, layout;
@@ -4020,7 +4029,11 @@ Style_ChangeElements(
     oldCount = masterStyle->numElements;
     MStyle_ChangeElementsAux(tree, masterStyle, count, elemList, map);
 
-    hPtr = Tcl_FirstHashEntry(&tree->itemHash, &search);
+    hPtr = Tcl_FirstHashEntry(tablePtr, &search);
+if (hPtr == NULL) {
+    tablePtr = &tree->headerHash;
+    hPtr = Tcl_FirstHashEntry(tablePtr, &search);
+}
     while (hPtr != NULL) {
 	item = (TreeItem) Tcl_GetHashValue(hPtr);
 	treeColumn = Tree_FirstColumn(tree, -1, TreeItem_GetHeader(tree, item) != NULL);
@@ -4046,7 +4059,10 @@ Style_ChangeElements(
 	    updateDInfo = TRUE;
 	}
 	hPtr = Tcl_NextHashEntry(&search);
-if (hPtr == NULL && TreeItem_GetHeader(tree, item) == NULL) hPtr = Tcl_FirstHashEntry(&tree->headerHash, &search);
+if (hPtr == NULL && tablePtr == &tree->itemHash) {
+    tablePtr = &tree->headerHash;
+    hPtr = Tcl_FirstHashEntry(tablePtr, &search);
+}
     }
     if (updateDInfo)
 	Tree_DInfoChanged(tree, DINFO_REDO_RANGES);
@@ -4089,6 +4105,7 @@ Style_ElemChanged(
     TreeItem item;
     TreeItemColumn column;
     TreeColumn treeColumn;
+    Tcl_HashTable *tablePtr = &tree->itemHash;
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
     IElementLink *eLink;
@@ -4096,18 +4113,22 @@ Style_ElemChanged(
     TreeElementArgs args;
     IStyle *style;
     int eMask, cMask, iMask;
-    int updateDInfo = FALSE;
+    int updateDInfo = FALSE, tailOK;
 
     args.tree = tree;
     args.change.flagTree = flagT;
     args.change.flagMaster = flagM;
     args.change.flagSelf = 0;
 
-    hPtr = Tcl_FirstHashEntry(&tree->itemHash, &search);
+    hPtr = Tcl_FirstHashEntry(tablePtr, &search);
+if (hPtr == NULL) {
+    tablePtr = &tree->headerHash;
+    hPtr = Tcl_FirstHashEntry(tablePtr, &search);
+}
     while (hPtr != NULL) {
 	item = (TreeItem) Tcl_GetHashValue(hPtr);
-	treeColumn = tree->columns;
-if (TreeItem_GetHeader(tree, item) != NULL && treeColumn == NULL) treeColumn = tree->columnTail;
+	tailOK = TreeItem_GetHeader(tree, item) != NULL;
+	treeColumn = Tree_FirstColumn(tree, -1, tailOK);
 	column = TreeItem_GetFirstColumn(tree, item);
 	columnIndex = 0;
 	iMask = 0;
@@ -4145,9 +4166,7 @@ if (TreeItem_GetHeader(tree, item) != NULL && treeColumn == NULL) treeColumn = t
 	    }
 	    columnIndex++;
 	    column = TreeItemColumn_GetNext(tree, column);
-if (treeColumn == tree->columnTail) break;
-	    treeColumn = TreeColumn_Next(treeColumn);
-if (treeColumn == NULL) treeColumn = tree->columnTail;
+	    treeColumn = Tree_ColumnToTheRight(treeColumn, FALSE, tailOK);
 	}
 	if (iMask & CS_LAYOUT) {
 	    TreeItem_InvalidateHeight(tree, item);
@@ -4157,7 +4176,10 @@ if (treeColumn == NULL) treeColumn = tree->columnTail;
 	else if (iMask & CS_DISPLAY) {
 	}
 	hPtr = Tcl_NextHashEntry(&search);
-if (hPtr == NULL && TreeItem_GetHeader(tree, item) == NULL) hPtr = Tcl_FirstHashEntry(&tree->headerHash, &search);
+if (hPtr == NULL && tablePtr == &tree->itemHash) {
+    tablePtr = &tree->headerHash;
+    hPtr = Tcl_FirstHashEntry(tablePtr, &search);
+}
     }
     if (updateDInfo)
 	Tree_DInfoChanged(tree, DINFO_REDO_RANGES);
@@ -4490,12 +4512,17 @@ Style_Deleted(
     TreeItem item;
     TreeItemColumn column;
     TreeColumn treeColumn;
+    Tcl_HashTable *tablePtr = &tree->itemHash;
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
     IStyle *style;
     int columnIndex;
 
-    hPtr = Tcl_FirstHashEntry(&tree->itemHash, &search);
+    hPtr = Tcl_FirstHashEntry(tablePtr, &search);
+if (hPtr == NULL) {
+    tablePtr = &tree->headerHash;
+    hPtr = Tcl_FirstHashEntry(tablePtr, &search);
+}
     while (hPtr != NULL) {
 	item = (TreeItem) Tcl_GetHashValue(hPtr);
 	treeColumn = tree->columns;
@@ -4514,7 +4541,10 @@ Style_Deleted(
 	    treeColumn = TreeColumn_Next(treeColumn);
 	}
 	hPtr = Tcl_NextHashEntry(&search);
-if (hPtr == NULL && TreeItem_GetHeader(tree, item) == NULL) hPtr = Tcl_FirstHashEntry(&tree->headerHash, &search);
+if (hPtr == NULL && tablePtr == &tree->itemHash) {
+    tablePtr = &tree->headerHash;
+    hPtr = Tcl_FirstHashEntry(tablePtr, &search);
+}
     }
 
     /* Update each column's -itemstyle option */
@@ -6983,6 +7013,7 @@ Tree_UndefineState(
 {
     TreeItem item;
     TreeItemColumn column;
+    Tcl_HashTable *tablePtr = &tree->itemHash;
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
     IElementLink *eLink;
@@ -7005,7 +7036,11 @@ Tree_UndefineState(
     args.tree = tree;
     args.state = state;
 
-    hPtr = Tcl_FirstHashEntry(&tree->itemHash, &search);
+    hPtr = Tcl_FirstHashEntry(tablePtr, &search);
+if (hPtr == NULL) {
+    tablePtr = &tree->headerHash;
+    hPtr = Tcl_FirstHashEntry(tablePtr, &search);
+}
     while (hPtr != NULL) {
 	item = (TreeItem) Tcl_GetHashValue(hPtr);
 	column = TreeItem_GetFirstColumn(tree, item);
@@ -7034,7 +7069,10 @@ Tree_UndefineState(
 	Tree_FreeItemDInfo(tree, item, NULL);
 	TreeItem_UndefineState(tree, item, state);
 	hPtr = Tcl_NextHashEntry(&search);
-if (hPtr == NULL && TreeItem_GetHeader(tree, item) == NULL) hPtr = Tcl_FirstHashEntry(&tree->headerHash, &search);
+if (hPtr == NULL && tablePtr == &tree->itemHash) {
+    tablePtr = &tree->headerHash;
+    hPtr = Tcl_FirstHashEntry(tablePtr, &search);
+}
     }
     Tree_InvalidateColumnWidth(tree, NULL);
     Tree_DInfoChanged(tree, DINFO_REDO_RANGES);

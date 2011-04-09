@@ -854,6 +854,7 @@ TreeItem_ChangeState(
     TreeColumn treeColumn;
     int columnIndex = 0, state, cstate;
     int sMask, iMask = 0;
+    int tailOK = item->header != NULL;
 
     state = item->state;
     state &= ~stateOff;
@@ -862,7 +863,7 @@ TreeItem_ChangeState(
     if (state == item->state)
 	return 0;
 
-    treeColumn = Tree_FirstColumn(tree, -1, item->header != NULL);
+    treeColumn = Tree_FirstColumn(tree, -1, tailOK);
     column = item->columns;
     while (column != NULL) {
 	if (column->style != NULL) {
@@ -883,7 +884,7 @@ TreeItem_ChangeState(
 	}
 	columnIndex++;
 	column = column->next;
-	treeColumn = Tree_ColumnToTheRight(treeColumn, FALSE, item->header != NULL);
+	treeColumn = Tree_ColumnToTheRight(treeColumn, FALSE, tailOK);
     }
 
     /* This item has a button */
@@ -4052,6 +4053,7 @@ TreeItem_SpansRedo(
 {
     TreeColumn treeColumn = tree->columns;
     Column *itemColumn = item->columns;
+    int columnCount = tree->columnCount + (item->header ? 1 : 0);
     int columnIndex = 0, spanner = 0, span = 1, simple = TRUE;
     int lock = TreeColumn_Lock(treeColumn);
 
@@ -4059,12 +4061,12 @@ TreeItem_SpansRedo(
 	dbwin("TreeItem_SpansRedo item %d\n", item->id);
 
     if (item->spans == NULL) {
-	item->spans = (int *) ckalloc(sizeof(int) * tree->columnCount);
-	item->spanAlloc = tree->columnCount;
-    } else if (item->spanAlloc < tree->columnCount) {
+	item->spans = (int *) ckalloc(sizeof(int) * columnCount);
+	item->spanAlloc = columnCount;
+    } else if (item->spanAlloc < columnCount) {
 	item->spans = (int *) ckrealloc((char *) item->spans,
-		sizeof(int) * tree->columnCount);
-	item->spanAlloc = tree->columnCount;
+		sizeof(int) * columnCount);
+	item->spanAlloc = columnCount;
     }
 
     while (treeColumn != NULL) {
@@ -4087,6 +4089,12 @@ TreeItem_SpansRedo(
 	treeColumn = TreeColumn_Next(treeColumn);
 	if (itemColumn != NULL)
 	    itemColumn = itemColumn->next;
+    }
+
+    if (item->header != NULL) {
+	if (columnCount >= 2)
+	    item->spans[columnCount - 2] = columnCount - 2; /* prev to tail */
+	item->spans[columnCount - 1] = columnCount - 1; /* tail column */
     }
 
     return simple;
@@ -4213,6 +4221,9 @@ Item_GetSpans(
     while (treeColumn != NULL) {
 	if (TreeColumn_Lock(treeColumn) != TreeColumn_Lock(firstColumn))
 	    break;
+if (treeColumn == tree->columnTail) {
+    span = 1; /* End current span if it hits the tail */
+}
 	if (--span == 0) {
 	    if (TreeColumn_Visible(treeColumn)) {
 		span = column ? column->span : 1;
@@ -4224,7 +4235,9 @@ Item_GetSpans(
 		spanPtr->itemColumn = (TreeItemColumn) column;
 		spanPtr->span = 0;
 		spanPtr->width = 0;
-if (spanCount == 0 && item->header != NULL && TreeColumn_Lock(treeColumn) == COLUMN_LOCK_NONE) spanPtr->width += tree->canvasPadX[PAD_TOP_LEFT];
+if (spanCount == 0 && item->header != NULL && TreeColumn_Lock(treeColumn) == COLUMN_LOCK_NONE) {
+    spanPtr->width += tree->canvasPadX[PAD_TOP_LEFT];
+}
 		spanPtr->visIndex = spanCount;
 		spanCount++;
 	    } else {
@@ -4233,13 +4246,19 @@ if (spanCount == 0 && item->header != NULL && TreeColumn_Lock(treeColumn) == COL
 	    }
 	}
 	spanPtr->span++;
-if (treeColumn == tree->columnTail) spanPtr->width = 100; else
+if (treeColumn == tree->columnTail) {
+    spanPtr->width = 100; /* TreeItem_WalkSpans will calculate the correct value */
+} else
 	spanPtr->width += TreeColumn_UseWidth(treeColumn);
 next:
-	++columnIndex;
+/*	++columnIndex;*/
 	treeColumn = Tree_ColumnToTheRight(treeColumn, TRUE, item->header != NULL);
 	if (column != NULL)
 	    column = column->next;
+if (treeColumn == tree->columnTail) {
+    while (column != NULL && column->next != NULL)
+	column = column->next;
+}
     }
 
     return spanCount;
@@ -4339,7 +4358,7 @@ TreeItem_WalkSpans(
 	itemColumn = (Column *) spans[spanIndex].itemColumn;
 
 if (treeColumn == tree->columnTail)
-    spans[spanIndex].width = MAX(0, Tree_ContentWidth(tree) - totalWidth);
+    spans[spanIndex].width = MAX(0, MAX(Tree_ContentWidth(tree), Tree_FakeCanvasWidth(tree)) - totalWidth);
 
 if (item->header != NULL)
     columnWidth = spans[spanIndex].width;
