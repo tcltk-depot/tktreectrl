@@ -3733,7 +3733,7 @@ Style_Changed(
     hPtr = Tcl_FirstHashEntry(&tree->itemHash, &search);
     while (hPtr != NULL) {
 	item = (TreeItem) Tcl_GetHashValue(hPtr);
-	treeColumn = tree->columns;
+	treeColumn = Tree_FirstColumn(tree, -1, TreeItem_GetHeader(tree, item) != NULL);
 	column = TreeItem_GetFirstColumn(tree, item);
 	columnIndex = 0;
 	layout = FALSE;
@@ -3755,7 +3755,7 @@ Style_Changed(
 	    }
 	    columnIndex++;
 	    column = TreeItemColumn_GetNext(tree, column);
-	    treeColumn = TreeColumn_Next(treeColumn);
+	    treeColumn = Tree_ColumnToTheRight(treeColumn, FALSE, TreeItem_GetHeader(tree, item) != NULL);
 	}
 	if (layout) {
 	    TreeItem_InvalidateHeight(tree, item);
@@ -4023,7 +4023,7 @@ Style_ChangeElements(
     hPtr = Tcl_FirstHashEntry(&tree->itemHash, &search);
     while (hPtr != NULL) {
 	item = (TreeItem) Tcl_GetHashValue(hPtr);
-	treeColumn = tree->columns;
+	treeColumn = Tree_FirstColumn(tree, -1, TreeItem_GetHeader(tree, item) != NULL);
 	column = TreeItem_GetFirstColumn(tree, item);
 	columnIndex = 0;
 	layout = FALSE;
@@ -4038,7 +4038,7 @@ Style_ChangeElements(
 	    }
 	    columnIndex++;
 	    column = TreeItemColumn_GetNext(tree, column);
-	    treeColumn = TreeColumn_Next(treeColumn);
+	    treeColumn = Tree_ColumnToTheRight(treeColumn, FALSE, TreeItem_GetHeader(tree, item) != NULL);
 	}
 	if (layout) {
 	    TreeItem_InvalidateHeight(tree, item);
@@ -4107,6 +4107,7 @@ Style_ElemChanged(
     while (hPtr != NULL) {
 	item = (TreeItem) Tcl_GetHashValue(hPtr);
 	treeColumn = tree->columns;
+if (TreeItem_GetHeader(tree, item) != NULL && treeColumn == NULL) treeColumn = tree->columnTail;
 	column = TreeItem_GetFirstColumn(tree, item);
 	columnIndex = 0;
 	iMask = 0;
@@ -4144,7 +4145,9 @@ Style_ElemChanged(
 	    }
 	    columnIndex++;
 	    column = TreeItemColumn_GetNext(tree, column);
+if (treeColumn == tree->columnTail) break;
 	    treeColumn = TreeColumn_Next(treeColumn);
+if (treeColumn == NULL) treeColumn = tree->columnTail;
 	}
 	if (iMask & CS_LAYOUT) {
 	    TreeItem_InvalidateHeight(tree, item);

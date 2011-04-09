@@ -1723,6 +1723,27 @@ TreeHeaderColumn_Draw(
     int isDragHeader = tree->columnDrag.header == header;
     int isDragColumn = 0;
 
+#if 0
+    if (column == NULL) { /* the tail column! */
+	if (!TreeColumn_Visible(tree->columnTree)) {
+	    Tk_Fill3DRectangle(tree->tkwin, td.drawable, tree->border,
+		    x, y, width, height, 0, TK_RELIEF_FLAT);
+	} else if (tree->useTheme &&
+	    (TreeTheme_DrawHeaderItem(tree, td, 0, 0, tree->columnCountVis,
+		x, y, width, height) == TCL_OK)) {
+	} else {
+	    Tk_3DBorder border;
+	    border = PerStateBorder_ForState(tree, &column->border,
+		Column_MakeState(column), NULL);
+	    if (border == NULL)
+		border = tree->border;
+	    Tk_Fill3DRectangle(tree->tkwin, td.drawable, border,
+		    x, y, width, height, 4/*column->borderWidth*/, TK_RELIEF_RAISED);
+	}
+	return;
+    }
+#endif
+
     if (isDragHeader && tree->columnDrag.column != NULL) {
 	TreeColumn treeColumn = Tree_FindColumn(tree, TreeItemColumn_Index(tree, header->item, column->itemColumn));
 	if (tree->columnDrag.column == treeColumn)

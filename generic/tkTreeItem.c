@@ -862,7 +862,7 @@ TreeItem_ChangeState(
     if (state == item->state)
 	return 0;
 
-    treeColumn = tree->columns;
+    treeColumn = Tree_FirstColumn(tree, -1, item->header != NULL);
     column = item->columns;
     while (column != NULL) {
 	if (column->style != NULL) {
@@ -883,7 +883,7 @@ TreeItem_ChangeState(
 	}
 	columnIndex++;
 	column = column->next;
-	treeColumn = TreeColumn_Next(treeColumn);
+	treeColumn = Tree_ColumnToTheRight(treeColumn, FALSE, item->header != NULL);
     }
 
     /* This item has a button */
@@ -3397,8 +3397,8 @@ Item_CreateColumn(
     int i;
 
 #ifdef TREECTRL_DEBUG
-    if (columnIndex < 0 || columnIndex >= tree->columnCount) {
-	panic("Item_CreateColumn with index %d, must be from 0-%d", columnIndex, tree->columnCount - 1);
+    if (columnIndex < 0 || columnIndex >= tree->columnCount + (item->header ? 1 : 0)) {
+	panic("Item_CreateColumn with index %d, must be from 0-%d", columnIndex, tree->columnCount + (item->header ? 1 : 0) - 1);
     }
 #endif
 
@@ -3416,6 +3416,11 @@ Item_CreateColumn(
 	}
 	column = column->next;
     }
+
+/* If creating a new -lock=none column then Column_Move does nothing */
+if (item->header != NULL && columnIndex == TreeColumn_Index(tree->columnTail) + 1) {
+    TreeItem_MoveColumn(tree, item, columnIndex, columnIndex - 1);
+}
 
     return column;
 }
@@ -3591,7 +3596,7 @@ Item_HeightOfStyles(
     )
 {
     Column *column = item->columns;
-    TreeColumn treeColumn = tree->columns;
+    TreeColumn treeColumn = Tree_FirstColumn(tree, -1, item->header != NULL);
     StyleDrawArgs drawArgs;
     int height = 0;
 
@@ -3610,7 +3615,7 @@ Item_HeightOfStyles(
 		drawArgs.width = -1;
 	    height = MAX(height, TreeStyle_UseHeight(&drawArgs));
 	}
-	treeColumn = TreeColumn_Next(treeColumn);
+	treeColumn = Tree_ColumnToTheRight(treeColumn, FALSE, item->header != NULL);
 	column = column->next;
     }
 
@@ -4228,13 +4233,15 @@ if (spanCount == 0 && item->header != NULL && TreeColumn_Lock(treeColumn) == COL
 	    }
 	}
 	spanPtr->span++;
+if (treeColumn == tree->columnTail) spanPtr->width = 100; else
 	spanPtr->width += TreeColumn_UseWidth(treeColumn);
 next:
 	++columnIndex;
-	treeColumn = TreeColumn_Next(treeColumn);
+	treeColumn = Tree_ColumnToTheRight(treeColumn, TRUE, item->header != NULL);
 	if (column != NULL)
 	    column = column->next;
     }
+
     return spanCount;
 }
 
@@ -4305,6 +4312,9 @@ TreeItem_WalkSpans(
 		break;
 	    case COLUMN_LOCK_NONE:
 		area = TREE_AREA_HEADER_NONE;
+		if (treeColumn == NULL)
+		    treeColumn = tree->columnTail;
+		columnCount += 1; /* +1 for the treeColumn */
 		break;
 	    case COLUMN_LOCK_RIGHT:
 		area = TREE_AREA_HEADER_RIGHT;
@@ -4328,6 +4338,12 @@ TreeItem_WalkSpans(
 	treeColumn = spans[spanIndex].treeColumn;
 	itemColumn = (Column *) spans[spanIndex].itemColumn;
 
+if (treeColumn == tree->columnTail)
+    spans[spanIndex].width = MAX(0, Tree_ContentWidth(tree) - totalWidth);
+
+if (item->header != NULL)
+    columnWidth = spans[spanIndex].width;
+else
 	/* If this is the single visible column, use the provided width which
 	 * may be different than the column's width. */
 	if ((tree->columnCountVis == 1) && (treeColumn == tree->columnVis)) {
@@ -4416,7 +4432,7 @@ SpanWalkProc_Draw(
 
     if (item->header != NULL) {
 	StyleDrawArgs drawArgsCopy = *drawArgs;
-	TreeHeaderColumn_Draw(item->header, itemColumn->headerColumn,
+	TreeHeaderColumn_Draw(item->header, itemColumn ? itemColumn->headerColumn : NULL,
 	    spanPtr->visIndex, TreeColumn_Lock(treeColumn), &drawArgsCopy);
 	return drawArgs->x + drawArgs->width >= data->maxX;
     }
@@ -8272,7 +8288,6 @@ reqSameRoot:
 		    continue;
 		if (IS_DELETED(item))
 		    continue;
-if (item == tree->headerItems) continue; /* Don't delete the default header item */
 		item->flags |= ITEM_FLAG_DELETED;
 		TreeItemList_Append(&deleted, item);
 		if (TreeItem_GetSelected(tree, item))
@@ -9331,7 +9346,7 @@ TreeItem_GetRects(
 
     if (Tree_ItemBbox(tree, item, lock, &tr) < 0)
 	return 0;
-
+#if 0
 if (treeColumn == tree->columnTail) {
     /* Hack for [identify] */
     if (item->header != NULL && count == 0) {
@@ -9342,7 +9357,7 @@ if (treeColumn == tree->columnTail) {
 	return tr.width > 0;
     }
 }
-
+#endif
     clientData.treeColumn = treeColumn;
     clientData.count = count;
     clientData.objv = objv;
@@ -9381,9 +9396,8 @@ TreeItem_CreateHeader(
     }
     item->header = header;
     /* This will create a TreeItemColumn and TreeHeaderColumn for every
-     * TreeColumn. */
-    if (tree->columnCount > 0)
-	(void) Item_CreateColumn(tree, item, tree->columnCount - 1, NULL);
+     * TreeColumn, including the tail column. */
+    (void) Item_CreateColumn(tree, item, tree->columnCount, NULL);
     if (tree->headerItems == NULL)
 	tree->headerItems = item;
     else {

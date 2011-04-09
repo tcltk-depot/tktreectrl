@@ -2255,6 +2255,9 @@ Tree_ItemBbox(
 		tr->width = Tree_WidthOfColumns(tree);
 		tr->x = 0/*tree->canvasPadX[PAD_TOP_LEFT]*/;
 		tr->width = tree->canvasPadX[PAD_TOP_LEFT] + Tree_WidthOfColumns(tree);
+		if (tr->width < Tree_ContentWidth(tree)) {
+		    tr->width = Tree_ContentWidth(tree);
+		}
 		break;
 	    case COLUMN_LOCK_RIGHT:
 		if (tree->columnCountVisRight == 0)
@@ -2916,6 +2919,7 @@ GetOnScreenColumnsForItemAux(
 {
     int minX, maxX, columnIndex = 0, x = 0, i, width;
     TreeColumn column = NULL, column2;
+    int columnCount = tree->columnCount;
 
     minX = MAX(area->x, TreeRect_Left(bounds));
     maxX = MIN(area->x + area->width, TreeRect_Right(bounds));
@@ -2923,12 +2927,46 @@ GetOnScreenColumnsForItemAux(
     minX -= area->x;
     maxX -= area->x;
 
+#if 1
+    for (column = Tree_FirstColumn(tree, lock, TRUE);
+	    column != NULL;
+	    column = Tree_ColumnToTheRight(column, TRUE, TRUE)) {
+	if (TreeColumn_Lock(column) != lock)
+	    break;
+	width = TreeColumn_GetDInfo(column)->width;
+	if (width == 0) /* also handles hidden columns */
+	    continue;
+	if (dItem->spans != NULL) {
+	    columnIndex = TreeColumn_Index(column);
+	    /* FIXME: not possible since I skip over the entire span. */
+	    if (dItem->spans[columnIndex] != columnIndex)
+		continue;
+	    /* Calculate the width of the span. */
+	    for (i = columnIndex, column2 = Tree_ColumnToTheRight(column, TRUE, TRUE);
+		    column2 != NULL && dItem->spans[i] == columnIndex;
+		    i++, column2 = Tree_ColumnToTheRight(column2, TRUE, TRUE)) {
+		width += TreeColumn_GetDInfo(column2)->width;
+	    }
+	}
+	if (x < maxX && x + width > minX) {
+	    TreeColumnList_Append(columns, column);
+	}
+	x += width;
+	if (x >= maxX)
+	    break;
+    }
+#else
     switch (lock) {
 	case COLUMN_LOCK_LEFT:
 	    column = tree->columnLockLeft;
 	    break;
 	case COLUMN_LOCK_NONE:
 	    column = tree->columnLockNone;
+if (TreeItem_GetHeader(tree, dItem->item) != NULL) {
+    if (column == NULL)
+	column = tree->columnTail;
+    columnCount += 1; /* FIXME: invalid index into 'spans' */
+}
 	    break;
 	case COLUMN_LOCK_RIGHT:
 	    column = tree->columnLockRight;
@@ -2936,10 +2974,10 @@ GetOnScreenColumnsForItemAux(
     }
 
     for (columnIndex = TreeColumn_Index(column);
-	    columnIndex < tree->columnCount; columnIndex++) {
+	    columnIndex < columnCount; columnIndex++) {
 	if (TreeColumn_Lock(column) != lock)
 	    break;
-	column2 = TreeColumn_Next(column);
+	columnNext = TreeColumn_Next(column);
 	width = TreeColumn_GetDInfo(column)->width;
 	if (width == 0) /* also handles hidden columns */
 	    goto next;
@@ -2950,8 +2988,8 @@ GetOnScreenColumnsForItemAux(
 	    /* Calculate the width of the span. */
 	    for (i = columnIndex + 1; i < tree->columnCount &&
 		    dItem->spans[i] == columnIndex; i++) {
-		width += TreeColumn_GetDInfo(column2)->width;
-		column2 = TreeColumn_Next(column2);
+		width += TreeColumn_GetDInfo(columnNext)->width;
+		columnNext = TreeColumn_Next(columnNext);
 	    }
 	    columnIndex = i - 1;
 	}
@@ -2962,8 +3000,9 @@ next:
 	x += width;
 	if (x >= maxX)
 	    break;
-	column = column2;
+	column = columnNext;
     }
+#endif
 }
 
 /*
@@ -6657,7 +6696,7 @@ CheckPendingHeaderUpdate(
     /* DINFO_CHECK_COLUMN_WIDTH - The width, offset or visibility of one or
      * 				  more columns *might* have changed. */
     if (dInfo->flags & (DINFO_REDO_COLUMN_WIDTH | DINFO_CHECK_COLUMN_WIDTH)) {
-	TreeColumn treeColumn = tree->columns;
+	TreeColumn treeColumn = Tree_FirstColumn(tree, -1, TRUE);
 	TreeColumnDInfo dColumn;
 	int force = (dInfo->flags & DINFO_REDO_COLUMN_WIDTH) != 0;
 	int redoRanges = force, drawItems = force, drawHeader = force;
@@ -6691,7 +6730,7 @@ CheckPendingHeaderUpdate(
 	    if (TreeColumn_Visible(treeColumn) &&
 		    (TreeColumn_BackgroundCount(treeColumn) > tree->columnBgCnt))
 		tree->columnBgCnt = TreeColumn_BackgroundCount(treeColumn);
-	    treeColumn = TreeColumn_Next(treeColumn);
+	    treeColumn = Tree_ColumnToTheRight(treeColumn, FALSE, TRUE);
 	}
 	if (redoRanges) dInfo->flags |= DINFO_REDO_RANGES | DINFO_OUT_OF_DATE;
 	if (drawHeader) dInfo->flags |= DINFO_DRAW_HEADER;

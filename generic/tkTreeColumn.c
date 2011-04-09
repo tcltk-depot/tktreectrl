@@ -1835,12 +1835,64 @@ Tree_FindColumn(
 {
     TreeColumn column = tree->columns;
 
+if (columnIndex == tree->columnTail->index) return tree->columnTail;
+
     while (column != NULL) {
 	if (column->index == columnIndex)
 	    break;
 	column = column->next;
     }
     return column;
+}
+
+TreeColumn
+Tree_FirstColumn(
+    TreeCtrl *tree,
+    int lock,
+    int tailOK
+    )
+{
+    TreeColumn column = NULL;
+
+    switch (lock) {
+	case COLUMN_LOCK_LEFT:
+	    column = tree->columnLockLeft;
+	    break;
+	case COLUMN_LOCK_NONE:
+	    column = tree->columnLockNone;
+	    if (column == NULL && tailOK)
+		column = tree->columnTail;
+	    break;
+	case COLUMN_LOCK_RIGHT:
+	    column = tree->columnLockRight;
+	    break;
+	default:
+	    column = tree->columns;
+	    if (column == NULL && tailOK)
+		column = tree->columnTail;
+	    break;
+    }
+    return column;
+}
+
+TreeColumn
+Tree_ColumnToTheRight(
+    TreeColumn column,		/* Column token. */
+    int displayOrder,
+    int tailOK
+    )
+{
+    TreeCtrl *tree = column->tree;
+    TreeColumn next = column->next;
+
+    if (column == tree->columnTail)
+	tailOK = FALSE;
+    if (displayOrder && next == tree->columnLockRight) {
+	return tailOK ? tree->columnTail : NULL;
+    }
+    if (next == NULL && tailOK)
+	return tree->columnTail;
+    return next;
 }
 
 /*
@@ -4153,7 +4205,7 @@ TreeColumnCmd(
 	    /* FIXME: -count N -tags $tags */
 	    column = Column_Alloc(tree);
 #if HEADERS == 1
-	    column->index = tree->columnCount - 1;
+	    column->index = TreeColumn_Index(tree->columnTail) + 1; /* after the tail column */
 
 	    /* Create the item-column and header-column in every header */
 	    item = tree->headerItems;
@@ -4161,13 +4213,14 @@ TreeColumnCmd(
 		(void) TreeItem_MakeColumnExist(tree, item, column->index);
 		item = TreeItem_GetNextSibling(tree, item);
 	    }
+	    column->index = TreeColumn_Index(tree->columnTail);
 #endif
 	    if (Column_Config(column, objc - 3, objv + 3, TRUE) != TCL_OK) {
 #if HEADERS == 1
 		/* Delete the item-column and header-column in every header */
 		item = tree->headerItems;
 		while (item != NULL) {
-		    TreeItem_RemoveColumns(tree, item, column->index, column->index);
+		    TreeItem_RemoveColumns(tree, item, column->index-1, column->index-1);
 		    item = TreeItem_GetNextSibling(tree, item);
 		}
 #endif

@@ -916,6 +916,8 @@ MODULE_SCOPE Tcl_Obj *TreeColumn_ToObj(TreeCtrl *tree, TreeColumn column_);
 MODULE_SCOPE int TreeColumnCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]);
 MODULE_SCOPE int TreeColumn_GetID(TreeColumn column_);
 MODULE_SCOPE int TreeColumn_Index(TreeColumn column_);
+MODULE_SCOPE TreeColumn Tree_FirstColumn(TreeCtrl *tree, int lock, int tailOK);
+MODULE_SCOPE TreeColumn Tree_ColumnToTheRight(TreeColumn column_, int displayOrder, int tailOK);
 MODULE_SCOPE TreeColumn TreeColumn_Next(TreeColumn column_);
 MODULE_SCOPE TreeColumn TreeColumn_Prev(TreeColumn column_);
 MODULE_SCOPE int TreeColumn_FixedWidth(TreeColumn column_);
