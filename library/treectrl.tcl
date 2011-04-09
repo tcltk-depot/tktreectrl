@@ -393,14 +393,14 @@ proc ::TreeCtrl::CursorAction {w x y var_} {
 
     set var(action) ""
     if {$id(where) eq "header"} {
+	set var(header) $id(header)
 	set column $id(column)
 	set side $id(side)
 	if {$side eq "left"} {
 	    if {[$w column compare $column == tail]} {
 		set column2 [$w column id "last visible lock none"]
 		if {$column2 ne "" && [$w column cget $column2 -resize]} {
-		    array set var [list action "header-resize" header $id(header) \
-			column $column2]
+		    array set var [list action "header-resize" column $column2]
 		    return
 		}
 		# Can't -resize or -button the tail column
@@ -408,8 +408,7 @@ proc ::TreeCtrl::CursorAction {w x y var_} {
 	    }
 	    if {[ColumnCanResizeLeft $w $column]} {
 		if {[$w column cget $column -resize]} {
-		    array set var [list action "header-resize" header $id(header) \
-			column $column]
+		    array set var [list action "header-resize" column $column]
 		    return
 		}
 	    } else {
@@ -418,8 +417,7 @@ proc ::TreeCtrl::CursorAction {w x y var_} {
 		if {[$w column compare $column != "first visible lock $lock"]} {
 		    set column2 [$w column id "$column prev visible"]
 		    if {[$w column cget $column2 -resize]} {
-			array set var [list action "header-resize" header $id(header) \
-			    column $column2]
+			array set var [list action "header-resize" column $column2]
 			return
 		    }
 		}
@@ -438,17 +436,15 @@ proc ::TreeCtrl::CursorAction {w x y var_} {
 
 	    if {![ColumnCanResizeLeft $w $column]} {
 		if {[$w column cget $column -resize]} {
-		    array set var [list action "header-resize" header $id(header) \
-			column $column]
+		    array set var [list action "header-resize" column $column]
 		    return
 		}
 	    }
 	}
 	if {[$w column compare $column == "tail"]} {
 	    # nothing
-	} elseif {[$w column cget $column -button]} {
-	    array set var [list action "header-button" header $id(header) \
-			column $column]
+	} elseif {[$w header cget $id(header) $column -button]} {
+	    array set var [list action "header-button" column $column]
 	    return
 	}
     }
@@ -872,10 +868,11 @@ proc ::TreeCtrl::Motion1 {w x y} {
 	dragColumnWait {
 	    if {(abs($Priv(columnDrag,x) - $x) > 4)} {
 		$w column dragconfigure \
+		    -header $Priv(header) \
 		    -imagecolumn $Priv(column) \
 		    -imageoffset [expr {$x - $Priv(columnDrag,x)}]
 		set Priv(buttonMode) dragColumn
-		TryEvent $w ColumnDrag begin [list H $Priv(header) C C $Priv(column)]
+		TryEvent $w ColumnDrag begin [list H $Priv(header) C $Priv(column)]
 	    }
 	}
 	dragColumn {
