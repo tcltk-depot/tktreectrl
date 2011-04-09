@@ -533,7 +533,7 @@ proc MakeIdentifyWindow {} {
     wm withdraw $w
     wm title $w "TkTreeCtrl Identify"
     set wText $w.text
-    text $wText -state disabled -width 50 -height 2 -font [[DemoList] cget -font]
+    text $wText -state disabled -width 70 -height 3 -font [[DemoList] cget -font]
     $wText tag configure tagBold -font DemoFontBold
     pack $wText -expand yes -fill both
     wm protocol $w WM_DELETE_WINDOW "ToggleIdentifyWindow"
@@ -547,7 +547,28 @@ proc UpdateIdentifyWindow {T x y} {
     $wText delete 1.0 end
     set nearest [$T item id [list nearest $x $y]]
     $wText insert end "x=" tagBold "$x  " {} "y=" tagBold "$y  " {} "nearest=" tagBold $nearest\n
+    $wText insert end "string: "
     foreach {key val} [$T identify $x $y] {
+	$wText insert end $key tagBold " $val "
+    }
+    $wText insert end "\narray: "
+    $T identify $x $y -array id
+    switch -- $id(where) {
+	"header" {
+	    set keys [list where header column elem side]
+	}
+	"item" {
+	    set keys [list where item column elem button line]
+	}
+	default {
+	    set keys [array names id]
+	}
+    }
+    foreach key $keys {
+	set val $id($key)
+	if {$val eq ""} {
+	    set val "\"\""
+	}
 	$wText insert end $key tagBold " $val "
     }
     $wText configure -state disabled
@@ -1212,10 +1233,11 @@ InitPics sky feather
 proc ShowPopup {T x y X Y} {
     global Popup
     set Popup(T) $T
-    set id [$T identify $x $y]
-    if {$id ne ""} {
-	if {[lindex $id 0] eq "header"} {
-	    set Popup(column) [lindex $id 1]
+    $T identify $x $y -array id
+    if {$id(where) ne ""} {
+	if {$id(where) eq "header"} {
+	    set Popup(header) $id(header)
+	    set Popup(column) $id(column)
 	    set Popup(arrow) [$T column cget $Popup(column) -arrow]
 	    set Popup(arrow,side) [$T column cget $Popup(column) -arrowside]
 	    set Popup(arrow,gravity) [$T column cget $Popup(column) -arrowgravity]
@@ -1236,22 +1258,18 @@ proc ShowPopup {T x y X Y} {
     set m $menu.mCollapse
     $m delete 0 end
     $m add command -label "All" -command {$Popup(T) item collapse all}
-    if {$id ne ""} {
-	if {[lindex $id 0] eq "item"} {
-	    set item [lindex $id 1]
-	    $m add command -label "Item $item" -command "$T item collapse $item"
-	    $m add command -label "Item $item (recurse)" -command "$T item collapse $item -recurse"
-	}
+    if {$id(where) eq "item"} {
+	set item $id(item)
+	$m add command -label "Item $item" -command "$T item collapse $item"
+	$m add command -label "Item $item (recurse)" -command "$T item collapse $item -recurse"
     }
     set m $menu.mExpand
     $m delete 0 end
     $m add command -label "All" -command {$Popup(T) item expand all}
-    if {$id ne ""} {
-	if {[lindex $id 0] eq "item"} {
-	    set item [lindex $id 1]
-	    $m add command -label "Item $item" -command "$T item expand $item"
-	    $m add command -label "Item $item (recurse)" -command "$T item expand $item -recurse"
-	}
+    if {$id(where) eq "item"} {
+	set item $id(item)
+	$m add command -label "Item $item" -command "$T item expand $item"
+	$m add command -label "Item $item (recurse)" -command "$T item expand $item -recurse"
     }
     foreach option {data display displaydelay enable span textlayout} {
 	set Popup(debug,$option) [$T debug cget -$option]
@@ -1297,22 +1315,20 @@ proc ShowPopup {T x y X Y} {
     $m delete 0 end
     $m add command -label "All Off" -command {$Popup(T) item configure all -wrap off}
     $m add command -label "All On" -command {$Popup(T) item configure all -wrap on}
-    if {$id ne ""} {
-	if {[lindex $id 0] eq "item"} {
-	    set item [lindex $id 1]
-	    if {[$T item cget $item -wrap]} {
-		$m add command -label "Item $item Off" -command "$T item configure $item -wrap off"
-	    } else {
-		$m add command -label "Item $item On" -command "$T item configure $item -wrap on"
-	    }
+    if {$id(where) eq "item"} {
+	set item $id(item)
+	if {[$T item cget $item -wrap]} {
+	    $m add command -label "Item $item Off" -command "$T item configure $item -wrap off"
+	} else {
+	    $m add command -label "Item $item On" -command "$T item configure $item -wrap on"
 	}
     }
 
     set m $menu.mSpan
     $m delete 0 end
-    if {[llength $id] >= 4 && [lindex $id 2] eq "column"} {
-	set item [lindex $id 1]
-	set column [lindex $id 3]
+    if {$id(where) eq "item" && $id(column) ne ""} {
+	set item $id(item)
+	set column $id(column)
 	set lock [$T column cget $column -lock]
 	for {set i 1} {$i <= [$T column order "last lock $lock"] - [$T column order $column] + 1} {incr i} {
 	    set break [expr {!(($i - 1) % 20)}]
@@ -1633,8 +1649,11 @@ proc DemoClear {} {
 
     set T [DemoList]
 
-    # Clear the demo list
+    # Delete all the items (except the root item, it never gets deleted).
     $T item delete all
+
+    # Delete all the headers (except the first header, it never gets deleted).
+    $T header delete all
 
     # Clear all bindings on the demo list added by the previous demo.
     # The bindings are removed from the tag $T only. For those

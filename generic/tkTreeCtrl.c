@@ -350,6 +350,7 @@ static void TreeDestroy(char *memPtr);
 static void TreeCmdDeletedProc(ClientData clientData);
 static void TreeWorldChanged(ClientData instanceData);
 static void TreeComputeGeometry(TreeCtrl *tree);
+static int TreeIdentifyCmd(TreeCtrl *tree, int objc, Tcl_Obj *CONST objv[]);
 static int TreeSeeCmd(TreeCtrl *tree, int objc, Tcl_Obj *CONST objv[]);
 static int TreeStateCmd(TreeCtrl *tree, int objc, Tcl_Obj *CONST objv[]);
 static int TreeSelectionCmd(Tcl_Interp *interp, TreeCtrl *tree, int objc,
@@ -932,149 +933,7 @@ static int TreeWidgetCmd(
 	}
 
 	case COMMAND_IDENTIFY: {
-	    int x, y, depth;
-	    TreeColumn treeColumn;
-	    TreeItem item;
-	    TreeElement elem;
-	    Tcl_Obj *listObj;
-	    TreeRectangle tr;
-	    int hit;
-	    int lock;
-	    int columnTreeLeft;
-/*
-  set id [$tree identify $x $y]
-  "item I column C" : mouse is in column C of item I
-  "item I column C elem E" : mouse is in element E in column C of item I
-  "item I button" : mouse is in button-area of item I
-  "item I line J" : mouse is near line coming from item J
-  "header C ?left|right?" : mouse is in header column C
-  "" : mouse is not in any item
-*/
-	    if (objc != 4) {
-		Tcl_WrongNumArgs(interp, 2, objv, "x y");
-		goto error;
-	    }
-	    if (Tk_GetPixelsFromObj(interp, tree->tkwin, objv[2], &x) != TCL_OK)
-		goto error;
-	    if (Tk_GetPixelsFromObj(interp, tree->tkwin, objv[3], &y) != TCL_OK)
-		goto error;
-
-	    hit = Tree_HitTest(tree, x, y);
-
-	    /* Require point inside borders */
-	    if (hit == TREE_AREA_NONE)
-		break;
-
-	    if (hit == TREE_AREA_HEADER) {
-#if 1
-		int wx = x;
-		item = Tree_HeaderUnderPoint(tree, &x, &y, &lock);
-		if (item == NULL) /* impossible */
-		    break;
-		listObj = Tcl_NewListObj(0, NULL);
-		Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("header", -1));
-		if (TreeItem_GetNextSibling(tree, tree->headerItems) != NULL)
-		    Tcl_ListObjAppendElement(interp, listObj, TreeItem_ToObj(tree, item));
-		TreeItem_Identify(tree, item, lock, x, y, &treeColumn, &elem);
-		if (treeColumn == NULL)
-		    treeColumn = tree->columnTail;
-		if (TreeItem_GetNextSibling(tree, tree->headerItems) != NULL)
-		    Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("column", -1));
-		Tcl_ListObjAppendElement(interp, listObj, TreeColumn_ToObj(tree, treeColumn));
-		if (elem != NULL) {
-		    Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("elem", -1));
-		    Tcl_ListObjAppendElement(interp, listObj, TreeElement_ToObj(elem));
-		}
-		if (TreeItem_GetRects(tree, item, treeColumn, 0, NULL, &tr) == 1) {
-		    if (W2Cx(wx) < TreeRect_Left(tr) + 4)
-			Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("left", -1));
-		    else if (treeColumn != tree->columnTail && W2Cx(wx) >= TreeRect_Right(tr) - 4)
-			Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("right", -1));
-		}
-		Tcl_SetObjResult(interp, listObj);
-		break;
-#else
-		treeColumn = Tree_HeaderUnderPoint(tree, &x, &y, &width, &height,
-			FALSE);
-		if (treeColumn == tree->columnTail) {
-		    strcpy(buf, "header tail");
-		    if (x < 4)
-			sprintf(buf + strlen(buf), " left");
-		    Tcl_SetResult(interp, buf, TCL_VOLATILE);
-		    break;
-		} else if (treeColumn != NULL) {
-		    sprintf(buf, "header %s%d", tree->columnPrefix,
-			TreeColumn_GetID(treeColumn));
-		    if (x < 4)
-			sprintf(buf + strlen(buf), " left");
-		    else if (x >= width - 4)
-			sprintf(buf + strlen(buf), " right");
-		    Tcl_SetResult(interp, buf, TCL_VOLATILE);
-		    break;
-		}
-#endif
-	    }
-
-	    item = Tree_ItemUnderPoint(tree, &x, &y, &lock, FALSE);
-	    if (item == NULL)
-		break;
-
-	    listObj = Tcl_NewListObj(0, NULL);
-	    Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("item", -1));
-	    Tcl_ListObjAppendElement(interp, listObj, TreeItem_ToObj(tree, item));
-	    depth = TreeItem_GetDepth(tree, item);
-	    if (item == tree->root)
-		depth = (tree->showButtons && tree->showRootButton) ? 1 : 0;
-	    else if (tree->showRoot)
-	    {
-		depth++;
-		if (tree->showButtons && tree->showRootButton)
-		    depth++;
-	    }
-	    else if (tree->showButtons && tree->showRootChildButtons)
-		depth += 1;
-	    else if (tree->showLines && tree->showRootLines)
-		depth += 1;
-
-	    columnTreeLeft = tree->columnTreeLeft; /* canvas coords */
-	    if (hit == TREE_AREA_CONTENT)
-		columnTreeLeft -= tree->canvasPadX[PAD_TOP_LEFT]; /* item coords */
-
-	    /* Point is in a line or button */
-	    if (tree->columnTreeVis &&
-		    (TreeColumn_Lock(tree->columnTree) == lock) &&
-		    (x >= columnTreeLeft) &&
-		    (x < columnTreeLeft + TreeColumn_UseWidth(tree->columnTree)) &&
-		    (x < columnTreeLeft + depth * tree->useIndent)) {
-		int column = (x - columnTreeLeft) / tree->useIndent + 1;
-		if (column == depth) {
-		    if (TreeItem_IsPointInButton(tree, item, x, y))
-			Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("button", -1));
-		} else if (tree->showLines) {
-		    TreeItem sibling;
-		    do {
-			item = TreeItem_GetParent(tree, item);
-		    } while (++column < depth);
-		    sibling = TreeItem_NextSiblingVisible(tree, item);
-		    if ((sibling != NULL) &&
-			    ((TreeItem_GetParent(tree, sibling) != tree->root) ||
-			    tree->showRootLines)) {
-			Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("line", -1));
-			Tcl_ListObjAppendElement(interp, listObj, TreeItem_ToObj(tree, item));
-		    }
-		}
-	    } else {
-		TreeItem_Identify(tree, item, lock, x, y, &treeColumn, &elem);
-		if (treeColumn != NULL) {
-		    Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("column", -1));
-		    Tcl_ListObjAppendElement(interp, listObj, TreeColumn_ToObj(tree, treeColumn));
-		}
-		if (elem != NULL) {
-		    Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("elem", -1));
-		    Tcl_ListObjAppendElement(interp, listObj, TreeElement_ToObj(elem));
-		}
-	    }
-	    Tcl_SetObjResult(interp, listObj);
+	    result = TreeIdentifyCmd(tree, objc, objv);
 	    break;
 	}
 
@@ -2316,6 +2175,275 @@ Tree_FreeImage(
 	    ckfree((char *) ref);
 	}
     }
+}
+
+/*
+ *--------------------------------------------------------------
+ *
+ * TreeIdentifyCmd --
+ *
+ *	This procedure is invoked to process the [identify] widget
+ *	command.  See the user documentation for details on what
+ *	it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *--------------------------------------------------------------
+ */
+
+static int
+TreeIdentifyCmd(
+    TreeCtrl *tree,		/* Widget info. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *CONST objv[]	/* Argument values. */
+    )
+{
+    Tcl_Interp *interp = tree->interp;
+    int x, y, depth;
+    TreeItem item;
+    Tcl_Obj *listObj;
+    TreeRectangle tr;
+    int i, lock, columnTreeLeft;
+    CONST char *arrayName = NULL;
+    struct {
+	char *where;
+	int area;
+	TreeHeader header;
+	TreeItem item;
+	TreeColumn column;
+	TreeElement elem;
+	int button;
+	TreeItem line;
+	char *side;
+    } id;
+/*
+  set id [$tree identify $x $y]
+  "item I column C" : mouse is in column C of item I
+  "item I column C elem E" : mouse is in element E in column C of item I
+  "item I button" : mouse is in button-area of item I
+  "item I line J" : mouse is near line coming from item J
+  "header C ?left|right?" : mouse is in header column C
+  "" : mouse is not in any item
+*/
+    if (objc < 4) {
+	Tcl_WrongNumArgs(interp, 2, objv, "x y");
+	return TCL_ERROR;
+    }
+    if (Tk_GetPixelsFromObj(interp, tree->tkwin, objv[2], &x) != TCL_OK)
+	return TCL_ERROR;
+    if (Tk_GetPixelsFromObj(interp, tree->tkwin, objv[3], &y) != TCL_OK)
+	return TCL_ERROR;
+
+    for (i = 4; i < objc; i += 2) {
+	static CONST char *opName[] = { "-array", NULL };
+	int index;
+
+	if (Tcl_GetIndexFromObj(interp, objv[i], opName, "option", 0,
+		&index) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (i + 1 == objc) {
+	    FormatResult(interp, "missing value for \"%s\" option",
+		opName[index]);
+	    return TCL_ERROR;
+	}
+	switch (index) {
+	    case 0:
+		arrayName = Tcl_GetString(objv[i + 1]);
+		break;
+	}
+    }
+
+    id.where = "";
+    id.header = NULL;
+    id.item = NULL;
+
+    id.area = Tree_HitTest(tree, x, y);
+
+    /* Require point inside borders */
+    if (id.area == TREE_AREA_NONE)
+	goto finish;
+
+    if (id.area == TREE_AREA_HEADER) {
+	int wx = x;
+	item = Tree_HeaderUnderPoint(tree, &x, &y, &lock);
+	if (item == NULL) /* impossible */
+	    panic("[identify] point is in TREE_AREA_HEADER but header == NULL");
+	id.where = "header";
+	id.header = TreeItem_GetHeader(tree, item);
+	TreeItem_Identify(tree, item, lock, x, y, &id.column, &id.elem);
+	if (id.column == NULL)
+	    id.column = tree->columnTail; /* should never happen */
+	id.side = "";
+	if (TreeItem_GetRects(tree, item, id.column, 0, NULL, &tr) == 1) {
+	    if (W2Cx(wx) < TreeRect_Left(tr) + 4)
+		id.side = "left";
+	    else if (id.column != tree->columnTail && W2Cx(wx) >= TreeRect_Right(tr) - 4)
+		id.side = "right";
+	}
+	goto finish;
+    }
+
+    item = Tree_ItemUnderPoint(tree, &x, &y, &lock, FALSE);
+    if (item == NULL)
+	goto finish;
+
+    id.where = "item";
+    id.item = item;
+
+    depth = TreeItem_GetDepth(tree, item);
+    if (item == tree->root)
+	depth = (tree->showButtons && tree->showRootButton) ? 1 : 0;
+    else if (tree->showRoot)
+    {
+	depth++;
+	if (tree->showButtons && tree->showRootButton)
+	    depth++;
+    }
+    else if (tree->showButtons && tree->showRootChildButtons)
+	depth += 1;
+    else if (tree->showLines && tree->showRootLines)
+	depth += 1;
+
+    columnTreeLeft = tree->columnTreeLeft; /* canvas coords */
+    if (id.area == TREE_AREA_CONTENT)
+	columnTreeLeft -= tree->canvasPadX[PAD_TOP_LEFT]; /* item coords */
+
+    id.button = FALSE;
+    id.line = NULL;
+
+    /* Point is not over the style */
+    if (tree->columnTreeVis &&
+	    (TreeColumn_Lock(tree->columnTree) == lock) &&
+	    (x >= columnTreeLeft) &&
+	    (x < columnTreeLeft + TreeColumn_UseWidth(tree->columnTree)) &&
+	    (x < columnTreeLeft + depth * tree->useIndent)) {
+	int column = (x - columnTreeLeft) / tree->useIndent + 1;
+	if (column == depth) {
+	    if (TreeItem_IsPointInButton(tree, item, x, y))
+		id.button = TRUE;
+	} else if (tree->showLines) {
+	    TreeItem sibling;
+	    do {
+		item = TreeItem_GetParent(tree, item);
+	    } while (++column < depth);
+	    sibling = TreeItem_NextSiblingVisible(tree, item);
+	    if ((sibling != NULL) &&
+		    ((TreeItem_GetParent(tree, sibling) != tree->root) ||
+		    tree->showRootLines)) {
+		id.line = item;
+	    }
+	}
+	id.column = tree->columnTree;
+	id.elem = NULL;
+
+    /* Point is over the style */
+    } else {
+	TreeItem_Identify(tree, item, lock, x, y, &id.column, &id.elem);
+    }
+
+finish:
+    /* New method: Set an array variable with the result. */
+    if (arrayName != NULL) {
+	if (Tcl_SetVar2Ex(interp, arrayName, "where", Tcl_NewStringObj(id.where, -1),
+		TCL_LEAVE_ERR_MSG) == NULL) {
+	    return TCL_ERROR;
+	}
+	/* Point in a header*/
+	if (id.header != NULL) {
+	    if (Tcl_SetVar2Ex(interp, arrayName, "header", TreeHeader_ToObj(tree, id.header),
+		    TCL_LEAVE_ERR_MSG) == NULL) {
+		return TCL_ERROR;
+	    }
+	    if (Tcl_SetVar2Ex(interp, arrayName, "column", TreeColumn_ToObj(tree, id.column),
+		    TCL_LEAVE_ERR_MSG) == NULL) {
+		return TCL_ERROR;
+	    }
+	    if (Tcl_SetVar2Ex(interp, arrayName, "elem",
+		    id.elem ? TreeElement_ToObj(id.elem) : Tcl_NewObj(),
+		    TCL_LEAVE_ERR_MSG) == NULL) {
+		return TCL_ERROR;
+	    }
+	    if (Tcl_SetVar2Ex(interp, arrayName, "side", Tcl_NewStringObj(id.side, -1),
+		    TCL_LEAVE_ERR_MSG) == NULL) {
+		return TCL_ERROR;
+	    }
+
+	/* Point in an item */
+	} else if (id.item != NULL) {
+	    if (Tcl_SetVar2Ex(interp, arrayName, "item", TreeItem_ToObj(tree, id.item),
+		    TCL_LEAVE_ERR_MSG) == NULL) {
+		return TCL_ERROR;
+	    }
+	    if (Tcl_SetVar2Ex(interp, arrayName, "button",
+		    Tcl_NewStringObj(id.button ? "yes" : "no", -1),
+		    TCL_LEAVE_ERR_MSG) == NULL) {
+		return TCL_ERROR;
+	    }
+	    if (Tcl_SetVar2Ex(interp, arrayName, "line",
+		    id.line ? TreeItem_ToObj(tree, id.line) : Tcl_NewObj(),
+		    TCL_LEAVE_ERR_MSG) == NULL) {
+		return TCL_ERROR;
+	    }
+	    if (Tcl_SetVar2Ex(interp, arrayName, "column",
+		    id.column ? TreeColumn_ToObj(tree, id.column) : Tcl_NewObj(),
+		    TCL_LEAVE_ERR_MSG) == NULL) {
+		return TCL_ERROR;
+	    }
+	    if (Tcl_SetVar2Ex(interp, arrayName, "elem",
+		    id.elem ? TreeElement_ToObj(id.elem) : Tcl_NewObj(),
+		    TCL_LEAVE_ERR_MSG) == NULL) {
+		return TCL_ERROR;
+	    }
+	}
+
+    /* Old method: Return a list. */
+    } else {
+	/* Point in a header*/
+	if (id.header != NULL) {
+	    listObj = Tcl_NewListObj(0, NULL);
+	    Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("header", -1));
+	    if (TreeItem_GetNextSibling(tree, tree->headerItems) != NULL)
+		Tcl_ListObjAppendElement(interp, listObj, TreeHeader_ToObj(tree, id.header));
+	    if (TreeItem_GetNextSibling(tree, tree->headerItems) != NULL)
+		Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("column", -1));
+	    Tcl_ListObjAppendElement(interp, listObj, TreeColumn_ToObj(tree, id.column));
+	    if (id.elem != NULL) {
+		Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("elem", -1));
+		Tcl_ListObjAppendElement(interp, listObj, TreeElement_ToObj(id.elem));
+	    }
+	    if (id.side != NULL)
+		Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(id.side, -1));
+	    Tcl_SetObjResult(interp, listObj);
+
+	/* Point in an item */
+	} else if (id.item != NULL) {
+	    listObj = Tcl_NewListObj(0, NULL);
+	    Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("item", -1));
+	    Tcl_ListObjAppendElement(interp, listObj, TreeItem_ToObj(tree, id.item));
+	    if (id.button)
+		Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("button", -1));
+	    else if (id.line) {
+		Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("line", -1));
+		Tcl_ListObjAppendElement(interp, listObj, TreeItem_ToObj(tree, id.line));
+	    } else {
+		if (id.column != NULL) {
+		    Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("column", -1));
+		    Tcl_ListObjAppendElement(interp, listObj, TreeColumn_ToObj(tree, id.column));
+		}
+		if (id.elem != NULL) {
+		    Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("elem", -1));
+		    Tcl_ListObjAppendElement(interp, listObj, TreeElement_ToObj(id.elem));
+		}
+	    }
+	    Tcl_SetObjResult(interp, listObj);
+	}
+    }
+    return TCL_OK;
 }
 
 /*

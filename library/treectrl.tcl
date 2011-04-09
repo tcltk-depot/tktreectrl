@@ -267,55 +267,6 @@ proc ::TreeCtrl::ColumnCanMoveHere {w column before} {
 	[$w column compare $before <= "last lock $lock next"]}]
 }
 
-proc ::TreeCtrl::IdentifyArray {T x y var_} {
-    upvar $var_ var
-    set id [$T identify $x $y]
-    if {[lindex $id 0] eq "header"} {
-	array set var {
-	    where "header"
-	    header ""
-	    column ""
-	    elem ""
-	    side ""
-	}
-	if {[lindex $id 2] eq "column"} {
-	    set var(header) [lindex $id 1]
-	    set var(column) [lindex $id 3]
-	    if {[lindex $id 4] eq "elem"} {
-		set var(elem) [lindex $id 5]
-	    }
-	} else {
-	    set var(header) 0 ; # default header id
-	    set var(column) [lindex $id 1]
-	    if {[lindex $id 2] eq "elem"} {
-		set var(elem) [lindex $id 3]
-	    }
-	}
-	if {[llength $id] % 2} {
-	    set var(side) [lindex $id end]
-	}
-    } elseif {[lindex $id 0] eq "item"} {
-	array set var {
-	    where item
-	    button no
-	    line ""
-	    column ""
-	    elem ""
-	}
-	set var(item) [lindex $id 1]
-	if {[lindex $id 2] eq "button"} {
-	    set var(button) yes
-	} elseif {[lindex $id 2] eq "line"} {
-	    set var(line) [lindex $id 3]
-	} else {
-	    array set var [lrange $id 2 end]
-	}
-    } else {
-	set var(where) ""
-    }
-    return
-}
-
 # ::TreeCtrl::ColumnDragFindBefore --
 #
 # This is called when dragging a column header. The result is 1 if the given
@@ -342,7 +293,7 @@ proc ::TreeCtrl::ColumnDragFindBefore {w x y dragColumn indColumn_ indSide_} {
     if {$x >= $maxX} {
 	set x [expr {$maxX - 1}]
     }
-    IdentifyArray $w $x $y id
+    $w identify $x $y -array id
     if {$id(where) ne "header"} {
 	return 0
     }
@@ -389,7 +340,7 @@ set indSide right
 proc ::TreeCtrl::CursorAction {w x y var_} {
     upvar $var_ var
     variable Priv
-    IdentifyArray $w $x $y id
+    $w identify $x $y -array id
 
     set var(action) ""
     if {$id(where) eq "header"} {
@@ -639,9 +590,9 @@ proc ::TreeCtrl::MotionInButtons {T args} {
     if {[llength $args]} {
 	set x [lindex $args 0]
 	set y [lindex $args 1]
-	set id [$T identify $x $y]
-	if {[lindex $id 2] eq "button"} {
-	    set button [lindex $id 1]
+	$T identify $x $y -array id
+	if {$id(where) eq "item" && $id(button)} {
+	    set button $id(item)
 	}
     }
     if {[info exists Priv(inbutton,$T)]} {
@@ -699,7 +650,7 @@ proc ::TreeCtrl::ButtonPress1 {w x y} {
     variable Priv
     focus $w
 
-    IdentifyArray $w $x $y id
+    $w identify $x $y -array id
     if {$id(where) eq ""} {
 	return
     }
@@ -778,26 +729,25 @@ proc ::TreeCtrl::ButtonPress1 {w x y} {
 
 proc ::TreeCtrl::DoubleButton1 {w x y} {
 
-    set id [$w identify $x $y]
-    if {$id eq ""} {
+    $w identify $x $y -array id
+    if {$id(where) eq ""} {
 	return
     }
-    if {[lindex $id 0] eq "item"} {
-	lassign $id where item arg1 arg2
-	if {$arg1 eq "button"} {
+    if {$id(where) eq "item"} {
+	if {$id(button)} {
 	    if {[$w cget -buttontracking]} {
 		# There is no <ButtonRelease> so just toggle it
-		$w item toggle $item -animate
+		$w item toggle $id(item) -animate
 	    } else {
-		$w item toggle $item -animate
+		$w item toggle $id(item) -animate
 	    }
 	    return
-	} elseif {$arg1 eq "line"} {
-	    $w item toggle $arg2
+	} elseif {$id(line) ne ""} {
+	    $w item toggle $id(line)
 	    return
 	}
     }
-    if {[lindex $id 0] eq "header"} {
+    if {$id(where) eq "header"} {
 	CursorAction $w $x $y action
 	# Double-click between columns to set default column width
 	if {$action(action) eq "header-resize"} {
@@ -826,7 +776,7 @@ proc ::TreeCtrl::Motion1 {w x y} {
     if {![info exists Priv(buttonMode)]} return
     switch $Priv(buttonMode) {
 	header {
-	    IdentifyArray $w $x $y id
+	    $w identify $x $y -array id
 	    if {$id(where) ne "header" ||
 		    $id(header) ne $Priv(header) ||
 		    $id(column) ne $Priv(column)} {
@@ -849,13 +799,12 @@ proc ::TreeCtrl::Motion1 {w x y} {
 	    }
 	}
 	buttonTracking {
-	    set id [$w identify $x $y]
-	    lassign $id where item arg1 arg2
+	    $w identify $x $y -array id
 	    set itemTrack $Priv(buttontrack,item)
 	    set exists [expr {[$w item id $itemTrack] ne ""}]
 	    set mouseover 0
-	    if {$where eq "item" && $arg1 eq "button"} {
-		if {$exists && [$w item compare $itemTrack == $item]} {
+	    if {$id(where) eq "item" && $id(button)} {
+		if {$exists && [$w item compare $itemTrack == $id(item)]} {
 		    set mouseover 1
 		}
 	    }
@@ -1014,13 +963,12 @@ proc ::TreeCtrl::Release1 {w x y} {
 	    MotionInHeader $w $x $y
 	}
 	buttonTracking {
-	    set id [$w identify $x $y]
-	    lassign $id where item arg1 arg2
+	    $w identify $x $y -array id
 	    set itemTrack $Priv(buttontrack,item)
 	    set exists [expr {[$w item id $itemTrack] ne ""}]
-	    if {$where eq "item" && $arg1 eq "button"} {
-		if {$exists && [$w item compare $itemTrack == $item]} {
-		    $w item buttonstate $item active
+	    if {$id(where) eq "item" && $id(button)} {
+		if {$exists && [$w item compare $itemTrack == $id(item)]} {
+		    $w item buttonstate $id(item) active
 		    $w item toggle $itemTrack -animate
 		}
 	    }
@@ -1052,7 +1000,7 @@ if 1 {
 		}
 		TryEvent $w ColumnDrag receive [list H $Priv(header) C $Priv(column) b $column]
 	    }
-	    IdentifyArray $w $x $y id
+	    $w identify $x $y -array id
 	    if {$id(where) eq "header"} {
 		set header $id(header)
 		set column $id(column)

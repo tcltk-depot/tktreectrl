@@ -111,19 +111,18 @@ namespace eval TreeCtrl {
 
 proc ::TreeCtrl::IsSensitive {T x y} {
     variable Priv
-    set id [$T identify $x $y]
-    if {[lindex $id 0] ne "item" || [llength $id] != 6} {
+    $T identify $x $y -array id
+    if {$id(where) ne "item" || $id(elem) eq ""} {
 	return 0
     }
-    lassign $id where item arg1 arg2 arg3 arg4
-    if {![$T item enabled $item]} {
+    if {![$T item enabled $id(item)]} {
 	return 0
     }
     foreach list $Priv(sensitive,$T) {
 	set eList [lassign $list C S]
-	if {[$T column compare $arg2 != $C]} continue
-	if {[$T item style set $item $C] ne $S} continue
-	if {[lsearch -exact $eList $arg4] == -1} continue
+	if {[$T column compare $id(column) != $C]} continue
+	if {[$T item style set $id(item) $C] ne $S} continue
+	if {[lsearch -exact $eList $id(elem)] == -1} continue
 	return 1
     }
     return 0
@@ -143,12 +142,11 @@ proc ::TreeCtrl::IsSensitive {T x y} {
 
 proc ::TreeCtrl::IsSensitiveMarquee {T x y} {
     variable Priv
-    set id [$T identify $x $y]
-    if {[lindex $id 0] ne "item" || [llength $id] != 6} {
+    $T identify $x $y -array id
+    if {$id(where) ne "item" || $id(elem) eq ""} {
 	return 0
     }
-    lassign $id where item arg1 arg2 arg3 arg4
-    if {![$T item enabled $item]} {
+    if {![$T item enabled $id(item)]} {
 	return 0
     }
     if {![info exists Priv(sensitive,marquee,$T)]} {
@@ -160,9 +158,9 @@ proc ::TreeCtrl::IsSensitiveMarquee {T x y} {
     }
     foreach list $sensitive {
 	set eList [lassign $list C S]
-	if {[$T column compare $arg2 != $C]} continue
-	if {[$T item style set $item $C] ne $S} continue
-	if {[lsearch -exact $eList $arg4] == -1} continue
+	if {[$T column compare $id(column) != $C]} continue
+	if {[$T item style set $id(item) $C] ne $S} continue
+	if {[lsearch -exact $eList $id(elem)] == -1} continue
 	return 1
     }
     return 0
@@ -180,7 +178,7 @@ proc ::TreeCtrl::IsSensitiveMarquee {T x y} {
 proc ::TreeCtrl::FileListButton1 {T x y} {
     variable Priv
     focus $T
-    set id [$T identify $x $y]
+    $T identify $x $y -array id
     set marquee 0
     set Priv(buttonMode) ""
     foreach e {text entry} {
@@ -190,71 +188,67 @@ proc ::TreeCtrl::FileListButton1 {T x y} {
     }
     FileListEditCancel $T
     # Click outside any item
-    if {$id eq ""} {
+    if {$id(where) eq ""} {
 	set marquee 1
 
     # Click in header
-    } elseif {[lindex $id 0] eq "header"} {
+    } elseif {$id(where) eq "header"} {
 	ButtonPress1 $T $x $y
 
     # Click in item
-    } else {
-	lassign $id where item arg1 arg2 arg3 arg4
-	switch $arg1 {
-	    button -
-	    line {
-		ButtonPress1 $T $x $y
-	    }
-	    column {
-		set drag 0
-		if {[IsSensitive $T $x $y]} {
-		    set Priv(drag,wasSel) [$T selection includes $item]
+    } elseif {$id(where) eq "item"} {
+	if {$id(button) || $id(line) ne ""} {
+	    ButtonPress1 $T $x $y
+	} elseif {$id(column) ne ""} {
+	    set item $id(item)
+	    set drag 0
+	    if {[IsSensitive $T $x $y]} {
+		set Priv(drag,wasSel) [$T selection includes $item]
+		$T activate $item
+		if {$Priv(selectMode) eq "add"} {
+		    BeginExtend $T $item
+		} elseif {$Priv(selectMode) eq "toggle"} {
+		    BeginToggle $T $item
+		} elseif {![$T selection includes $item]} {
+		    BeginSelect $T $item
+		}
+
+		# Changing the selection might change the list
+		if {[$T item id $item] eq ""} return
+
+		# Click selected item(s) to drag or rename
+		if {[$T selection includes $item]} {
+		    set drag 1
+		}
+	    } elseif {[FileListEmulateWin7 $T] && [IsSensitiveMarquee $T $x $y]} {
+		# Click selected item(s) to drag or rename
+		if {[$T selection includes $item]} {
+		    set Priv(drag,wasSel) 1
 		    $T activate $item
-		    if {$Priv(selectMode) eq "add"} {
-			BeginExtend $T $item
-		    } elseif {$Priv(selectMode) eq "toggle"} {
-			BeginToggle $T $item
-		    } elseif {![$T selection includes $item]} {
-			BeginSelect $T $item
-		    }
-
-		    # Changing the selection might change the list
-		    if {[$T item id $item] eq ""} return
-
-		    # Click selected item(s) to drag or rename
-		    if {[$T selection includes $item]} {
-			set drag 1
-		    }
-		} elseif {[FileListEmulateWin7 $T] && [IsSensitiveMarquee $T $x $y]} {
-		    # Click selected item(s) to drag or rename
-		    if {[$T selection includes $item]} {
-			set Priv(drag,wasSel) 1
-			$T activate $item
-			set drag 1
-		    # Click marquee-sensitive parts of an unselected item
-		    # in single-select mode changes nothing until a drag
-		    # occurs or the mouse button is released.
-		    } elseif {[$T cget -selectmode] eq "single"} {
-			set Priv(drag,wasSel) 0
-			set drag 1
-		    } else {
-			set marquee 1
-		    }
+		    set drag 1
+		# Click marquee-sensitive parts of an unselected item
+		# in single-select mode changes nothing until a drag
+		# occurs or the mouse button is released.
+		} elseif {[$T cget -selectmode] eq "single"} {
+		    set Priv(drag,wasSel) 0
+		    set drag 1
 		} else {
 		    set marquee 1
 		}
-		if {$drag} {
-		    set Priv(drag,motion) 0
-		    set Priv(drag,click,x) $x
-		    set Priv(drag,click,y) $y
-		    set Priv(drag,x) [$T canvasx $x]
-		    set Priv(drag,y) [$T canvasy $y]
-		    set Priv(drop) ""
-		    set Priv(drag,item) $item
-		    set Priv(drag,C) $arg2
-		    set Priv(drag,E) $arg4
-		    set Priv(buttonMode) drag
-		}
+	    } else {
+		set marquee 1
+	    }
+	    if {$drag} {
+		set Priv(drag,motion) 0
+		set Priv(drag,click,x) $x
+		set Priv(drag,click,y) $y
+		set Priv(drag,x) [$T canvasx $x]
+		set Priv(drag,y) [$T canvasy $y]
+		set Priv(drop) ""
+		set Priv(drag,item) $item
+		set Priv(drag,C) $id(column)
+		set Priv(drag,E) $id(elem)
+		set Priv(buttonMode) drag
 	    }
 	}
     }
@@ -280,7 +274,7 @@ proc ::TreeCtrl::FileListButton1 {T x y} {
 	set Priv(marquee,motion) 0
 	if {[FileListEmulateWin7 $T]} {
 	    if {[IsSensitiveMarquee $T $x $y]} {
-		set item [lindex $id 1]
+		set item $id(item)
 		$T activate $item
 		if {$Priv(selectMode) ne "add"} {
 		    $T selection anchor $item
@@ -420,7 +414,7 @@ proc ::TreeCtrl::FileListMotion {T x y} {
 
 	    # Find the element under the cursor
 	    set drop ""
-	    set id [$T identify $x $y]
+	    $T identify $x $y -array id
 	    if {[IsSensitive $T $x $y]} {
 		set sensitive 1
 	    } elseif {[FileListEmulateWin7 $T] && [IsSensitiveMarquee $T $x $y]} {
@@ -429,7 +423,7 @@ proc ::TreeCtrl::FileListMotion {T x y} {
 		set sensitive 0
 	    }
 	    if {$sensitive} {
-		set item [lindex $id 1]
+		set item $id(item)
 		# If the item is not in the pre-drag selection
 		# (i.e. not being dragged) and it is a directory,
 		# see if we can drop on it
