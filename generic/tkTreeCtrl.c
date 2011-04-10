@@ -2043,6 +2043,76 @@ Tree_RemoveItem(
 /*
  *----------------------------------------------------------------------
  *
+ * Tree_AddHeader --
+ *
+ *	Add a header to the hash table of headers. Also set the unique
+ *	header id and increment the number of headers.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tree_AddHeader(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeItem item		/* Header that was created. */
+    )
+{
+    Tcl_HashEntry *hPtr;
+    int id, isNew;
+
+    id = TreeItem_SetID(tree, item, tree->nextHeaderId++);
+    hPtr = Tcl_CreateHashEntry(&tree->headerHash, (char *) INT2PTR(id), &isNew);
+    Tcl_SetHashValue(hPtr, item);
+    tree->headerCount++;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tree_RemoveHeader --
+ *
+ *	Remove a header from the hash table of headers.
+ *	Decrement the number of headers.
+ *	Reset the unique header id allocator if the last header is removed.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tree_RemoveHeader(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeItem item		/* Header to remove. */
+    )
+{
+    Tcl_HashEntry *hPtr;
+
+    hPtr = Tcl_FindHashEntry(&tree->itemSpansHash, (char *) item);
+    if (hPtr != NULL)
+	Tcl_DeleteHashEntry(hPtr);
+
+    hPtr = Tcl_FindHashEntry(&tree->headerHash,
+	    (char *) INT2PTR(TreeItem_GetID(tree, item)));
+    Tcl_DeleteHashEntry(hPtr);
+    tree->headerCount--;
+    if (tree->headerCount == 1)
+	tree->nextHeaderId = TreeItem_GetID(tree, tree->headerItems) + 1;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * ImageChangedProc --
  *
  *	This procedure is invoked by the image code whenever the manager

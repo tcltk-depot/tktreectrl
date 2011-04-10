@@ -527,6 +527,7 @@ struct TreeCtrl
     Tk_OptionTable headerOptionTable;
     Tk_OptionTable headerColumnOptionTable;
     TreeItem headerItems;
+    int headerCount;
     int nextHeaderId;
     Tcl_HashTable headerHash;	/* TreeItem.id -> TreeItem */
 };
@@ -551,6 +552,8 @@ struct TreeCtrl
 
 MODULE_SCOPE void Tree_AddItem(TreeCtrl *tree, TreeItem item);
 MODULE_SCOPE void Tree_RemoveItem(TreeCtrl *tree, TreeItem item);
+MODULE_SCOPE void Tree_AddHeader(TreeCtrl *tree, TreeItem item);
+MODULE_SCOPE void Tree_RemoveHeader(TreeCtrl *tree, TreeItem item);
 MODULE_SCOPE Tk_Image Tree_GetImage(TreeCtrl *tree, char *imageName);
 MODULE_SCOPE void Tree_FreeImage(TreeCtrl *tree, Tk_Image image);
 MODULE_SCOPE void Tree_UpdateScrollbarX(TreeCtrl *tree);

@@ -641,16 +641,10 @@ Item_Alloc(
     item->indexVis = -1;
     /* In the typical case all spans are 1. */
     item->flags |= ITEM_FLAG_SPANS_SIMPLE;
-    if (isHeader) {
-	Tcl_HashEntry *hPtr;
-	int id, isNew;
-
-	id = TreeItem_SetID(tree, item, tree->nextHeaderId++);
-	hPtr = Tcl_CreateHashEntry(&tree->headerHash, (char *) INT2PTR(id), &isNew);
-	Tcl_SetHashValue(hPtr, item);
-    } else {
+    if (isHeader)
+	Tree_AddHeader(tree, item);
+    else
 	Tree_AddItem(tree, item);
-    }
     return item;
 }
 
@@ -2931,19 +2925,10 @@ TreeItem_Delete(
     TreeDisplay_ItemDeleted(tree, item);
     TreeGradient_ItemDeleted(tree, item);
     TreeTheme_ItemDeleted(tree, item);
-    if (item->header != NULL) {
-	Tcl_HashEntry *hPtr;
-	hPtr = Tcl_FindHashEntry(&tree->itemSpansHash, (char *) item);
-	if (hPtr != NULL)
-	    Tcl_DeleteHashEntry(hPtr);
-
-	hPtr = Tcl_FindHashEntry(&tree->headerHash,
-		(char *) INT2PTR(TreeItem_GetID(tree, item)));
-	Tcl_DeleteHashEntry(hPtr);
-	if (tree->headerItems->nextSibling == NULL)
-	    tree->nextHeaderId = TreeItem_GetID(tree, tree->headerItems) + 1;
-    } else
-    Tree_RemoveItem(tree, item);
+    if (item->header != NULL)
+	Tree_RemoveHeader(tree, item);
+    else
+	Tree_RemoveItem(tree, item);
     TreeItem_FreeResources(tree, item);
     if (tree->activeItem == item) {
 	tree->activeItem = tree->root;
