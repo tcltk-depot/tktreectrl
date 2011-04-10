@@ -5568,6 +5568,7 @@ TreeItemCmd_Element(
     TreeItem item;
     int flags = IFO_NOT_NULL;
     int result = TCL_OK;
+    int tailFlag = doHeaders ? 0 : CFO_NOT_TAIL; /* styles allowed in tail ?*/
 
     if (objc < 7) {
 	Tcl_WrongNumArgs(interp, 3, objv, "command item column element ?arg ...?");
@@ -5670,7 +5671,7 @@ TreeItemCmd_Element(
 
 	    /* If no option-value pair is given, we can't specify more than
 	     * one column. */
-	    flags = CFO_NOT_NULL | CFO_NOT_TAIL;
+	    flags = CFO_NOT_NULL | tailFlag;
 	    if (objc < 9)
 		flags |= CFO_NOT_MANY;
 
@@ -5743,7 +5744,7 @@ TreeItemCmd_Element(
 
 		    if (TreeColumnList_FromObj(tree, objv[index + 1],
 			    &co[index + 1].columns, CFO_NOT_NULL |
-			    CFO_NOT_TAIL) != TCL_OK) {
+			    tailFlag) != TCL_OK) {
 			result = TCL_ERROR;
 			goto doneCONF;
 		    }
@@ -5898,6 +5899,7 @@ TreeItemCmd_Style(
     TreeItem item;
     int flags = IFO_NOT_NULL;
     int result = TCL_OK;
+    int tailFlag = doHeaders ? 0 : CFO_NOT_TAIL;
 
     if (objc < 5) {
 	Tcl_WrongNumArgs(interp, 3, objv, "command item ?arg ...?");
@@ -5966,7 +5968,7 @@ TreeItemCmd_Style(
 		return TCL_ERROR;
 	    }
 	    if (TreeColumnList_FromObj(tree, objv[5], &columns,
-		    CFO_NOT_NULL | CFO_NOT_TAIL) != TCL_OK) {
+		    CFO_NOT_NULL | tailFlag) != TCL_OK) {
 		result = TCL_ERROR;
 		break;
 	    }
@@ -6061,7 +6063,7 @@ doneMAP:
 	    STATIC_ALLOC(cs, struct columnStyle, objc / 2);
 	    for (i = 5; i < objc; i += 2) {
 		if (TreeColumnList_FromObj(tree, objv[i], &cs[count].columns,
-			CFO_NOT_NULL | CFO_NOT_TAIL) != TCL_OK) {
+			CFO_NOT_NULL | tailFlag) != TCL_OK) {
 		    result = TCL_ERROR;
 		    goto doneSET;
 		}
