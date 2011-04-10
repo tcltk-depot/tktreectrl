@@ -2338,7 +2338,10 @@ TreeIdentifyCmd(
 		id.line = item;
 	    }
 	}
-	id.column = tree->columnTree;
+	if (arrayName == NULL)
+	    id.column = NULL;
+	else
+	    id.column = tree->columnTree;
 	id.elem = NULL;
 
     /* Point is over the style */
@@ -2416,7 +2419,7 @@ finish:
 		Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("elem", -1));
 		Tcl_ListObjAppendElement(interp, listObj, TreeElement_ToObj(id.elem));
 	    }
-	    if (id.side != NULL)
+	    if (id.side[0])
 		Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(id.side, -1));
 	    Tcl_SetObjResult(interp, listObj);
 
