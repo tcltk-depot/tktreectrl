@@ -3361,6 +3361,11 @@ TreeItem_RemoveAllColumns(
 
     while (column != NULL) {
 	Column *next = column->next;
+	/* Don't delete the tail item-column in header items. */
+	if (item->header != NULL && next == NULL) {
+	    item->columns = column;
+	    return;
+	}
 	Column_FreeResources(tree, column);
 	column = next;
     }
