@@ -2427,10 +2427,10 @@ TreeHeader_FromObj(
 
 Tcl_Obj *
 TreeHeader_ToObj(
-    TreeCtrl *tree,		/* Widget info. */
     TreeHeader header		/* Header token. */
     )
 {
+    TreeCtrl *tree = header->tree;
 #if 0
     if (tree->itemPrefixLen) {
 	char buf[100 + TCL_INTEGER_SPACE];

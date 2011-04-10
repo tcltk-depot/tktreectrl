@@ -2355,7 +2355,7 @@ finish:
 	}
 	/* Point in a header*/
 	if (id.header != NULL) {
-	    if (Tcl_SetVar2Ex(interp, arrayName, "header", TreeHeader_ToObj(tree, id.header),
+	    if (Tcl_SetVar2Ex(interp, arrayName, "header", TreeHeader_ToObj(id.header),
 		    TCL_LEAVE_ERR_MSG) == NULL) {
 		return TCL_ERROR;
 	    }
@@ -2408,7 +2408,7 @@ finish:
 	    listObj = Tcl_NewListObj(0, NULL);
 	    Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("header", -1));
 	    if (TreeItem_GetNextSibling(tree, tree->headerItems) != NULL)
-		Tcl_ListObjAppendElement(interp, listObj, TreeHeader_ToObj(tree, id.header));
+		Tcl_ListObjAppendElement(interp, listObj, TreeHeader_ToObj(id.header));
 	    if (TreeItem_GetNextSibling(tree, tree->headerItems) != NULL)
 		Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("column", -1));
 	    Tcl_ListObjAppendElement(interp, listObj, TreeColumn_ToObj(tree, id.column));
