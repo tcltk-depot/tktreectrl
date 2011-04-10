@@ -8944,6 +8944,7 @@ if (hPtr == NULL) {
 }
     while (hPtr != NULL) {
 	value = (TreeColumn *) Tcl_GetHashValue(hPtr);
+	if (value == NULL) panic("TreeDisplay_ColumnDeleted value == NULL");
 	for (i = 0; value[i] != NULL; i++) {
 	    if (value[i] == column) {
 		while (value[i] != NULL) {
