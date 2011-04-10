@@ -4517,6 +4517,7 @@ Style_Deleted(
     Tcl_HashSearch search;
     IStyle *style;
     int columnIndex;
+    int tailOK;
 
     hPtr = Tcl_FirstHashEntry(tablePtr, &search);
 if (hPtr == NULL) {
@@ -4525,7 +4526,8 @@ if (hPtr == NULL) {
 }
     while (hPtr != NULL) {
 	item = (TreeItem) Tcl_GetHashValue(hPtr);
-	treeColumn = tree->columns;
+	tailOK = TreeItem_GetHeader(tree, item) != NULL;
+	treeColumn = Tree_FirstColumn(tree, -1, tailOK);
 	column = TreeItem_GetFirstColumn(tree, item);
 	columnIndex = 0;
 	while (column != NULL) {
@@ -4538,7 +4540,7 @@ if (hPtr == NULL) {
 	    }
 	    columnIndex++;
 	    column = TreeItemColumn_GetNext(tree, column);
-	    treeColumn = TreeColumn_Next(treeColumn);
+	    treeColumn = Tree_ColumnToTheRight(treeColumn, FALSE, tailOK);
 	}
 	hPtr = Tcl_NextHashEntry(&search);
 if (hPtr == NULL && tablePtr == &tree->itemHash) {
