@@ -264,6 +264,7 @@ foreach file {
     gradients
     gradients2
     gradients3
+    headers
     help
     imovie
     layout
@@ -1481,6 +1482,7 @@ proc InitDemoList {} {
 	"Gradients" DemoGradients gradients.tcl \
 	"Gradients II" DemoGradients2 gradients2.tcl \
 	"Gradients III" DemoGradients3 gradients3.tcl \
+	"Headers" DemoHeaders headers.tcl \
 	] {
 	set item [$t item create]
 	$t item lastchild root $item
