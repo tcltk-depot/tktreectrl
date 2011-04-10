@@ -2648,15 +2648,15 @@ TreeHeaderCmd(
 {
     TreeCtrl *tree = clientData;
     static CONST char *commandNames[] = {
-	"bbox", "cget", "configure", "create", "delete",
+	"bbox", "cget", "compare", "configure", "create", "delete",
 	"dragcget", "dragconfigure", "element", "id", "span",
-	"style", "tag", (char *) NULL
+	"state", "style", "tag", (char *) NULL
     };
     enum {
-	COMMAND_BBOX, COMMAND_CGET, COMMAND_CONFIGURE,
+	COMMAND_BBOX, COMMAND_CGET, COMMAND_COMPARE, COMMAND_CONFIGURE,
 	COMMAND_CREATE, COMMAND_DELETE, COMMAND_DRAGCGET,
 	COMMAND_DRAGCONF, COMMAND_ELEMENT, COMMAND_ID, COMMAND_SPAN,
-	COMMAND_STYLE, COMMAND_TAG
+	COMMAND_STATE, COMMAND_STYLE, COMMAND_TAG
     };
     int index;
     TreeItemList items;
@@ -2682,6 +2682,63 @@ TreeHeaderCmd(
 	/* T header cget H ?C? option */
 	case COMMAND_CGET:
 	    return cmd_header_cget(clientData, interp, objc, objv);
+
+	/* T header compare H op H */
+	case COMMAND_COMPARE: {
+	    static CONST char *opName[] = { "<", "<=", "==", ">=", ">", "!=", NULL };
+	    enum { COP_LT, COP_LE, COP_EQ, COP_GE, COP_GT, COP_NE };
+	    int op, compare = 0, index1 = 0, index2 = 0;
+	    TreeHeader header1, header2;
+
+	    if (objc != 6) {
+		Tcl_WrongNumArgs(interp, 3, objv, "header1 op header2");
+		return TCL_ERROR;
+	    }
+
+	    if (TreeHeader_FromObj(tree, objv[3], &header1) != TCL_OK)
+		return TCL_ERROR;
+
+	    if (Tcl_GetIndexFromObj(interp, objv[4], opName, "comparison operator", 0,
+		    &op) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+
+	    if (TreeHeader_FromObj(tree, objv[5], &header2) != TCL_OK)
+		return TCL_ERROR;
+
+	    if (op != COP_EQ && op != COP_NE) {
+		for (item = tree->headerItems; item != header1->item;
+			item = TreeItem_GetNextSibling(tree, item)) {
+		    index1++;
+		}
+		for (item = tree->headerItems; item != header2->item;
+			item = TreeItem_GetNextSibling(tree, item)) {
+		    index2++;
+		}
+	    }
+	    switch (op) {
+		case COP_LT:
+		    compare = index1 < index2;
+		    break;
+		case COP_LE:
+		    compare = index1 <= index2;
+		    break;
+		case COP_EQ:
+		    compare = header1 == header2;
+		    break;
+		case COP_GE:
+		    compare = index1 >= index2;
+		    break;
+		case COP_GT:
+		    compare = index1 > index2;
+		    break;
+		case COP_NE:
+		    compare = header1 != header2;
+		    break;
+	    }
+	    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(compare));
+	    break;
+	}
 
 	/* T header configure H ?C? ?option? ?value? ?option value ...? */
 	case COMMAND_CONFIGURE:
@@ -2749,6 +2806,9 @@ TreeHeaderCmd(
 	    }
 	    break;
 	}
+
+	case COMMAND_STATE:
+	    return TreeItem_StateCmd(tree, objc, objv, TRUE);
 
 	case COMMAND_STYLE:
 	    return TreeItem_StyleCmd(tree, objc, objv, TRUE);

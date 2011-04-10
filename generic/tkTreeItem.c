@@ -7270,15 +7270,15 @@ doneSPAN:
  *----------------------------------------------------------------------
  */
 
-static int
-ItemStateCmd(
-    ClientData clientData,	/* Widget info. */
-    Tcl_Interp *interp,		/* Current interpreter. */
+int
+TreeItem_StateCmd(
+    TreeCtrl *tree,
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[]	/* Argument values. */
+    Tcl_Obj *CONST objv[],	/* Argument values. */
+    int doHeaders
     )
 {
-    TreeCtrl *tree = clientData;
+    Tcl_Interp *interp = tree->interp;
     static CONST char *commandNames[] = {
 	"forcolumn", "get", "set", (char *) NULL
     };
@@ -7319,9 +7319,15 @@ ItemStateCmd(
 	    /* Without a stateList only one item is accepted. */
 	    if (objc == 6)
 		flags |= IFO_NOT_MANY;
-	    if (TreeItemList_FromObj(tree, objv[4], &itemList, flags)
-		    != TCL_OK)
-		return TCL_ERROR;
+	    if (doHeaders) {
+		if (TreeHeaderList_FromObj(tree, objv[4], &itemList, flags)
+			!= TCL_OK)
+		    return TCL_ERROR;
+	    } else {
+		if (TreeItemList_FromObj(tree, objv[4], &itemList, flags)
+			!= TCL_OK)
+		    return TCL_ERROR;
+	    }
 	    TreeColumnList_Init(tree, &columns, 0);
 	    if (objc == 6) {
 		item = TreeItemList_Nth(&itemList, 0);
@@ -7382,8 +7388,16 @@ doneFORC:
 		Tcl_WrongNumArgs(interp, 5, objv, "?state?");
 		return TCL_ERROR;
 	    }
-	    if (TreeItem_FromObj(tree, objv[4], &item, IFO_NOT_NULL) != TCL_OK)
-		return TCL_ERROR;
+	    if (doHeaders) {
+		TreeItemList itemList;
+		if (TreeHeaderList_FromObj(tree, objv[4], &itemList, IFO_NOT_NULL | IFO_NOT_MANY) != TCL_OK)
+		    return TCL_ERROR;
+		item = TreeItemList_Nth(&itemList, 0);
+		TreeItemList_Free(&itemList);
+	    } else {
+		if (TreeItem_FromObj(tree, objv[4], &item, IFO_NOT_NULL) != TCL_OK)
+		    return TCL_ERROR;
+	    }
 	    if (objc == 6) {
 		states[STATE_OP_ON] = 0;
 		if (Tree_StateFromObj(tree, objv[5], states, NULL,
@@ -7417,8 +7431,13 @@ doneFORC:
 		Tcl_WrongNumArgs(interp, 5, objv, "?last? stateList");
 		return TCL_ERROR;
 	    }
-	    if (TreeItemList_FromObj(tree, objv[4], &itemList, IFO_NOT_NULL) != TCL_OK)
-		return TCL_ERROR;
+	    if (doHeaders) {
+		if (TreeHeaderList_FromObj(tree, objv[4], &itemList, IFO_NOT_NULL) != TCL_OK)
+		    return TCL_ERROR;
+	    } else {
+		if (TreeItemList_FromObj(tree, objv[4], &itemList, IFO_NOT_NULL) != TCL_OK)
+		    return TCL_ERROR;
+	    }
 	    if (objc == 6) {
 		TreeItemList_Init(tree, &item2List, 0);
 	    }
@@ -7452,6 +7471,19 @@ doneSET:
     }
 
     return TCL_OK;
+}
+
+static int
+ItemStateCmd(
+    ClientData clientData,	/* Widget info. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *CONST objv[]	/* Argument values. */
+    )
+{
+    TreeCtrl *tree = clientData;
+
+    return TreeItem_StateCmd(tree, objc, objv, FALSE);
 }
 
 /*
