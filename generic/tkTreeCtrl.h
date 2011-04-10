@@ -637,6 +637,8 @@ MODULE_SCOPE TreeItem Tree_HeaderUnderPoint(TreeCtrl *tree, int *x_, int *y_, in
 MODULE_SCOPE int TreeHeader_FromObj(TreeCtrl *tree, Tcl_Obj *objPtr,
     TreeHeader *headerPtr);
 MODULE_SCOPE Tcl_Obj* TreeHeader_ToObj(TreeCtrl *tree, TreeHeader header);
+MODULE_SCOPE Tk_Justify TreeHeaderColumn_Justify(TreeHeader header,
+    TreeHeaderColumn column);
 
 MODULE_SCOPE Tk_ObjCustomOption TreeCtrlCO_header;
 

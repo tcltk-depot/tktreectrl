@@ -1984,6 +1984,15 @@ TreeHeader_DrawDragImagery(
     }
 }
 
+Tk_Justify
+TreeHeaderColumn_Justify(
+    TreeHeader header,		/* Header token. */
+    TreeHeaderColumn column	/* Column token. */
+    )
+{
+    return column->justify;
+}
+
 static int
 Header_Configure(
     TreeHeader header,

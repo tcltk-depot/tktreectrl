@@ -4397,6 +4397,7 @@ if (item->header != NULL && TreeColumn_Lock(treeColumn)==COLUMN_LOCK_NONE && spa
 	drawArgs.y = y;
 	drawArgs.width = columnWidth;
 	drawArgs.height = height;
+if (item->header != NULL) drawArgs.justify = TreeHeaderColumn_Justify(item->header, itemColumn->headerColumn);
 	drawArgs.justify = TreeColumn_ItemJustify(treeColumn);
 	drawArgs.column = treeColumn; /* needed for gradients */
 	if ((*proc)(tree, item, &spans[spanIndex], &drawArgs, clientData))
