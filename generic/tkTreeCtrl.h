@@ -618,6 +618,9 @@ MODULE_SCOPE int TreeHeaderCmd(ClientData clientData, Tcl_Interp *interp,
 MODULE_SCOPE int Tree_HeightOfHeaderItems(TreeCtrl *tree);
 MODULE_SCOPE int TreeHeaderList_FromObj(TreeCtrl *tree, Tcl_Obj *objPtr, TreeItemList *items, int flags);
 MODULE_SCOPE void TreeHeader_TreeChanged(TreeCtrl *tree, int flagT);
+MODULE_SCOPE void TreeHeader_DrawDragImagery(TreeHeader header, int lock,
+    TreeDrawable td, int x, int y, int width, int height);
+MODULE_SCOPE int TreeHeader_NeededHeight(TreeHeader header);
 
 MODULE_SCOPE int TreeHeader_ConsumeColumnCget(TreeCtrl *tree,
     TreeColumn treeColumn, Tcl_Obj *objPtr);
@@ -729,11 +732,17 @@ MODULE_SCOPE TreeItemColumn TreeItem_MakeColumnExist(TreeCtrl *tree,
 MODULE_SCOPE TreeItem TreeItem_CreateHeader(TreeCtrl *tree);
 MODULE_SCOPE TreeHeader TreeItem_GetHeader(TreeCtrl *tree, TreeItem item_);
 MODULE_SCOPE TreeHeaderColumn TreeItemColumn_GetHeaderColumn(TreeCtrl *tree, TreeItemColumn itemColumn);
+MODULE_SCOPE int TreeItem_ConsumeHeaderCget(TreeCtrl *tree, TreeItem item,
+    Tcl_Obj *objPtr);
+MODULE_SCOPE int TreeItem_ConsumeHeaderConfig(TreeCtrl *tree, TreeItem item,
+    int objc, Tcl_Obj *CONST objv[]);
 MODULE_SCOPE int TreeItem_ConfigureSpans(TreeCtrl *tree, TreeItemList *itemList,
     int objc, Tcl_Obj *CONST objv[]);
-MODULE_SCOPE int TreeItem_ElementCmd(TreeCtrl *tree, int objc,
+MODULE_SCOPE int TreeItemCmd_Element(TreeCtrl *tree, int objc,
     Tcl_Obj *CONST objv[], int doHeaders);
-MODULE_SCOPE int TreeItem_StyleCmd(TreeCtrl *tree, int objc,
+MODULE_SCOPE int TreeItemCmd_State(TreeCtrl *tree, int objc,
+    Tcl_Obj *CONST objv[], int doHeaders);
+MODULE_SCOPE int TreeItemCmd_Style(TreeCtrl *tree, int objc,
     Tcl_Obj *CONST objv[], int doHeaders);
 
 MODULE_SCOPE void TreeItem_AppendChild(TreeCtrl *tree, TreeItem self, TreeItem child);

@@ -5542,7 +5542,7 @@ NoStyleMsg(
  */
 
 int
-TreeItem_ElementCmd(
+TreeItemCmd_Element(
     TreeCtrl *tree,
     int objc,			/* Number of arguments. */
     Tcl_Obj *CONST objv[],	/* Argument values. */
@@ -5861,7 +5861,7 @@ ItemElementCmd(
     )
 {
     TreeCtrl *tree = clientData;
-    return TreeItem_ElementCmd(tree, objc, objv, FALSE);
+    return TreeItemCmd_Element(tree, objc, objv, FALSE);
 }
 
 /*
@@ -5883,7 +5883,7 @@ ItemElementCmd(
  */
 
 int
-TreeItem_StyleCmd(
+TreeItemCmd_Style(
     TreeCtrl *tree,
     int objc,			/* Number of arguments. */
     Tcl_Obj *CONST objv[],	/* Argument values. */
@@ -6143,7 +6143,7 @@ ItemStyleCmd(
     )
 {
     TreeCtrl *tree = clientData;
-    return TreeItem_StyleCmd(tree, objc, objv, FALSE);
+    return TreeItemCmd_Style(tree, objc, objv, FALSE);
 }
 
 /* Quicksort is not a "stable" sorting algorithm, but it can become a
@@ -7256,7 +7256,7 @@ doneSPAN:
  */
 
 int
-TreeItem_StateCmd(
+TreeItemCmd_State(
     TreeCtrl *tree,
     int objc,			/* Number of arguments. */
     Tcl_Obj *CONST objv[],	/* Argument values. */
@@ -7468,7 +7468,7 @@ ItemStateCmd(
 {
     TreeCtrl *tree = clientData;
 
-    return TreeItem_StateCmd(tree, objc, objv, FALSE);
+    return TreeItemCmd_State(tree, objc, objv, FALSE);
 }
 
 /*

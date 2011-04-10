@@ -1314,7 +1314,7 @@ TreeHeaderColumn_NeededWidth(
 /*
  *----------------------------------------------------------------------
  *
- * TreeColumn_NeededHeight --
+ * TreeHeaderColumn_NeededHeight --
  *
  *	Return the total height requested by all the graphical elements
  *	that make up a column header.  The height is recalculated if it
@@ -2438,7 +2438,7 @@ TreeHeader_ToObj(
 }
 
 static int
-cmd_header_create(
+TreeHeaderCmd_Create(
     ClientData clientData,	/* Widget info. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
@@ -2462,7 +2462,7 @@ cmd_header_create(
 }
 
 static int
-cmd_header_cget(
+TreeHeaderCmd_Cget(
     ClientData clientData,	/* Widget info. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
@@ -2518,7 +2518,7 @@ cmd_header_cget(
 }
 
 static int
-cmd_header_configure(
+TreeHeaderCmd_Configure(
     ClientData clientData,	/* Widget info. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
@@ -2677,11 +2677,11 @@ TreeHeaderCmd(
 
     switch (index) {
 	case COMMAND_CREATE:
-	    return cmd_header_create(clientData, interp, objc, objv);
+	    return TreeHeaderCmd_Create(clientData, interp, objc, objv);
 
 	/* T header cget H ?C? option */
 	case COMMAND_CGET:
-	    return cmd_header_cget(clientData, interp, objc, objv);
+	    return TreeHeaderCmd_Cget(clientData, interp, objc, objv);
 
 	/* T header compare H op H */
 	case COMMAND_COMPARE: {
@@ -2742,7 +2742,7 @@ TreeHeaderCmd(
 
 	/* T header configure H ?C? ?option? ?value? ?option value ...? */
 	case COMMAND_CONFIGURE:
-	    return cmd_header_configure(clientData, interp, objc, objv);
+	    return TreeHeaderCmd_Configure(clientData, interp, objc, objv);
 
 	case COMMAND_DELETE: {
 	    if (objc != 4) {
@@ -2773,7 +2773,7 @@ TreeHeaderCmd(
 	}
 
 	case COMMAND_ELEMENT:
-	    return TreeItem_ElementCmd(tree, objc, objv, TRUE);
+	    return TreeItemCmd_Element(tree, objc, objv, TRUE);
 
 	/* T header id H */
 	case COMMAND_ID: {
@@ -2808,10 +2808,10 @@ TreeHeaderCmd(
 	}
 
 	case COMMAND_STATE:
-	    return TreeItem_StateCmd(tree, objc, objv, TRUE);
+	    return TreeItemCmd_State(tree, objc, objv, TRUE);
 
 	case COMMAND_STYLE:
-	    return TreeItem_StyleCmd(tree, objc, objv, TRUE);
+	    return TreeItemCmd_Style(tree, objc, objv, TRUE);
     }
 
     return TCL_OK;
