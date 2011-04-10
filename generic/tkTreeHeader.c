@@ -283,14 +283,14 @@ HeaderCO_Get(
     )
 {
     TreeHeader value = *(TreeHeader *) (recordPtr + internalOffset);
-    TreeCtrl *tree = (TreeCtrl *) ((TkWindow *) tkwin)->instanceData;
+/*    TreeCtrl *tree = (TreeCtrl *) ((TkWindow *) tkwin)->instanceData;*/
     if (value == NULL)
 	return NULL;
 #if 0
     if (value == COLUMN_ALL)
 	return Tcl_NewStringObj("all", -1);
 #endif
-    return TreeHeader_ToObj(tree, value);
+    return TreeHeader_ToObj(value);
 }
 
 /*
@@ -525,14 +525,12 @@ TreeHeader_ConsumeColumnCget(
 	return TCL_OK;
 
     if (tree->headerItems == NULL) {
-	FormatResult(tree->interp, "the default header was deleted!");
-	return TCL_ERROR;
+	panic("the default header was deleted!");
     }
     itemColumn = TreeItem_FindColumn(tree, tree->headerItems, TreeColumn_Index(treeColumn));
     if (itemColumn == NULL) {
-	FormatResult(tree->interp, "the default header is missing column %s%d!",
+	panic("the default header is missing column %s%d!",
 	    tree->columnPrefix, TreeColumn_GetID(treeColumn));
-	return TCL_ERROR;
     }
     column = TreeItemColumn_GetHeaderColumn(tree, itemColumn);
     resultObjPtr = Tk_GetOptionValue(tree->interp, (char *) column,
@@ -558,14 +556,12 @@ TreeHeader_ConsumeColumnConfig(
 	return TCL_OK;
 
     if (tree->headerItems == NULL) {
-	FormatResult(tree->interp, "the default header was deleted!");
-	return TCL_ERROR;
+	panic("the default header was deleted!");
     }
     itemColumn = TreeItem_FindColumn(tree, tree->headerItems, TreeColumn_Index(treeColumn));
     if (itemColumn == NULL) {
-	FormatResult(tree->interp, "the default header is missing column %s%d!",
+	panic("the default header is missing column %s%d!",
 	    tree->columnPrefix, TreeColumn_GetID(treeColumn));
-	return TCL_ERROR;
     }
     column = TreeItemColumn_GetHeaderColumn(tree, itemColumn);
     return Column_Configure(TreeItem_GetHeader(tree, tree->headerItems), column, treeColumn, objc, objv, FALSE);
