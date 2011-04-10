@@ -562,10 +562,12 @@ proc ::TreeCtrl::MotionInHeader {w args} {
 	if {$headerPrev ne "" && [$w header id $headerPrev] ne ""} {
 	    if {$columnPrev ne "" && [$w column id $columnPrev] ne ""} {
 		$w header configure $headerPrev $columnPrev -state normal
+		TryEvent $w Header state [list H $headerPrev C $columnPrev s normal]
 	    }
 	}
 	if {$column ne ""} {
 	    $w header configure $header $column -state active
+	    TryEvent $w Header state [list H $header C $column s active]
 	    set Priv(inheader,$w) [list $header $column]
 	} else {
 	    unset Priv(inheader,$w)
@@ -688,6 +690,7 @@ proc ::TreeCtrl::ButtonPress1 {w x y} {
 	if {$action(action) eq "header-button"} {
 	    set Priv(buttonMode) header
 	    $w header configure $action(header) $column -state pressed
+	    TryEvent $w Header state [list H $action(header) C $column s pressed]
 	} else {
 	    if {[$w column compare $column == "tail"]} return
 	    if {![$w column dragcget -enable]} return
@@ -782,10 +785,12 @@ proc ::TreeCtrl::Motion1 {w x y} {
 		    $id(column) ne $Priv(column)} {
 		if {[$w header cget $Priv(header) $Priv(column) -state] eq "pressed"} {
 		    $w header configure $Priv(header) $Priv(column) -state normal
+		    TryEvent $w Header state [list H $Priv(header) C $Priv(column) s normal]
 		}
 	    } else {
 		if {[$w header cget $Priv(header) $Priv(column) -state] ne "pressed"} {
 		    $w header configure $Priv(header) $Priv(column) -state pressed
+		    TryEvent $w Header state [list H $Priv(header) C $Priv(column) s pressed]
 		}
 		if {[$w column dragcget -enable] &&
 		    (abs($Priv(columnDrag,x) - $x) > 4)} {
@@ -917,6 +922,7 @@ proc ::TreeCtrl::Leave1 {w x y} {
 	header {
 	    if {[$w header cget $Priv(header) $Priv(column) -state] eq "pressed"} {
 		$w header configure $Priv(header) $Priv(column) -state normal
+		TryEvent $w Header state [list H $Priv(header) C $Priv(column) s normal]
 	    }
 	}
     }
@@ -957,7 +963,8 @@ proc ::TreeCtrl::Release1 {w x y} {
 	header {
 	    if {[$w header cget $Priv(header) $Priv(column) -state] eq "pressed"} {
 		$w header configure $Priv(header) $Priv(column) -state active
-		TryEvent $w Header invoke [list C $Priv(column)]
+		TryEvent $w Header state [list H $Priv(header) C $Priv(column) s active]
+		TryEvent $w Header invoke [list H $Priv(header) C $Priv(column)]
 	    }
 	    CursorCheck $w $x $y
 	    MotionInHeader $w $x $y
