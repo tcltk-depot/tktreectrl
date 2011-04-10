@@ -620,6 +620,8 @@ MODULE_SCOPE int TreeHeader_ConsumeColumnCget(TreeCtrl *tree,
     TreeColumn treeColumn, Tcl_Obj *objPtr);
 MODULE_SCOPE int TreeHeader_ConsumeColumnConfig(TreeCtrl *tree,
     TreeColumn treeColumn, int objc, Tcl_Obj *CONST objv[]);
+MODULE_SCOPE Tcl_Obj *TreeHeader_ConsumeColumnOptionInfo(TreeCtrl *tree,
+    TreeColumn treeColumn, Tcl_Obj *objPtr);
 MODULE_SCOPE TreeHeader TreeHeader_CreateWithItem(TreeCtrl *tree,
     TreeItem item);
 MODULE_SCOPE void TreeHeader_FreeResources(TreeHeader header);

@@ -4174,6 +4174,34 @@ TreeColumnCmd(
 		if (TreeColumn_FromObj(tree, objv[3], &column,
 			CFO_NOT_NULL) != TCL_OK)
 		    return TCL_ERROR;
+#if HEADERS == 1
+		if (objc == 5) {
+		    Tk_OptionSpec *specPtr = columnSpecs;
+		    int length;
+		    CONST char *optionName = Tcl_GetStringFromObj(objv[4], &length);
+		    while (specPtr->type != TK_OPTION_END) {
+			if (strncmp(specPtr->optionName, optionName, length) == 0) {
+			    break;
+			}
+			specPtr++;
+		    }
+		    if (specPtr->type == TK_OPTION_END) {
+			resultObjPtr = TreeHeader_ConsumeColumnOptionInfo(tree, column, objv[4]);
+			if (resultObjPtr == NULL)
+			    goto errorExit;
+			Tcl_SetObjResult(interp, resultObjPtr);
+			break;
+		    }
+		} else {
+		    /* Return the combined [configure] output of the column and header-column */
+		    Tcl_Obj *objPtr = Tk_GetOptionInfo(interp, (char *) column,
+			column->optionTable, (Tcl_Obj *) NULL,  tree->tkwin);
+		    resultObjPtr = TreeHeader_ConsumeColumnOptionInfo(tree, column, NULL);
+		    Tcl_ListObjAppendList(interp, resultObjPtr, objPtr);
+		    Tcl_SetObjResult(interp, resultObjPtr);
+		    break;
+		}
+#endif
 		resultObjPtr = Tk_GetOptionInfo(interp, (char *) column,
 			column->optionTable,
 			(objc == 4) ? (Tcl_Obj *) NULL : objv[4],

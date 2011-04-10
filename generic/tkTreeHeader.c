@@ -571,6 +571,30 @@ TreeHeader_ConsumeColumnConfig(
     return Column_Configure(TreeItem_GetHeader(tree, tree->headerItems), column, treeColumn, objc, objv, FALSE);
 }
 
+
+Tcl_Obj *
+TreeHeader_ConsumeColumnOptionInfo(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeColumn treeColumn,
+    Tcl_Obj *objPtr		/* Option name or NULL. */
+    )
+{
+    TreeItemColumn itemColumn;
+    TreeHeaderColumn column;
+
+    if (tree->headerItems == NULL) {
+	panic("the default header was deleted!");
+    }
+    itemColumn = TreeItem_FindColumn(tree, tree->headerItems, TreeColumn_Index(treeColumn));
+    if (itemColumn == NULL) {
+	panic("the default header is missing column %s%d!",
+	    tree->columnPrefix, TreeColumn_GetID(treeColumn));
+    }
+    column = TreeItemColumn_GetHeaderColumn(tree, itemColumn);
+    return Tk_GetOptionInfo(tree->interp, (char *) column,
+	tree->headerColumnOptionTable, objPtr,  tree->tkwin);
+}
+
 /*
  *----------------------------------------------------------------------
  *
