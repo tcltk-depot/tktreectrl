@@ -1053,8 +1053,11 @@ proc MakeListPopup {T} {
     $m add checkbutton -label "Button Tracking" -variable Popup(buttontracking) \
 	-command {$Popup(T) configure -buttontracking $Popup(buttontracking)}
 
-    set m2 [menu $m.mVisible -tearoff no]
-    $m add cascade -label Columns -menu $m2
+    set m2 [menu $m.mColumns -tearoff no]
+    $m add cascade -label "Columns" -menu $m2
+
+    set m2 [menu $m.mHeaders -tearoff no]
+    $m add cascade -label "Headers" -menu $m2
 
     set m2 [menu $m.mColumnResizeMode -tearoff no]
     $m2 add radiobutton -label proxy -variable Popup(columnresizemode) -value proxy \
@@ -1151,68 +1154,122 @@ if 0 {
 }
 
 proc MakeHeaderPopup {T} {
-    set m [menu $T.mHeader -tearoff no]
+    set m [menu $T.mColumn -tearoff no]
 
-    set m2 [menu $m.mArrow -tearoff no]
-    $m add cascade -label Arrow -menu $m2
+    ### Header
+
+    set m1 [menu $m.mHeader -tearoff no]
+    $m add cascade -label "Header" -menu $m1
+
+    $m1 add checkbutton -label "Owner-drawn" -variable Popup(header,ownerdrawn) \
+	-command [list eval $T header configure \$Popup(header) -ownerdrawn \$Popup(header,ownerdrawn)]
+    $m1 add checkbutton -label "Visible" -variable Popup(header,visible) \
+	-command [list eval $T header configure \$Popup(header) -visible \$Popup(header,visible)]
+
+    ### Header-column
+
+    set m1 [menu $m.mHeaderColumn -tearoff no]
+    $m add cascade -label "Header Column" -menu $m1
+
+    set m2 [menu $m1.mArrow -tearoff no]
+    $m1 add cascade -label Arrow -menu $m2
     $m2 add radiobutton -label "None" -variable Popup(arrow) -value none \
-	-command {$Popup(T) column configure $Popup(column) -arrow none}
+	-command {$Popup(T) header configure $Popup(header) $Popup(column) -arrow none}
     $m2 add radiobutton -label "Up" -variable Popup(arrow) -value up \
-	-command {$Popup(T) column configure $Popup(column) -arrow up}
+	-command {$Popup(T) header configure $Popup(header) $Popup(column) -arrow up}
     $m2 add radiobutton -label "Down" -variable Popup(arrow) -value down \
-	-command {$Popup(T) column configure $Popup(column) -arrow down}
+	-command {$Popup(T) header configure $Popup(header) $Popup(column) -arrow down}
     $m2 add separator
     $m2 add radiobutton -label "Side Left" -variable Popup(arrow,side) -value left \
-	-command {$Popup(T) column configure $Popup(column) -arrowside left}
+	-command {$Popup(T) header configure $Popup(header) $Popup(column) -arrowside left}
     $m2 add radiobutton -label "Side Right" -variable Popup(arrow,side) -value right \
-	-command {$Popup(T) column configure $Popup(column) -arrowside right}
+	-command {$Popup(T) header configure $Popup(header) $Popup(column) -arrowside right}
     $m2 add separator
     $m2 add radiobutton -label "Gravity Left" -variable Popup(arrow,gravity) -value left \
-	-command {$Popup(T) column configure $Popup(column) -arrowgravity left}
+	-command {$Popup(T) header configure $Popup(header) $Popup(column) -arrowgravity left}
     $m2 add radiobutton -label "Gravity Right" -variable Popup(arrow,gravity) -value right \
-	-command {$Popup(T) column configure $Popup(column) -arrowgravity right}
+	-command {$Popup(T) header configure $Popup(header) $Popup(column) -arrowgravity right}
 
-    $m add checkbutton -label "Button" -variable Popup(button) \
-	-command {$Popup(T) column configure $Popup(column) -button $Popup(button)}
-    $m add checkbutton -label "Expand" -variable Popup(expand) \
-	-command {$Popup(T) column configure $Popup(column) -expand $Popup(expand)}
+    $m1 add checkbutton -label "Button" -variable Popup(button) \
+	-command {$Popup(T) header configure $Popup(header) $Popup(column) -button $Popup(button)}
 
-    set m2 [menu $m.mItemJustify -tearoff no]
-    $m add cascade -label "Item Justify" -menu $m2
-    $m2 add radiobutton -label "Left" -variable Popup(itemjustify) -value left \
-	-command {$Popup(T) column configure $Popup(column) -itemjustify left}
-    $m2 add radiobutton -label "Center" -variable Popup(itemjustify) -value center \
-	-command {$Popup(T) column configure $Popup(column) -itemjustify center}
-    $m2 add radiobutton -label "Right" -variable Popup(itemjustify) -value right \
-	-command {$Popup(T) column configure $Popup(column) -itemjustify right}
-    $m2 add radiobutton -label "Unspecified" -variable Popup(itemjustify) -value none \
-	-command {$Popup(T) column configure $Popup(column) -itemjustify {}}
+    set m2 [menu $m1.mJustify -tearoff no]
+    $m1 add cascade -label "Justify" -menu $m2
+    $m2 add radiobutton -label "Left" -variable Popup(header,justify) -value left \
+	-command {$Popup(T) header configure $Popup(header) $Popup(column) -justify left}
+    $m2 add radiobutton -label "Center" -variable Popup(header,justify) -value center \
+	-command {$Popup(T) header configure $Popup(header) $Popup(column) -justify center}
+    $m2 add radiobutton -label "Right" -variable Popup(header,justify) -value right \
+	-command {$Popup(T) header configure $Popup(header) $Popup(column) -justify right}
 
-    set m2 [menu $m.mJustify -tearoff no]
-    $m add cascade -label Justify -menu $m2
-    $m2 add radiobutton -label "Left" -variable Popup(justify) -value left \
-	-command {$Popup(T) column configure $Popup(column) -justify left}
-    $m2 add radiobutton -label "Center" -variable Popup(justify) -value center \
-	-command {$Popup(T) column configure $Popup(column) -justify center}
-    $m2 add radiobutton -label "Right" -variable Popup(justify) -value right \
-	-command {$Popup(T) column configure $Popup(column) -justify right}
-
-    set m2 [menu $m.mLock -tearoff no]
-    $m add cascade -label Lock -menu $m2
-    $m2 add radiobutton -label "Left" -variable Popup(lock) -value left \
-	-command {$Popup(T) column configure $Popup(column) -lock left}
-    $m2 add radiobutton -label "None" -variable Popup(lock) -value none \
-	-command {$Popup(T) column configure $Popup(column) -lock none}
-    $m2 add radiobutton -label "Right" -variable Popup(lock) -value right \
-	-command {$Popup(T) column configure $Popup(column) -lock right}
-
-    $m add checkbutton -label "Resize" -variable Popup(resize) \
-	-command {$Popup(T) column configure $Popup(column) -resize $Popup(resize)}
-    $m add checkbutton -label "Squeeze" -variable Popup(squeeze) \
-	-command {$Popup(T) column configure $Popup(column) -squeeze $Popup(squeeze)}
-    $m add checkbutton -label "Tree Column" -variable Popup(treecolumn) \
-	-command {$Popup(T) configure -treecolumn [expr {$Popup(treecolumn) ? $Popup(column) : ""}]}
     return
+}
+
+proc MakeHeaderSubmenu {T H parentMenu} {
+
+    ### Header
+
+    set m1 [menu $parentMenu.mHeader$H -tearoff no]
+
+    $m1 add checkbutton -label "Owner-drawn" -variable Popup(header,ownerdrawn,$H) \
+	-command [list eval $T header configure $H -ownerdrawn \$Popup(header,ownerdrawn,$H)]
+    $m1 add checkbutton -label "Visible" -variable Popup(header,visible,$H) \
+	-command [list eval $T header configure $H -visible \$Popup(header,visible,$H)]
+
+    return $m1
+}
+
+proc PostColumnSubmenu {T C parentMenu} {
+
+    ### Tree-column
+
+#    set m1 [menu $parentMenu.mColumn$C -tearoff no]
+    set m1 $parentMenu.mColumn$C
+    $m1 delete 0 end
+
+    $m1 add checkbutton -label "Expand" -variable Popup(column,expand,$C) \
+	-command [list eval $T column configure $C -expand \$Popup(column,expand,$C)]
+
+    set m2 [menu $m1.mItemJustify -tearoff no]
+    $m1 add cascade -label "Item Justify" -menu $m2
+    $m2 add radiobutton -label "Left" -variable Popup(column,itemjustify,$C) -value left \
+	-command [list $T column configure $C -itemjustify left]
+    $m2 add radiobutton -label "Center" -variable Popup(column,itemjustify,$C) -value center \
+	-command [list $T column configure $C -itemjustify center]
+    $m2 add radiobutton -label "Right" -variable Popup(column,itemjustify,$C) -value right \
+	-command [list $T column configure $C -itemjustify right]
+    $m2 add radiobutton -label "Unspecified" -variable Popup(column,itemjustify,$C) -value none \
+	-command [list $T column configure $C -itemjustify {}]
+
+    set m2 [menu $m1.mJustify -tearoff no]
+    $m1 add cascade -label "Justify" -menu $m2
+    $m2 add radiobutton -label "Left" -variable Popup(column,justify,$C) -value left \
+	-command [list $T column configure $C -justify left]
+    $m2 add radiobutton -label "Center" -variable Popup(column,justify,$C) -value center \
+	-command [list $T column configure $C -justify center]
+    $m2 add radiobutton -label "Right" -variable Popup(column,justify,$C) -value right \
+	-command [list $T column configure $C -justify right]
+
+    set m2 [menu $m1.mLock -tearoff no]
+    $m1 add cascade -label Lock -menu $m2
+    $m2 add radiobutton -label "Left" -variable Popup(column,lock,$C) -value left \
+	-command [list $T column configure $C -lock left]
+    $m2 add radiobutton -label "None" -variable Popup(column,lock,$C) -value none \
+	-command [list $T column configure $C -lock none]
+    $m2 add radiobutton -label "Right" -variable Popup(column,lock,$C) -value right \
+	-command [list $T column configure $C -lock right]
+
+    $m1 add checkbutton -label "Resize" -variable Popup(column,resize,$C) \
+	-command [list eval $T column configure $C -resize \$Popup(column,resize,$C)]
+    $m1 add checkbutton -label "Squeeze" -variable Popup(column,squeeze,$C) \
+	-command [list eval $T column configure $C -squeeze \$Popup(column,squeeze,$C)]
+    $m1 add checkbutton -label "Tree Column" -variable Popup(treecolumn,$C) \
+	-command [list eval $T configure -treecolumn "\[expr {\$Popup(treecolumn,$C) ? $C : {}}\]"]
+    $m1 add checkbutton -label "Visible" -variable Popup(column,visible,$C) \
+	-command [list eval $T column configure $C -visible \$Popup(column,visible,$C) ; \
+	    TreeCtrl::TryEvent $T DemoColumnVisibility {} {C $C} ]
+
+    return $m1
 }
 
 proc AddBindTag {w tag} {
@@ -1238,10 +1295,14 @@ proc ShowPopup {T x y X Y} {
 	if {$id(where) eq "header"} {
 	    set Popup(header) $id(header)
 	    set Popup(column) $id(column)
-	    set Popup(arrow) [$T column cget $Popup(column) -arrow]
-	    set Popup(arrow,side) [$T column cget $Popup(column) -arrowside]
-	    set Popup(arrow,gravity) [$T column cget $Popup(column) -arrowgravity]
-	    set Popup(button) [$T column cget $Popup(column) -button]
+	    set Popup(arrow) [$T header cget $Popup(header) $Popup(column) -arrow]
+	    set Popup(arrow,side) [$T header cget $Popup(header) $Popup(column) -arrowside]
+	    set Popup(arrow,gravity) [$T header cget $Popup(header) $Popup(column) -arrowgravity]
+	    set Popup(button) [$T header cget $Popup(header) $Popup(column) -button]
+	    set Popup(header,justify) [$T header cget $Popup(header) $Popup(column) -justify]
+	    set Popup(header,ownerdrawn) [$T header cget $Popup(header) -ownerdrawn]
+	    set Popup(header,visible) [$T header cget $Popup(header) -visible]
+
 	    set Popup(expand) [$T column cget $Popup(column) -expand]
 	    set Popup(resize) [$T column cget $Popup(column) -resize]
 	    set Popup(squeeze) [$T column cget $Popup(column) -squeeze]
@@ -1250,7 +1311,7 @@ proc ShowPopup {T x y X Y} {
 	    set Popup(justify) [$T column cget $Popup(column) -justify]
 	    set Popup(lock) [$T column cget $Popup(column) -lock]
 	    set Popup(treecolumn) [expr {[$T column id tree] eq $Popup(column)}]
-	    tk_popup $T.mHeader $X $Y
+	    tk_popup $T.mColumn $X $Y
 	    return
 	}
     }
@@ -1298,17 +1359,39 @@ proc ShowPopup {T x y X Y} {
     set Popup(showrootbutton) [$T cget -showrootbutton]
     set Popup(showrootchildbuttons) [$T cget -showrootchildbuttons]
     set Popup(showrootlines) [$T cget -showrootlines]
-    set m $menu.mVisible
+
+    set m $menu.mColumns
+    eval destroy [winfo children $m]
     $m delete 0 end
     foreach C [$T column list] {
 	set break [expr {!([$T column order $C] % 20)}]
-	set Popup(visible,$C) [$T column cget $C -visible]
-	$m add checkbutton \
-	    -label "Column $C \"[$T column cget $C -text]\" \[[$T column cget $C -image]\]" \
-	    -variable Popup(visible,$C) \
-	    -command "$T column configure $C -visible \$Popup(visible,$C) ;
-		TreeCtrl::TryEvent $T DemoColumnVisibility {} {C $C}" \
-	    -columnbreak $break
+#	set m1 [MakeColumnSubmenu $T $C $m]
+	set m1 [menu $m.mColumn$C -postcommand [list PostColumnSubmenu $T $C $m]]
+	$m add cascade -menu $m1 -columnbreak $break \
+	    -label "Column $C \"[$T column cget $C -text]\" \[[$T column cget $C -image]\]"
+
+	set Popup(column,expand,$C) [$T column cget $C -expand]
+	set Popup(column,justify,$C) [$T column cget $C -justify]
+	set Popup(column,itemjustify,$C) [$T column cget $C -itemjustify]
+	if {$Popup(column,itemjustify,$C) eq ""} { set Popup(column,itemjustify,$C) none }
+	set Popup(column,lock,$C) [$T column cget $C -lock]
+	set Popup(column,squeeze,$C) [$T column cget $C -squeeze]
+	set Popup(column,visible,$C) [$T column cget $C -visible]
+	set Popup(treecolumn,$C) no
+	if {[$T column id tree] ne ""} {
+	    set Popup(treecolumn,$C) [$T column compare [$T column id tree] == $C]
+	}
+    }
+
+    set m $menu.mHeaders
+    eval destroy [winfo children $m]
+    $m delete 0 end
+    foreach H [$T header id all] {
+	set m1 [MakeHeaderSubmenu $T $H $m]
+	$m add cascade -menu $m1 -label "Header $H"
+
+	set Popup(header,ownerdrawn,$H) [$T header cget $H -ownerdrawn]
+	set Popup(header,visible,$H) [$T header cget $H -visible]
     }
 
     set m $menu.mItemWrap
@@ -1654,6 +1737,7 @@ proc DemoClear {} {
 
     # Delete all the headers (except the first header, it never gets deleted).
     $T header delete all
+    $T header configure first -ownerdrawn no
 
     # Clear all bindings on the demo list added by the previous demo.
     # The bindings are removed from the tag $T only. For those
@@ -1679,7 +1763,7 @@ proc DemoClear {} {
 
     # Delete -window windows
     foreach child [winfo children $T] {
-	if {[string equal $child $T.mTree] || [string equal $child $T.mHeader]} continue
+	if {[string equal $child $T.mTree] || [string equal $child $T.mColumn]} continue
 	destroy $child
     }
 
@@ -2024,3 +2108,4 @@ proc RandomPerfTest {} {
     puts [time {[DemoList] colu conf 0 -width 160 ; update}]
     return
 }
+
