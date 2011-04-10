@@ -9454,6 +9454,23 @@ TreeItemColumn_GetHeaderColumn(
 }
 
 int
+TreeItem_ConsumeHeaderCget(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeItem item,
+    Tcl_Obj *objPtr		/* Option name. */
+    )
+{
+    Tcl_Obj *resultObjPtr;
+
+    resultObjPtr = Tk_GetOptionValue(tree->interp, (char *) item,
+	    tree->itemOptionTable, objPtr, tree->tkwin);
+    if (resultObjPtr == NULL)
+	return TCL_ERROR;
+    Tcl_SetObjResult(tree->interp, resultObjPtr);
+    return TCL_OK;
+}
+
+int
 TreeItem_ConsumeHeaderConfig(
     TreeCtrl *tree,		/* Widget info. */
     TreeItem item,		/* Item token. */

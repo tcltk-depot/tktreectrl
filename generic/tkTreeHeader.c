@@ -2479,6 +2479,20 @@ cmd_header_cget(
 
     /* T header cget H option */
     if (objc == 5) {
+	{
+	    Tk_OptionSpec *specPtr = headerSpecs;
+	    int length;
+	    CONST char *optionName = Tcl_GetStringFromObj(objv[4], &length);
+	    while (specPtr->type != TK_OPTION_END) {
+		if (strncmp(specPtr->optionName, optionName, length) == 0) {
+		    break;
+		}
+		specPtr++;
+	    }
+	    if (specPtr->type == TK_OPTION_END) {
+		return TreeItem_ConsumeHeaderCget(tree, header->item, objv[4]);
+	    }
+	}
 	resultObjPtr = Tk_GetOptionValue(interp, (char *) header,
 		tree->headerOptionTable, objv[4], tree->tkwin);
 	if (resultObjPtr == NULL)
