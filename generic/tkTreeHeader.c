@@ -2676,13 +2676,13 @@ TreeHeaderCmd(
 {
     TreeCtrl *tree = clientData;
     static CONST char *commandNames[] = {
-	"bbox", "cget", "compare", "configure", "create", "delete",
+	"bbox", "cget", "compare", "configure", "count", "create", "delete",
 	"dragcget", "dragconfigure", "element", "id", "span",
 	"state", "style", "tag", (char *) NULL
     };
     enum {
 	COMMAND_BBOX, COMMAND_CGET, COMMAND_COMPARE, COMMAND_CONFIGURE,
-	COMMAND_CREATE, COMMAND_DELETE, COMMAND_DRAGCGET,
+	COMMAND_COUNT, COMMAND_CREATE, COMMAND_DELETE, COMMAND_DRAGCGET,
 	COMMAND_DRAGCONF, COMMAND_ELEMENT, COMMAND_ID, COMMAND_SPAN,
 	COMMAND_STATE, COMMAND_STYLE, COMMAND_TAG
     };
@@ -2704,6 +2704,62 @@ TreeHeaderCmd(
     /* FIXME: Tree_PreserveItems? */
 
     switch (index) {
+	/* T header bbox I ?C? ?E? */
+	case COMMAND_BBOX: {
+	    TreeHeader header;
+	    int count;
+	    TreeColumn treeColumn;
+	    TreeRectangle rect;
+
+	    if (objc < 4 || objc > 6) {
+		Tcl_WrongNumArgs(interp, 3, objv, "header ?column? ?element?");
+		return TCL_ERROR;
+	    }
+
+	    if (TreeHeader_FromObj(tree, objv[3], &header) != TCL_OK)
+		return TCL_ERROR;
+	    item = header->item;
+
+	    (void) Tree_GetOriginX(tree);
+	    (void) Tree_GetOriginY(tree);
+
+	    if (objc == 4) {
+		/* If an item is visible but has zero height a valid bbox
+		 * is returned. */
+		if (Tree_ItemBbox(tree, item, COLUMN_LOCK_NONE, &rect) < 0)
+		    break;
+	    } else {
+		if (TreeColumn_FromObj(tree, objv[4], &treeColumn,
+			CFO_NOT_NULL | CFO_NOT_TAIL) != TCL_OK)
+		    return TCL_ERROR;
+
+		/* Bounds of a column. */
+		if (objc == 5) {
+		    objc = 0;
+		    objv = NULL;
+
+		/* Single element in a column. */
+		} else {
+		    objc -= 5;
+		    objv += 5;
+		}
+
+		count = TreeItem_GetRects(tree, item, treeColumn,
+			objc, objv, &rect);
+		if (count == 0)
+		    break;
+		if (count == -1)
+		    return TCL_ERROR;
+	    }
+	    /* Canvas -> window coordinates */
+	    FormatResult(interp, "%d %d %d %d",
+		    TreeRect_Left(rect) - tree->xOrigin,
+		    TreeRect_Top(rect) - tree->yOrigin,
+		    TreeRect_Left(rect) - tree->xOrigin + TreeRect_Width(rect),
+		    TreeRect_Top(rect) - tree->yOrigin + TreeRect_Height(rect));
+	    break;
+	}
+
 	case COMMAND_CREATE:
 	    return TreeHeaderCmd_Create(clientData, interp, objc, objv);
 
@@ -2771,6 +2827,28 @@ TreeHeaderCmd(
 	/* T header configure H ?C? ?option? ?value? ?option value ...? */
 	case COMMAND_CONFIGURE:
 	    return TreeHeaderCmd_Configure(clientData, interp, objc, objv);
+
+	/* T header count ?H? */
+	case COMMAND_COUNT: {
+	    int count = tree->headerCount;
+
+	    if (objc > 4) {
+		Tcl_WrongNumArgs(interp, 3, objv, "?headerDesc?");
+		return TCL_ERROR;
+	    }
+
+	    if (objc == 4) {
+		if (TreeHeaderList_FromObj(tree, objv[3], &items, 0) != TCL_OK)
+		    return TCL_ERROR;
+		count = 0;
+		ITEM_FOR_EACH(item, &items, NULL, &iter) {
+		    count++;
+		}
+		TreeItemList_Free(&items);
+	    }
+	    Tcl_SetObjResult(interp, Tcl_NewIntObj(count));
+	    break;
+	}
 
 	case COMMAND_DELETE: {
 	    if (objc != 4) {
