@@ -2480,10 +2480,10 @@ finish:
 	if (id.header != NULL) {
 	    listObj = Tcl_NewListObj(0, NULL);
 	    Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("header", -1));
-	    if (TreeItem_GetNextSibling(tree, tree->headerItems) != NULL)
+	    if (tree->headerCount > 1) {
 		Tcl_ListObjAppendElement(interp, listObj, TreeHeader_ToObj(id.header));
-	    if (TreeItem_GetNextSibling(tree, tree->headerItems) != NULL)
 		Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("column", -1));
+	    }
 	    Tcl_ListObjAppendElement(interp, listObj, TreeColumn_ToObj(tree, id.column));
 	    if (id.elem != NULL) {
 		Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("elem", -1));
