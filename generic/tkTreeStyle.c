@@ -3770,7 +3770,7 @@ if (hPtr == NULL) {
 	hPtr = Tcl_NextHashEntry(&search);
 if (hPtr == NULL && tablePtr == &tree->itemHash) {
     tablePtr = &tree->headerHash;
-    hPtr = Tcl_FirstHashEntry(&tree->headerHash, &search);
+    hPtr = Tcl_FirstHashEntry(tablePtr, &search);
 }
     }
     if (updateDInfo)
