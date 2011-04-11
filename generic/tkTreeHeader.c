@@ -2807,7 +2807,12 @@ TreeHeaderCmd(
 	case COMMAND_ID: {
 	    Tcl_Obj *listObj;
 
-	    if (TreeHeaderList_FromObj(tree, objv[3], &items, IFO_NOT_NULL) != TCL_OK)
+	    if (objc != 4) {
+		Tcl_WrongNumArgs(interp, 3, objv, "header");
+		return TCL_ERROR;
+	    }
+
+	    if (TreeHeaderList_FromObj(tree, objv[3], &items, 0) != TCL_OK)
 		return TCL_ERROR;
 
 	    listObj = Tcl_NewListObj(0, NULL);
