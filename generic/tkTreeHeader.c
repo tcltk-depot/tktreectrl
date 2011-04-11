@@ -61,6 +61,7 @@ struct TreeHeaderColumn_
 				 * text + arrow */
     int neededHeight;		/* calculated from borders + image/bitmap +
 				 * text */
+    int layoutWidth;		/* Used to detect changes in column width */
     GC bitmapGC;
     TextLayout textLayout;	/* multi-line titles */
     int textLayoutWidth;	/* width passed to TextLayout_Compute */
@@ -1333,7 +1334,8 @@ TreeHeaderColumn_NeededWidth(
 int
 TreeHeaderColumn_NeededHeight(
     TreeHeader header,		/* Header token. */
-    TreeHeaderColumn column	/* Column token. */
+    TreeHeaderColumn column,	/* Column token. */
+    int fixedWidth		/* Width available, or -1 for no limit. */
     )
 {
     TreeCtrl *tree = header->tree;
@@ -1348,8 +1350,21 @@ TreeHeaderColumn_NeededHeight(
     if (tree->columnCountVis + tree->columnCountVisLeft + tree->columnCountVisRight == 0)
 	return 0;
 
-    if (column->neededHeight >= 0)
+    /* Detect changes to column width, either from [column configure] or the
+     * window changing size when some columns have -squeeze=yes. */
+    if (fixedWidth >= 0 /*&& column->neededHeight >= 0*/) {
+	int neededWidth = TreeHeaderColumn_NeededWidth(header, column);
+	if ((fixedWidth < neededWidth || column->layoutWidth < neededWidth) && column->textLines != 1) {
+	    if (column->layoutWidth != fixedWidth) {
+		column->neededHeight = -1;
+	    }
+	}
+	column->layoutWidth = fixedWidth;
+    }
+
+    if (column->neededHeight >= 0) {
 	return column->neededHeight;
+    }
 
 #if defined(MAC_OSX_TK)
     /* List headers are a fixed height on Aqua */
@@ -1379,9 +1394,13 @@ TreeHeaderColumn_NeededHeight(
     }
     if (column->text != NULL) {
 	struct Layout layout;
+#if 1
+	layout.width = (fixedWidth >= 0) ? fixedWidth : TreeHeaderColumn_NeededWidth(header, column);
+#else
 	layout.width = TreeColumn_UseWidth(
 			    Tree_FindColumn(tree,
 				TreeItemColumn_Index(tree, header->item, column->itemColumn)));
+#endif
 	layout.height = -1;
 	Column_DoLayout(tree, column, &layout);
 	if (column->textLayout != NULL) {
@@ -2162,6 +2181,29 @@ TreeHeader_FreeResources(
     WFREE(header, TreeHeader_);
 }
 
+int
+TreeHeaders_NeededWidthOfColumn(
+    TreeCtrl *tree,
+    TreeColumn treeColumn
+    )
+{
+    TreeItem item = tree->headerItems;
+    int maxWidth = 0, width;
+
+    while (item != NULL) {
+	TreeHeader header = TreeItem_GetHeader(tree, item);
+	TreeItemColumn itemColumn = TreeItem_FindColumn(tree, item, TreeColumn_Index(treeColumn));
+	TreeHeaderColumn column = TreeItemColumn_GetHeaderColumn(tree, itemColumn);
+	width = TreeHeaderColumn_NeededWidth(header, column);
+	maxWidth = MAX(maxWidth, width);
+	width = TreeItemColumn_NeededWidth(tree, item, itemColumn); /* the style */
+	maxWidth = MAX(maxWidth, width);
+	item = TreeItem_GetNextSibling(tree, item);
+    }
+
+    return maxWidth;
+}
+
 #if 0
 int
 TreeHeader_NeededHeight(
@@ -2928,6 +2970,30 @@ TreeHeaderCmd(
 
     return TCL_OK;
 }
+
+#if 0
+void
+TreeHeaders_InvalidateNeededHeight(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeColumn treeColumn	/* Column that changed width. */
+    )
+{
+    TreeItem item = tree->headerItems;
+    TreeItemColumn itemColumn;
+    TreeHeaderColumn column;
+
+    while (item != NULL) {
+	itemColumn = TreeItem_FindColumn(tree, item, TreeColumn_Index(treeColumn));
+	column = TreeItemColumn_GetHeaderColumn(tree, itemColumn);
+	if (column == NULL)
+	    panic("TreeHeaders_InvalidateNeededHeight: item-column is missing its associated header-column");
+	column->neededHeight = -1;
+	item = TreeItem_GetNextSibling(tree, item);
+    }
+    tree->headerHeight = -1;
+    /* Tree_DInfoChanged should be called by the caller */
+}
+#endif
 
 /*
  *----------------------------------------------------------------------

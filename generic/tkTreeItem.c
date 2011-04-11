@@ -3606,9 +3606,16 @@ Item_HeightOfStyles(
 		drawArgs.width = -1;
 	    height = MAX(height, TreeStyle_UseHeight(&drawArgs));
 	}
-if (TreeColumn_Visible(treeColumn) && (column->headerColumn != NULL)) {
-    height = MAX(height, TreeHeaderColumn_NeededHeight(item->header, column->headerColumn));
-}
+	if (TreeColumn_Visible(treeColumn) && (column->headerColumn != NULL)) {
+	    int fixedWidth = -1;
+	    if ((TreeColumn_FixedWidth(treeColumn) != -1) ||
+		    TreeColumn_Squeeze(treeColumn)) {
+		fixedWidth = TreeColumn_UseWidth(treeColumn) -
+		    TreeItem_Indent(tree, treeColumn, item);
+	    }
+	    height = MAX(height, TreeHeaderColumn_NeededHeight(item->header,
+		column->headerColumn, fixedWidth));
+	}
 	treeColumn = Tree_ColumnToTheRight(treeColumn, FALSE, tailOK);
 	column = column->next;
     }

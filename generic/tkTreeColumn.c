@@ -2218,7 +2218,7 @@ Column_Config(
     Tcl_Obj *staticHObjV[STATIC_SIZE], **hObjV = staticHObjV;
     int i;
 
-    /* Hack -- Pass some options to the underlying header */
+    /* Hack -- Pass some options to the underlying header-column */
     STATIC_ALLOC(objV, Tcl_Obj *, objc);
     STATIC_ALLOC(hObjV, Tcl_Obj *, objc);
     for (i = 0; i < objc; i += 2) {
@@ -2501,9 +2501,11 @@ Column_Config(
 
 #if HEADERS == 1
     /* If there are no more visible columns, the header isn't shown. */
-    /* Header height may change with the width of columns. */
-    if (mask & COLU_CONF_TWIDTH)
+    /* Header height may change with the width of columns (due to text wrapping). */
+    if (mask & COLU_CONF_TWIDTH) {
 	tree->headerHeight = -1;
+/*	TreeHeaders_InvalidateNeededHeight(tree, column);*/
+    }
 #else
     if (mask & (COLU_CONF_NWIDTH | COLU_CONF_TWIDTH))
 	mask |= COLU_CONF_NHEIGHT;
