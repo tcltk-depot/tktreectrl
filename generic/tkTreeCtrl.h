@@ -622,7 +622,7 @@ MODULE_SCOPE int TreeHeaderList_FromObj(TreeCtrl *tree, Tcl_Obj *objPtr, TreeIte
 MODULE_SCOPE void TreeHeader_TreeChanged(TreeCtrl *tree, int flagT);
 MODULE_SCOPE void TreeHeader_DrawDragImagery(TreeHeader header, int lock,
     TreeDrawable td, int x, int y, int width, int height);
-MODULE_SCOPE int TreeHeader_NeededHeight(TreeHeader header);
+MODULE_SCOPE int TreeHeaderColumn_NeededHeight(TreeHeader header, TreeHeaderColumn column);
 
 MODULE_SCOPE int TreeHeader_ConsumeColumnCget(TreeCtrl *tree,
     TreeColumn treeColumn, Tcl_Obj *objPtr);

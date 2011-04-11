@@ -3567,7 +3567,7 @@ TreeItem_Release(
 /*
  *----------------------------------------------------------------------
  *
- * Item_UseHeight --
+ * Item_HeightOfStyles --
  *
  *	Return the height used by styles in an Item.
  *
@@ -3587,7 +3587,8 @@ Item_HeightOfStyles(
     )
 {
     Column *column = item->columns;
-    TreeColumn treeColumn = Tree_FirstColumn(tree, -1, item->header != NULL);
+    int tailOK = item->header != NULL;
+    TreeColumn treeColumn = Tree_FirstColumn(tree, -1, tailOK);
     StyleDrawArgs drawArgs;
     int height = 0;
 
@@ -3605,7 +3606,10 @@ Item_HeightOfStyles(
 		drawArgs.width = -1;
 	    height = MAX(height, TreeStyle_UseHeight(&drawArgs));
 	}
-	treeColumn = Tree_ColumnToTheRight(treeColumn, FALSE, item->header != NULL);
+if (TreeColumn_Visible(treeColumn) && (column->headerColumn != NULL)) {
+    height = MAX(height, TreeHeaderColumn_NeededHeight(item->header, column->headerColumn));
+}
+	treeColumn = Tree_ColumnToTheRight(treeColumn, FALSE, tailOK);
 	column = column->next;
     }
 
@@ -3649,9 +3653,11 @@ TreeItem_Height(
 	return 0;
 
     if (item->header != NULL) {
+	if (!tree->showHeader) /* FIXME: should this routine call ReallyVisible()? */
+	    return 0;
 	if (item->fixedHeight > 0)
 	    return item->fixedHeight;
-	return MAX(TreeHeader_NeededHeight(item->header), Item_HeightOfStyles(tree, item));
+	return Item_HeightOfStyles(tree, item); /* styles *plus* header stuff */
     }
 
     /* Get requested height of the style in each column */

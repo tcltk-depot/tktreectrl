@@ -1339,6 +1339,15 @@ TreeHeaderColumn_NeededHeight(
     TreeCtrl *tree = header->tree;
     int margins[4];
 
+    if (!tree->showHeader || header->ownerDrawn)
+	return 0;
+
+    /* For compatibility, if there are no visible columns then don't display
+     * the lone tail column. */
+    (void) Tree_WidthOfColumns(tree);
+    if (tree->columnCountVis + tree->columnCountVisLeft + tree->columnCountVisRight == 0)
+	return 0;
+
     if (column->neededHeight >= 0)
 	return column->neededHeight;
 
@@ -1779,6 +1788,10 @@ TreeHeaderColumn_Draw(
 	    drawArgs->x = x;
 	}
     }
+
+    /* FIXME: don't draw the tail column if it isn't visible.
+     * Currently I always create a span for the tail column. */
+
     if (header->ownerDrawn || isDragColumn) {
 	GC gc = Tk_3DBorderGC(tree->tkwin, tree->border, TK_3D_FLAT_GC);
 	TreeRectangle tr;
@@ -2149,6 +2162,7 @@ TreeHeader_FreeResources(
     WFREE(header, TreeHeader_);
 }
 
+#if 0
 int
 TreeHeader_NeededHeight(
     TreeHeader header
@@ -2158,7 +2172,13 @@ TreeHeader_NeededHeight(
     TreeItemColumn itemColumn;
     int maxHeight = 0;
 
-    if (header->ownerDrawn)
+    if (!tree->showHeader || header->ownerDrawn)
+	return 0;
+
+    /* For compatibility, if there are no visible columns then don't display
+     * the lone tail column. */
+    (void) Tree_WidthOfColumns(tree);
+    if (tree->columnCountVis + tree->columnCountVisLeft + tree->columnCountVisRight == 0)
 	return 0;
 
     for (itemColumn = TreeItem_GetFirstColumn(tree, header->item);
@@ -2169,6 +2189,7 @@ TreeHeader_NeededHeight(
     }
     return maxHeight;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
