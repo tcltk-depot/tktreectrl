@@ -781,7 +781,7 @@ MODULE_SCOPE void TreeItem_Identify2(TreeCtrl *tree, TreeItem item_,
 	int x1, int y1, int x2, int y2, Tcl_Obj *listObj);
 MODULE_SCOPE int TreeItem_GetRects(TreeCtrl *tree, TreeItem item_,
     TreeColumn treeColumn, int objc, Tcl_Obj *CONST objv[], TreeRectangle rects[]);
-MODULE_SCOPE int TreeItem_Indent(TreeCtrl *tree, TreeItem item_);
+MODULE_SCOPE int TreeItem_Indent(TreeCtrl *tree, TreeColumn column, TreeItem item_);
 MODULE_SCOPE void Tree_UpdateItemIndex(TreeCtrl *tree);
 MODULE_SCOPE void Tree_DeselectHidden(TreeCtrl *tree);
 MODULE_SCOPE int TreeItemCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]);
@@ -936,6 +936,7 @@ MODULE_SCOPE Tcl_Obj *TreeColumn_ToObj(TreeCtrl *tree, TreeColumn column_);
 MODULE_SCOPE int TreeColumnCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]);
 MODULE_SCOPE int TreeColumn_GetID(TreeColumn column_);
 MODULE_SCOPE int TreeColumn_Index(TreeColumn column_);
+MODULE_SCOPE int TreeColumn_VisIndex(TreeColumn column_);
 MODULE_SCOPE TreeColumn Tree_FirstColumn(TreeCtrl *tree, int lock, int tailOK);
 MODULE_SCOPE TreeColumn Tree_ColumnToTheRight(TreeColumn column_, int displayOrder, int tailOK);
 MODULE_SCOPE TreeColumn TreeColumn_Next(TreeColumn column_);

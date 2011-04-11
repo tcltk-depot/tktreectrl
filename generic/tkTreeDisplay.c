@@ -414,8 +414,7 @@ Range_Redo(
 			    int columnWidth =
 				TreeItemColumn_NeededWidth(tree, item,
 					itemColumn);
-			    if (tree->columnTreeVis)
-				columnWidth += TreeItem_Indent(tree, item);
+			    columnWidth += TreeItem_Indent(tree, tree->columnVis, item);
 			    rItem->size = columnWidth;
 			} else
 			    rItem->size = 0;
@@ -657,8 +656,7 @@ Range_TotalWidth(
 			itemColumn);
 	    else
 		itemWidth = 0;
-	    if (tree->columnTreeVis)
-		itemWidth += TreeItem_Indent(tree, item);
+	    itemWidth += TreeItem_Indent(tree, tree->columnVis, item);
 	    if (itemWidth > range->totalWidth)
 		range->totalWidth = itemWidth;
 	    if (rItem == range->last)
@@ -689,8 +687,7 @@ Range_TotalWidth(
 		else
 		    itemWidth = 0;
 
-		if (tree->columnTreeVis)
-		    itemWidth += TreeItem_Indent(tree, item);
+		itemWidth += TreeItem_Indent(tree, tree->columnVis, item);
 
 		if ((stepWidth != -1) && (itemWidth % stepWidth))
 		    itemWidth += stepWidth - itemWidth % stepWidth;

@@ -1097,7 +1097,7 @@ TreeItem_GetButtonBbox(
     if (itemColumn != NULL)
 	style = TreeItemColumn_GetStyle(tree, itemColumn);
 
-    indent = TreeItem_Indent(tree, item);
+    indent = TreeItem_Indent(tree, tree->columnTree, item);
 
     if (style != NULL)
 	buttonY = TreeStyle_GetButtonY(tree, style);
@@ -3597,8 +3597,7 @@ Item_HeightOfStyles(
 	if (TreeColumn_Visible(treeColumn) && (column->style != NULL)) {
 	    drawArgs.state = item->state | column->cstate;
 	    drawArgs.style = column->style;
-	    drawArgs.indent = (treeColumn == tree->columnTree) ?
-		TreeItem_Indent(tree, item) : 0;
+	    drawArgs.indent = TreeItem_Indent(tree, treeColumn, item);
 	    if ((TreeColumn_FixedWidth(treeColumn) != -1) ||
 		    TreeColumn_Squeeze(treeColumn)) {
 		drawArgs.width = TreeColumn_UseWidth(treeColumn);
@@ -3853,10 +3852,22 @@ TreeItem_ColumnFromObj(
 int
 TreeItem_Indent(
     TreeCtrl *tree,		/* Widget info. */
+    TreeColumn treeColumn,	/* Which column. */
     TreeItem item		/* Item token. */
     )
 {
     int depth;
+
+    if (item->header != NULL) {
+	if ((TreeColumn_Lock(treeColumn) == COLUMN_LOCK_NONE) &&
+		(TreeColumn_VisIndex(treeColumn) == 0)) {
+	    return tree->canvasPadX[PAD_TOP_LEFT];
+	}
+	return 0;
+    }
+
+    if (treeColumn != tree->columnTree)
+	return 0;
 
     if (IS_ROOT(item))
 	return (tree->showRoot && tree->showButtons && tree->showRootButton)
@@ -4373,11 +4384,7 @@ else
 	    drawArgs.state = item->state;
 	    drawArgs.style = NULL;
 	}
-if (item->header != NULL && TreeColumn_Lock(treeColumn)==COLUMN_LOCK_NONE && spanIndex==0) drawArgs.indent = tree->canvasPadX[PAD_TOP_LEFT]; else
-	if (treeColumn == tree->columnTree)
-	    drawArgs.indent = TreeItem_Indent(tree, item);
-	else
-	    drawArgs.indent = 0;
+	drawArgs.indent = TreeItem_Indent(tree, treeColumn, item);
 	drawArgs.x = x + totalWidth;
 	drawArgs.y = y;
 	drawArgs.width = columnWidth;
@@ -4596,7 +4603,7 @@ TreeItem_DrawLines(
     int hasPrev, hasNext;
     int i, vert = 0;
 
-    indent = TreeItem_Indent(tree, item);
+    indent = TreeItem_Indent(tree, tree->columnTree, item);
 
     if (style != NULL)
 	buttonY = TreeStyle_GetButtonY(tree, style);
@@ -4751,7 +4758,7 @@ TreeItem_DrawButton(
     if (!TreeItem_HasButton(tree, item))
 	return;
 
-    indent = TreeItem_Indent(tree, item);
+    indent = TreeItem_Indent(tree, tree->columnTree, item);
 
     if (style != NULL)
 	buttonY = TreeStyle_GetButtonY(tree, style);

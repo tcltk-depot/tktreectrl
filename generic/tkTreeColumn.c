@@ -3866,6 +3866,49 @@ TreeColumn_Index(
 /*
  *----------------------------------------------------------------------
  *
+ * TreeColumn_VisIndex --
+ *
+ *	Return the 0-based index for a column.
+ *
+ * Results:
+ *	Position of the column in the list of visible columns.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TreeColumn_VisIndex(
+    TreeColumn column		/* Column token. */
+    )
+{
+    TreeCtrl *tree = column->tree;
+    TreeColumn walk = Tree_FirstColumn(tree, column->lock, TRUE);
+    int index = 0;
+
+    /* FIXME: slow, this is only used by headers in TreeItem_Indent. */
+    /* I can't calculate this in LayoutColumns because TreeItem_Indent is
+     * used during that procedure. */
+
+    if (!column->visible)
+	return -1;
+
+    while (walk != column) {
+	if (walk->visible) {
+	    /* I only care about the first non-locked visible column (index==0).*/
+	    return 1;
+	    index++;
+	}
+	walk = Tree_ColumnToTheRight(walk, TRUE, TRUE);
+    }
+    return index;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * ColumnTagCmd --
  *
  *	This procedure is invoked to process the [column tag] widget
@@ -5460,29 +5503,27 @@ TreeColumn_WidthOfItems(
     while (item != NULL) {
 #ifdef EXPENSIVE_SPAN_WIDTH /* NOT USED */
 	width = TreeItem_NeededWidthOfColumn(tree, item, column->index);
-	if (column == tree->columnTree)
-	    width += TreeItem_Indent(tree, item);
+	width += TreeItem_Indent(tree, column, item);
 	column->widthOfItems = MAX(column->widthOfItems, width);
 #else
 	itemColumn = TreeItem_FindColumn(tree, item, column->index);
 	if (itemColumn != NULL) {
 	    width = TreeItemColumn_NeededWidth(tree, item, itemColumn);
-	    if (column == tree->columnTree)
-		width += TreeItem_Indent(tree, item);
+	    width += TreeItem_Indent(tree, column, item);
 	    column->widthOfItems = MAX(column->widthOfItems, width);
 	}
 #endif
 	item = TreeItem_NextVisible(tree, item);
     }
 
+    /* FIXME: this whole block can't be here */
     item = tree->headerItems;
     if ((item != NULL) && !TreeItem_ReallyVisible(tree, item))
 	item = TreeItem_NextVisible(tree, item);
     while (item != NULL) {
 #ifdef EXPENSIVE_SPAN_WIDTH /* NOT USED */
 	width = TreeItem_NeededWidthOfColumn(tree, item, column->index);
-	if (column == tree->columnTree)
-	    width += TreeItem_Indent(tree, item);
+	width += TreeItem_Indent(tree, column, item);
 	column->widthOfItems = MAX(column->widthOfItems, width);
 #else
 	itemColumn = TreeItem_FindColumn(tree, item, column->index);
@@ -5491,8 +5532,7 @@ TreeColumn_WidthOfItems(
 	    width = MAX(width, TreeHeaderColumn_NeededWidth(
 		TreeItem_GetHeader(tree, item),
 		TreeItemColumn_GetHeaderColumn(tree, itemColumn)));
-	    if (column == tree->columnTree)
-		width += TreeItem_Indent(tree, item);
+	    width += TreeItem_Indent(tree, column, item);
 	    column->widthOfItems = MAX(column->widthOfItems, width);
 	}
 #endif
