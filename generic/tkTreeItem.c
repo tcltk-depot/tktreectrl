@@ -6033,7 +6033,8 @@ doneMAP:
 	    /* Return list of styles. */
 	    if (objc == 5) {
 		Tcl_Obj *listObj = Tcl_NewListObj(0, NULL);
-		treeColumn = tree->columns;
+		int tailOK = item->header != NULL;
+		treeColumn = Tree_FirstColumn(tree, -1, tailOK);
 		column = item->columns;
 		while (treeColumn != NULL) {
 		    if ((column != NULL) && (column->style != NULL))
@@ -6043,7 +6044,7 @@ doneMAP:
 		    else
 			Tcl_ListObjAppendElement(interp, listObj,
 				Tcl_NewObj());
-		    treeColumn = TreeColumn_Next(treeColumn);
+		    treeColumn = Tree_ColumnToTheRight(treeColumn, FALSE, tailOK);
 		    if (column != NULL)
 			column = column->next;
 		}
