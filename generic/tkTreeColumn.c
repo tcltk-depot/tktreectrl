@@ -289,16 +289,20 @@ static CONST char *justifyStrings[] = {
     "left", "right", "center", (char *) NULL
 };
 
+#if HEADERS == 0
 #define COLU_CONF_IMAGE		0x0001
 #define COLU_CONF_NWIDTH	0x0002	/* neededWidth */
 #define COLU_CONF_NHEIGHT	0x0004	/* neededHeight */
+#endif
 #define COLU_CONF_TWIDTH	0x0008	/* totalWidth */
 #define COLU_CONF_ITEMBG	0x0010
 #define COLU_CONF_DISPLAY	0x0040
 #define COLU_CONF_JUSTIFY	0x0080
 #define COLU_CONF_TAGS		0x0100
+#if HEADERS == 0
 #define COLU_CONF_TEXT		0x0200
 #define COLU_CONF_BITMAP	0x0400
+#endif
 #define COLU_CONF_RANGES	0x0800
 #if COLUMNGRID == 1
 #define COLU_CONF_GRIDLINES	0x1000
@@ -2495,9 +2499,14 @@ Column_Config(
 	Tree_DInfoChanged(tree, DINFO_REDO_COLUMN_WIDTH);
     }
 
+#if HEADERS == 1
+    /* If there are no more visible columns, the header isn't shown. */
+    /* Header height may change with the width of columns. */
+    if (mask & COLU_CONF_TWIDTH)
+	tree->headerHeight = -1;
+#else
     if (mask & (COLU_CONF_NWIDTH | COLU_CONF_TWIDTH))
 	mask |= COLU_CONF_NHEIGHT;
-#if HEADERS == 0
     if (mask & (COLU_CONF_JUSTIFY | COLU_CONF_TEXT))
 	column->textLayoutInvalid = TRUE;
 
@@ -2518,7 +2527,11 @@ Column_Config(
 	Tree_DInfoChanged(tree, DINFO_REDO_RANGES);
 
     /* Redraw everything */
+#if HEADERS == 1
+    if (mask & COLU_CONF_TWIDTH) {
+#else
     if (mask & (COLU_CONF_TWIDTH | COLU_CONF_NWIDTH | COLU_CONF_NHEIGHT)) {
+#endif
 	tree->widthOfColumns = -1;
 	tree->widthOfColumnsLeft = tree->widthOfColumnsRight = -1;
 	Tree_DInfoChanged(tree, DINFO_CHECK_COLUMN_WIDTH | DINFO_DRAW_HEADER);
