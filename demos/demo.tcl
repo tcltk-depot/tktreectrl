@@ -1220,14 +1220,15 @@ proc MakeHeaderSubmenu {T H parentMenu} {
     return $m1
 }
 
-proc PostColumnSubmenu {T C parentMenu} {
+proc MakeColumnSubmenu {T C parentMenu} {
 
     ### Tree-column
-
-#    set m1 [menu $parentMenu.mColumn$C -tearoff no]
+if 1 {
+    set m1 [menu $parentMenu.mColumn$C -tearoff no]
+} else {
     set m1 $parentMenu.mColumn$C
     $m1 delete 0 end
-
+}
     $m1 add checkbutton -label "Expand" -variable Popup(column,expand,$C) \
 	-command [list eval $T column configure $C -expand \$Popup(column,expand,$C)]
 
@@ -1267,8 +1268,8 @@ proc PostColumnSubmenu {T C parentMenu} {
     $m1 add checkbutton -label "Tree Column" -variable Popup(treecolumn,$C) \
 	-command [list eval $T configure -treecolumn "\[expr {\$Popup(treecolumn,$C) ? $C : {}}\]"]
     $m1 add checkbutton -label "Visible" -variable Popup(column,visible,$C) \
-	-command [list eval $T column configure $C -visible \$Popup(column,visible,$C) ; \
-	    TreeCtrl::TryEvent $T DemoColumnVisibility {} {C $C} ]
+	-command [list eval $T column configure $C -visible \$Popup(column,visible,$C) \; \
+	    TreeCtrl::TryEvent $T DemoColumnVisibility {} [list C $C] ]
 
     return $m1
 }
@@ -1366,8 +1367,8 @@ proc ShowPopup {T x y X Y} {
     $m delete 0 end
     foreach C [$T column list] {
 	set break [expr {!([$T column order $C] % 20)}]
-#	set m1 [MakeColumnSubmenu $T $C $m]
-	set m1 [menu $m.mColumn$C -postcommand [list PostColumnSubmenu $T $C $m]]
+	set m1 [MakeColumnSubmenu $T $C $m]
+#	set m1 [menu $m.mColumn$C -postcommand [list PostColumnSubmenu $T $C $m]]
 	$m add cascade -menu $m1 -columnbreak $break \
 	    -label "Column $C \"[$T column cget $C -text]\" \[[$T column cget $C -image]\]"
 
