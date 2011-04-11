@@ -1,0 +1,560 @@
+# Commands covered:  treectrl's widget command header
+#
+# This file contains a collection of tests for the header widget command of
+# the tktreectrl extension.  Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# Copyright (c) 2000 by Scriptics Corporation.
+# Copyright (c) 2002 by Christian Krone.
+# Copyright (c) 2011 by Tim Baker.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest 2
+    namespace import ::tcltest::*
+}
+
+package require Tk
+package require treectrl
+
+test header-0.1 {some needed preparations} -body {
+    pack [treectrl .t -usetheme no]
+    # If a treectrl has never been mapped then Tk_Width and Tk_Height return 1
+    update
+} -result {}
+
+test header-0.2 {create an image} -body {
+    image create photo emptyImg
+} -result {emptyImg}
+
+test header-1.1 {missing args} -body {
+    .t header
+} -returnCodes error -result {wrong # args: should be ".t header command ?arg arg ...?"}
+
+test header-1.2 {unknown command} -body {
+    .t header foo
+} -returnCodes error -result {bad command "foo": must be *} -match glob
+
+test header-1.3 {default header exists} -body {
+    .t header count
+} -result {1}
+
+test header-1.4 {default header exists} -body {
+    .t header id all
+} -result {0}
+
+test header-1.5 {no header exists with numerical index} -body {
+    .t header configure 1
+} -returnCodes error -result {header "1" doesn't exist}
+
+test header-1.6 {configure: no header exists with tag} -body {
+    .t header configure header0
+} -returnCodes error -result {header "header0" doesn't exist}
+
+test header-1.7 {header-column tail exists} -body {
+    .t header cget 0 tail -arrow
+} -result {none}
+
+test header-2.1 {header bbox: missing args} -body {
+    .t header bbox
+} -returnCodes error -result {wrong # args: should be ".t header bbox header ?column? ?element?"}
+
+test header-2.2 {header bbox: too many args} -body {
+    .t header bbox a b c d
+} -returnCodes error -result {wrong # args: should be ".t header bbox header ?column? ?element?"}
+
+test header-2.3 {header bbox: invalid header} -body {
+    .t header bbox foo
+} -returnCodes error -result {header "foo" doesn't exist}
+
+test header-2.4 {header bbox: no columns} -body {
+    .t header bbox 0
+} -result {2 2 202 2}
+
+test header-2.5 {header bbox: zero-sized visible column} -setup {
+    .t column create -width 0 -tags column0
+}  -body {
+    .t header bbox 0
+} -result {2 2 202 6}
+
+test header-2.6 {header bbox: zero-sized visible -lock=left column} -setup {
+    .t column configure column0 -lock left
+}  -body {
+    .t header bbox 0
+} -cleanup {
+    .t column configure column0 -lock none
+} -result {2 2 202 6}
+
+test header-2.6.1 {header bbox: no visible columns is same as no columns} -setup {
+    .t column configure column0 -lock left -visible no
+}  -body {
+    .t header bbox 0
+} -result {2 2 202 2}
+
+test header-2.7 {header bbox: tree doesn't show headers} -setup {
+    .t configure -showheader 0
+}  -body {
+    .t header bbox 0
+} -cleanup {
+    .t column delete column0
+    .t configure -showheader 1
+} -result {}
+
+test header-2.8 {header bbox: header is not visible} -setup {
+    .t header configure first -visible no
+} -body {
+    .t header bbox first
+} -result {}
+
+test header-2.9 {header bbox: header is ownerdrawn but has no style} -setup {
+    .t header configure first -visible yes -ownerdrawn yes
+} -body {
+    .t header bbox first
+} -cleanup {
+    .t header configure first -ownerdrawn no
+} -result {2 2 202 2}
+
+test header-2.20 {header bbox: invalid column} -body {
+    .t header bbox 0 first
+} -returnCodes error -result {column "first" doesn't exist}
+
+test header-2.21 {header bbox: tree doesn't show headers} -setup {
+    .t column create -tags column0
+    .t element create e rect -width 482 -height 20
+    .t style create s
+    .t style elements s e
+    set i [.t item create -parent root]
+    .t item style set $i column0 s
+    .t column create -tags column1
+    .t configure -showheader 0
+} -body {
+    .t header bbox 0 column0
+} -result {}
+
+test header-2.22 {header bbox: tree does show headers} -setup {
+    .t configure -showheader 1
+} -body {
+    .t header bbox 0 column0
+} -result {2 2 484 6}
+
+test header-2.23 {header bbox: tail column not allowed} -body {
+    .t header bbox first tail
+} -returnCodes error -result {can't specify "tail" for this command}
+
+test header-2.30 {header bbox: no style} -body {
+    .t header bbox first column0 foo
+} -returnCodes error -result {header 0 column 0 has no style}
+
+test header-2.31 {header bbox: unknown element} -setup {
+    .t header style set first column0 s
+} -body {
+    .t header bbox first column0 foo
+} -returnCodes error -result {element "foo" doesn't exist}
+
+test header-2.32 {header bbox: element} -body {
+    .t header bbox first column0 e
+} -cleanup {
+    .t header style set first column0 ""
+} -result {2 2 484 22}
+
+test header-3.1 {header configure: missing args} -body {
+    .t header configure
+} -returnCodes error -result {wrong # args: should be ".t header configure header ?column? ?option? ?value? ?option value ...?"}
+
+test header-3.2 {header configure: invalid header} -body {
+    .t header configure foo
+} -returnCodes error -result {header "foo" doesn't exist}
+
+test header-3.3 {header configure: list all options} -body {
+    .t header configure first column1
+} -result {{-arrow {} {} none none} *} -match glob
+
+test header-3.4 {header configure: tail column} -body {
+    .t header configure first tail
+} -result {{-arrow {} {} none none} *} -match glob
+
+test header-3.4a {header configure: invalid option} -body {
+    .t header configure first tail -foo
+} -returnCodes error -result {unknown option "-foo"}
+
+test header-3.5 {header configure: invalid -arrow} -body {
+    .t header configure first column1 -arrow straight
+} -returnCodes error -result {bad arrow "straight": must be none, up, or down}
+
+test header-3.6 {header configure/cget: -arrow} -body {
+    .t header configure first column1 -arrow up
+    .t header cget first column1 -arrow
+} -result {up}
+
+test header-3.7 {header configure: invalid -arrowside} -body {
+    .t header configure first column1 -arrowside up
+} -returnCodes error -result {bad arrowside "up": must be left or right}
+
+test header-3.8 {header configure/cget: -arrowside} -body {
+    .t header configure first column1 -arrowside left
+    .t header cget first column1 -arrowside
+} -result {left}
+
+test header-3.9 {header configure: invalid -arrowgravity} -body {
+    .t header configure first column1 -arrowgravity both
+} -returnCodes error -result {bad arrowgravity "both": must be left or right}
+
+test header-3.10 {header configure/cget: -arrowgravity} -body {
+    .t header configure first column1 -arrowgravity right
+    .t header cget first column1 -arrowgravity
+} -result {right}
+
+test header-3.11 {header configure: invalid -arrowpadx} -body {
+    .t header configure first column1 -arrowpadx x
+} -returnCodes error -result {bad pad amount "x": must be a list of 1 or 2 positive screen distances}
+
+test header-3.11a {header configure: invalid 2 element -arrowpadx} -body {
+    .t header configure first column1 -arrowpadx {3 x}
+} -returnCodes error -result {bad pad amount "3 x": must be a list of 1 or 2 positive screen distances}
+
+test header-3.12 {header configure/cget: -arrowpadx} -body {
+    .t header configure first column1 -arrowpadx 8
+    .t header cget first column1 -arrowpadx
+} -result {8}
+
+test header-3.12a {header configure/cget: 2 element -arrowpadx} -body {
+    .t header configure first column1 -arrowpadx {8 5}
+    .t header cget first column1 -arrowpadx
+} -result {8 5}
+
+test header-3.13 {header configure: invalid -bitmap} -body {
+    .t header configure first column1 -bitmap no-such-bitmap
+} -returnCodes error -result {bitmap "no-such-bitmap" not defined}
+
+test header-3.14 {header configure/cget: -bitmap} -body {
+    .t header configure first column1 -bitmap questhead
+    .t header cget first column1 -bitmap
+} -result {questhead}
+
+test header-3.15 {header configure: invalid -background} -body {
+    .t header configure first column1 -background foo
+} -returnCodes error -result {unknown color name "foo"}
+
+test header-3.16 {header configure/cget: -background} -body {
+    .t header configure first column1 -background magenta
+    .t header cget first column1 -background
+} -result {magenta}
+
+test header-3.17 {header configure: invalid -borderwidth} -body {
+    .t header configure first column1 -borderwidth x
+} -returnCodes error -result {bad screen distance "x"}
+
+test header-3.18 {header configure/cget: -borderwidth} -body {
+    .t header configure first column1 -borderwidth 4
+    .t header cget first column1 -borderwidth
+} -result {4}
+
+test header-3.19 {header configure: invalid -button} -body {
+    .t header configure first column1 -button ""
+} -returnCodes error -result {expected boolean value but got ""}
+
+test header-3.20 {header configure/cget: -button} -body {
+    .t header configure first column1 -button off
+    .t header cget first column1 -button
+} -result {0}
+
+###
+
+test header-3.23 {header configure: invalid -image} -body {
+    .t header configure first column1 -image questhead
+} -returnCodes error -result {image "questhead" doesn't exist}
+
+test header-3.24 {header configure/cget: -image} -body {
+    .t header configure first column1 -image emptyImg
+    .t header cget first column1 -image
+} -result {emptyImg}
+
+test header-3.25 {header configure: invalid -imagepadx} -body {
+    .t header configure first column1 -imagepadx y
+} -returnCodes error -result {bad pad amount "y": must be a list of 1 or 2 positive screen distances}
+
+test header-3.25a {header configure: invalid 2 element -imagepadx} -body {
+    .t header configure first column1 -imagepadx "y \{"
+} -returnCodes error -result {unmatched open brace in list}
+
+test header-3.26 {header configure/cget: -imagepadx} -body {
+    .t header configure first column1 -imagepadx 9 -imagepady 4
+    list [.t header cget first column1 -imagepadx] \
+	 [.t header cget first column1 -imagepady]
+} -result {9 4}
+
+test header-3.26a {header configure/cget: 2 element -imagepadx/y} -body {
+    .t header configure first column1 -imagepadx {9 0} -imagepady {4 3}
+    list [.t header cget first column1 -imagepadx] \
+	 [.t header cget first column1 -imagepady]
+} -result {{9 0} {4 3}}
+
+###
+
+test header-3.31 {header configure: invalid -justify} -body {
+    .t header configure first column1 -justify no
+} -returnCodes error -result {bad justification "no": must be left, right, or center}
+
+test header-3.32 {header configure/cget: simple -justify} -body {
+    .t header configure first column1 -justify center
+    .t header cget first column1 -justify
+} -result {center}
+
+###
+
+test header-3.35 {header configure: invalid -state} -body {
+    .t header configure first column1 -state yes
+} -returnCodes error -result {bad state "yes": must be normal, active, or pressed}
+
+test header-3.36 {header configure/cget: -state} -body {
+    .t header configure first column1 -state pressed
+    .t header cget first column1 -state
+} -result {pressed}
+
+###
+
+test header-3.41 {header configure: -text} -body {
+    .t header configure first column1 -text "Text above Column 1"
+    .t header cget first column1 -text
+} -result {Text above Column 1}
+
+test header-3.42 {header configure: invalid -textpadx} -body {
+    .t header configure first column1 -textpadx baz
+} -returnCodes error -result {bad pad amount "baz": must be a list of 1 or 2 positive screen distances}
+
+test header-3.42a {header configure: invalid 2 element -textpadx} -body {
+    .t header configure first column1 -textpadx {foo bar baz}
+} -returnCodes error -result {bad pad amount "foo bar baz": must be a list of 1 or 2 positive screen distances}
+
+test header-3.43 {header configure/cget: -textpadx/y} -body {
+    .t header configure first column1 -textpadx 8 -textpady 5
+    list [.t header cget first column1 -textpadx] \
+	 [.t header cget first column1 -textpady]
+} -result {8 5}
+
+test header-3.43a {header configure/cget: 2 element -textpadx/y} -body {
+    .t header configure first column1 -textpadx {8 4} -textpady {4 5}
+    list [.t header cget first column1 -textpadx] \
+	 [.t header cget first column1 -textpady]
+} -result {{8 4} {4 5}}
+
+###
+
+test header-3.46 {header configure: invalid -visible} -body {
+    .t header configure first -visible never
+} -returnCodes error -result {expected boolean value but got "never"}
+
+test header-3.47 {header configure/cget: -visible} -body {
+    .t header configure first -visible no
+    .t header cget first -visible
+} -result {0}
+
+###
+
+test header-4.1 {header configure: -tags} -body {
+    .t header configure first -tags header0
+    .t header cget header1 -tags
+} -returnCodes error -result {header "header1" doesn't exist}
+
+test header-4.2 {header configure: -tags} -body {
+    .t header cget header0 -tags
+} -result {header0}
+
+###
+
+test header-5.1 {header delete: missing args} -body {
+    .t header delete
+} -returnCodes error -result {wrong # args: should be ".t header delete header"}
+
+test header-5.2 {header delete: too many args} -body {
+    .t header delete a b
+} -returnCodes error -result {wrong # args: should be ".t header delete header"}
+
+test header-5.3 {header delete: first header} -setup {
+    .t header create -tags header1
+} -body {
+    .t header delete header1
+} -result {}
+
+test header-5.4 {deleted header doesn't exist} -body {
+    .t header cget header1 -tags
+} -returnCodes error -result {header "header1" doesn't exist}
+
+test header-5.5 {header delete: 'all' ignores header 0} -setup {
+    .t header create
+    .t header create
+    .t header create
+} -body {
+    .t header delete all
+    .t header id all
+} -result {0}
+
+test header-5.6 {header delete: delete one} -body {
+    .t header create -tags header1
+    .t header create -tags header2
+    .t header create -tags header3
+    .t header create -tags header4    
+    .t header delete header1
+    .t header id al
+} -result {0 2 3 4}
+
+test header-5.7 {header delete: delete two} -body {
+    .t header delete header4
+    .t header delete header3
+    .t header id all
+} -result {0 2}
+
+test header-5.8 {header delete: deleting all headers resets the next unique id} -body {
+    .t header delete all
+    .t header create
+} -result {1}
+
+test header-6.1 {header id: missing args} -body {
+    .t header id
+} -returnCodes error -result {wrong # args: should be ".t header id header"}
+
+test header-6.2 {header id: too many args} -body {
+    .t header id a b
+} -returnCodes error -result {wrong # args: should be ".t header id header"}
+
+test header-6.3 {header id: by ID} -setup {
+    .t header create -tags header2
+    .t header delete header1
+} -body {
+    .t header id 2
+} -result {2}
+
+test header-6.4 {header id: by tag} -body {
+    .t header id header2
+} -result {2}
+
+test header-6.5 {header id: by keyword first} -body {
+    .t header id first
+} -result {0}
+
+test header-6.6 {header id: by keyword last} -body {
+    .t header id last
+} -result {2}
+
+test header-6.7 {header id: by keyword end} -body {
+    .t header id end
+} -result {2}
+
+test header-6.8 {header id: by tag expression} -body {
+    .t header id header2||header0
+} -result {0 2}
+
+###
+
+test header-11.1 {header count: too many args} -body {
+    .t header count a b
+} -returnCodes error -result {wrong # args: should be ".t header count ?headerDesc?"}
+
+test header-11.2 {header count: no args} -setup {
+    .t header delete all
+} -body {
+    .t header count
+} -result {1}
+
+test header-11.3 {header count: with desc} -body {
+    .t header count first
+} -result {1}
+
+test header-11.4 {header count: all} -body {
+    .t header count all
+} -result {1}
+
+test header-11.5 {header count: unknown tag} -body {
+    .t header count foo
+} -result {0}
+
+test header-11.6 {header count: 2 new headers} -setup {
+    .t header create -tags header1
+    .t header create -tags header2
+} -body {
+    .t header count
+} -result {3}
+
+test header-11.7 {header count: delete a header} -setup {
+    .t header delete header1
+} -body {
+    .t header count
+} -result {2}
+
+test header-11.8 {header count: delete another header} -setup {
+    .t header delete header2
+} -body {
+    .t header count
+} -result {1}
+
+test header-20.1 {unknown column config options are passed to the first header} -setup {
+    .t header delete all
+    .t column delete all
+} -body {
+    .t column create -text "Column 0" -tags column0
+    .t header cget first column0 -text
+} -result {Column 0}
+
+test header-20.2 {unknown column config options are retrieved from the first header} -body {
+    .t header configure first column0 -text "Header 0, Column 0"
+    .t column cget column0 -text
+} -result {Header 0, Column 0}
+
+test header-20.3 {unknown header config options are passed to the underlying item} -body {
+    .t header configure first -button auto ; # FIXME
+} -result {}
+
+test header-20.4 {unknown header config options are retrieved from the underlying item} -body {
+    .t header cget first -button ; # FIXME
+} -result {auto}
+
+test header-21.1 {column create doesn't mess up header-columns} -setup {
+    .t header delete all
+    .t column delete all
+    .t style create stail
+    .t header style set first all stail
+} -body {
+    .t header style set first
+} -result {stail}
+
+test header-21.2 {column create doesn't mess up header-columns} -setup {
+    .t column create -tags column0
+    .t style create s0
+    .t header style set first column0 s0
+} -body {
+    .t header style set first
+} -result {s0 stail}
+
+test header-21.3 {column create doesn't mess up header-columns} -setup {
+    .t column create -tags columnL -lock left
+    .t style create sL
+    .t header style set first columnL sL
+} -body {
+    .t header style set first
+} -result {sL s0 stail}
+
+test header-21.4 {column create doesn't mess up header-columns} -setup {
+    .t column create -tags columnR -lock right
+    .t style create sR
+    .t header style set first columnR sR
+} -body {
+    .t header style set first
+} -result {sL s0 sR stail}
+
+test header-21.5 {aborted column create doesn't mess up header-columns} -setup {
+    catch {.t column create -foo bar}
+} -body {
+    .t header style set first
+} -result {sL s0 sR stail}
+
+
+test header-99.1 {some needed cleanup} -body {
+    destroy .t
+} -result {}
+
+# cleanup
+image delete emptyImg
+::tcltest::cleanupTests
+return
