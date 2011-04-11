@@ -4232,7 +4232,12 @@ if (treeColumn == tree->columnTail) {
     span = 1; /* End current span if it hits the tail */
 }
 	if (--span == 0) {
+#if 1
+	    /* We always want to draw (and hit-test) the tail column in headers */
+	    if ((treeColumn == tree->columnTail) || TreeColumn_Visible(treeColumn)) {
+#else
 	    if (TreeColumn_Visible(treeColumn)) {
+#endif
 		span = column ? column->span : 1;
 		if (spanPtr == NULL)
 		    spanPtr = spans;
