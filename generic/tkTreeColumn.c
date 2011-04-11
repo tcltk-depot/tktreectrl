@@ -4725,7 +4725,9 @@ doneDELETE:
 	    /* Update layout if needed */
 	    (void) Tree_CanvasWidth(tree);
 	    width = TreeColumn_WidthOfItems(column);
-#if HEADERS == 0
+#if HEADERS == 1
+	    width = MAX(width, TreeHeaders_NeededWidthOfColumn(tree, column));
+#else
 	    width = MAX(width, TreeColumn_NeededWidth(column));
 #endif
 	    Tcl_SetObjResult(interp, Tcl_NewIntObj(width));
@@ -5517,7 +5519,7 @@ TreeColumn_WidthOfItems(
 #endif
 	item = TreeItem_NextVisible(tree, item);
     }
-
+#if 0
     /* FIXME: this whole block can't be here */
     item = tree->headerItems;
     if ((item != NULL) && !TreeItem_ReallyVisible(tree, item))
@@ -5540,7 +5542,7 @@ TreeColumn_WidthOfItems(
 #endif
 	item = TreeItem_NextVisible(tree, item);
     }
-
+#endif
     return column->widthOfItems;
 }
 
@@ -5967,7 +5969,9 @@ LayoutColumns(
 		width = column->width;
 	    else {
 		width = TreeColumn_WidthOfItems(column);
-#if HEADERS == 0
+#if HEADERS == 1
+		width = MAX(width, TreeHeaders_NeededWidthOfColumn(tree, column));
+#else
 		width = MAX(width, TreeColumn_NeededWidth(column));
 #endif
 		width = MAX(width, TreeColumn_MinWidth(column));
