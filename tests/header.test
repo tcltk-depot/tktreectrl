@@ -549,6 +549,30 @@ test header-21.5 {aborted column create doesn't mess up header-columns} -setup {
     .t header style set first
 } -result {sL s0 sR stail}
 
+test header-22.1 {changing column -width invalidates needed height of headers} -body {
+    .t header delete all
+    .t column delete all
+    .t header conf 0 -visible 1
+    .t column create -tags column0 -text "Here is a long line of text that will wrap" -textlines 0
+    scan [.t header bbox 0 column0] "%d %d %d %d" left top right bottom
+    .t column configure column0 -width [expr {($right - $left) / 2}]
+    scan [.t header bbox 0 column0] "%d %d %d %d" left1 top1 right1 bottom1
+    set fh [font metrics [.t cget -font] -linespace]
+    expr {$bottom1 >= $bottom + $fh}
+} -result {1}
+
+test header-22.2 {squeezing columns invalidates needed height of headers} -body {
+    .t column configure column0 -width "" -squeeze yes
+    set nw [.t column neededwidth column0]
+    .t configure -width [expr {$nw * 1.5}]
+    update idletasks ; # <Configure>
+    scan [.t header bbox 0 column0] "%d %d %d %d" left top right bottom
+    .t configure -width [expr {$nw * 0.5}]
+    update idletasks ; # <Configure>
+    scan [.t header bbox 0 column0] "%d %d %d %d" left1 top1 right1 bottom1
+    set fh [font metrics [.t cget -font] -linespace]
+    expr {$bottom1 >= $bottom + $fh}
+} -result {1}
 
 test header-99.1 {some needed cleanup} -body {
     destroy .t
