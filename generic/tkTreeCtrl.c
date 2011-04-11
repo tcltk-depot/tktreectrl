@@ -1630,6 +1630,7 @@ TreeEventProc(
 		    (tree->prevHeight != Tk_Height(tree->tkwin))) {
 		tree->widthOfColumns = -1;
 		tree->widthOfColumnsLeft = tree->widthOfColumnsRight = -1;
+		tree->headerHeight = -1;
 		Tree_RelayoutWindow(tree);
 		tree->prevWidth = Tk_Width(tree->tkwin);
 		tree->prevHeight = Tk_Height(tree->tkwin);
