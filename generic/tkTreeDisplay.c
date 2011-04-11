@@ -2231,17 +2231,20 @@ Tree_ItemBbox(
     if (!TreeItem_ReallyVisible(tree, item))
 	return -1;
 
+    /* Update columnCountVisXXX if needed */
+    (void) Tree_WidthOfColumns(tree);
+
+    /* FIXME: update tree->xOrigin and tree->yOrigin also!!! */
+
     if (TreeItem_GetHeader(tree, item) != NULL) {
 	TreeItem walk = tree->headerItems;
+
 	tr->y = W2Cy(Tree_BorderTop(tree));
 	while (walk != item) {
 	    tr->y += TreeItem_Height(tree, walk);
 	    walk = TreeItem_NextSiblingVisible(tree, walk);
 	}
 	tr->height = TreeItem_Height(tree, item);
-
-	/* Update columnCountVisXXX if needed */
-	(void) Tree_WidthOfColumns(tree);
 
 	switch (lock) {
 	    case COLUMN_LOCK_LEFT:
@@ -2251,9 +2254,11 @@ Tree_ItemBbox(
 		tr->width = Tree_WidthOfLeftColumns(tree);
 		break;
 	    case COLUMN_LOCK_NONE:
-		tr->x = tree->canvasPadX[PAD_TOP_LEFT];
-		tr->width = Tree_WidthOfColumns(tree);
-		tr->x = 0/*tree->canvasPadX[PAD_TOP_LEFT]*/;
+		/* Unlike regular items, headers cover the width of the whole
+		 * canvas (or content width, whichever is greater) because
+		 * headers include the tail column. */
+		/* FIXME: what if the tail column has -visible=0 */
+		tr->x = 0;
 		tr->width = tree->canvasPadX[PAD_TOP_LEFT] + Tree_WidthOfColumns(tree);
 		if (tr->width < Tree_FakeCanvasWidth(tree)) {
 		    tr->width = Tree_FakeCanvasWidth(tree);
@@ -2268,9 +2273,6 @@ Tree_ItemBbox(
 	}
 	return 0;
     }
-
-    /* Update columnCountVisXXX if needed */
-    (void) Tree_WidthOfColumns(tree);
 
     Range_RedoIfNeeded(tree);
     rItem = (RItem *) TreeItem_GetRInfo(tree, item);
