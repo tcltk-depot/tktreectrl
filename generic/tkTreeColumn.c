@@ -5922,6 +5922,11 @@ LayoutColumns(
     int uniformCount = 0;
 #endif
 
+#ifdef TREECTRL_DEBUG
+    if (tree->inLayoutColumns)
+	panic("recursive call to LayoutColumns");
+#endif
+
     if (visPtr != NULL)
 	(*visPtr) = NULL;
     (*countVisPtr) = 0;
@@ -5930,6 +5935,10 @@ LayoutColumns(
 	return 0;
 
     tree = first->tree;
+
+#ifdef TREECTRL_DEBUG
+    tree->inLayoutColumns = TRUE;
+#endif
 
 #ifdef UNIFORM_GROUP
     /* Initialize the .minSize field of every uniform group. */
@@ -6113,6 +6122,11 @@ doOffsets:
 	totalWidth += column->useWidth;
 	column = column->next;
     }
+
+#ifdef TREECTRL_DEBUG
+    tree->inLayoutColumns = FALSE;
+#endif
+
     return totalWidth;
 }
 

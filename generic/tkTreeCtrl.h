@@ -532,6 +532,10 @@ struct TreeCtrl
     int headerCount;
     int nextHeaderId;
     Tcl_HashTable headerHash;	/* TreeItem.id -> TreeItem */
+
+#ifdef TREECTRL_DEBUG
+    int inLayoutColumns; /* detect recursion */
+#endif
 };
 
 #define TREE_CONF_FONT 0x0001
