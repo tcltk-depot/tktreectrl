@@ -5909,13 +5909,13 @@ done:
 
 static int
 LayoutColumns(
+    TreeCtrl *tree,		/* Widget info. */
     TreeColumn first,		/* First column to update. All columns
 				 * with the same -lock value are updated. */
     TreeColumn *visPtr,		/* Out: first visible column. */
     int *countVisPtr		/* Out: number of visible columns. */
     )
 {
-    TreeCtrl *tree;
     TreeColumn column;
     int width, visWidth, totalWidth = 0;
     int numExpand = 0, numSqueeze = 0;
@@ -6170,7 +6170,7 @@ Tree_WidthOfColumns(
     if (tree->widthOfColumns >= 0)
 	return tree->widthOfColumns;
 
-    tree->widthOfColumns = LayoutColumns(
+    tree->widthOfColumns = LayoutColumns(tree,
 	tree->columnLockNone,
 	&tree->columnVis,
 	&tree->columnCountVis);
@@ -6225,7 +6225,7 @@ Tree_WidthOfLeftColumns(
 	return 0;
     }
 
-    tree->widthOfColumnsLeft = LayoutColumns(
+    tree->widthOfColumnsLeft = LayoutColumns(tree,
 	tree->columnLockLeft,
 	NULL,
 	&tree->columnCountVisLeft);
@@ -6272,7 +6272,7 @@ Tree_WidthOfRightColumns(
 	return 0;
     }
 
-    tree->widthOfColumnsRight = LayoutColumns(
+    tree->widthOfColumnsRight = LayoutColumns(tree,
 	tree->columnLockRight,
 	NULL,
 	&tree->columnCountVisRight);
