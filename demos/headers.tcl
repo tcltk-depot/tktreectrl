@@ -14,17 +14,17 @@ proc DemoHeaders {} {
     set itembg {linen {} #e0e8f0 {}}
 
     $T column create -text "Left" -tags Cleft -width 80 -justify center \
-	-gridrightcolor gray90 -itembackground $itembg -borderwidth 1 \
-	-lock left -arrow none -arrowside left -arrowgravity left \
+	-gridrightcolor gray90 -itembackground $itembg \
+	-lock left -arrow none -arrowside left \
 	-visible no
 
     for {set i 1} {$i <= 8} {incr i} {
 	$T column create -text "C$i" -tags C$i -width 80 -justify center \
-	    -gridrightcolor gray90 -itembackground $itembg -borderwidth 1 
+	    -gridrightcolor gray90 -itembackground $itembg 
     }
 
     $T column create -text "Right" -tags Cright -width 80 -justify center \
-	-gridrightcolor gray90 -itembackground $itembg -borderwidth 1  \
+	-gridrightcolor gray90 -itembackground $itembg  \
 	-lock right -visible no
 
     #
@@ -55,8 +55,8 @@ proc DemoHeaders {} {
     set S [$T style create header1 -orient horizontal]
     $T style elements $S {header.border header.text header.sort}
     $T style layout $S header.border -detach yes -iexpand xy
-    $T style layout $S header.text -expand wens -padx 2 -pady 2 ; # $T style layout $S header.text -center x -expand ns -padx 2 -pady 2
-    $T style layout $S header.sort -expand nws -padx 6 \
+    $T style layout $S header.text -expand wens -padx 6 -pady 2 ; # $T style layout $S header.text -center x -expand ns -padx 2 -pady 2
+    $T style layout $S header.sort -expand nws -padx {0 6} \
 	-visible {no {!sortdown !sortup}}
 
     #
@@ -76,8 +76,8 @@ proc DemoHeaders {} {
     set S [$T style create header2 -orient horizontal]
     $T style elements $S {header.rrect header.text header.sort}
     $T style layout $S header.rrect -detach yes -iexpand xy -padx {1 0} -pady 1
-    $T style layout $S header.text -expand wens -padx 2 -pady 4 ; # $T style layout $S header.text -center x -expand ns -padx 2 -pady 4
-    $T style layout $S header.sort -expand nws -padx 6 \
+    $T style layout $S header.text -expand wens -padx 6 -pady 4 ; # $T style layout $S header.text -center x -expand ns -padx 2 -pady 4
+    $T style layout $S header.sort -expand nws -padx {0 6} \
 	-visible {no {!sortdown !sortup}}
 if 0 {
     #
@@ -97,32 +97,35 @@ if 0 {
 #    set S header3
 
     #
-    # Create the three topmost -lock items
+    # Configure 3 rows of column headers
     #
 
     set text [$T column cget 0 -text]
 
-    $T header configure first -tags header1
+    $T header configure first -ownerdrawn yes -tags header1
     set H [$T header id first]
-    $T header style set $H Cleft $S C1 $S C5 $S Cright $S
+    $T header style set $H all $S ; # Cleft $S C1 $S C5 $S Cright $S
     $T header span $H 1 4 C5 4
 #    $T item text $I Cleft $text C1 A C5 H Cright Right
     foreach {C text} {Cleft $text C1 A C5 H Cright Right} {
+	$T header configure $H $C -text $text -arrowgravity right
 	$T header element configure $H $C header.text -text $text
     }
 
-    set H [$T header create -tags header2]
-    $T header style set $H Cleft $S C1 $S C3 $S C5 $S C7 $S Cright $S
+    set H [$T header create -ownerdrawn yes -tags header2]
+    $T header style set $H all $S ; # Cleft $S C1 $S C3 $S C5 $S C7 $S Cright $S
     $T header span $H C1 2 C3 2 C5 2 C7 2
 #    $T item text $I Cleft $text C1 B C3 C C5 I C7 J Cright Right
     foreach {C text} {Cleft $text C1 B C3 C C5 I C7 J Cright Right} {
+	$T header configure $H $C -text $text -justify center -arrowgravity right
 	$T header element configure $H $C header.text -text $text
     }
 
-    set H [$T header create -tags header3]
+    set H [$T header create -ownerdrawn yes -tags header3]
     $T header style set $H all $S
 #    $T item text $I Cleft $text C1 D C2 E C3 F C4 G C5 K C6 L C7 M C8 N Cright Right
     foreach {C text} {Cleft $text C1 D C2 E C3 F C4 G C5 K C6 L C7 M C8 N Cright Right} {
+	$T header configure $H $C -text $text -justify center -arrowgravity right
 	$T header element configure $H $C header.text -text $text
     }
 
@@ -145,17 +148,22 @@ if 0 {
     # Create an interface to change the style used by the custom headers
     #
 
-    set DemoHeaders::HeaderStyle header3
+    set DemoHeaders::HeaderStyle header2
     set f [frame $T.fHeaderStyle -borderwidth 2 -relief raised -width 150]
+    pack [$::radiobuttonCmd $f.native -text "No Style" \
+	-variable ::DemoHeaders::HeaderStyle -value "" \
+	-command [list DemoHeaders::ChangeHeaderStyle no]] -side top -anchor w -pady 3
     pack [$::radiobuttonCmd $f.style1 -text header1 \
 	-variable ::DemoHeaders::HeaderStyle -value header1 \
 	-command [list DemoHeaders::ChangeHeaderStyle yes black]] -side top -anchor w -pady 3
     pack [$::radiobuttonCmd $f.style2 -text header2 \
 	-variable ::DemoHeaders::HeaderStyle -value header2 \
 	-command [list DemoHeaders::ChangeHeaderStyle yes blue]] -side top -anchor w -pady 3
+if 0 {
     pack [$::radiobuttonCmd $f.style3 -text header3 \
 	-variable ::DemoHeaders::HeaderStyle -value header3 \
 	-command [list DemoHeaders::ChangeHeaderStyle no]] -side top -anchor w -pady 3
+}
     place $f -relx 0.5 -rely 0.3 -anchor n
 
     #
@@ -216,7 +224,12 @@ proc DemoHeaders::ChangeHeaderStyle {ownerDrawn {sortColor ""}} {
     }
     set S $HeaderStyle
     foreach H [$T header id all] {
-	$T header style map $H all $S {header.text header.text}
+	$T header style set $H all $S
+	if {$S ne ""} {
+	    foreach C [$T column list] {
+		$T header element configure $H $C header.text -text [$T header cget $H $C -text]
+	    }
+	}
 	$T header configure $H -ownerdrawn $ownerDrawn
     }
     if {$Sort(header) ne ""} {
@@ -239,6 +252,7 @@ proc DemoHeaders::HeaderState {H C state} {
 	$T header state forcolumn $H $C header$state
     }
     set S [$T header style set $H $C]
+    if {$S eq ""} return
     foreach E [$T style elements $S] {
 	if {[$T element type $E] eq "header"} {
 	    $T header element configure $H $C $E -state $state
@@ -278,8 +292,10 @@ proc DemoHeaders::HeaderInvoke {H C} {
 proc DemoHeaders::ShowSortArrow {H C} {
     variable Sort
     set T [DemoList]
+    $T header configure $H $C -arrow $Sort(direction,$C)
     $T header state forcolumn $H $C [list !sortdown !sortup sort$Sort(direction,$C)]
     set S [$T header style set $H $C]
+    if {$S eq ""} return
     foreach E [$T style elements $S] {
 	if {[$T element type $E] eq "header"} {
 	    $T header element configure $H $C $E -arrow $Sort(direction,$C)
@@ -295,8 +311,10 @@ proc DemoHeaders::ShowSortArrow {H C} {
 proc DemoHeaders::HideSortArrow {H C} {
     variable Sort
     set T [DemoList]
+    $T header configure $H $C -arrow none
     $T header state forcolumn $H $C [list !sortdown !sortup]
     set S [$T header style set $H $C]
+    if {$S eq ""} return
     foreach E [$T style elements $S] {
 	if {[$T element type $E] eq "header"} {
 	    $T header element configure $H $C $E -arrow none
