@@ -5517,7 +5517,8 @@ NoStyleMsg(
     )
 {
     FormatResult(tree->interp,
-	    "item %s%d column %s%d has no style",
+	    "%s %s%d column %s%d has no style",
+	    item->header ? "header" : "item",
 	    tree->itemPrefix, item->id,
 	    tree->columnPrefix,
 	    TreeColumn_GetID(Tree_FindColumn(tree, columnIndex)));
