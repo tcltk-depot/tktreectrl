@@ -94,7 +94,9 @@ typedef struct TreeThemeData_ *TreeThemeData;
 typedef struct TreeGradient_ *TreeGradient;
 typedef struct TreeHeader_ *TreeHeader;
 typedef struct TreeHeaderColumn_ *TreeHeaderColumn;
+
 typedef struct StyleDrawArgs StyleDrawArgs;
+typedef struct TagInfo TagInfo;
 
 /*****/
 
@@ -727,6 +729,8 @@ MODULE_SCOPE TreeItemDInfo TreeItem_GetDInfo(TreeCtrl *tree, TreeItem item);
 MODULE_SCOPE void TreeItem_SetRInfo(TreeCtrl *tree, TreeItem item, TreeItemRInfo rInfo);
 MODULE_SCOPE TreeItemRInfo TreeItem_GetRInfo(TreeCtrl *tree, TreeItem item);
 
+MODULE_SCOPE TagInfo *TreeItem_GetTagInfo(TreeCtrl *tree, TreeItem item);
+MODULE_SCOPE int TreeItem_HasTag(TreeItem, Tk_Uid tag);
 MODULE_SCOPE TreeItemColumn TreeItem_MakeColumnExist(TreeCtrl *tree,
     TreeItem item, int columnIndex);
 MODULE_SCOPE TreeItem TreeItem_CreateHeader(TreeCtrl *tree);
@@ -1308,7 +1312,6 @@ MODULE_SCOPE void TreeItemList_Sort(TreeItemList *items);
 /*
  * This structure holds a list of tags.
  */
-typedef struct TagInfo TagInfo;
 struct TagInfo {
     int numTags;		/* Number of tag slots actually used
 				    * at tagPtr. */

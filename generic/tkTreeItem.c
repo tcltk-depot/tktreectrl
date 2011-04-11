@@ -1718,7 +1718,7 @@ TreeItem_ToIndex(
 /*
  *----------------------------------------------------------------------
  *
- * ItemHasTag --
+ * TreeItem_HasTag --
  *
  *	Checks whether an item has a certain tag.
  *
@@ -1731,8 +1731,8 @@ TreeItem_ToIndex(
  *----------------------------------------------------------------------
  */
 
-static int
-ItemHasTag(
+int
+TreeItem_HasTag(
     TreeItem item,		/* The item to test. */
     Tk_Uid tag			/* Tag to look for. */
     )
@@ -1930,7 +1930,7 @@ Qualifies(
 	return 0;
     if ((q->depth >= 0) && (item->depth + 1 != q->depth))
 	return 0;
-    if ((q->tag != NULL) && !ItemHasTag(item, q->tag))
+    if ((q->tag != NULL) && !TreeItem_HasTag(item, q->tag))
 	return 0;
     return 1;
 }
@@ -2326,7 +2326,7 @@ TreeItemList_FromObj(
 	    hPtr = Tcl_FirstHashEntry(&tree->itemHash, &search);
 	    while (hPtr != NULL) {
 		item = (TreeItem) Tcl_GetHashValue(hPtr);
-		if (ItemHasTag(item, tag) && Qualifies(&q, item)) {
+		if (TreeItem_HasTag(item, tag) && Qualifies(&q, item)) {
 		    TreeItemList_Append(items, item);
 		}
 		hPtr = Tcl_NextHashEntry(&search);
@@ -7637,6 +7637,31 @@ ItemTagCmd(
 
     TreeItemList_Free(&items);
     return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeItem_GetTagInfo --
+ *
+ *	Returns item->tagInfo.
+ *
+ * Results:
+ *	TagInfo pointer or NULL.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+TagInfo *
+TreeItem_GetTagInfo(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeItem item		/* Item token. */
+    )
+{
+    return item->tagInfo;
 }
 
 #ifdef SELECTION_VISIBLE

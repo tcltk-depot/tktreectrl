@@ -2352,8 +2352,36 @@ TreeHeaderList_FromObj(
 		    break;
 		item = TreeItem_GetNextSibling(tree, item);
 	    }
+	    goto gotFirstPart;
 	}
+
+	/* Try a tag or tag expression. */
+	if (tree->itemTagExpr) { /* FIXME: headerTagExpr */
+	    TagExpr expr;
+	    if (TagExpr_Init(tree, elemPtr, &expr) != TCL_OK)
+		goto errorExit;
+	    item = tree->headerItems;
+	    while (item != NULL) {
+		if (TagExpr_Eval(&expr, TreeItem_GetTagInfo(tree, item)) /*&& Qualifies(&q, item)*/) {
+		    TreeItemList_Append(items, item);
+		}
+		item = TreeItem_GetNextSibling(tree, item);
+	    }
+	    TagExpr_Free(&expr);
+	} else {
+	    Tk_Uid tag = Tk_GetUid(Tcl_GetString(elemPtr));
+	    item = tree->headerItems;
+	    while (item != NULL) {
+		if (TreeItem_HasTag(item, tag) /*&& Qualifies(&q, item)*/) {
+		    TreeItemList_Append(items, item);
+		}
+		item = TreeItem_GetNextSibling(tree, item);
+	    }
+	}
+	item = NULL;
     }
+
+gotFirstPart:
 
     /* This means a valid specification was given, but there is no such item */
     if ((TreeItemList_Count(items) == 0) && (item == NULL)) {
