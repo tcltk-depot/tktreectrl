@@ -8013,6 +8013,9 @@ reqSameRoot:
 	    TreeColumn treeColumn;
 	    TreeRectangle rect;
 
+	    (void) Tree_GetOriginX(tree);
+	    (void) Tree_GetOriginY(tree);
+
 	    if (objc == 4) {
 		if (Tree_ItemBbox(tree, item, COLUMN_LOCK_NONE, &rect) < 0)
 		    break;
@@ -8039,6 +8042,7 @@ reqSameRoot:
 		if (count == -1)
 		    goto errorExit;
 	    }
+	    /* Canvas -> window coordinates */
 	    FormatResult(interp, "%d %d %d %d",
 		    TreeRect_Left(rect) - tree->xOrigin,
 		    TreeRect_Top(rect) - tree->yOrigin,
