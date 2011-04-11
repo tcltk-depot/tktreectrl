@@ -4999,7 +4999,7 @@ TreeItem_ReallyVisible(
     TreeItem parent = item->parent;
 
     if (item->header != NULL) {
-	return IS_VISIBLE(item);
+	return tree->showHeader && IS_VISIBLE(item);
     }
 
     if (!tree->updateIndex)
