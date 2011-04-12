@@ -3083,8 +3083,7 @@ TreeHeader_TreeChanged(
 	item = TreeItem_GetNextSibling(tree, item);
     }
 
-    if (flagT & TREE_CONF_FONT)
-	tree->headerHeight = -1;
+    tree->headerHeight = -1;
 }
 
 int
