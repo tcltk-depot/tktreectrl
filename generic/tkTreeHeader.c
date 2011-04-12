@@ -524,15 +524,16 @@ TreeHeader_ConsumeColumnCget(
 
     if (treeColumn == tree->columnTail)
 	return TCL_OK;
-
-    if (tree->headerItems == NULL) {
+#ifdef TREECTRL_DEBUG
+    if (tree->headerItems == NULL)
 	panic("the default header was deleted!");
-    }
+#endif
     itemColumn = TreeItem_FindColumn(tree, tree->headerItems, TreeColumn_Index(treeColumn));
-    if (itemColumn == NULL) {
+#ifdef TREECTRL_DEBUG
+    if (itemColumn == NULL)
 	panic("the default header is missing column %s%d!",
 	    tree->columnPrefix, TreeColumn_GetID(treeColumn));
-    }
+#endif
     column = TreeItemColumn_GetHeaderColumn(tree, itemColumn);
     resultObjPtr = Tk_GetOptionValue(tree->interp, (char *) column,
 	    tree->headerColumnOptionTable, objPtr, tree->tkwin);
@@ -555,19 +556,19 @@ TreeHeader_ConsumeColumnConfig(
 
     if ((objc <= 0) || (treeColumn == tree->columnTail))
 	return TCL_OK;
-
-    if (tree->headerItems == NULL) {
+#ifdef TREECTRL_DEBUG
+    if (tree->headerItems == NULL)
 	panic("the default header was deleted!");
-    }
+#endif
     itemColumn = TreeItem_FindColumn(tree, tree->headerItems, TreeColumn_Index(treeColumn));
-    if (itemColumn == NULL) {
+#ifdef TREECTRL_DEBUG
+    if (itemColumn == NULL)
 	panic("the default header is missing column %s%d!",
 	    tree->columnPrefix, TreeColumn_GetID(treeColumn));
-    }
+#endif
     column = TreeItemColumn_GetHeaderColumn(tree, itemColumn);
     return Column_Configure(TreeItem_GetHeader(tree, tree->headerItems), column, treeColumn, objc, objv, FALSE);
 }
-
 
 Tcl_Obj *
 TreeHeader_ConsumeColumnOptionInfo(
@@ -579,14 +580,16 @@ TreeHeader_ConsumeColumnOptionInfo(
     TreeItemColumn itemColumn;
     TreeHeaderColumn column;
 
-    if (tree->headerItems == NULL) {
+#ifdef TREECTRL_DEBUG
+    if (tree->headerItems == NULL)
 	panic("the default header was deleted!");
-    }
+#endif
     itemColumn = TreeItem_FindColumn(tree, tree->headerItems, TreeColumn_Index(treeColumn));
-    if (itemColumn == NULL) {
+#ifdef TREECTRL_DEBUG
+    if (itemColumn == NULL)
 	panic("the default header is missing column %s%d!",
 	    tree->columnPrefix, TreeColumn_GetID(treeColumn));
-    }
+#endif
     column = TreeItemColumn_GetHeaderColumn(tree, itemColumn);
     return Tk_GetOptionInfo(tree->interp, (char *) column,
 	tree->headerColumnOptionTable, objPtr,  tree->tkwin);
@@ -3059,8 +3062,10 @@ TreeHeader_TreeChanged(
 	itemColumn = TreeItem_GetFirstColumn(tree, item);
 	while (itemColumn != NULL) {
 	    column = TreeItemColumn_GetHeaderColumn(tree, itemColumn);
+#ifdef TREECTRL_DEBUG
 	    if (column == NULL)
 		panic("TreeHeader_TreeChanged: item-column is missing its associated header-column");
+#endif
 	    if ((flagT & TREE_CONF_FONT) && (column->tkfont == NULL) &&
 		    (column->textLen > 0)) {
 		column->textWidth = Tk_TextWidth(tree->tkfont, column->text,
