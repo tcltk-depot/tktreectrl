@@ -100,33 +100,31 @@ if 0 {
     # Configure 3 rows of column headers
     #
 
-    set text [$T column cget 0 -text]
-
     $T header configure first -ownerdrawn yes -tags header1
     set H [$T header id first]
     $T header style set $H all $S ; # Cleft $S C1 $S C5 $S Cright $S
-    $T header span $H 1 4 C5 4
+    $T header span $H C1 4 C5 4
 #    $T item text $I Cleft $text C1 A C5 H Cright Right
-    foreach {C text} {Cleft $text C1 A C5 H Cright Right} {
+    foreach {C text} [list Cleft Left C1 A C5 H Cright Right] {
 	$T header configure $H $C -text $text -arrowgravity right
-	$T header element configure $H $C header.text -text $text
+	$T header text $H $C $text
     }
 
     set H [$T header create -ownerdrawn yes -tags header2]
     $T header style set $H all $S ; # Cleft $S C1 $S C3 $S C5 $S C7 $S Cright $S
     $T header span $H C1 2 C3 2 C5 2 C7 2
 #    $T item text $I Cleft $text C1 B C3 C C5 I C7 J Cright Right
-    foreach {C text} {Cleft $text C1 B C3 C C5 I C7 J Cright Right} {
+    foreach {C text} [list Cleft Left C1 B C3 C C5 I C7 J Cright Right] {
 	$T header configure $H $C -text $text -justify center -arrowgravity right
-	$T header element configure $H $C header.text -text $text
+	$T header text $H $C $text
     }
 
     set H [$T header create -ownerdrawn yes -tags header3]
     $T header style set $H all $S
 #    $T item text $I Cleft $text C1 D C2 E C3 F C4 G C5 K C6 L C7 M C8 N Cright Right
-    foreach {C text} {Cleft $text C1 D C2 E C3 F C4 G C5 K C6 L C7 M C8 N Cright Right} {
+    foreach {C text} [list Cleft Left C1 D C2 E C3 F C4 G C5 K C6 L C7 M C8 N Cright Right] {
 	$T header configure $H $C -text $text -justify center -arrowgravity right
-	$T header element configure $H $C header.text -text $text
+	$T header text $H $C $text
     }
 
     #
@@ -189,6 +187,11 @@ if 0 {
 	DemoHeaders::HeaderInvoke %H %C
     }
 
+    $T notify configure DontDelete <ColumnDrag-receive> -active no
+    $T notify bind $T <ColumnDrag-receive> {
+	DemoHeaders::ColumnDrag %H %C %b
+    }
+
     return
 }
 
@@ -212,9 +215,7 @@ proc DemoHeaders::InitSortImages {color} {
 }
 
 # Called when the user clicks one of the radiobuttons to select one of the
-# styles created by this demo.  The [item style map] call changes the style
-# while perserving the -text of the header.text element used by all the
-# styles.
+# styles created by this demo.
 proc DemoHeaders::ChangeHeaderStyle {ownerDrawn {sortColor ""}} {
     variable HeaderStyle
     variable Sort
@@ -227,7 +228,7 @@ proc DemoHeaders::ChangeHeaderStyle {ownerDrawn {sortColor ""}} {
 	$T header style set $H all $S
 	if {$S ne ""} {
 	    foreach C [$T column list] {
-		$T header element configure $H $C header.text -text [$T header cget $H $C -text]
+		$T header text $H $C [$T header cget $H $C -text]
 	    }
 	}
 	$T header configure $H -ownerdrawn $ownerDrawn
@@ -331,6 +332,41 @@ proc DemoHeaders::ToggleSortArrow {H C} {
 	set Sort(direction,$C) up
     }
     ShowSortArrow $H $C
+    return
+}
+
+proc DemoHeaders::ColumnDrag {H C b} {
+    set T [DemoList]
+    set span [$T header span $H $C]
+    set lastInSpan [expr {[$T column order $C] + $span - 1}]
+    set columns [$T column id "range $C {order $lastInSpan}"]
+    if {[$T column compare $C < $b]} {
+	set lastInSpan [expr {[$T column order $b] + $span - 1}]
+	set b [$T column id "order $lastInSpan"]
+    }
+
+    set span1 [$T header span header1]
+    set span2 [$T header span header2]
+    set text1 [$T header text header1]
+    set text2 [$T header text header2]
+
+    foreach C $columns {
+	$T column move $C $b
+    }
+
+    if {[$T header compare $H > header1]} {
+	foreach span $span1 text $text1 C [$T column list] {
+	    $T header span header1 $C $span
+	    $T header text header1 $C $text
+	}
+    }
+    if {[$T header compare $H > header2]} {
+	foreach span $span2 text $text2 C [$T column list] {
+	    $T header span header2 $C $span
+	    $T header text header2 $C $text
+	}
+    }
+
     return
 }
 
