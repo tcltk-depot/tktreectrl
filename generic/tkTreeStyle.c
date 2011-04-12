@@ -3754,7 +3754,7 @@ if (hPtr == NULL) {
 		}
 #endif
 		style->neededWidth = style->neededHeight = -1;
-		Tree_InvalidateColumnWidth(tree, treeColumn);
+		TreeColumns_InvalidateWidthOfItems(tree, treeColumn);
 		TreeItemColumn_InvalidateSize(tree, column);
 		layout = TRUE;
 	    }
@@ -4045,7 +4045,7 @@ if (hPtr == NULL) {
 	    if ((style != NULL) && (style->master == masterStyle)) {
 		IStyle_ChangeElementsAux(tree, style, oldCount, count, elemList, map);
 		style->neededWidth = style->neededHeight = -1;
-		Tree_InvalidateColumnWidth(tree, treeColumn);
+		TreeColumns_InvalidateWidthOfItems(tree, treeColumn);
 		TreeItemColumn_InvalidateSize(tree, column);
 		layout = TRUE;
 	    }
@@ -4157,7 +4157,7 @@ if (hPtr == NULL) {
 		iMask |= cMask;
 		if (cMask & CS_LAYOUT) {
 		    style->neededWidth = style->neededHeight = -1;
-		    Tree_InvalidateColumnWidth(tree, treeColumn);
+		    TreeColumns_InvalidateWidthOfItems(tree, treeColumn);
 		    TreeItemColumn_InvalidateSize(tree, column);
 		}
 		else if (cMask & CS_DISPLAY) {
@@ -4528,7 +4528,7 @@ if (hPtr == NULL) {
 	while (column != NULL) {
 	    style = (IStyle *) TreeItemColumn_GetStyle(tree, column);
 	    if ((style != NULL) && (style->master == masterStyle)) {
-		Tree_InvalidateColumnWidth(tree, treeColumn);
+		TreeColumns_InvalidateWidthOfItems(tree, treeColumn);
 		TreeItemColumn_ForgetStyle(tree, column);
 		TreeItem_InvalidateHeight(tree, item);
 		Tree_FreeItemDInfo(tree, item, NULL);
@@ -4858,7 +4858,7 @@ Tree_ElementChangedItself(
 #endif
 	style->neededWidth = style->neededHeight = -1;
 
-	Tree_InvalidateColumnWidth(tree, Tree_FindColumn(tree, columnIndex));
+	TreeColumns_InvalidateWidthOfItems(tree, Tree_FindColumn(tree, columnIndex));
 	TreeItemColumn_InvalidateSize(tree, column);
 	TreeItem_InvalidateHeight(tree, item);
 	Tree_FreeItemDInfo(tree, item, NULL);
@@ -4882,7 +4882,7 @@ void Tree_ElementIterateChanged(TreeIterate iter_, int mask)
 	iter->eLink->neededWidth = iter->eLink->neededHeight = -1;
 #endif
 	iter->style->neededWidth = iter->style->neededHeight = -1;
-	Tree_InvalidateColumnWidth(iter->tree,
+	TreeColumns_InvalidateWidthOfItems(iter->tree,
 	    Tree_FindColumn(iter->tree, iter->columnIndex));
 	TreeItemColumn_InvalidateSize(iter->tree, iter->column);
 	TreeItem_InvalidateHeight(iter->tree, iter->item);
@@ -7071,7 +7071,7 @@ if (hPtr == NULL && tablePtr == &tree->itemHash) {
     hPtr = Tcl_FirstHashEntry(tablePtr, &search);
 }
     }
-    Tree_InvalidateColumnWidth(tree, NULL);
+    TreeColumns_InvalidateWidthOfItems(tree, NULL);
     Tree_DInfoChanged(tree, DINFO_REDO_RANGES);
 
     hPtr = Tcl_FirstHashEntry(&tree->elementHash, &search);

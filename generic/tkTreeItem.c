@@ -799,7 +799,7 @@ Column_ChangeState(
 		item->state | column->cstate, state);
 	if (sMask) {
 	    if (sMask & CS_LAYOUT)
-		Tree_InvalidateColumnWidth(tree, treeColumn);
+		TreeColumns_InvalidateWidthOfItems(tree, treeColumn);
 	    iMask |= sMask;
 	}
 
@@ -868,7 +868,7 @@ TreeItem_ChangeState(
 		    item->state | column->cstate, cstate);
 	    if (sMask) {
 		if (sMask & CS_LAYOUT) {
-		    Tree_InvalidateColumnWidth(tree, treeColumn);
+		    TreeColumns_InvalidateWidthOfItems(tree, treeColumn);
 		    TreeItemColumn_InvalidateSize(tree, (TreeItemColumn) column);
 		} else if (sMask & CS_DISPLAY) {
 		    Tree_InvalidateItemDInfo(tree, treeColumn, item, NULL);
@@ -2819,7 +2819,7 @@ Item_ToggleOpen(
 	Tree_DInfoChanged(tree, DINFO_REDO_RANGES);
 
 	/* Hiding/showing children may change the width of any column */
-	Tree_InvalidateColumnWidth(tree, NULL);
+	TreeColumns_InvalidateWidthOfItems(tree, NULL);
     }
 
     /* If this item was previously onscreen, this call is repetitive. */
@@ -2902,7 +2902,7 @@ TreeItem_Delete(
     )
 {
     if (TreeItem_ReallyVisible(tree, item))
-	Tree_InvalidateColumnWidth(tree, NULL);
+	TreeColumns_InvalidateWidthOfItems(tree, NULL);
 
     while (item->numChildren > 0)
 	TreeItem_Delete(tree, item->firstChild);
@@ -3144,7 +3144,7 @@ TreeItem_AddToParent(
      * is slow I will keep depth up-to-date here. */
     TreeItem_UpdateDepth(tree, item);
 
-    Tree_InvalidateColumnWidth(tree, NULL);
+    TreeColumns_InvalidateWidthOfItems(tree, NULL);
 
     if (tree->debug.enable && tree->debug.data)
 	Tree_Debug(tree);
@@ -5209,7 +5209,7 @@ Item_Configure(
 	/* Changing the visibility of an item can change the width of
 	 * any column. This is due to column expansion (this item may
 	 * be the widest item in the column) and spans > 1. */
-	Tree_InvalidateColumnWidth(tree, NULL);
+	TreeColumns_InvalidateWidthOfItems(tree, NULL);
 
 	/* If this is the last child, redraw the lines of the previous
 	 * sibling and all of its descendants because the line from
@@ -5239,7 +5239,7 @@ Item_Configure(
 
     if ((mask & ITEM_CONF_WRAP) && (IS_WRAP(item) != lastWrap)) {
 	tree->updateIndex = 1;
-	Tree_InvalidateColumnWidth(tree, NULL);
+	TreeColumns_InvalidateWidthOfItems(tree, NULL);
 	Tree_DInfoChanged(tree, DINFO_REDO_RANGES);
     }
 
@@ -5845,7 +5845,7 @@ if (co[indexElem].numArgs == -1) panic("indexElem=%d (%s) objc=%d numArgs == -1"
 
 			if (cMask & CS_LAYOUT) {
 			    TreeItemColumn_InvalidateSize(tree, (TreeItemColumn) column);
-			    Tree_InvalidateColumnWidth(tree, treeColumn);
+			    TreeColumns_InvalidateWidthOfItems(tree, treeColumn);
 			} else if (cMask & CS_DISPLAY) {
 			    Tree_InvalidateItemDInfo(tree, treeColumn, item, NULL);
 			}
@@ -6026,7 +6026,7 @@ TreeItemCmd_Style(
 			column->style = TreeStyle_NewInstance(tree, style);
 		    }
 		    TreeItemColumn_InvalidateSize(tree, (TreeItemColumn) column);
-		    Tree_InvalidateColumnWidth(tree, treeColumn);
+		    TreeColumns_InvalidateWidthOfItems(tree, treeColumn);
 		}
 		TreeItem_InvalidateHeight(tree, item);
 		Tree_FreeItemDInfo(tree, item, NULL);
@@ -6138,7 +6138,7 @@ doneMAP:
 			}
 			TreeItemColumn_InvalidateSize(tree,
 				(TreeItemColumn) column);
-			Tree_InvalidateColumnWidth(tree, treeColumn);
+			TreeColumns_InvalidateWidthOfItems(tree, treeColumn);
 			changedI = TRUE;
 		    }
 		    if (changedI) {
@@ -6315,7 +6315,7 @@ TreeItemCmd_ImageOrText(
 		    }
 		} else {
 		    TreeItemColumn_InvalidateSize(tree, (TreeItemColumn) column);
-		    Tree_InvalidateColumnWidth(tree, treeColumn);
+		    TreeColumns_InvalidateWidthOfItems(tree, treeColumn);
 		    changedI = TRUE;
 		}
 	    }
@@ -7440,7 +7440,7 @@ TreeItem_ConfigureSpans(
 		    TreeItemColumn_InvalidateSize(tree,
 			(TreeItemColumn) column);
 		    changedI = TRUE;
-		    Tree_InvalidateColumnWidth(tree, treeColumn);
+		    TreeColumns_InvalidateWidthOfItems(tree, treeColumn);
 		}
 	    }
 	}
@@ -8503,7 +8503,7 @@ reqSameRoot:
 	    if (iMask & CS_DISPLAY)
 		Tree_InvalidateItemDInfo(tree, NULL, item, NULL);
 	    if (iMask & CS_LAYOUT) {
-		Tree_InvalidateColumnWidth(tree, NULL);
+		TreeColumns_InvalidateWidthOfItems(tree, NULL);
 		TreeItem_InvalidateHeight(tree, item);
 		Tree_FreeItemDInfo(tree, item, NULL);
 		Tree_DInfoChanged(tree, DINFO_REDO_RANGES);
@@ -8649,7 +8649,7 @@ reqSameRoot:
 		}
 
 		if (redoColumns)
-		    Tree_InvalidateColumnWidth(tree, NULL);
+		    TreeColumns_InvalidateWidthOfItems(tree, NULL);
 	    }
 
 	    TreeItemList_Free(&selected);
@@ -8887,7 +8887,7 @@ reqSameRoot:
 		break;
 	    if (tree->debug.enable && tree->debug.data)
 		Tree_Debug(tree);
-	    Tree_InvalidateColumnWidth(tree, NULL);
+	    TreeColumns_InvalidateWidthOfItems(tree, NULL);
 #ifdef SELECTION_VISIBLE
 	    Tree_DeselectHidden(tree);
 #endif
@@ -8983,7 +8983,7 @@ reqSameRoot:
 			    TreeItemColumn_InvalidateSize(tree,
 				(TreeItemColumn) column);
 			    changedI = TRUE;
-			    Tree_InvalidateColumnWidth(tree, treeColumn);
+			    TreeColumns_InvalidateWidthOfItems(tree, treeColumn);
 			}
 		    }
 		}
@@ -9093,7 +9093,7 @@ doneSPAN:
 			if (result != TCL_OK)
 			    goto doneTEXT;
 			TreeItemColumn_InvalidateSize(tree, (TreeItemColumn) column);
-			Tree_InvalidateColumnWidth(tree, treeColumn);
+			TreeColumns_InvalidateWidthOfItems(tree, treeColumn);
 			changedI = TRUE;
 		    }
 		}

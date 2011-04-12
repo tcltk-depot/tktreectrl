@@ -497,7 +497,7 @@ Column_Configure(
 
     /* Redraw everything */
     if (mask & (COLU_CONF_TWIDTH | COLU_CONF_NWIDTH | COLU_CONF_NHEIGHT)) {
-	Tree_InvalidateColumnWidth(tree, treeColumn); /* invalidate width of items */
+	TreeColumns_InvalidateWidthOfItems(tree, treeColumn); /* invalidate width of items */
 /*	tree->widthOfColumns = -1;
 	tree->widthOfColumnsLeft = tree->widthOfColumnsRight = -1;*/
 	Tree_DInfoChanged(tree, DINFO_CHECK_COLUMN_WIDTH | DINFO_DRAW_HEADER);
@@ -2137,7 +2137,7 @@ Header_Configure(
     if ((oldVisible != TreeItem_ReallyVisible(tree, header->item)) ||
 	    (ownerDrawn != header->ownerDrawn)) {
 	tree->headerHeight = -1;
-	Tree_InvalidateColumnWidth(tree, NULL);
+	TreeColumns_InvalidateWidthOfItems(tree, NULL);
 	Tree_DInfoChanged(tree, DINFO_DRAW_HEADER);
     }
 
@@ -2946,7 +2946,7 @@ TreeHeaderCmd(
 
 		if (TreeItem_ReallyVisible(tree, item)) {
 		    tree->headerHeight = -1;
-		    Tree_InvalidateColumnWidth(tree, NULL);
+		    TreeColumns_InvalidateWidthOfItems(tree, NULL);
 		}
 
 		if (tree->columnDrag.header == TreeItem_GetHeader(tree, item))

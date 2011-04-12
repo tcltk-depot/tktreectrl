@@ -3805,7 +3805,7 @@ TreeColumn_WidthOfItems(
 /*
  *----------------------------------------------------------------------
  *
- * Tree_InvalidateColumnWidth --
+ * TreeColumns_InvalidateWidthOfItems --
  *
  *	Marks the width of zero or more columns as out-of-date.
  *	Schedules a redisplay to check the widths of columns which
@@ -3821,7 +3821,7 @@ TreeColumn_WidthOfItems(
  */
 
 void
-Tree_InvalidateColumnWidth(
+TreeColumns_InvalidateWidthOfItems(
     TreeCtrl *tree,		/* Widget info. */
     TreeColumn column		/* Column to modify. NULL means
 				 * modify every column. */

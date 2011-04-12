@@ -1537,8 +1537,7 @@ badWrap:
 
     if (mask & TREE_CONF_RELAYOUT) {
 	TreeComputeGeometry(tree);
-	Tree_InvalidateColumnWidth(tree, NULL);
-	Tree_InvalidateColumnHeight(tree, NULL); /* In case -usetheme changes */
+	TreeColumns_InvalidateWidthOfItems(tree, NULL);
 	Tree_RelayoutWindow(tree);
     } else if (mask & TREE_CONF_REDISPLAY) {
 	Tree_RelayoutWindow(tree);
@@ -1586,7 +1585,7 @@ TreeWorldChanged(
     TreeHeader_TreeChanged(tree, TREE_CONF_FONT | TREE_CONF_RELAYOUT);
 
     TreeComputeGeometry(tree);
-    Tree_InvalidateColumnWidth(tree, NULL);
+    TreeColumns_InvalidateWidthOfItems(tree, NULL);
     Tree_RelayoutWindow(tree);
 }
 
