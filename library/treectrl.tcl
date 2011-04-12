@@ -983,6 +983,7 @@ proc ::TreeCtrl::Release1 {w x y} {
 	dragColumn {
 	    AutoScanCancel $w
 	    $w header configure $Priv(header) $Priv(column) -state normal
+	    TryEvent $w Header state [list H $Priv(header) C $Priv(column) s normal]
 	    if {[$w column dragcget -imagecolumn] ne ""} {
 		set visible 1
 	    } else {
