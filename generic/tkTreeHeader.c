@@ -2224,13 +2224,15 @@ TreeHeaders_NeededWidthOfColumn(
     int maxWidth = 0, width;
 
     while (item != NULL) {
-	TreeHeader header = TreeItem_GetHeader(tree, item);
-	TreeItemColumn itemColumn = TreeItem_FindColumn(tree, item, TreeColumn_Index(treeColumn));
-	TreeHeaderColumn column = TreeItemColumn_GetHeaderColumn(tree, itemColumn);
-	width = TreeHeaderColumn_NeededWidth(header, column);
-	maxWidth = MAX(maxWidth, width);
-	width = TreeItemColumn_NeededWidth(tree, item, itemColumn); /* the style */
-	maxWidth = MAX(maxWidth, width);
+	if (TreeItem_ReallyVisible(tree, item)) {
+	    TreeHeader header = TreeItem_GetHeader(tree, item);
+	    TreeItemColumn itemColumn = TreeItem_FindColumn(tree, item, TreeColumn_Index(treeColumn));
+	    TreeHeaderColumn column = TreeItemColumn_GetHeaderColumn(tree, itemColumn);
+	    width = TreeHeaderColumn_NeededWidth(header, column);
+	    maxWidth = MAX(maxWidth, width);
+	    width = TreeItemColumn_NeededWidth(tree, item, itemColumn); /* the style */
+	    maxWidth = MAX(maxWidth, width);
+	}
 	item = TreeItem_GetNextSibling(tree, item);
     }
 
