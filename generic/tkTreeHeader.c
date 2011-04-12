@@ -2723,14 +2723,14 @@ TreeHeaderCmd(
     TreeCtrl *tree = clientData;
     static CONST char *commandNames[] = {
 	"bbox", "cget", "compare", "configure", "count", "create", "delete",
-	"dragcget", "dragconfigure", "element", "id", "span",
-	"state", "style", "tag", (char *) NULL
+	"dragcget", "dragconfigure", "element", "id", "image", "span",
+	"state", "style", "tag", "text", (char *) NULL
     };
     enum {
 	COMMAND_BBOX, COMMAND_CGET, COMMAND_COMPARE, COMMAND_CONFIGURE,
 	COMMAND_COUNT, COMMAND_CREATE, COMMAND_DELETE, COMMAND_DRAGCGET,
-	COMMAND_DRAGCONF, COMMAND_ELEMENT, COMMAND_ID, COMMAND_SPAN,
-	COMMAND_STATE, COMMAND_STYLE, COMMAND_TAG
+	COMMAND_DRAGCONF, COMMAND_ELEMENT, COMMAND_ID, COMMAND_IMAGE,
+	COMMAND_SPAN, COMMAND_STATE, COMMAND_STYLE, COMMAND_TAG, COMMAND_TEXT
     };
     int index;
     TreeItemList items;
@@ -2949,6 +2949,9 @@ TreeHeaderCmd(
 	    break;
 	}
 
+	case COMMAND_IMAGE:
+	    return TreeItemCmd_ImageOrText(tree, objc, objv, TRUE, TRUE);
+
 	/* T header span H ?C? ?span? ?C span ...? */
 	case COMMAND_SPAN: {
 	    if (objc < 4) {
@@ -2970,6 +2973,9 @@ TreeHeaderCmd(
 
 	case COMMAND_STYLE:
 	    return TreeItemCmd_Style(tree, objc, objv, TRUE);
+
+	case COMMAND_TEXT:
+	    return TreeItemCmd_ImageOrText(tree, objc, objv, FALSE, TRUE);
     }
 
     return TCL_OK;

@@ -6175,6 +6175,173 @@ ItemStyleCmd(
     return TreeItemCmd_Style(tree, objc, objv, FALSE);
 }
 
+int
+TreeItemCmd_ImageOrText(
+    TreeCtrl *tree,
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *CONST objv[],	/* Argument values. */
+    int doImage,
+    int doHeaders
+    )
+{
+    Tcl_Interp *interp = tree->interp;
+    TreeColumn treeColumn = tree->columns;
+    TreeItemList itemList;
+    TreeItem item;
+    Column *column;
+    Tcl_Obj *objPtr;
+    int isImage = doImage;
+    struct columnObj {
+	TreeColumnList columns;
+	Tcl_Obj *obj;
+    } staticCO[STATIC_SIZE], *co = staticCO;
+    int i, count = 0, changed = FALSE, columnIndex;
+    ItemForEach iter;
+    ColumnForEach citer;
+    int result = TCL_OK;
+
+    /* T item text I ?C? ?text? ?C text ...? */
+    if (objc < 4) {
+	Tcl_WrongNumArgs(interp, 3, objv, "item ?column? ?text? ?column text ...?");
+	return TCL_ERROR;
+    }
+    if (doHeaders) {
+	if (TreeHeaderList_FromObj(tree, objv[3], &itemList, IFO_NOT_NULL)
+		!= TCL_OK)
+	    return TCL_ERROR;
+    } else {
+	if (TreeItemList_FromObj(tree, objv[3], &itemList, IFO_NOT_NULL)
+		!= TCL_OK)
+	    return TCL_ERROR;
+    }
+    item = TreeItemList_Nth(&itemList, 0);
+
+    if ((objc < 6) && (IS_ALL(item) ||
+	    (TreeItemList_Count(&itemList) > 1))) {
+	FormatResult(interp, "can't specify > 1 item for this command");
+	goto errorExit;
+    }
+    if (objc == 4) {
+	Tcl_Obj *listObj = Tcl_NewListObj(0, NULL);
+	column = item->columns;
+	while (treeColumn != NULL) {
+	    if ((column != NULL) && (column->style != NULL))
+		objPtr = isImage ?
+		    TreeStyle_GetImage(tree, column->style) :
+		    TreeStyle_GetText(tree, column->style);
+	    else
+		objPtr = NULL;
+	    if (objPtr == NULL)
+		objPtr = Tcl_NewObj();
+	    Tcl_ListObjAppendElement(interp, listObj, objPtr);
+	    treeColumn = TreeColumn_Next(treeColumn);
+	    if (column != NULL)
+		column = column->next;
+	}
+	Tcl_SetObjResult(interp, listObj);
+	goto okExit;
+    }
+    if (objc == 5) {
+	if (Item_FindColumnFromObj(tree, item, objv[4], &column, NULL) != TCL_OK) {
+	    goto errorExit;
+	}
+	if ((column != NULL) && (column->style != NULL)) {
+	    objPtr = isImage ?
+		TreeStyle_GetImage(tree, column->style) :
+		TreeStyle_GetText(tree, column->style);
+	    if (objPtr != NULL)
+		Tcl_SetObjResult(interp, objPtr);
+	}
+	goto okExit;
+    }
+    if ((objc - 4) & 1) {
+	FormatResult(interp, "missing argument after column \"%s\"",
+		Tcl_GetString(objv[objc - 1]));
+	goto errorExit;
+    }
+    /* Gather column/obj pairs. */
+    STATIC_ALLOC(co, struct columnObj, objc / 2);
+    for (i = 4; i < objc; i += 2) {
+	if (TreeColumnList_FromObj(tree, objv[i], &co[count].columns,
+		CFO_NOT_NULL | CFO_NOT_TAIL) != TCL_OK) {
+	    result = TCL_ERROR;
+	    goto doneTEXT;
+	}
+	co[count].obj = objv[i + 1];
+	count++;
+    }
+    ITEM_FOR_EACH(item, &itemList, NULL, &iter) {
+	int changedI = FALSE;
+	for (i = 0; i < count; i++) {
+	    COLUMN_FOR_EACH(treeColumn, &co[i].columns, NULL, &citer) {
+		columnIndex = TreeColumn_Index(treeColumn);
+		column = Item_FindColumn(tree, item, columnIndex);
+		if ((column == NULL) || (column->style == NULL)) {
+		    NoStyleMsg(tree, item, columnIndex);
+		    result = TCL_ERROR;
+		    goto doneTEXT;
+		}
+		result = isImage ?
+		    TreeStyle_SetImage(tree, item,
+			(TreeItemColumn) column, column->style, co[i].obj) :
+		    TreeStyle_SetText(tree, item,
+			(TreeItemColumn) column, column->style, co[i].obj);
+		if (result != TCL_OK)
+		    goto doneTEXT;
+		TreeItemColumn_InvalidateSize(tree, (TreeItemColumn) column);
+		Tree_InvalidateColumnWidth(tree, treeColumn);
+		changedI = TRUE;
+	    }
+	}
+	if (changedI) {
+	    TreeItem_InvalidateHeight(tree, item);
+	    Tree_FreeItemDInfo(tree, item, NULL);
+	    changed = TRUE;
+	}
+    }
+    if (changed)
+	Tree_DInfoChanged(tree, DINFO_REDO_RANGES);
+doneTEXT:
+    for (i = 0; i < count; i++) {
+	TreeColumnList_Free(&co[i].columns);
+    }
+    STATIC_FREE(co, struct columnObj, objc / 2);
+    TreeItemList_Free(&itemList);
+    return result;
+
+okExit:
+    TreeItemList_Free(&itemList);
+    return TCL_OK;
+
+errorExit:
+    TreeItemList_Free(&itemList);
+    return TCL_ERROR;
+}
+
+static int
+ItemImageCmd(
+    ClientData clientData,	/* Widget info. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *CONST objv[]	/* Argument values. */
+    )
+{
+    TreeCtrl *tree = clientData;
+    return TreeItemCmd_ImageOrText(tree, objc, objv, TRUE, FALSE);
+}
+
+static int
+ItemTextCmd(
+    ClientData clientData,	/* Widget info. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *CONST objv[]	/* Argument values. */
+    )
+{
+    TreeCtrl *tree = clientData;
+    return TreeItemCmd_ImageOrText(tree, objc, objv, FALSE, FALSE);
+}
+
 /* Quicksort is not a "stable" sorting algorithm, but it can become a
  * stable sort by using the pre-sort order of two items as a tie-breaker
  * for items that would otherwise be considered equal. */
@@ -7875,8 +8042,7 @@ TreeItemCmd(
 		AF_NOT_EQUAL | AF_NOT_DELETED, 0, "item ?newFirstChild?",
 		NULL },
 	{ "id", 1, 1, 0, 0, 0, "item", NULL },
-	{ "image", 1, 100000, IFO_NOT_NULL, AF_NOT_ITEM, AF_NOT_ITEM,
-		"item ?column? ?image? ?column image ...?", NULL },
+	{ "image", 0, 0, 0, 0, 0, NULL, ItemImageCmd },
 	{ "isancestor", 2, 2, IFO_NOT_MANY | IFO_NOT_NULL, IFO_NOT_MANY |
 		IFO_NOT_NULL, 0, "item item2", NULL },
 	{ "isopen", 1, 1, IFO_NOT_MANY | IFO_NOT_NULL, 0, 0, "item", NULL },
@@ -7906,8 +8072,7 @@ TreeItemCmd(
 	{ "state", 0, 0, 0, 0, 0, NULL, ItemStateCmd },
 	{ "style", 0, 0, 0, 0, 0, NULL, ItemStyleCmd },
 	{ "tag", 0, 0, 0, 0, 0, NULL, ItemTagCmd },
-	{ "text", 1, 100000, IFO_NOT_NULL, AF_NOT_ITEM, AF_NOT_ITEM,
-		"item ?column? ?text? ?column text ...?", NULL },
+	{ "text", 0, 0, 0, 0, 0, NULL, ItemTextCmd },
 	{ "toggle", 1, 2, IFO_NOT_NULL, AF_NOT_ITEM, 0, "item ?-recurse?",
 		NULL},
 	{ NULL }
@@ -8812,6 +8977,7 @@ doneSPAN:
 #endif
 	}
 
+#if 0
 	/* T item image I ?C? ?image? ?C image ...? */
 	case COMMAND_IMAGE:
 	/* T item text I ?C? ?text? ?C text ...? */
@@ -8919,6 +9085,7 @@ doneTEXT:
 	    STATIC_FREE(co, struct columnObj, objc / 2);
 	    break;
 	}
+#endif
     }
 
     TreeItemList_Free(&itemList);
