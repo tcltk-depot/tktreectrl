@@ -79,6 +79,7 @@ proc DemoHeaders {} {
     $T style layout $S header.text -expand wens -padx 6 -pady 4 ; # $T style layout $S header.text -center x -expand ns -padx 2 -pady 4
     $T style layout $S header.sort -expand nws -padx {0 6} \
 	-visible {no {!sortdown !sortup}}
+
 if 0 {
     #
     # Create a style for our custom headers,
@@ -92,38 +93,50 @@ if 0 {
     $T style layout $S header.header -union header.text -iexpand news
     $T style layout $S header.text -expand wens -padx 6 -pady 2 -squeeze x ; # $T style layout $S header.text -expand ns -center x -padx 6 -pady 2 -squeeze x
 }
-    set S header1
+
+    #
+    # Create a style for our custom headers,
+    # just a checkbox image.
+    #
+
+    InitPics *checked
+
+    $T state define CHECK
+    $T element create header.check image -image {checked CHECK unchecked {}}
+    set S [$T style create header4]
+    $T style elements $S header.check
+    $T style layout $S header.check -expand nes -padx 6
+
     set S header2
-#    set S header3
 
     #
     # Configure 3 rows of column headers
     #
 
     $T header configure first -ownerdrawn yes -tags header1
-    set H [$T header id first]
-    $T header style set $H all $S ; # Cleft $S C1 $S C5 $S Cright $S
-    $T header span $H C1 4 C5 4
-#    $T item text $I Cleft $text C1 A C5 H Cright Right
+    set H header1
+    $T header configure $H all -arrowgravity right -justify center
+    $T header style set $H all $S
+    $T header span $H all 4
     foreach {C text} [list Cleft Left C1 A C5 H Cright Right] {
-	$T header configure $H $C -text $text -arrowgravity right
+	$T header configure $H $C -text $text
 	$T header text $H $C $text
     }
 
     set H [$T header create -ownerdrawn yes -tags header2]
-    $T header style set $H all $S ; # Cleft $S C1 $S C3 $S C5 $S C7 $S Cright $S
-    $T header span $H C1 2 C3 2 C5 2 C7 2
-#    $T item text $I Cleft $text C1 B C3 C C5 I C7 J Cright Right
+    $T header configure $H all -arrowgravity right -justify center
+    $T header style set $H all $S
+    $T header span $H all 2
     foreach {C text} [list Cleft Left C1 B C3 C C5 I C7 J Cright Right] {
-	$T header configure $H $C -text $text -justify center -arrowgravity right
+	$T header configure $H $C -text $text
 	$T header text $H $C $text
     }
 
     set H [$T header create -ownerdrawn yes -tags header3]
+    $T header configure $H all -arrowgravity right -justify center
     $T header style set $H all $S
-#    $T item text $I Cleft $text C1 D C2 E C3 F C4 G C5 K C6 L C7 M C8 N Cright Right
     foreach {C text} [list Cleft Left C1 D C2 E C3 F C4 G C5 K C6 L C7 M C8 N Cright Right] {
-	$T header configure $H $C -text $text -justify center -arrowgravity right
+	$T header configure $H $C -text $text
 	$T header text $H $C $text
     }
 
@@ -162,6 +175,9 @@ if 0 {
 	-variable ::DemoHeaders::HeaderStyle -value header3 \
 	-command [list DemoHeaders::ChangeHeaderStyle no]] -side top -anchor w -pady 3
 }
+    pack [$::radiobuttonCmd $f.style5 -text header4 \
+	-variable ::DemoHeaders::HeaderStyle -value header4 \
+	-command [list DemoHeaders::ChangeHeaderStyle no]] -side top -anchor w -pady 3
     place $f -relx 0.5 -rely 0.3 -anchor n
 
     #
@@ -227,6 +243,11 @@ proc DemoHeaders::ChangeHeaderStyle {ownerDrawn {sortColor ""}} {
     foreach H [$T header id all] {
 	$T header style set $H all $S
 	if {$S ne ""} {
+	    if {$S eq "header4"} {
+		$T header configure all all -textpadx {22 6}
+	    } else {
+		$T header configure all all -textpadx 6
+	    }
 	    foreach C [$T column list] {
 		$T header text $H $C [$T header cget $H $C -text]
 	    }
@@ -358,12 +379,14 @@ proc DemoHeaders::ColumnDrag {H C b} {
 	foreach span $span1 text $text1 C [$T column list] {
 	    $T header span header1 $C $span
 	    $T header text header1 $C $text
+	    $T header configure header1 $C -text $text
 	}
     }
     if {[$T header compare $H > header2]} {
 	foreach span $span2 text $text2 C [$T column list] {
 	    $T header span header2 $C $span
 	    $T header text header2 $C $text
+	    $T header configure header2 $C -text $text
 	}
     }
 
