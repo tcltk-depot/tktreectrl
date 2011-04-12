@@ -1014,6 +1014,7 @@ if 1 {
 		if {($column ne "") && [$w column compare $column != "tail"]} {
 		    if {[$w header cget $header $column -button]} {
 			$w header configure $header $column -state active
+			TryEvent $w Header state [list H $header C $column s active]
 		    }
 		}
 	    }
