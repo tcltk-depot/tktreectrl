@@ -655,7 +655,7 @@ MODULE_SCOPE TreeHeaderColumn TreeHeaderColumn_CreateWithItemColumn(
 MODULE_SCOPE void TreeHeaderColumn_FreeResources(TreeCtrl *tree,
     TreeHeaderColumn column);
 MODULE_SCOPE void TreeHeaderColumn_Draw(TreeHeader header,
-    TreeHeaderColumn column, int visIndex, int lock, StyleDrawArgs *drawArgs);
+    TreeHeaderColumn column, int visIndex, StyleDrawArgs *drawArgs);
 MODULE_SCOPE int TreeHeaderColumn_NeededWidth(TreeHeader header,
     TreeHeaderColumn column);
 MODULE_SCOPE TreeItem Tree_HeaderUnderPoint(TreeCtrl *tree, int *x_, int *y_, int *lock);

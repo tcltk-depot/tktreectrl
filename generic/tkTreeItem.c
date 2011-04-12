@@ -3656,11 +3656,12 @@ TreeItem_Height(
     int buttonHeight = 0;
     int useHeight;
 
+    /* FIXME: should this routine call ReallyVisible()? */
     if (!IS_VISIBLE(item) || (IS_ROOT(item) && !tree->showRoot))
 	return 0;
 
     if (item->header != NULL) {
-	if (!tree->showHeader) /* FIXME: should this routine call ReallyVisible()? */
+	if (!tree->showHeader)
 	    return 0;
 	if (item->fixedHeight > 0)
 	    return item->fixedHeight;
@@ -4467,8 +4468,9 @@ SpanWalkProc_Draw(
 
     if (item->header != NULL) {
 	StyleDrawArgs drawArgsCopy = *drawArgs;
-	TreeHeaderColumn_Draw(item->header, itemColumn ? itemColumn->headerColumn : NULL,
-	    spanPtr->visIndex, TreeColumn_Lock(treeColumn), &drawArgsCopy);
+	TreeHeaderColumn_Draw(item->header,
+	    itemColumn ? itemColumn->headerColumn : NULL,
+	    spanPtr->visIndex, &drawArgsCopy);
 	return drawArgs->x + drawArgs->width >= data->maxX;
     }
 

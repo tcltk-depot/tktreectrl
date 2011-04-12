@@ -1613,8 +1613,9 @@ static void
 Column_Draw(
     TreeHeader header,		/* Header token. */
     TreeHeaderColumn column,	/* Column token. */
-    int lock,			/* COLUMN_LOCK_XXX */
+    TreeColumn treeColumn,	/* Column token. */
     TreeDrawable td,		/* Where to draw. */
+    int indent,
     int x, int y,		/* Area of the column header to draw. */
     int width, int height,	/* ^ */
     int visIndex,		/* 0-based index in the list of visible
@@ -1632,21 +1633,9 @@ Column_Draw(
     GC gc = None;
     TkRegion clipRgn = NULL;
 
-    /* Hack on */
-    if (visIndex == 0 && lock == COLUMN_LOCK_NONE) {
-	x += tree->canvasPadX[PAD_TOP_LEFT];
-	width -= tree->canvasPadX[PAD_TOP_LEFT];
-    }
-
-    layout.width = width;
+    layout.width = width - indent;
     layout.height = height;
     Column_DoLayout(tree, column, &layout);
-
-    /* Hack off */
-    if (visIndex == 0 && lock == COLUMN_LOCK_NONE) {
-	x -= tree->canvasPadX[PAD_TOP_LEFT];
-	width += tree->canvasPadX[PAD_TOP_LEFT];
-    }
 
     border = PerStateBorder_ForState(tree, &column->border,
 	Column_MakeState(column), NULL);
@@ -1667,11 +1656,8 @@ Column_Draw(
 	}
     }
 
-    /* Hack on */
-    if (visIndex == 0 && lock == COLUMN_LOCK_NONE) {
-	x += tree->canvasPadX[PAD_TOP_LEFT];
-	width -= tree->canvasPadX[PAD_TOP_LEFT];
-    }
+    x += indent;
+    width -= indent;
 
     if (column->image != NULL) {
 	int imgW, imgH, ix, iy, h;
@@ -1779,11 +1765,8 @@ Column_Draw(
     Column_DrawArrow(header, column, td, x, y, layout);
 
     if (theme != TCL_OK) {
-	/* Hack */
-	if (visIndex == 0 && lock == COLUMN_LOCK_NONE) {
-	    x -= tree->canvasPadX[PAD_TOP_LEFT];
-	    width += tree->canvasPadX[PAD_TOP_LEFT];
-	}
+	x -= indent;
+	width += indent;
 	Tk_Draw3DRectangle(tree->tkwin, td.drawable, border,
 		x, y, width, height, column->borderWidth, relief);
     }
@@ -1794,67 +1777,60 @@ TreeHeaderColumn_Draw(
     TreeHeader header,		/* Header token. */
     TreeHeaderColumn column,	/* Column token. */
     int visIndex,
-    int lock,			/* COLUMN_LOCK_XXX */
-    StyleDrawArgs *drawArgs
+    StyleDrawArgs *drawArgs	/* May be changed by this procedure. */
     )
 {
     TreeCtrl *tree = header->tree;
     TreeDrawable td = drawArgs->td;
     int x = drawArgs->x, y = drawArgs->y, width = drawArgs->width, height = drawArgs->height;
+    TreeColumn treeColumn = drawArgs->column;
     int isDragHeader = tree->columnDrag.header == header;
-    int isDragColumn = 0;
+    int isDragColumn, isHiddenTail;
 
-
-    if (isDragHeader && tree->columnDrag.column != NULL) {
-	TreeColumn treeColumn = Tree_FindColumn(tree, TreeItemColumn_Index(tree, header->item, column->itemColumn));
-	if (tree->columnDrag.column == treeColumn)
-	    isDragColumn = 1;
-    }
-    if (isDragColumn && tree->columnDrag.indColumn != NULL)
+    isDragColumn = isDragHeader && (tree->columnDrag.column == treeColumn);
+    if (isDragColumn && tree->columnDrag.indColumn != NULL) {
 	return;
+    }
     if (isDragHeader && tree->columnDrag.indColumn != NULL && tree->columnDrag.column != NULL) {
 	int index1 = TreeColumn_Index(tree->columnDrag.column);
 	int index2 = TreeColumn_Index(tree->columnDrag.indColumn);
-	int index3 = TreeItemColumn_Index(tree, header->item, column->itemColumn);
+	int index3 = TreeColumn_Index(treeColumn);
 	TreeRectangle bbox;
-#if 0
-	if (isDragColumn) {
-	    if (TreeItem_GetRects(tree, header->item, tree->columnDrag.indColumn,
-		    0, NULL, &bbox) == 1) {
-		if (index1 > index2)
-		    x = bbox.x;
-		else
-		    x = bbox.x + bbox.width - width;
-		x -= tree->drawableXOrigin;
-	    }
-	} else
-#endif
 	if (index3 >= MIN(index1,index2) && index3 <= MAX(index1,index2)) {
 	    if (TreeItem_GetRects(tree, header->item, tree->columnDrag.column,
 		    0, NULL, &bbox) == 1) {
 		if (index1 < index2)
-		    x -= bbox.width;
+		    x -= bbox.width - TreeItem_Indent(tree, tree->columnDrag.column, header->item);
 		else
-		    x += bbox.width;
+		    x += bbox.width + drawArgs->indent;
 	    }
+	    if (x == bbox.x + TreeItem_Indent(tree, tree->columnDrag.column, header->item)) {
+	    x = drawArgs->x = bbox.x;
+	    width = drawArgs->width = bbox.width;
+	    drawArgs->indent = TreeItem_Indent(tree, tree->columnDrag.column, header->item);
+	    } else {
 	    drawArgs->x = x;
+	    width = drawArgs->width -= drawArgs->indent;
+	    drawArgs->indent = 0;
+	    }
 	}
     }
 
-    /* FIXME: don't draw the tail column if it isn't visible.
-     * Currently I always create a span for the tail column. */
+    /* Don't draw the tail column if it isn't visible.
+     * Currently a span is always created for the tail column. */
+    isHiddenTail = (treeColumn == tree->columnTail) && !TreeColumn_Visible(treeColumn);
 
-    if (header->ownerDrawn || isDragColumn) {
+    if (header->ownerDrawn || isDragColumn || isHiddenTail) {
 	GC gc = Tk_3DBorderGC(tree->tkwin, tree->border, TK_3D_FLAT_GC);
 	TreeRectangle tr;
 
 	TreeRect_SetXYWH(tr, x, y, width, height);
 	Tree_FillRectangle(tree, td, NULL, gc, tr);
     } else {
-	Column_Draw(header, column, lock, td, x, y, width, height, visIndex, FALSE);
+	Column_Draw(header, column, treeColumn, td, drawArgs->indent, x, y, width, height, visIndex, FALSE);
     }
 
-    if (!isDragColumn && (drawArgs->style != NULL)) {
+    if ((drawArgs->style != NULL) && !isDragColumn && !isHiddenTail) {
 	TreeStyle_Draw(drawArgs); /* may change drawArgs! */
     }
 }
@@ -1884,7 +1860,8 @@ static Tk_Image
 SetImageForColumn(
     TreeHeader header,		/* Header token. */
     TreeHeaderColumn column,	/* Column record. */
-    int lock,
+    TreeColumn treeColumn,
+    int indent,
     int width,
     int height
     )
@@ -1894,7 +1871,7 @@ SetImageForColumn(
     Tk_PhotoHandle photoH;
     TreeDrawable td;
     XImage *ximage;
-    int visIndex = 0; /* FIXME */
+    int visIndex = TreeColumn_VisIndex(treeColumn);
 
     photoH = Tk_FindPhoto(tree->interp, "::TreeCtrl::ImageColumn");
     if (photoH == NULL) {
@@ -1916,12 +1893,12 @@ SetImageForColumn(
 	TreeRect_SetXYWH(tr, 0, 0, width, height);
 	Tree_FillRectangle(tree, td, NULL, gc, tr);
     } else
-	Column_Draw(header, column, lock, td, 0, 0, width, height, visIndex, TRUE);
+	Column_Draw(header, column, treeColumn, td, indent, 0, 0, width, height, visIndex, TRUE);
 
     if (TreeItemColumn_GetStyle(tree, column->itemColumn) != NULL) {
 	StyleDrawArgs drawArgs;
 	int area;
-	switch (lock) {
+	switch (TreeColumn_Lock(treeColumn)) {
 	    case COLUMN_LOCK_LEFT:
 		area = TREE_AREA_HEADER_LEFT;
 		break;
@@ -1941,16 +1918,13 @@ SetImageForColumn(
 	drawArgs.state = TreeItem_GetState(tree, item) |
 	    TreeItemColumn_GetState(tree, column->itemColumn);
 	drawArgs.style = TreeItemColumn_GetStyle(tree, column->itemColumn);
-	if (lock == COLUMN_LOCK_NONE && visIndex == 0)
-	    drawArgs.indent = tree->canvasPadX[PAD_TOP_LEFT];
-	else
-	    drawArgs.indent = 0;
+	drawArgs.indent = indent;
 	drawArgs.x = 0;
 	drawArgs.y = 0;
 	drawArgs.width = width,
 	drawArgs.height = height;
 	drawArgs.justify = column->justify;
-	drawArgs.column = Tree_FindColumn(tree, TreeItemColumn_Index(tree, item, column->itemColumn));
+	drawArgs.column = treeColumn;
 	TreeStyle_Draw(&drawArgs);
     }
 
@@ -1980,7 +1954,8 @@ TreeHeader_DrawDragImagery(
     )
 {
     TreeCtrl *tree = header->tree;
-    TreeRectangle bbox;
+    TreeItem item = header->item;
+    TreeRectangle bbox1, bbox2;
     Tk_Image image;
     TreeItemColumn itemColumn;
     TreeHeaderColumn column;
@@ -1994,31 +1969,34 @@ TreeHeader_DrawDragImagery(
     if (lock != TreeColumn_Lock(tree->columnDrag.column))
 	return;
 
-    if (TreeItem_GetRects(tree, header->item, tree->columnDrag.column,
-	    0, NULL, &bbox) == 1) {
-	int ix = 0, iy = 0, iw = bbox.width, ih = bbox.height;
+    if (TreeItem_GetRects(tree, item, tree->columnDrag.column,
+	    0, NULL, &bbox1) == 1) {
+	int indent1 = TreeItem_Indent(tree, tree->columnDrag.column, item);
+	int ix = 0, iy = 0, iw = bbox1.width - indent1, ih = bbox1.height;
 
 	/* Erase the area to be occupied by the dragged column. */
 	if (tree->columnDrag.indColumn != NULL) {
-	    int index1 = TreeColumn_Index(tree->columnDrag.column);
-	    int index2 = TreeColumn_Index(tree->columnDrag.indColumn);
-	    TreeRectangle bbox2;
-	    if (TreeItem_GetRects(tree, header->item, tree->columnDrag.indColumn,
+	    if (TreeItem_GetRects(tree, item, tree->columnDrag.indColumn,
 		    0, NULL, &bbox2) == 1) {
+		int index1 = TreeColumn_Index(tree->columnDrag.column);
+		int index2 = TreeColumn_Index(tree->columnDrag.indColumn);
+		int indent2 = TreeItem_Indent(tree, tree->columnDrag.indColumn, item);
 		GC gc = Tk_3DBorderGC(tree->tkwin, tree->border, TK_3D_FLAT_GC);
+		bbox1.width -= indent1;
 		if (index1 > index2)
-		    bbox.x = bbox2.x;
+		    bbox1.x = bbox2.x;
 		else
-		    bbox.x = bbox2.x + bbox2.width - bbox.width;
-		bbox.x -= tree->drawableXOrigin;
-		bbox.y = y;
-		Tree_FillRectangle(tree, td, NULL, gc, bbox);
+		    bbox1.x = bbox2.x + bbox2.width - bbox1.width;
+		bbox1.x -= tree->drawableXOrigin;
+		bbox1.y = y;
+		bbox1.width += indent2;
+		Tree_FillRectangle(tree, td, NULL, gc, bbox1);
 	    }
 	}
 
-	itemColumn = TreeItem_FindColumn(tree, header->item, TreeColumn_Index(tree->columnDrag.column));
+	itemColumn = TreeItem_FindColumn(tree, item, TreeColumn_Index(tree->columnDrag.column));
 	column = TreeItemColumn_GetHeaderColumn(tree, itemColumn);
-	image = SetImageForColumn(header, column, TreeColumn_Lock(tree->columnDrag.column), iw, ih);
+	image = SetImageForColumn(header, column, tree->columnDrag.column, 0, iw, ih);
 	x += tree->columnDrag.offset;
 	Tree_RedrawImage(image, ix, iy, iw, ih, td, x + TreeColumn_Offset(tree->columnDrag.column), y);
 	Tk_FreeImage(image);
@@ -2162,7 +2140,7 @@ TreeHeaderColumn_CreateWithItemColumn(
     }
     column->itemColumn = itemColumn;
     column->neededWidth = column->neededHeight = -1;
-tree->headerHeight = -1;
+    tree->headerHeight = -1;
     return column;
 }
 
