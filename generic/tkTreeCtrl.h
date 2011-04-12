@@ -533,6 +533,12 @@ struct TreeCtrl
     int nextHeaderId;
     Tcl_HashTable headerHash;	/* TreeItem.id -> TreeItem */
 
+    /* These two options contain "-image" and "-text".
+     * They are used by the [item image] and [item text] commands.
+     * Originally these were static globals but that isn't thread safe. */
+    Tcl_Obj *imageOptionNameObj;
+    Tcl_Obj *textOptionNameObj;
+
 #ifdef TREECTRL_DEBUG
     int inLayoutColumns; /* detect recursion */
 #endif
@@ -628,6 +634,12 @@ MODULE_SCOPE void TreeHeader_DrawDragImagery(TreeHeader header, int lock,
     TreeDrawable td, int x, int y, int width, int height);
 MODULE_SCOPE int TreeHeaderColumn_NeededHeight(TreeHeader header, TreeHeaderColumn column, int fixedWidth);
 MODULE_SCOPE int TreeHeaders_NeededWidthOfColumn(TreeCtrl *tree, TreeColumn treeColumn);
+
+MODULE_SCOPE Tcl_Obj *TreeHeaderColumn_GetImageOrText(TreeHeader header,
+    TreeHeaderColumn column, int isImage);
+MODULE_SCOPE int TreeHeaderColumn_SetImageOrText(TreeHeader header,
+    TreeHeaderColumn column, TreeColumn treeColumn, Tcl_Obj *valueObj,
+    int isImage);
 
 MODULE_SCOPE int TreeHeader_ConsumeColumnCget(TreeCtrl *tree,
     TreeColumn treeColumn, Tcl_Obj *objPtr);
@@ -844,10 +856,10 @@ MODULE_SCOPE int TreeElement_FromObj(TreeCtrl *tree, Tcl_Obj *obj, TreeElement *
 MODULE_SCOPE int TreeElement_IsType(TreeCtrl *tree, TreeElement elem, CONST char *type);
 MODULE_SCOPE int TreeStyle_FromObj(TreeCtrl *tree, Tcl_Obj *obj, TreeStyle *stylePtr);
 MODULE_SCOPE Tcl_Obj *TreeStyle_ToObj(TreeStyle style_);
-MODULE_SCOPE Tcl_Obj *TreeStyle_GetImage(TreeCtrl *tree, TreeStyle style_);
-MODULE_SCOPE Tcl_Obj *TreeStyle_GetText(TreeCtrl *tree, TreeStyle style_);
-MODULE_SCOPE int TreeStyle_SetImage(TreeCtrl *tree, TreeItem item, TreeItemColumn column, TreeStyle style_, Tcl_Obj *textObj);
-MODULE_SCOPE int TreeStyle_SetText(TreeCtrl *tree, TreeItem item, TreeItemColumn column, TreeStyle style_, Tcl_Obj *textObj);
+MODULE_SCOPE Tcl_Obj *TreeStyle_GetImage(TreeCtrl *tree, TreeStyle style_, TreeElement *elemPtr);
+MODULE_SCOPE Tcl_Obj *TreeStyle_GetText(TreeCtrl *tree, TreeStyle style_, TreeElement *elemPtr);
+MODULE_SCOPE int TreeStyle_SetImage(TreeCtrl *tree, TreeItem item, TreeItemColumn column, TreeStyle style_, Tcl_Obj *imageObj, TreeElement *elemPtr);
+MODULE_SCOPE int TreeStyle_SetText(TreeCtrl *tree, TreeItem item, TreeItemColumn column, TreeStyle style_, Tcl_Obj *textObj, TreeElement *elemPtr);
 MODULE_SCOPE int TreeStyle_FindElement(TreeCtrl *tree, TreeStyle style_, TreeElement elem, int *index);
 MODULE_SCOPE TreeStyle TreeStyle_NewInstance(TreeCtrl *tree, TreeStyle master);
 MODULE_SCOPE int TreeStyle_ElementActual(TreeCtrl *tree, TreeStyle style_, int state, Tcl_Obj *elemObj, Tcl_Obj *obj);

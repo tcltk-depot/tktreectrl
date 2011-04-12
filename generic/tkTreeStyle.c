@@ -4237,9 +4237,6 @@ TreeStyle_GetMaster(
     return (TreeStyle) ((IStyle *) style_)->master;
 }
 
-static Tcl_Obj *confImageObj = NULL;
-static Tcl_Obj *confTextObj = NULL;
-
 /*
  *----------------------------------------------------------------------
  *
@@ -4262,19 +4259,13 @@ Style_GetImageOrText(
     TreeCtrl *tree,		/* Widget info. */
     IStyle *style,		/* Style. */
     TreeElementType *typePtr,	/* Type of element to look for. */
-    CONST char *optionName,	/* Name of config option to query. */
-    Tcl_Obj **optionNameObj	/* Pointer to a Tcl_Obj to hold the
-				 * option name. Initialized
-				 * on the first call. */
+    Tcl_Obj *optionNameObj,	/* Pointer to a Tcl_Obj holding the
+				 * option name. */
+    TreeElement *elemPtr	/* Returned element or NULL. */
     )
 {
     IElementLink *eLink;
     int i;
-
-    if (*optionNameObj == NULL) {
-	*optionNameObj = Tcl_NewStringObj(optionName, -1);
-	Tcl_IncrRefCount(*optionNameObj);
-    }
 
     for (i = 0; i < style->master->numElements; i++) {
 	eLink = &style->elements[i];
@@ -4282,11 +4273,13 @@ Style_GetImageOrText(
 	    Tcl_Obj *resultObjPtr;
 	    resultObjPtr = Tk_GetOptionValue(tree->interp,
 		(char *) eLink->elem, eLink->elem->typePtr->optionTable,
-		*optionNameObj, tree->tkwin);
+		optionNameObj, tree->tkwin);
+	    (*elemPtr) = style->master->elements[i].elem;
 	    return resultObjPtr;
 	}
     }
 
+    (*elemPtr) = NULL;
     return NULL;
 }
 
@@ -4311,11 +4304,12 @@ Style_GetImageOrText(
 Tcl_Obj *
 TreeStyle_GetImage(
     TreeCtrl *tree,		/* Widget info. */
-    TreeStyle style_		/* Token for style to examine. */
+    TreeStyle style_,		/* Token for style to examine. */
+    TreeElement *elemPtr	/* Returned element or NULL. */
     )
 {
     return Style_GetImageOrText(tree, (IStyle *) style_, &treeElemTypeImage,
-	"-image", &confImageObj);
+	tree->imageOptionNameObj, elemPtr);
 }
 
 /*
@@ -4339,11 +4333,12 @@ TreeStyle_GetImage(
 Tcl_Obj *
 TreeStyle_GetText(
     TreeCtrl *tree,		/* Widget info. */
-    TreeStyle style_		/* Token for style to examine. */
+    TreeStyle style_,		/* Token for style to examine. */
+    TreeElement *elemPtr	/* Returned element or NULL. */
     )
 {
     return Style_GetImageOrText(tree, (IStyle *) style_, &treeElemTypeText,
-	"-text", &confTextObj);
+	tree->textOptionNameObj, elemPtr);
 }
 
 /*
@@ -4372,20 +4367,17 @@ Style_SetImageOrText(
     TreeItemColumn column,	/* Item-column containing the style */
     IStyle *style,		/* The style */
     TreeElementType *typePtr,	/* Element type to look for. */
-    CONST char *optionName,	/* NULL-terminated config option name. */
-    Tcl_Obj **optionNameObj,	/* Pointer to Tcl_Obj to hold the option
-				 * name; initialized on the first call. */
-    Tcl_Obj *valueObj		/* New value for the config option. */
+    Tcl_Obj *optionNameObj,	/* Pointer to a Tcl_Obj holding the option
+				 * name. */
+    Tcl_Obj *valueObj,		/* New value for the config option. */
+    TreeElement *elemPtr	/* Returned element or NULL. */
     )
 {
     MStyle *masterStyle = style->master;
     IElementLink *eLink;
     int i;
 
-    if (*optionNameObj == NULL) {
-	*optionNameObj = Tcl_NewStringObj(optionName, -1);
-	Tcl_IncrRefCount(*optionNameObj);
-    }
+    (*elemPtr) = NULL;
 
     for (i = 0; i < masterStyle->numElements; i++) {
 	TreeElement masterElem = masterStyle->elements[i].elem;
@@ -4395,7 +4387,7 @@ Style_SetImageOrText(
 
 	    eLink = Style_CreateElem(tree, item, column, style, masterElem, NULL);
 
-	    objv[0] = *optionNameObj;
+	    objv[0] = optionNameObj;
 	    objv[1] = valueObj;
 	    args.tree = tree;
 	    args.elem = eLink->elem;
@@ -4416,6 +4408,7 @@ Style_SetImageOrText(
 	    eLink->neededWidth = eLink->neededHeight = -1;
 #endif
 	    style->neededWidth = style->neededHeight = -1;
+	    (*elemPtr) = masterElem;
 	    break;
 	}
     }
@@ -4446,11 +4439,12 @@ TreeStyle_SetImage(
     TreeItem item,		/* Item containing the style. */
     TreeItemColumn column,	/* Item-column containing the style. */
     TreeStyle style_,		/* The instance style. */
-    Tcl_Obj *valueObj		/* New value for -image option. */
+    Tcl_Obj *valueObj,		/* New value for -image option. */
+    TreeElement *elemPtr	/* Returned element or NULL. */
     )
 {
     return Style_SetImageOrText(tree, item, column, (IStyle *) style_,
-	&treeElemTypeImage, "-image", &confImageObj, valueObj);
+	&treeElemTypeImage, tree->imageOptionNameObj, valueObj, elemPtr);
 }
 
 /*
@@ -4477,11 +4471,12 @@ TreeStyle_SetText(
     TreeItem item,		/* Item containing the style. */
     TreeItemColumn column,	/* Item-column containing the style. */
     TreeStyle style_,		/* The instance style. */
-    Tcl_Obj *valueObj		/* New value for -text option. */
+    Tcl_Obj *valueObj,		/* New value for -text option. */
+    TreeElement *elemPtr	/* Returned element or NULL. */
     )
 {
     return Style_SetImageOrText(tree, item, column, (IStyle *) style_,
-	&treeElemTypeText, "-text", &confTextObj, valueObj);
+	&treeElemTypeText, tree->textOptionNameObj, valueObj, elemPtr);
 }
 
 /*
@@ -7138,7 +7133,11 @@ TreeStyle_Init(
     )
 {
     tree->styleOptionTable = Tk_CreateOptionTable(tree->interp,
-	styleOptionSpecs); 
+	styleOptionSpecs);
+    tree->imageOptionNameObj = Tcl_NewStringObj("-image", -1);
+    Tcl_IncrRefCount(tree->imageOptionNameObj);
+    tree->textOptionNameObj = Tcl_NewStringObj("-text", -1);
+    Tcl_IncrRefCount(tree->textOptionNameObj);
     return TCL_OK;
 }
 
@@ -7186,5 +7185,8 @@ TreeStyle_Free(
 
     Tcl_DeleteHashTable(&tree->elementHash);
     Tcl_DeleteHashTable(&tree->styleHash);
+
+    Tcl_DecrRefCount(tree->imageOptionNameObj);
+    Tcl_DecrRefCount(tree->textOptionNameObj);
 }
 

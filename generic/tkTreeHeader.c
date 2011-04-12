@@ -1436,6 +1436,39 @@ TreeHeaderColumn_NeededHeight(
     return column->neededHeight;
 }
 
+Tcl_Obj *
+TreeHeaderColumn_GetImageOrText(
+    TreeHeader header,		/* Header token. */
+    TreeHeaderColumn column,	/* Column token. */
+    int isImage
+    )
+{
+    TreeCtrl *tree = header->tree;
+
+    return Tk_GetOptionValue(tree->interp, (char *) column,
+	tree->headerColumnOptionTable,
+	isImage ? tree->imageOptionNameObj : tree->textOptionNameObj,
+	tree->tkwin);
+}
+
+int
+TreeHeaderColumn_SetImageOrText(
+    TreeHeader header,		/* Header token. */
+    TreeHeaderColumn column,	/* Column token. */
+    TreeColumn treeColumn,
+    Tcl_Obj *valueObj,		/* New value of -image or -text option */
+    int isImage
+    )
+{
+    TreeCtrl *tree = header->tree;
+    int objc = 2;
+    Tcl_Obj *objv[2];
+
+    objv[0] = isImage ? tree->imageOptionNameObj : tree->textOptionNameObj;
+    objv[1] = valueObj;
+    return Column_Configure(header, column, treeColumn, objc, objv, FALSE);
+}
+
 /*
  *----------------------------------------------------------------------
  *
