@@ -627,13 +627,13 @@ MODULE_SCOPE int TreeHeader_Init(TreeCtrl *tree);
 MODULE_SCOPE void TreeHeader_Free(TreeCtrl *tree);
 MODULE_SCOPE int TreeHeaderCmd(ClientData clientData, Tcl_Interp *interp,
     int objc, Tcl_Obj *CONST objv[]);
-MODULE_SCOPE int Tree_HeightOfHeaderItems(TreeCtrl *tree);
 MODULE_SCOPE int TreeHeaderList_FromObj(TreeCtrl *tree, Tcl_Obj *objPtr, TreeItemList *items, int flags);
 MODULE_SCOPE void TreeHeader_TreeChanged(TreeCtrl *tree, int flagT);
 MODULE_SCOPE void TreeHeader_DrawDragImagery(TreeHeader header, int lock,
     TreeDrawable td, int x, int y, int width, int height);
 MODULE_SCOPE int TreeHeaderColumn_NeededHeight(TreeHeader header, TreeHeaderColumn column, int fixedWidth);
 MODULE_SCOPE int TreeHeaders_NeededWidthOfColumn(TreeCtrl *tree, TreeColumn treeColumn);
+MODULE_SCOPE int Tree_HeaderHeight(TreeCtrl *tree);
 
 MODULE_SCOPE Tcl_Obj *TreeHeaderColumn_GetImageOrText(TreeHeader header,
     TreeHeaderColumn column, int isImage);
@@ -988,12 +988,7 @@ MODULE_SCOPE void TreeColumn_InvalidateWidth(TreeColumn column_);
 MODULE_SCOPE void TreeColumn_Init(TreeCtrl *tree);
 MODULE_SCOPE void Tree_FreeColumns(TreeCtrl *tree);
 MODULE_SCOPE void TreeColumns_InvalidateWidthOfItems(TreeCtrl *tree, TreeColumn column);
-MODULE_SCOPE void Tree_InvalidateColumnHeight(TreeCtrl *tree, TreeColumn column);
-MODULE_SCOPE int Tree_HeaderHeight(TreeCtrl *tree);
 MODULE_SCOPE int TreeColumn_Bbox(TreeColumn column, int *x, int *y, int *w, int *h);
-#if 0
-MODULE_SCOPE TreeColumn Tree_HeaderUnderPoint(TreeCtrl *tree, int *x_, int *y_, int *w, int *h, int nearest);
-#endif
 MODULE_SCOPE int TreeColumn_Lock(TreeColumn column_);
 MODULE_SCOPE int Tree_WidthOfColumns(TreeCtrl *tree);
 MODULE_SCOPE int Tree_WidthOfLeftColumns(TreeCtrl *tree);

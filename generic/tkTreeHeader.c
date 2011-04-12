@@ -2249,12 +2249,13 @@ TreeHeader_NeededHeight(
 /*
  *----------------------------------------------------------------------
  *
- * Tree_HeightOfHeaderItems --
+ * Tree_HeaderHeight --
  *
- *	Returns the height of the header items.
+ *	Return the total height of the column header area. The height
+ *	is only recalculated if it is marked out-of-date.
  *
  * Results:
- *	Pixel height.
+ *	Pixel height. Will be zero if the -showheader option is FALSE.
  *
  * Side effects:
  *	None.
@@ -2263,19 +2264,25 @@ TreeHeader_NeededHeight(
  */
 
 int
-Tree_HeightOfHeaderItems(
+Tree_HeaderHeight(
     TreeCtrl *tree		/* Widget info. */
     )
 {
     TreeItem item = tree->headerItems;
     int totalHeight = 0;
 
+    if (!tree->showHeader)
+	return 0;
+
+    if (tree->headerHeight >= 0)
+	return tree->headerHeight;
+
     while (item != NULL) {
 	totalHeight += TreeItem_Height(tree, item);
 	item = TreeItem_GetNextSibling(tree, item);
     }
 
-    return totalHeight;
+    return tree->headerHeight = totalHeight;
 }
 
 TreeItem
