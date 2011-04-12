@@ -2439,7 +2439,8 @@ gotFirstPart:
 	goto errorExit;
     }
 
-    TreeItemList_Append(items, item);
+    if (item != NULL)
+	TreeItemList_Append(items, item);
 
 goodExit:
     return TCL_OK;
