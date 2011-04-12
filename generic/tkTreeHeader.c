@@ -2669,8 +2669,10 @@ TreeHeaderCmd_Configure(
 	    } else {
 		if (TreeHeaderList_FromObj(tree, objv[3], &items, 0) != TCL_OK)
 		    return TCL_ERROR;
-		if (TreeColumnList_FromObj(tree, objv[4], &columns, CFO_NOT_TAIL) != TCL_OK)
+		if (TreeColumnList_FromObj(tree, objv[4], &columns, CFO_NOT_TAIL) != TCL_OK) {
+		    TreeItemList_Free(&items);
 		    return TCL_ERROR;
+		}
 		ITEM_FOR_EACH(item, &items, NULL, &iter) {
 		    header = TreeItem_GetHeader(tree, item);
 		    COLUMN_FOR_EACH(treeColumn, &columns, NULL, &citer) {
@@ -2959,6 +2961,7 @@ TreeHeaderCmd(
 		TreeItemList_Free(&items);
 		return TCL_ERROR;
 	    }
+	    TreeItemList_Free(&items);
 	    break;
 	}
 
