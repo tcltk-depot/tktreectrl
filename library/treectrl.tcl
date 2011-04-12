@@ -794,6 +794,7 @@ proc ::TreeCtrl::Motion1 {w x y} {
 		}
 		if {[$w column dragcget -enable] &&
 		    (abs($Priv(columnDrag,x) - $x) > 4)} {
+		    set Priv(columnDrag,x) $x
 		    $w column dragconfigure \
 			-header $Priv(header) \
 			-imagecolumn $Priv(column) \
@@ -821,6 +822,7 @@ proc ::TreeCtrl::Motion1 {w x y} {
 	}
 	dragColumnWait {
 	    if {(abs($Priv(columnDrag,x) - $x) > 4)} {
+		set Priv(columnDrag,x) $x
 		$w column dragconfigure \
 		    -header $Priv(header) \
 		    -imagecolumn $Priv(column) \
