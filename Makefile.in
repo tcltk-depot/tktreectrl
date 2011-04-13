@@ -230,7 +230,7 @@ install-doc: install-doc-x
 	cp $(srcdir)/doc/*.html $(DESTDIR)$(pkglibdir)/htmldoc
 
 test: binaries libraries
-	$(WISH) `@CYGPATH@ $(srcdir)/tests/all.tcl` $(TESTFLAGS) | cat
+	@$(WISH) `@CYGPATH@ $(srcdir)/tests/all.tcl` $(TESTFLAGS) | cat
 
 shell: binaries libraries
 	@$(WISH) $(SCRIPT)
