@@ -1948,7 +1948,8 @@ TreeHeaderColumn_Draw(
 {
     TreeCtrl *tree = header->tree;
     TreeDrawable td = drawArgs->td;
-    int x = drawArgs->x, y = drawArgs->y, width = drawArgs->width, height = drawArgs->height;
+    int x = drawArgs->x, y = drawArgs->y,
+	width = drawArgs->width, height = drawArgs->height;
     TreeColumn treeColumn = drawArgs->column;
     int isDragHeader = tree->columnDrag.header == header;
     int isDragColumn, isHiddenTail;
@@ -1957,27 +1958,30 @@ TreeHeaderColumn_Draw(
     if (isDragColumn && tree->columnDrag.indColumn != NULL) {
 	return;
     }
-    if (isDragHeader && tree->columnDrag.indColumn != NULL && tree->columnDrag.column != NULL) {
+    if (isDragHeader && tree->columnDrag.indColumn != NULL &&
+	    tree->columnDrag.column != NULL) {
 	int index1 = TreeColumn_Index(tree->columnDrag.column);
 	int index2 = TreeColumn_Index(tree->columnDrag.indColumn);
 	int index3 = TreeColumn_Index(treeColumn);
-	TreeRectangle bbox;
 	if (index3 >= MIN(index1,index2) && index3 <= MAX(index1,index2)) {
+	    TreeRectangle bbox;
 	    if (TreeItem_GetRects(tree, header->item, tree->columnDrag.column,
 		    0, NULL, &bbox) == 1) {
+		int indent1 = TreeItem_Indent(tree, tree->columnDrag.column,
+		    header->item);
 		if (index1 < index2)
-		    x -= bbox.width - TreeItem_Indent(tree, tree->columnDrag.column, header->item);
+		    x -= bbox.width - indent1;
 		else
 		    x += bbox.width + drawArgs->indent;
-	    }
-	    if (x == bbox.x + TreeItem_Indent(tree, tree->columnDrag.column, header->item)) {
-	    x = drawArgs->x = bbox.x;
-	    width = drawArgs->width = bbox.width;
-	    drawArgs->indent = TreeItem_Indent(tree, tree->columnDrag.column, header->item);
-	    } else {
-	    drawArgs->x = x;
-	    width = drawArgs->width -= drawArgs->indent;
-	    drawArgs->indent = 0;
+		if (x == bbox.x + indent1) {
+		    x = drawArgs->x = bbox.x;
+		    width = drawArgs->width -= drawArgs->indent - indent1;
+		    drawArgs->indent = indent1;
+		} else {
+		    drawArgs->x = x;
+		    width = drawArgs->width -= drawArgs->indent;
+		    drawArgs->indent = 0;
+		}
 	    }
 	}
     }
