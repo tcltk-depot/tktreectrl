@@ -1,7 +1,7 @@
 /*
  * tkTreeHeaders.c --
  *
- *	This module implements the treectrl widget's column headers.
+ *	This module implements treectrl widget's column headers.
  *
  * Copyright (c) 2011 Tim Baker
  */
@@ -336,6 +336,49 @@ Tk_ObjCustomOption TreeCtrlCO_header =
     (ClientData) 0
 };
 
+#if 0
+/*
+ *----------------------------------------------------------------------
+ *
+ * ImageChangedProc --
+ *
+ *	This procedure is invoked by the image code whenever the manager
+ *	for an image does something that affects the size or contents
+ *	of an image displayed in a column header.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Invalidates the size of the column and schedules a redisplay.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+ImageChangedProc(
+    ClientData clientData,		/* Pointer to Column record. */
+    int x, int y,			/* Upper left pixel (within image)
+					 * that must be redisplayed. */
+    int width, int height,		/* Dimensions of area to redisplay
+					 * (may be <= 0). */
+    int imageWidth, int imageHeight	/* New dimensions of image. */
+    )
+{
+    /* I would like to know the image was deleted... */
+    TreeHeaderColumn column = clientData;
+    TreeCtrl *tree = column->tree;
+
+    /* Duplicate the effects of configuring the -image option. */
+    column->neededWidth = -1;
+    column->neededHeight = -1;
+    tree->headerHeight = -1;
+    tree->widthOfColumns = -1;
+    tree->widthOfColumnsLeft = tree->widthOfColumnsRight = -1;
+    Tree_DInfoChanged(tree, DINFO_CHECK_COLUMN_WIDTH | DINFO_DRAW_HEADER);
+}
+#endif
+
 /*
  *----------------------------------------------------------------------
  *
@@ -358,9 +401,9 @@ Tk_ObjCustomOption TreeCtrlCO_header =
 
 static int
 Column_Configure(
-    TreeHeader header,
-    TreeHeaderColumn column,	/* Column record. */
-    TreeColumn treeColumn,
+    TreeHeader header,		/* Header token. */
+    TreeHeaderColumn column,	/* Column token. */
+    TreeColumn treeColumn,	/* Column token. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *CONST objv[],	/* Argument values. */
     int createFlag		/* TRUE if the Column is being created. */
@@ -409,7 +452,13 @@ Column_Configure(
 		if (column->imageString == NULL) {
 		    column->image = NULL;
 		} else {
+#if 1
 		    column->image = Tree_GetImage(tree, column->imageString);
+#else
+		    column->image = Tk_GetImage(tree->interp, tree->tkwin,
+			    column->imageString, ImageChangedProc,
+			    (ClientData) column);
+#endif
 		    if (column->image == NULL)
 			continue;
 		    maskFree |= COLU_CONF_IMAGE;
@@ -511,11 +560,31 @@ Column_Configure(
     return TCL_OK;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeHeader_ConsumeColumnCget --
+ *
+ *	Sets the interpreter result to the value of a single configuration
+ *	option for a header-column.  This is called when an unknown
+ *	option is passed to [column cget].  It operates on the first
+ *	row of headers only.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
 int
 TreeHeader_ConsumeColumnCget(
     TreeCtrl *tree,		/* Widget info. */
-    TreeColumn treeColumn,
-    Tcl_Obj *objPtr		/* Option name. */
+    TreeColumn treeColumn,	/* Used to determine which header-column to
+				 * get the option value from. */
+    Tcl_Obj *objPtr		/* Object holding the name of the option. */
     )
 {
     TreeItemColumn itemColumn;
@@ -543,10 +612,29 @@ TreeHeader_ConsumeColumnCget(
     return TCL_OK;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeHeader_ConsumeColumnConfig --
+ *
+ *	Configures a header-column with option/value pairs.  This is
+ *	called by [column configure] for any unknown options.  It
+ *	operates on the first row of headers only.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
 int
 TreeHeader_ConsumeColumnConfig(
     TreeCtrl *tree,		/* Widget info. */
-    TreeColumn treeColumn,
+    TreeColumn treeColumn,	/* Used to determine which header-column to
+				 * configure. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *CONST objv[]	/* Argument values. */
     )
@@ -570,11 +658,32 @@ TreeHeader_ConsumeColumnConfig(
     return Column_Configure(TreeItem_GetHeader(tree, tree->headerItems), column, treeColumn, objc, objv, FALSE);
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeHeader_ConsumeColumnOptionInfo --
+ *
+ *	Retrieves the info for one or all configuration options of a
+ *	header-column.  This is called when an unknown option is passed
+ *	to [column configure].   It operates on the first row of
+ *	headers only.
+ *
+ * Results:
+ *	A pointer to a list object containing the configuration info
+ *	for the option(s), or NULL if an error occurs.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
 Tcl_Obj *
 TreeHeader_ConsumeColumnOptionInfo(
     TreeCtrl *tree,		/* Widget info. */
-    TreeColumn treeColumn,
-    Tcl_Obj *objPtr		/* Option name or NULL. */
+    TreeColumn treeColumn,	/* Used to determine which header-column
+				 * to get the option info from. */
+    Tcl_Obj *objPtr		/* Option name or NULL for every option. */
     )
 {
     TreeItemColumn itemColumn;
@@ -739,7 +848,7 @@ Column_MakeState(
 
 static void
 Column_UpdateTextLayout(
-    TreeCtrl *tree,
+    TreeCtrl *tree,		/* Widget info. */
     HeaderColumn *column,	/* Column info. */
     int width			/* Maximum line length. Zero means there
 				 * is no limit. */
@@ -808,7 +917,7 @@ Column_UpdateTextLayout(
 
 static void
 Column_GetArrowSize(
-    TreeCtrl *tree,
+    TreeCtrl *tree,		/* Widget info. */
     HeaderColumn *column,	/* Column info. */
     int *widthPtr,		/* Returned width. */
     int *heightPtr		/* Returned height. */
@@ -904,7 +1013,7 @@ struct LayoutPart
 
 static void
 Column_DoLayout(
-    TreeCtrl *tree,
+    TreeCtrl *tree,		/* Widget info. */
     HeaderColumn *column,	/* Column info. */
     struct Layout *layout	/* Returned layout info. The width and
 				 * height fields must be initialized. */
@@ -1205,7 +1314,7 @@ finish:
 /*
  *----------------------------------------------------------------------
  *
- * TreeHeader_NeededWidth --
+ * TreeHeaderColumn_NeededWidth --
  *
  *	Return the total width requested by all the graphical elements
  *	that make up a column header.  The width is recalculated if it
@@ -1397,13 +1506,7 @@ TreeHeaderColumn_NeededHeight(
     }
     if (column->text != NULL) {
 	struct Layout layout;
-#if 1
 	layout.width = (fixedWidth >= 0) ? fixedWidth : TreeHeaderColumn_NeededWidth(header, column);
-#else
-	layout.width = TreeColumn_UseWidth(
-			    Tree_FindColumn(tree,
-				TreeItemColumn_Index(tree, header->item, column->itemColumn)));
-#endif
 	layout.height = -1;
 	Column_DoLayout(tree, column, &layout);
 	if (column->textLayout != NULL) {
@@ -1439,6 +1542,27 @@ TreeHeaderColumn_NeededHeight(
     return column->neededHeight;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeHeaderColumn_GetImageOrText --
+ *
+ *	Retrieves the value of the -image or -text option of a
+ *	header-column.
+ *	This is called by the [header image] and [header text] command
+ *	when a header-column has no style or no style with a text
+ *	element.
+ *
+ * Results:
+ *	A point to an object containing the value of the -image or
+ *	-text option, which may be NULL.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
 Tcl_Obj *
 TreeHeaderColumn_GetImageOrText(
     TreeHeader header,		/* Header token. */
@@ -1454,13 +1578,33 @@ TreeHeaderColumn_GetImageOrText(
 	tree->tkwin);
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeHeaderColumn_SetImageOrText --
+ *
+ *	Configures the -image or -text option of a header-column.
+ *	This is called by the [header image] and [header text] command
+ *	when a header-column has no style or no style with a text
+ *	element.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	Header layout may change, a redraw may get scheduled.
+ *
+ *----------------------------------------------------------------------
+ */
+
 int
 TreeHeaderColumn_SetImageOrText(
     TreeHeader header,		/* Header token. */
     TreeHeaderColumn column,	/* Column token. */
-    TreeColumn treeColumn,
+    TreeColumn treeColumn,	/* Column token. */
     Tcl_Obj *valueObj,		/* New value of -image or -text option */
-    int isImage
+    int isImage			/* TRUE to configure the -image option,
+				 * FALSE to configure the -text option. */
     )
 {
     TreeCtrl *tree = header->tree;
@@ -1775,11 +1919,30 @@ Column_Draw(
     }
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeHeaderColumn_Draw --
+ *
+ *	Draws a single header-column.  If the header has -ownerdrawn=yes
+ *	then the area is erased to the tree -background color and only
+ *	the item style (if any) is drawn.  When -ownerdrawn=no the
+ *	native column stuff is drawn followed by the item style (if any).
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Stuff is drawn in a drawable.
+ *
+ *----------------------------------------------------------------------
+ */
+
 void
 TreeHeaderColumn_Draw(
     TreeHeader header,		/* Header token. */
     TreeHeaderColumn column,	/* Column token. */
-    int visIndex,
+    int visIndex,		/* 0-based index in the list of spans. */
     StyleDrawArgs *drawArgs	/* May be changed by this procedure. */
     )
 {
@@ -1862,11 +2025,11 @@ TreeHeaderColumn_Draw(
 static Tk_Image
 SetImageForColumn(
     TreeHeader header,		/* Header token. */
-    TreeHeaderColumn column,	/* Column record. */
-    TreeColumn treeColumn,
-    int indent,
-    int width,
-    int height
+    TreeHeaderColumn column,	/* Column token. */
+    TreeColumn treeColumn,	/* Column token. */
+    int indent,			/* */
+    int width,			/* Width of the header and image */
+    int height			/* Height of the header and image */
     )
 {
     TreeCtrl *tree = header->tree;
@@ -1947,6 +2110,24 @@ SetImageForColumn(
 	NULL, (ClientData) NULL);
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeHeader_DrawDragImagery --
+ *
+ *	Draws the drag-and-drop feedback for a single TreeHeader.
+ *	This is called after the header has been drawn.  It renders
+ *	the transparent drag image on top of what was already drawn.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Stuff may be drawn in a drawable.
+ *
+ *----------------------------------------------------------------------
+ */
+
 void
 TreeHeader_DrawDragImagery(
     TreeHeader header,		/* Header token. */
@@ -2006,6 +2187,22 @@ TreeHeader_DrawDragImagery(
     }
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeHeaderColumn_Justify --
+ *
+ *	Returns the value of the -justify option for a header-column.
+ *
+ * Results:
+ *	A Tk_Justify value.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
 Tk_Justify
 TreeHeaderColumn_Justify(
     TreeHeader header,		/* Header token. */
@@ -2015,12 +2212,32 @@ TreeHeaderColumn_Justify(
     return column->justify;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Header_Configure --
+ *
+ *	This procedure is called to process an objc/objv list to set
+ *	configuration options for a TreeHeader.
+ *
+ * Results:
+ *	The return value is a standard Tcl result.  If TCL_ERROR is
+ *	returned, then an error message is left in interp's result.
+ *
+ * Side effects:
+ *	Configuration information, such as text string, colors, font,
+ *	etc. get set for 'header';  old resources get freed, if there
+ *	were any.  Display changes may occur.
+ *
+ *----------------------------------------------------------------------
+ */
+
 static int
 Header_Configure(
-    TreeHeader header,
+    TreeHeader header,		/* Header token */
     int objc,			/* Number of arguments. */
     Tcl_Obj *CONST objv[],	/* Argument values. */
-    int createFlag		/* TRUE if the Column is being created. */
+    int createFlag		/* TRUE if the TreeHeader is being created. */
     )
 {
     TreeCtrl *tree = header->tree;
@@ -2125,10 +2342,28 @@ Header_Configure(
     return TCL_OK;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeHeaderColumn_CreateWithItemColumn --
+ *
+ *	Allocates and initializes a new header-column.
+ *
+ * Results:
+ *	A token for the new header-column.
+ *
+ * Side effects:
+ *	Memory allocation, option initialization.
+ *
+ *----------------------------------------------------------------------
+ */
+
 TreeHeaderColumn
 TreeHeaderColumn_CreateWithItemColumn(
-    TreeHeader header,
-    TreeItemColumn itemColumn
+    TreeHeader header,			/* Header token. */
+    TreeItemColumn itemColumn		/* Newly-created item-column to
+					 * assocate the new header-column
+					 * with. */
     )
 {
     TreeCtrl *tree = header->tree;
@@ -2141,16 +2376,34 @@ TreeHeaderColumn_CreateWithItemColumn(
 	WFREE(column, HeaderColumn);
 	return NULL;
     }
+    /* FIXME: should call Column_Configure to handle any option-database tomfoolery */
     column->itemColumn = itemColumn;
     column->neededWidth = column->neededHeight = -1;
     tree->headerHeight = -1;
     return column;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeHeader_CreateWithItem --
+ *
+ *	Allocates and initializes a new row of column headers.
+ *
+ * Results:
+ *	A token for the new header.
+ *
+ * Side effects:
+ *	Memory allocation, option initialization.
+ *
+ *----------------------------------------------------------------------
+ */
+
 TreeHeader
 TreeHeader_CreateWithItem(
-    TreeCtrl *tree,
-    TreeItem item
+    TreeCtrl *tree,		/* Widget info. */
+    TreeItem item		/* Newly-created item to associate the
+				 * new header with. */
     )
 {
     TreeHeader header;
@@ -2167,10 +2420,26 @@ TreeHeader_CreateWithItem(
     return header;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeHeaderColumn_FreeResources --
+ *
+ *	Frees any memory and options associated with a header-column.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Memory is freed.
+ *
+ *----------------------------------------------------------------------
+ */
+
 void
 TreeHeaderColumn_FreeResources(
-    TreeCtrl *tree,
-    TreeHeaderColumn column
+    TreeCtrl *tree,		/* Widget info. */
+    TreeHeaderColumn column	/* Column token. */
     )
 {
     if (column->bitmapGC != None)
@@ -2184,9 +2453,25 @@ TreeHeaderColumn_FreeResources(
     WFREE(column, HeaderColumn);
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeHeader_FreeResources --
+ *
+ *	Frees any memory and options associated with a header.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Memory is freed.
+ *
+ *----------------------------------------------------------------------
+ */
+
 void
 TreeHeader_FreeResources(
-    TreeHeader header
+    TreeHeader header		/* Header to free. */
     )
 {
     TreeCtrl *tree = header->tree;
@@ -2195,10 +2480,29 @@ TreeHeader_FreeResources(
     WFREE(header, TreeHeader_);
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeHeaders_NeededWidthOfColumn --
+ *
+ *	Returns the needed width of every header-column above a column.
+ *	The needed width is the maximum of the style width (if any) and
+ *	the native header elements (which is zero for -ownerdrawn
+ *	headers).
+ *
+ * Results:
+ *	Pixel width. Will be zero if there are no visible headers.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
 int
 TreeHeaders_NeededWidthOfColumn(
-    TreeCtrl *tree,
-    TreeColumn treeColumn
+    TreeCtrl *tree,		/* Widget info. */
+    TreeColumn treeColumn	/* Column to consider. */
     )
 {
     TreeItem item = tree->headerItems;
@@ -2209,9 +2513,9 @@ TreeHeaders_NeededWidthOfColumn(
 	    TreeHeader header = TreeItem_GetHeader(tree, item);
 	    TreeItemColumn itemColumn = TreeItem_FindColumn(tree, item, TreeColumn_Index(treeColumn));
 	    TreeHeaderColumn column = TreeItemColumn_GetHeaderColumn(tree, itemColumn);
-	    width = TreeHeaderColumn_NeededWidth(header, column);
+	    width = TreeHeaderColumn_NeededWidth(header, column); /* native header stuff */
 	    maxWidth = MAX(maxWidth, width);
-	    width = TreeItemColumn_NeededWidth(tree, item, itemColumn); /* the style */
+	    width = TreeItemColumn_NeededWidth(tree, item, itemColumn); /* the style (if any) */
 	    maxWidth = MAX(maxWidth, width);
 	}
 	item = TreeItem_GetNextSibling(tree, item);
@@ -2258,7 +2562,7 @@ TreeHeader_NeededHeight(
  *	is only recalculated if it is marked out-of-date.
  *
  * Results:
- *	Pixel height. Will be zero if the -showheader option is FALSE.
+ *	Pixel height. Will be zero if there are no visible headers.
  *
  * Side effects:
  *	None.
@@ -2287,6 +2591,22 @@ Tree_HeaderHeight(
 
     return tree->headerHeight = totalHeight;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tree_HeaderUnderPoint --
+ *
+ *	Returns the header containing the given coordinates.
+ *
+ * Results:
+ *	TreeItem or NULL if the point is outside any header.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
 
 TreeItem
 Tree_HeaderUnderPoint(
@@ -2328,6 +2648,22 @@ Tree_HeaderUnderPoint(
     return NULL;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeHeaderColumn_FromObj --
+ *
+ *	Parses a column description into a header-column token.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
 int
 TreeHeaderColumn_FromObj(
     TreeHeader header,		/* Header token. */
@@ -2346,6 +2682,23 @@ TreeHeaderColumn_FromObj(
     (*columnPtr) = TreeItemColumn_GetHeaderColumn(tree, itemColumn);
     return TCL_OK;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeHeaderList_FromObj --
+ *
+ *	Parses a header description into a list of zero or more header
+ *	tokens.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
 
 int
 TreeHeaderList_FromObj(
@@ -2482,17 +2835,35 @@ errorExit:
     return TCL_ERROR;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeHeader_FromObj --
+ *
+ *	Parses a header description into a single header token.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
 int
 TreeHeader_FromObj(
     TreeCtrl *tree,		/* Widget info. */
     Tcl_Obj *objPtr,		/* Object to parse to a header. */
-    TreeHeader *headerPtr
+    TreeHeader *headerPtr	/* Out: returned header, always non-NULL
+				 * unless an error occurs. */
     )
 {
     TreeItemList items;
     TreeItem item;
 
-    if (TreeHeaderList_FromObj(tree, objPtr, &items, IFO_NOT_MANY | IFO_NOT_NULL) != TCL_OK)
+    if (TreeHeaderList_FromObj(tree, objPtr, &items, IFO_NOT_MANY |
+	    IFO_NOT_NULL) != TCL_OK)
 	return TCL_ERROR;
     item = TreeItemList_Nth(&items, 0);
     (*headerPtr) = TreeItem_GetHeader(tree, item);
@@ -2532,6 +2903,24 @@ TreeHeader_ToObj(
     return Tcl_NewIntObj(TreeItem_GetID(tree, header->item));
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeHeaderCmd_Create --
+ *
+ *	This procedure is invoked to process the [header create] widget
+ *	command.  See the user documentation for details on what it
+ *	does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
 static int
 TreeHeaderCmd_Create(
     ClientData clientData,	/* Widget info. */
@@ -2555,6 +2944,24 @@ TreeHeaderCmd_Create(
     Tcl_SetObjResult(interp, TreeItem_ToObj(tree, item));
     return TCL_OK;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeHeaderCmd_Cget --
+ *
+ *	This procedure is invoked to process the [header cget] widget
+ *	command.  See the user documentation for details on what it
+ *	does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
 
 static int
 TreeHeaderCmd_Cget(
@@ -2611,6 +3018,24 @@ TreeHeaderCmd_Cget(
 
     return TCL_OK;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeHeaderCmd_Configure --
+ *
+ *	This procedure is invoked to process the [header configure]
+ *	widget command.  See the user documentation for details on what
+ *	it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
 
 static int
 TreeHeaderCmd_Configure(
@@ -3074,7 +3499,7 @@ TreeHeader_TreeChanged(
 		column->textLayoutInvalid = TRUE;
 	    }
 	    /* Need to do this if the -usetheme option changes or the system
-	    * theme changes. */
+	     * theme changes. */
 	    if (flagT & TREE_CONF_RELAYOUT) {
 		column->neededWidth = column->neededHeight = -1;
 	    }
@@ -3085,6 +3510,23 @@ TreeHeader_TreeChanged(
 
     tree->headerHeight = -1;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeHeader_Init --
+ *
+ *	Perform header-related initialization when a new TreeCtrl is
+ *	created.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
 
 int
 TreeHeader_Init(
@@ -3121,6 +3563,22 @@ TreeHeader_Init(
 
     return TCL_OK;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeHeader_Free --
+ *
+ *	Free header-related resources for a deleted TreeCtrl.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Memory is deallocated.
+ *
+ *----------------------------------------------------------------------
+ */
 
 void
 TreeHeader_Free(
