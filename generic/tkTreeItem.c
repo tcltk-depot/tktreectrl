@@ -8177,12 +8177,7 @@ TreeItemCmd(
 	Tcl_ObjCmdProc *proc;
     } argInfo[] = {
 	{ "ancestors", 1, 1, IFO_NOT_MANY | IFO_NOT_NULL, 0, 0, "item", NULL },
-#if 1
 	{ "bbox", 0, 0, 0, 0, 0, NULL, ItemBboxCmd },
-#else
-	{ "bbox", 1, 3, IFO_NOT_MANY | IFO_NOT_NULL, AF_NOT_ITEM, AF_NOT_ITEM,
-		"item ?column? ?element?", NULL },
-#endif
 	{ "buttonstate", 1, 2, IFO_NOT_MANY | IFO_NOT_NULL, AF_NOT_ITEM, 0,
 		"item ?state?", NULL },
 	{ "cget", 2, 2, IFO_NOT_MANY | IFO_NOT_NULL, AF_NOT_ITEM, 0,
@@ -8359,51 +8354,6 @@ reqSameRoot:
 	    Tcl_SetObjResult(interp, listObj);
 	    break;
 	}
-#if 0
-	/* T item bbox I ?C? ?E? */
-	case COMMAND_BBOX: {
-	    int count;
-	    TreeColumn treeColumn;
-	    TreeRectangle rect;
-
-	    (void) Tree_GetOriginX(tree);
-	    (void) Tree_GetOriginY(tree);
-
-	    if (objc == 4) {
-		if (Tree_ItemBbox(tree, item, COLUMN_LOCK_NONE, &rect) < 0)
-		    break;
-	    } else {
-		if (TreeColumn_FromObj(tree, objv[4], &treeColumn,
-			CFO_NOT_NULL | CFO_NOT_TAIL) != TCL_OK)
-		    goto errorExit;
-
-		/* Bounds of a column. */
-		if (objc == 5) {
-		    objc = 0;
-		    objv = NULL;
-
-		/* Single element in a column. */
-		} else {
-		    objc -= 5;
-		    objv += 5;
-		}
-
-		count = TreeItem_GetRects(tree, item, treeColumn,
-			objc, objv, &rect);
-		if (count == 0)
-		    break;
-		if (count == -1)
-		    goto errorExit;
-	    }
-	    /* Canvas -> window coordinates */
-	    FormatResult(interp, "%d %d %d %d",
-		    TreeRect_Left(rect) - tree->xOrigin,
-		    TreeRect_Top(rect) - tree->yOrigin,
-		    TreeRect_Left(rect) - tree->xOrigin + TreeRect_Width(rect),
-		    TreeRect_Top(rect) - tree->yOrigin + TreeRect_Height(rect));
-	    break;
-	}
-#endif
 	/* T item buttonstate I ?state? */
 	case COMMAND_BUTTONSTATE: {
 	    static const char *stateNames[] = {

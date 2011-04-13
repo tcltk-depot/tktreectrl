@@ -3227,65 +3227,8 @@ TreeHeaderCmd(
 
     switch (index) {
 	/* T header bbox I ?C? ?E? */
-#if 1
 	case COMMAND_BBOX:
 	    return TreeItemCmd_Bbox(tree, objc, objv, TRUE);
-#else
-	case COMMAND_BBOX: {
-	    TreeHeader header;
-	    int count;
-	    TreeColumn treeColumn;
-	    TreeRectangle rect;
-
-	    if (objc < 4 || objc > 6) {
-		Tcl_WrongNumArgs(interp, 3, objv, "header ?column? ?element?");
-		return TCL_ERROR;
-	    }
-
-	    if (TreeHeader_FromObj(tree, objv[3], &header) != TCL_OK)
-		return TCL_ERROR;
-	    item = header->item;
-
-	    (void) Tree_GetOriginX(tree);
-	    (void) Tree_GetOriginY(tree);
-
-	    if (objc == 4) {
-		/* If an item is visible but has zero height a valid bbox
-		 * is returned. */
-		if (Tree_ItemBbox(tree, item, COLUMN_LOCK_NONE, &rect) < 0)
-		    break;
-	    } else {
-		if (TreeColumn_FromObj(tree, objv[4], &treeColumn,
-			CFO_NOT_NULL | CFO_NOT_TAIL) != TCL_OK)
-		    return TCL_ERROR;
-
-		/* Bounds of a column. */
-		if (objc == 5) {
-		    objc = 0;
-		    objv = NULL;
-
-		/* Single element in a column. */
-		} else {
-		    objc -= 5;
-		    objv += 5;
-		}
-
-		count = TreeItem_GetRects(tree, item, treeColumn,
-			objc, objv, &rect);
-		if (count == 0)
-		    break;
-		if (count == -1)
-		    return TCL_ERROR;
-	    }
-	    /* Canvas -> window coordinates */
-	    FormatResult(interp, "%d %d %d %d",
-		    TreeRect_Left(rect) - tree->xOrigin,
-		    TreeRect_Top(rect) - tree->yOrigin,
-		    TreeRect_Left(rect) - tree->xOrigin + TreeRect_Width(rect),
-		    TreeRect_Top(rect) - tree->yOrigin + TreeRect_Height(rect));
-	    break;
-	}
-#endif
 
 	case COMMAND_CREATE:
 	    return TreeHeaderCmd_Create(clientData, interp, objc, objv);
