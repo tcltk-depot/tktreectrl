@@ -22,7 +22,8 @@ struct Column {
 			 * [item state forcolumn] command */
     int span;		/* Number of tree-columns this column covers */
     TreeStyle style;	/* Instance style. */
-    TreeHeaderColumn headerColumn;
+    TreeHeaderColumn headerColumn; /* The header-column if the parent item
+			 * is actually a header, otherwise NULL. */
     Column *next;	/* Column to the right of this one */
 };
 
@@ -68,7 +69,7 @@ struct TreeItem_ {
     int flags;
     TagInfo *tagInfo;	/* Tags. May be NULL. */
 
-    TreeHeader header;
+    TreeHeader header;	/* The header or NULL */
 };
 
 #define ITEM_FLAGS_BUTTONSTATE (ITEM_FLAG_BUTTONSTATE_ACTIVE | \
@@ -150,9 +151,12 @@ Column_Alloc(
     column->span = 1;
 
     if (item->header != NULL) {
-	column->headerColumn = TreeHeaderColumn_CreateWithItemColumn(item->header, (TreeItemColumn) column);
+	column->headerColumn = TreeHeaderColumn_CreateWithItemColumn(item->header,
+	    (TreeItemColumn) column);
+#if TREECTRL_DEBUG
 	if (column->headerColumn == NULL)
 	    panic("TreeHeaderColumn_CreateWithItemColumn failed");
+#endif
     }
     
     return column;
@@ -3887,9 +3891,6 @@ TreeItem_Indent(
 	return (tree->showRoot && tree->showButtons && tree->showRootButton)
 	    ? tree->useIndent : 0;
 
-    if (item->header != NULL)
-	return 0;
-
     Tree_UpdateItemIndex(tree);
 
     depth = item->depth;
@@ -4241,7 +4242,7 @@ if (treeColumn == tree->columnTail) {
 }
 	if (--span == 0) {
 #if 1
-	    /* We always want to draw (and hit-test) the tail column in headers */
+	    /* Always create a span for the tail column in headers */
 	    if ((treeColumn == tree->columnTail) || TreeColumn_Visible(treeColumn)) {
 #else
 	    if (TreeColumn_Visible(treeColumn)) {
@@ -5677,7 +5678,8 @@ TreeItemCmd_Element(
     TreeCtrl *tree,
     int objc,			/* Number of arguments. */
     Tcl_Obj *CONST objv[],	/* Argument values. */
-    int doHeaders
+    int doHeaders		/* TRUE to operate on headers, FALSE
+				 * to operate on items. */
     )
 {
     Tcl_Interp *interp = tree->interp;
@@ -6016,10 +6018,11 @@ ItemElementCmd(
 
 int
 TreeItemCmd_Style(
-    TreeCtrl *tree,
+    TreeCtrl *tree,		/* Widget info. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *CONST objv[],	/* Argument values. */
-    int doHeaders
+    int doHeaders		/* TRUE to operate on headers, FALSE
+				 * to operate on items. */
     )
 {
     Tcl_Interp *interp = tree->interp;
@@ -6280,13 +6283,32 @@ ItemStyleCmd(
     return TreeItemCmd_Style(tree, objc, objv, FALSE);
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeItemCmd_ImageOrText --
+ *
+ *	This procedure is invoked to process the [item image] and
+ *	[item text] widget commands.  See the user documentation for
+ *	details on what it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
 int
 TreeItemCmd_ImageOrText(
-    TreeCtrl *tree,
+    TreeCtrl *tree,		/* Widget info. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *CONST objv[],	/* Argument values. */
-    int doImage,
-    int doHeaders
+    int doImage,		/* TRUE if this is [item image] */
+    int doHeaders		/* TRUE to operate on headers, FALSE
+				 * to operate on items. */
     )
 {
     Tcl_Interp *interp = tree->interp;
@@ -7457,6 +7479,22 @@ TreeItemList_Sort(
 	    TILSCompare);
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeItem_ConfigureSpans --
+ *
+ *	The body of the [item span] and [header span] commands.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	May change the layout and schedule a redraw of the widget.
+ *
+ *----------------------------------------------------------------------
+ */
+
 int
 TreeItem_ConfigureSpans(
     TreeCtrl *tree,
@@ -7585,10 +7623,11 @@ doneSPAN:
 
 int
 TreeItemCmd_State(
-    TreeCtrl *tree,
+    TreeCtrl *tree,		/* Widget info. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *CONST objv[],	/* Argument values. */
-    int doHeaders
+    int doHeaders		/* TRUE to operate on headers, FALSE
+				 * to operate on items. */
     )
 {
     Tcl_Interp *interp = tree->interp;
@@ -9766,15 +9805,51 @@ TreeItem_GetRects(
     return clientData.result;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeItem_MakeColumnExist --
+ *
+ *	Wrapper around Item_CreateColumn, called when a tree-column is
+ *	created.
+ *
+ * Results:
+ *	A TreeItemColumn.
+ *
+ * Side effects:
+ *	Memory allocation.
+ *
+ *----------------------------------------------------------------------
+ */
+
 TreeItemColumn
 TreeItem_MakeColumnExist(
     TreeCtrl *tree,		/* Widget info. */
-    TreeItem item,
-    int columnIndex
+    TreeItem item,		/* Header token. */
+    int columnIndex		/* Index of new column. */
     )
 {
     return (TreeItemColumn) Item_CreateColumn(tree, item, columnIndex, NULL);
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeItem_CreateHeader --
+ *
+ *	Create a new TreeHeader.  Both the header and underlying item
+ *	are created.  For each tree-column that exists (including the
+ *	tail), a new header-column and associated item-column are
+ *	created.
+ *
+ * Results:
+ *	A TreeItem.
+ *
+ * Side effects:
+ *	Memory allocation.
+ *
+ *----------------------------------------------------------------------
+ */
 
 TreeItem
 TreeItem_CreateHeader(
@@ -9805,6 +9880,22 @@ TreeItem_CreateHeader(
     return item;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeItem_GetHeader --
+ *
+ *	Return the header associated with an item.
+ *
+ * Results:
+ *	A TreeHeader or NULL if this is not a header-item.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
 TreeHeader
 TreeItem_GetHeader(
     TreeCtrl *tree,		/* Widget info. */
@@ -9813,6 +9904,23 @@ TreeItem_GetHeader(
 {
     return item->header;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeItemColumn_GetHeaderColumn --
+ *
+ *	Return the header-column associated with an item-column.
+ *
+ * Results:
+ *	A TreeHeaderColumn or NULL if this is not a item-column in a
+ *	header-item.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
 
 TreeHeaderColumn
 TreeItemColumn_GetHeaderColumn(
@@ -9823,10 +9931,28 @@ TreeItemColumn_GetHeaderColumn(
     return ((Column *)column)->headerColumn;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeItem_ConsumeHeaderCget --
+ *
+ *	Sets the interpreter result with the value of a single
+ *	configuration option for an item.  This is called when an
+ *	unknown option is passed to [header cget].
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
 int
 TreeItem_ConsumeHeaderCget(
     TreeCtrl *tree,		/* Widget info. */
-    TreeItem item,
+    TreeItem item,		/* Item token. */
     Tcl_Obj *objPtr		/* Option name. */
     )
 {
@@ -9839,6 +9965,23 @@ TreeItem_ConsumeHeaderCget(
     Tcl_SetObjResult(tree->interp, resultObjPtr);
     return TCL_OK;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeItem_ConsumeHeaderConfig --
+ *
+ *	Configures an item with option/value pairs.  This is
+ *	called with any unknown options passed to [header configure].
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	Whatever [item configure] does.
+ *
+ *----------------------------------------------------------------------
+ */
 
 int
 TreeItem_ConsumeHeaderConfig(
