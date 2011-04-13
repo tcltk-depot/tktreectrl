@@ -2874,6 +2874,30 @@ TreeHeader_FromObj(
 /*
  *----------------------------------------------------------------------
  *
+ * TreeHeader_GetItem --
+ *
+ *	Get the underlying item for a header.
+ *
+ * Results:
+ *	The TreeItem that is the back-end of a header.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+TreeItem
+TreeHeader_GetItem(
+    TreeHeader header		/* Header token. */
+    )
+{
+    return header->item;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TreeHeader_ToObj --
  *
  *	Convert a TreeHeader to a Tcl_Obj.
@@ -3199,6 +3223,10 @@ TreeHeaderCmd(
 
     switch (index) {
 	/* T header bbox I ?C? ?E? */
+#if 1
+	case COMMAND_BBOX:
+	    return TreeItemCmd_Bbox(tree, objc, objv, TRUE);
+#else
 	case COMMAND_BBOX: {
 	    TreeHeader header;
 	    int count;
@@ -3253,6 +3281,7 @@ TreeHeaderCmd(
 		    TreeRect_Top(rect) - tree->yOrigin + TreeRect_Height(rect));
 	    break;
 	}
+#endif
 
 	case COMMAND_CREATE:
 	    return TreeHeaderCmd_Create(clientData, interp, objc, objv);

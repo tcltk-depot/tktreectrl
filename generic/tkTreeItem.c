@@ -5251,6 +5251,109 @@ Item_Configure(
 /*
  *----------------------------------------------------------------------
  *
+ * TreeItemCmd_Bbox --
+ *
+ *	This procedure is invoked to process the [item bbox] widget
+ *	command.  See the user documentation for details on what
+ *	it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TreeItemCmd_Bbox(
+    TreeCtrl *tree,		/* Widget info. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *CONST objv[],	/* Argument values. */
+    int doHeaders		/* TRUE to operate on headers, FALSE
+				 * to operate on items. */
+    )
+{
+    Tcl_Interp *interp = tree->interp;
+    TreeItem item;
+    int count;
+    TreeColumn treeColumn;
+    TreeRectangle rect;
+
+    if (objc < 4 || objc > 6) {
+	Tcl_WrongNumArgs(interp, 3, objv, doHeaders ? "header ?column? ?element?"
+	    : "item ?column? ?element?");
+	return TCL_ERROR;
+    }
+
+    if (doHeaders) {
+	TreeHeader header;
+	if (TreeHeader_FromObj(tree, objv[3], &header) != TCL_OK)
+	    return TCL_ERROR;
+	item = TreeHeader_GetItem(header);
+    } else {
+	if (TreeItem_FromObj(tree, objv[3], &item, IFO_NOT_NULL) != TCL_OK)
+	    return TCL_ERROR;
+    }
+
+    (void) Tree_GetOriginX(tree);
+    (void) Tree_GetOriginY(tree);
+
+    if (objc == 4) {
+	/* If an item is visible but has zero height a valid bbox
+	 * is returned. */
+	if (Tree_ItemBbox(tree, item, COLUMN_LOCK_NONE, &rect) < 0)
+	    return TCL_OK;
+    } else {
+	if (TreeColumn_FromObj(tree, objv[4], &treeColumn,
+		CFO_NOT_NULL | CFO_NOT_TAIL) != TCL_OK)
+	    return TCL_ERROR;
+
+	/* Bounds of a column. */
+	if (objc == 5) {
+	    objc = 0;
+	    objv = NULL;
+
+	/* Single element in a column. */
+	} else {
+	    objc -= 5;
+	    objv += 5;
+	}
+
+	count = TreeItem_GetRects(tree, item, treeColumn, objc, objv, &rect);
+	if (count == 0)
+	    return TCL_OK;
+	if (count == -1)
+	    return TCL_ERROR;
+    }
+
+    /* Canvas -> window coordinates */
+    FormatResult(interp, "%d %d %d %d",
+	    TreeRect_Left(rect) - tree->xOrigin,
+	    TreeRect_Top(rect) - tree->yOrigin,
+	    TreeRect_Left(rect) - tree->xOrigin + TreeRect_Width(rect),
+	    TreeRect_Top(rect) - tree->yOrigin + TreeRect_Height(rect));
+
+    return TCL_OK;
+}
+
+static int
+ItemBboxCmd(
+    ClientData clientData,	/* Widget info. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *CONST objv[]	/* Argument values. */
+    )
+{
+    TreeCtrl *tree = clientData;
+
+    return TreeItemCmd_Bbox(tree, objc, objv, FALSE);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * ItemCreateCmd --
  *
  *	This procedure is invoked to process the [item create] widget
@@ -8035,8 +8138,12 @@ TreeItemCmd(
 	Tcl_ObjCmdProc *proc;
     } argInfo[] = {
 	{ "ancestors", 1, 1, IFO_NOT_MANY | IFO_NOT_NULL, 0, 0, "item", NULL },
+#if 1
+	{ "bbox", 0, 0, 0, 0, 0, NULL, ItemBboxCmd },
+#else
 	{ "bbox", 1, 3, IFO_NOT_MANY | IFO_NOT_NULL, AF_NOT_ITEM, AF_NOT_ITEM,
 		"item ?column? ?element?", NULL },
+#endif
 	{ "buttonstate", 1, 2, IFO_NOT_MANY | IFO_NOT_NULL, AF_NOT_ITEM, 0,
 		"item ?state?", NULL },
 	{ "cget", 2, 2, IFO_NOT_MANY | IFO_NOT_NULL, AF_NOT_ITEM, 0,
@@ -8213,6 +8320,7 @@ reqSameRoot:
 	    Tcl_SetObjResult(interp, listObj);
 	    break;
 	}
+#if 0
 	/* T item bbox I ?C? ?E? */
 	case COMMAND_BBOX: {
 	    int count;
@@ -8256,6 +8364,7 @@ reqSameRoot:
 		    TreeRect_Top(rect) - tree->yOrigin + TreeRect_Height(rect));
 	    break;
 	}
+#endif
 	/* T item buttonstate I ?state? */
 	case COMMAND_BUTTONSTATE: {
 	    static const char *stateNames[] = {
