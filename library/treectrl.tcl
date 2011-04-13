@@ -525,6 +525,47 @@ proc ::TreeCtrl::GetSpanStartColumn {T H C} {
     return [lindex $columns [$T column order $C]]
 }
 
+# ::TreeCtrl::SetHeaderState --
+#
+# This procedure sets the state of a header-column and remembers that
+# header-column.  If a different header-column is passed later the previous
+# header-column's state is set to 'normal'.
+#
+# Arguments:
+# T		The treectrl widget.
+# H		Header id
+# C		Column id
+# state		active|normal|pressed
+proc ::TreeCtrl::SetHeaderState {T H C state} {
+    variable Priv
+    if {[info exists Priv(inheader,$T)]} {
+	lassign $Priv(inheader,$T) Hprev Cprev
+    } else {
+	set Hprev [set Cprev ""]
+    }
+    if {$H ne $Hprev || $C ne $Cprev} {
+	if {$Hprev ne "" && [$T header id $Hprev] ne ""} {
+	    if {$Cprev ne "" && [$T column id $Cprev] ne ""} {
+		$T header configure $Hprev $Cprev -state normal
+		TryEvent $T Header state [list H $Hprev C $Cprev s normal]
+	    }
+	}
+    }
+    if {$H eq "" || $C eq ""} {
+	unset Priv(inheader,$T)
+    } else {
+	$T header configure $H $C -state $state
+	TryEvent $T Header state [list H $H C $C s $state]
+	set Priv(inheader,$T) [list $H $C]
+    }
+    return
+}
+
+proc ::TreeCtrl::ClearHeaderState {T} {
+    SetHeaderState $T "" "" ""
+    return
+}
+
 # ::TreeCtrl::MotionInHeader --
 #
 # This procedure updates the active/normal states of columns as the pointer
@@ -559,18 +600,10 @@ proc ::TreeCtrl::MotionInHeader {w args} {
 	set column [GetSpanStartColumn $w $header $action(column)]
     }
     if {$header ne $headerPrev || $column ne $columnPrev} {
-	if {$headerPrev ne "" && [$w header id $headerPrev] ne ""} {
-	    if {$columnPrev ne "" && [$w column id $columnPrev] ne ""} {
-		$w header configure $headerPrev $columnPrev -state normal
-		TryEvent $w Header state [list H $headerPrev C $columnPrev s normal]
-	    }
-	}
 	if {$column ne ""} {
-	    $w header configure $header $column -state active
-	    TryEvent $w Header state [list H $header C $column s active]
-	    set Priv(inheader,$w) [list $header $column]
+	    SetHeaderState $w $header $column active
 	} else {
-	    unset Priv(inheader,$w)
+	    ClearHeaderState $w
 	}
     }
     return
@@ -689,8 +722,7 @@ proc ::TreeCtrl::ButtonPress1 {w x y} {
 	set column $id(column)
 	if {$action(action) eq "header-button"} {
 	    set Priv(buttonMode) header
-	    $w header configure $action(header) $column -state pressed
-	    TryEvent $w Header state [list H $action(header) C $column s pressed]
+	    SetHeaderState $w $action(header) $column pressed
 	} else {
 	    if {[$w column compare $column == "tail"]} return
 	    if {![$w column dragcget -enable]} return
@@ -784,13 +816,11 @@ proc ::TreeCtrl::Motion1 {w x y} {
 		    $id(header) ne $Priv(header) ||
 		    $id(column) ne $Priv(column)} {
 		if {[$w header cget $Priv(header) $Priv(column) -state] eq "pressed"} {
-		    $w header configure $Priv(header) $Priv(column) -state normal
-		    TryEvent $w Header state [list H $Priv(header) C $Priv(column) s normal]
+		    ClearHeaderState $w
 		}
 	    } else {
 		if {[$w header cget $Priv(header) $Priv(column) -state] ne "pressed"} {
-		    $w header configure $Priv(header) $Priv(column) -state pressed
-		    TryEvent $w Header state [list H $Priv(header) C $Priv(column) s pressed]
+		    SetHeaderState $w $Priv(header) $Priv(column) pressed
 		}
 		if {[$w column dragcget -enable] &&
 		    (abs($Priv(columnDrag,x) - $x) > 4)} {
@@ -923,8 +953,7 @@ proc ::TreeCtrl::Leave1 {w x y} {
     switch $Priv(buttonMode) {
 	header {
 	    if {[$w header cget $Priv(header) $Priv(column) -state] eq "pressed"} {
-		$w header configure $Priv(header) $Priv(column) -state normal
-		TryEvent $w Header state [list H $Priv(header) C $Priv(column) s normal]
+		ClearHeaderState $w
 	    }
 	}
     }
@@ -964,8 +993,7 @@ proc ::TreeCtrl::Release1 {w x y} {
     switch $Priv(buttonMode) {
 	header {
 	    if {[$w header cget $Priv(header) $Priv(column) -state] eq "pressed"} {
-		$w header configure $Priv(header) $Priv(column) -state active
-		TryEvent $w Header state [list H $Priv(header) C $Priv(column) s active]
+		SetHeaderState $w $Priv(header) $Priv(column) active
 		TryEvent $w Header invoke [list H $Priv(header) C $Priv(column)]
 	    }
 	    CursorCheck $w $x $y
@@ -984,8 +1012,7 @@ proc ::TreeCtrl::Release1 {w x y} {
 	}
 	dragColumn {
 	    AutoScanCancel $w
-	    $w header configure $Priv(header) $Priv(column) -state normal
-	    TryEvent $w Header state [list H $Priv(header) C $Priv(column) s normal]
+	    ClearHeaderState $w
 	    if {[$w column dragcget -imagecolumn] ne ""} {
 		set visible 1
 	    } else {
@@ -1010,17 +1037,21 @@ if 1 {
 		}
 		TryEvent $w ColumnDrag receive [list H $Priv(header) C $Priv(column) b $column]
 	    }
+if 1 {
+	    CursorCheck $w $x $y
+	    MotionInHeader $w $x $y
+} else {
 	    $w identify $x $y -array id
 	    if {$id(where) eq "header"} {
 		set header $id(header)
 		set column $id(column)
 		if {($column ne "") && [$w column compare $column != "tail"]} {
 		    if {[$w header cget $header $column -button]} {
-			$w header configure $header $column -state active
-			TryEvent $w Header state [list H $header C $column s active]
+			SetHeaderState $w $header $column active
 		    }
 		}
 	    }
+}
 	    TryEvent $w ColumnDrag end [list H $Priv(header) C $Priv(column)]
 	}
 	normal {
