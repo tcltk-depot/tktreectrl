@@ -1808,6 +1808,10 @@ proc DemoClear {} {
     # <ColumnDrag> event be installed.
     $T column dragconfigure -enable yes
 
+    # Re-active the column drag-and-drop binding in case the previous demo
+    # deactivated it.
+    $T notify configure DontDelete <ColumnDrag-receive> -active yes
+
     # Restore default bindings to the demo list
     bindtags $T [list $T TreeCtrl [winfo toplevel $T] all DisplayStylesInItemBindTag]
 
