@@ -2918,7 +2918,9 @@ GetOnScreenColumnsForItemAux(
 {
     int minX, maxX, columnIndex = 0, x = 0, i, width;
     TreeColumn column = NULL, column2, column3;
+#if 0
     int columnCount = tree->columnCount;
+#endif
     int tailOK = TreeItem_GetHeader(tree, dItem->item) != NULL;
 
     minX = MAX(area->x, TreeRect_Left(bounds));
@@ -2928,6 +2930,7 @@ GetOnScreenColumnsForItemAux(
     maxX -= area->x;
 
 #if 1
+    /* FIXME: Perhaps call TreeItem_WalkSpans instead. */
     if (TreeItem_GetHeader(tree, dItem->item) != NULL)
 	x += tree->canvasPadX[PAD_TOP_LEFT];
     for (column = Tree_FirstColumn(tree, lock, TRUE);
@@ -2954,7 +2957,6 @@ GetOnScreenColumnsForItemAux(
 	}
 	if (x < maxX && x + width > minX) {
 	    TreeColumnList_Append(columns, column);
-if (columns->count > columnCount) DebugBreak();
 	}
 	x += width;
 	if (x >= maxX)
@@ -6766,6 +6768,23 @@ CheckPendingHeaderUpdate(
     }
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TrackItemVisibility --
+ *
+ *	Keeps track of the items and individual item-columns that
+ *	are visible onscreen.
+ *
+ * Results:
+ *	One of the DISPLAY_XXX constants.
+ *
+ * Side effects:
+ *	May generate an <ItemVisibility> event.
+ *
+ *----------------------------------------------------------------------
+ */
+
 enum {
     DISPLAY_OK,
     DISPLAY_RETRY,
@@ -6776,11 +6795,12 @@ static int
 TrackItemVisibility(
     TreeCtrl *tree,
     DItem *dItemHead,
-    int isHeaders
+    int doHeaders		/* TRUE to operate on headers, FALSE
+				 * to operate on items. */
     )
 {
     TreeDInfo dInfo = tree->dInfo;
-    Tcl_HashTable *tablePtr = isHeaders ? &dInfo->headerVisHash : &dInfo->itemVisHash;
+    Tcl_HashTable *tablePtr = doHeaders ? &dInfo->headerVisHash : &dInfo->itemVisHash;
     DItem *dItem;
     int requests;
     Tcl_HashEntry *hPtr;
@@ -6846,7 +6866,7 @@ TrackItemVisibility(
 #endif /* DCOLUMN */
     }
 
-    if (!isHeaders) {
+    if (!doHeaders) {
 	/*
 	 * Generate an <ItemVisibility> event here. This can be used to set
 	 * an item's styles when the item is about to be displayed, and to
@@ -6958,7 +6978,6 @@ Tree_Display(
     int didScrollX = 0, didScrollY = 0;
     Drawable drawable;
     TreeDrawable tdrawable;
-    TreeRectangle tr;
     int count;
     int numCopy = 0, numDraw = 0;
     TkRegion wsRgnNew, wsRgnDif;
@@ -7107,7 +7126,6 @@ if (dItemHeader != NULL)
     FreeDItems(tree, dItemHeader, NULL, 0);
 dItemHeader = MakeDItemsForHeaderItems(tree, tree->headerItems);
 
-#if 1
     /*
      * When an item goes from visible to hidden, "window" elements in the
      * item must be hidden. An item may become hidden because of scrolling,
@@ -7126,105 +7144,6 @@ dItemHeader = MakeDItemsForHeaderItems(tree, tree->headerItems);
 	case DISPLAY_RETRY: goto displayRetry; break;
 	case DISPLAY_EXIT: goto displayExit; break;
     }
-#else
-    /*
-     * When an item goes from visible to hidden, "window" elements in the
-     * item must be hidden. An item may become hidden because of scrolling,
-     * or because an ancestor was collapsed, or because the -visible option
-     * of the item changed.
-     */
-    {
-	Tcl_HashEntry *hPtr;
-	Tcl_HashSearch search;
-	TreeItemList newV, newH;
-	TreeItem item;
-	int isNew, i, count;
-	DItem *dItemHead = dInfo->dItem;
-
-	TreeItemList_Init(tree, &newV, 0);
-	TreeItemList_Init(tree, &newH, 0);
-
-if (dInfo->dItemLast != NULL) {
-    dInfo->dItemLast->next = dItemHeader;
-} else {
-    dItemHead = dItemHeader;
-}
-
-	for (dItem = dItemHead;
-	    dItem != NULL;
-	    dItem = dItem->next) {
-
-	    hPtr = Tcl_FindHashEntry(&dInfo->itemVisHash, (char *) dItem->item);
-	    if (hPtr == NULL) {
-		/* This item is now visible, wasn't before */
-		TreeItemList_Append(&newV, dItem->item);
-		TreeItem_OnScreen(tree, dItem->item, TRUE);
-	    }
-#ifdef DCOLUMN
-	    /* The item was onscreen and still is. Figure out which
-	     * item-columns have become visible or hidden. */
-	    else {
-		TrackOnScreenColumnsForItem(tree, dItem->item, hPtr);
-	    }
-#endif /* DCOLUMN */
-	}
-
-if (dInfo->dItemLast != NULL) {
-    dInfo->dItemLast->next = NULL;
-}
-
-	hPtr = Tcl_FirstHashEntry(&dInfo->itemVisHash, &search);
-	while (hPtr != NULL) {
-	    item = (TreeItem) Tcl_GetHashKey(&dInfo->itemVisHash, hPtr);
-	    if (TreeItem_GetDInfo(tree, item) == NULL) {
-		/* This item was visible but isn't now */
-		TreeItemList_Append(&newH, item);
-		TreeItem_OnScreen(tree, item, FALSE);
-	    }
-	    hPtr = Tcl_NextHashEntry(&search);
-	}
-
-	/* Remove newly-hidden items from itemVisHash */
-	count = TreeItemList_Count(&newH);
-	for (i = 0; i < count; i++) {
-	    item = TreeItemList_Nth(&newH, i);
-	    hPtr = Tcl_FindHashEntry(&dInfo->itemVisHash, (char *) item);
-#ifdef DCOLUMN
-	    TrackOnScreenColumnsForItem(tree, item, hPtr);
-	    ckfree((char *) Tcl_GetHashValue(hPtr));
-#endif
-	    Tcl_DeleteHashEntry(hPtr);
-	}
-
-	/* Add newly-visible items to itemVisHash */
-	count = TreeItemList_Count(&newV);
-	for (i = 0; i < count; i++) {
-	    item = TreeItemList_Nth(&newV, i);
-	    hPtr = Tcl_CreateHashEntry(&dInfo->itemVisHash, (char *) item, &isNew);
-#ifdef DCOLUMN
-	    TrackOnScreenColumnsForItem(tree, item, hPtr);
-#endif /* DCOLUMN */
-	}
-
-	/*
-	 * Generate an <ItemVisibility> event here. This can be used to set
-	 * an item's styles when the item is about to be displayed, and to
-	 * clear an item's styles when the item is no longer displayed.
-	 */
-	if (TreeItemList_Count(&newV) || TreeItemList_Count(&newH)) {
-	    TreeNotify_ItemVisibility(tree, &newV, &newH);
-	}
-
-	TreeItemList_Free(&newV);
-	TreeItemList_Free(&newH);
-
-	if (tree->deleted || !Tk_IsMapped(tkwin))
-	    goto displayExit;
-
-	if (TreeDisplay_WasThereTrouble(tree, requests))
-	    goto displayRetry;
-    }
-#endif /* 0 */
 
     tdrawable.width = Tk_Width(tkwin);
     tdrawable.height = Tk_Height(tkwin);
@@ -7277,7 +7196,7 @@ if (dInfo->dItemLast != NULL) {
     /* FIXME: only redraw header items if needed. */
     if ((dInfo->flags & DINFO_DRAW_HEADER) && (dItemHeader != NULL)) {
 	TreeDrawable tpixmap = tdrawable;
-
+#if 0
 	/* Erase whitespace to left and right. */
 	if (Tree_AreaBbox(tree, TREE_AREA_HEADER_NONE, &tr)) {
 	    Tree_FillRectangle(tree, tdrawable, NULL,
@@ -7287,7 +7206,7 @@ if (dInfo->dItemLast != NULL) {
 		    TreeRect_Right(tr), TreeRect_Bottom(tr));
 	    }
 	}
-
+#endif
 	for (dItem = dItemHeader;
 	    dItem != NULL;
 	    dItem = dItem->next) {
