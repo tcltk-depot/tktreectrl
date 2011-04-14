@@ -6415,6 +6415,12 @@ DisplayDItem(
 	    DblBufWinDirty(tree, left, top, right, bottom);
 	}
 
+#ifdef TREECTRL_DEBUG
+	if (tree->debug.eraseColor)
+	    XFillRectangle(tree->display, pixmap.drawable,
+		    tree->debug.gcErase, 0, 0, right - left, bottom - top);
+#endif
+
 	/* The top-left corner of the drawable is at this
 	* point in the canvas */
 	tree->drawableXOrigin = W2Cx(left);
