@@ -239,15 +239,16 @@ struct TreeCtrlColumnDrag
 {
     Tk_OptionTable optionTable;
     int enable;			/* -enable */
-    TreeHeader header;		/* -header */
     TreeColumn column;		/* -imagecolumn */
     Tcl_Obj *offsetObj;		/* -imageoffset */
     int offset;			/* -imageoffset */
     XColor *color;		/* -imagecolor */
     int alpha;			/* -imagealpha */
+    int span;			/* -imagespan */
     TreeColumn indColumn;	/* -indicatorcolumn */
     XColor *indColor;		/* -indicatorcolor */
     int indSide;		/* -indicatorside */
+    int indSpan;		/* -indicatorspan */
 };
 
 struct TreeCtrl
@@ -528,6 +529,7 @@ struct TreeCtrl
 
     Tk_OptionTable headerOptionTable;
     Tk_OptionTable headerColumnOptionTable;
+    Tk_OptionTable headerDragOptionTable;
     TreeItem headerItems;
     int headerCount;
     int nextHeaderId;

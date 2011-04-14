@@ -5,7 +5,7 @@ proc DemoHeaders {} {
 
     $T configure \
 	-showroot no -xscrollsmoothing yes -itemheight 22 \
-	-selectmode multiple
+	-selectmode multiple -xscrollincrement 20 -canvaspadx 40
 
     #
     # Create one locked column on each side plus 8 non-locked columns
@@ -54,7 +54,7 @@ proc DemoHeaders {} {
 
     set S [$T style create header1 -orient horizontal]
     $T style elements $S {header.border header.text header.sort}
-    $T style layout $S header.border -detach yes -iexpand xy
+    $T style layout $S header.border -detach yes -indent no -iexpand xy
     $T style layout $S header.text -expand wens -padx 6 -pady 2 ; # $T style layout $S header.text -center x -expand ns -padx 2 -pady 2
     $T style layout $S header.sort -expand nws -padx {0 6} \
 	-visible {no {!sortdown !sortup}}
@@ -203,9 +203,13 @@ if 0 {
 	DemoHeaders::HeaderInvoke %H %C
     }
 
+    $T notify bind $T <ColumnDrag-begin> {
+	DemoHeaders::ColumnDragBegin %H %C
+    }
+
     $T notify configure DontDelete <ColumnDrag-receive> -active no
     $T notify bind $T <ColumnDrag-receive> {
-	DemoHeaders::ColumnDrag %H %C %b
+	DemoHeaders::ColumnDragReceive %H %C %b
     }
 
     return
@@ -356,7 +360,26 @@ proc DemoHeaders::ToggleSortArrow {H C} {
     return
 }
 
-proc DemoHeaders::ColumnDrag {H C b} {
+proc DemoHeaders::ColumnDragBegin {H C} {
+    set T [DemoList]
+    # The treectrl.tcl library script sets -imagespan to the span of the
+    # dragged column header.  For the top row span is 4, for the middle
+    # row span is 2, and for the bottom row span is 1.
+    set span [$T column dragcget -imagespan]
+#set span 6
+#    $T column dragconfigure -indicatorspan $span
+#$T column dragconfigure -imagespan $span
+    $T header dragconfigure all -draw yes
+    if {[$T header compare $H > header1]} {
+	$T header dragconfigure header1 -draw no
+    }
+    if {[$T header compare $H > header2]} {
+	$T header dragconfigure header2 -draw no
+    }
+    return
+}
+
+proc DemoHeaders::ColumnDragReceive {H C b} {
     set T [DemoList]
     set span [$T header span $H $C]
     set lastInSpan [expr {[$T column order $C] + $span - 1}]

@@ -536,6 +536,7 @@ proc ::TreeCtrl::GetSpanStartColumn {T H C} {
 # H		Header id
 # C		Column id
 # state		active|normal|pressed
+
 proc ::TreeCtrl::SetHeaderState {T H C state} {
     variable Priv
     if {[info exists Priv(inheader,$T)]} {
@@ -560,6 +561,17 @@ proc ::TreeCtrl::SetHeaderState {T H C state} {
     }
     return
 }
+
+# ::TreeCtrl::ClearHeaderState --
+#
+# If a header-column's state was previously set via SetHeaderState then
+# that column's state is set to normal and the header-column is forgotten.
+#
+# Arguments:
+# T		The treectrl widget.
+# H		Header id
+# C		Column id
+# state		active|normal|pressed
 
 proc ::TreeCtrl::ClearHeaderState {T} {
     SetHeaderState $T "" "" ""
@@ -826,9 +838,9 @@ proc ::TreeCtrl::Motion1 {w x y} {
 		    (abs($Priv(columnDrag,x) - $x) > 4)} {
 		    set Priv(columnDrag,x) $x
 		    $w column dragconfigure \
-			-header $Priv(header) \
 			-imagecolumn $Priv(column) \
-			-imageoffset [expr {$x - $Priv(columnDrag,x)}]
+			-imageoffset [expr {$x - $Priv(columnDrag,x)}] \
+			-imagespan [$w header span $Priv(header) $Priv(column)]
 		    set Priv(buttonMode) dragColumn
 		    TryEvent $w ColumnDrag begin [list H $Priv(header) C $Priv(column)]
 		}
@@ -854,9 +866,9 @@ proc ::TreeCtrl::Motion1 {w x y} {
 	    if {(abs($Priv(columnDrag,x) - $x) > 4)} {
 		set Priv(columnDrag,x) $x
 		$w column dragconfigure \
-		    -header $Priv(header) \
 		    -imagecolumn $Priv(column) \
-		    -imageoffset [expr {$x - $Priv(columnDrag,x)}]
+		    -imageoffset [expr {$x - $Priv(columnDrag,x)}] \
+		    -imagespan [$w header span $Priv(header) $Priv(column)]
 		set Priv(buttonMode) dragColumn
 		TryEvent $w ColumnDrag begin [list H $Priv(header) C $Priv(column)]
 	    }
@@ -876,8 +888,11 @@ proc ::TreeCtrl::Motion1 {w x y} {
 	    if {$inside} {
 		$w column dragconfigure -imageoffset [expr {$x - $Priv(columnDrag,x)}]
 		if {[ColumnDragFindBefore $w $x $Priv(columnDrag,y) $Priv(column) indColumn indSide]} {
-		    $w column dragconfigure -indicatorcolumn $indColumn \
-			-indicatorside $indSide
+		    $w column dragconfigure \
+			-indicatorcolumn $indColumn \
+			-indicatorside $indSide \
+			-indicatorspan [$w header span $Priv(header) $indColumn]
+		    TryEvent ColumnDrag indicator [list H $Priv(header) C $Priv(indColumn)]
 		} else {
 		    $w column dragconfigure -indicatorcolumn ""
 		}

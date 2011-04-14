@@ -4460,20 +4460,32 @@ SpanWalkProc_Draw(
 	int index;
     } *data = clientData;
 
+    if (item->header != NULL) {
+	StyleDrawArgs drawArgsCopy = *drawArgs;
+
+	(void) TreeHeaderColumn_DragBounds(item->header,
+	    itemColumn ? itemColumn->headerColumn : NULL, &drawArgsCopy);
+
+	/* Draw nothing if the entire span is out-of-bounds. */
+	if ((drawArgsCopy.x >= data->maxX) ||
+		(drawArgsCopy.x + drawArgsCopy.width <= data->minX))
+	    return 0;
+
+	drawArgsCopy.td = data->td;
+	TreeHeaderColumn_Draw(item->header,
+	    itemColumn ? itemColumn->headerColumn : NULL,
+	    spanPtr->visIndex, &drawArgsCopy);
+
+	return drawArgsCopy.x + drawArgsCopy.width >= data->maxX &&
+	    drawArgs->x + drawArgs->width >= data->maxX;
+    }
+
     /* Draw nothing if the entire span is out-of-bounds. */
     if ((drawArgs->x >= data->maxX) ||
 	    (drawArgs->x + drawArgs->width <= data->minX))
 	return 0;
 
     drawArgs->td = data->td;
-
-    if (item->header != NULL) {
-	StyleDrawArgs drawArgsCopy = *drawArgs;
-	TreeHeaderColumn_Draw(item->header,
-	    itemColumn ? itemColumn->headerColumn : NULL,
-	    spanPtr->visIndex, &drawArgsCopy);
-	return drawArgs->x + drawArgs->width >= data->maxX;
-    }
 
     /* Draw background colors. */
     if (spanPtr->span == 1) {
