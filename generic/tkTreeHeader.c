@@ -2110,7 +2110,7 @@ TreeHeaderColumn_Draw(
     TreeCtrl *tree = header->tree;
     TreeDrawable td = drawArgs->td;
     TreeColumn column1min, column1max;
-    int index1min, index1max;
+    int index1min, index1max, index3;
     int x = drawArgs->x, y = drawArgs->y,
 	width = drawArgs->width, height = drawArgs->height;
     int isDragColumn = 0, isHiddenTail;
@@ -2120,7 +2120,7 @@ TreeHeaderColumn_Draw(
 	column1max = GetFollowingColumn(column1min, tree->columnDrag.span, NULL);
 	index1min = TreeColumn_Index(column1min);
 	index1max = TreeColumn_Index(column1max);
-	int index3 = TreeColumn_Index(drawArgs->column);
+	index3 = TreeColumn_Index(drawArgs->column);
 
 	isDragColumn = index3 >= index1min && index3 <= index1max;
     }
