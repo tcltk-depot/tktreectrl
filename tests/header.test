@@ -397,7 +397,7 @@ test header-5.6 {header delete: delete one} -body {
     .t header create -tags header3
     .t header create -tags header4    
     .t header delete header1
-    .t header id al
+    .t header id all
 } -result {0 2 3 4}
 
 test header-5.7 {header delete: delete two} -body {
@@ -411,7 +411,12 @@ test header-5.8 {header delete: deleting all headers resets the next unique id} 
     .t header create
 } -result {1}
 
-test header-6.1 {header id: missing args} -body {
+test header-6.1 {header id: missing args} -setup {
+    .t header delete all
+    .t header configure header0 -visible no
+    .t header create -tags header1
+    .t header create -tags header2
+} -body {
     .t header id
 } -returnCodes error -result {wrong # args: should be ".t header id header"}
 
@@ -420,7 +425,6 @@ test header-6.2 {header id: too many args} -body {
 } -returnCodes error -result {wrong # args: should be ".t header id header"}
 
 test header-6.3 {header id: by ID} -setup {
-    .t header create -tags header2
     .t header delete header1
 } -body {
     .t header id 2
@@ -445,6 +449,34 @@ test header-6.7 {header id: by keyword end} -body {
 test header-6.8 {header id: by tag expression} -body {
     .t header id header2||header0
 } -result {0 2}
+
+test header-6.9 {header id: qualifier 'tag'} -body {
+    .t header id {tag header2}
+} -result {2}
+
+test header-6.10 {header id: qualifier 'tag'} -body {
+    .t header id {all tag header2}
+} -result {2}
+
+test header-6.11 {header id: qualifier 'tag'} -body {
+    .t header id {first tag header2}
+} -result {2}
+
+test header-6.12 {header id: qualifier 'visible'} -body {
+    .t header id visible
+} -result {2}
+
+test header-6.13 {header id: qualifier 'visible'} -body {
+    .t header id {last visible}
+} -result {2}
+
+test header-6.14 {header id: qualifier '!visible'} -body {
+    .t header id !visible
+} -result {0}
+
+test header-6.15 {header id: qualifier '!visible'} -body {
+    .t header id {all !visible}
+} -result {0}
 
 ###
 
@@ -487,6 +519,89 @@ test header-11.8 {header count: delete another header} -setup {
     .t header delete header2
 } -body {
     .t header count
+} -result {1}
+
+test header-12.1 {header dragconfigure: no args} -setup {
+    .t header delete all
+    .t header create -tags header1
+} -body {
+    .t header dragconfigure
+} -result {{-enable {} {} 0 0} *} -match glob
+
+test header-12.2 {header dragconfigure: unknown option} -body {
+    .t header dragconfigure -foo
+} -returnCodes error -result {unknown option "-foo"}
+
+test header-12.3 {header dragconfigure: bad option-value} -body {
+    .t header dragconfigure -enable foo
+} -returnCodes error -result {expected boolean value but got "foo"}
+
+test header-12.4 {header dragconfigure: missing option-value} -body {
+    .t header dragconfigure -enable yes -imagespan
+} -returnCodes error -result {value for "-imagespan" missing}
+
+test header-12.5 {header dragconfigure: tail column forbidden} -body {
+    .t header dragconfigure -imagecolumn tail
+} -returnCodes error -result {can't specify "tail" for this command}
+
+test header-12.6 {header dragconfigure: negative spans not an error} -body {
+    .t header dragconfigure -imagespan -10
+} -result {}
+
+test header-12.20 {header dragconfigure: unknown header} -body {
+    .t header dragconfigure foo
+} -returnCodes error -result {header "foo" doesn't exist}
+
+test header-12.21 {header dragconfigure: valid header} -body {
+    .t header dragconfigure first
+} -result {{-draw {} {} 1 1} *} -match glob
+
+test header-12.22 {header dragconfigure: multiple headers not allowed} -body {
+    .t header dragconfigure all
+} -returnCodes error -result {can't specify > 1 header for this command}
+
+test header-12.23 {header dragconfigure: multiple headers not allowed} -body {
+    .t header dragconfigure all -foo
+} -returnCodes error -result {can't specify > 1 header for this command}
+
+test header-12.24 {header dragconfigure: multiple headers unknown option} -body {
+    .t header dragconfigure all -foo bar
+} -returnCodes error -result {unknown option "-foo"}
+
+test header-12.25 {header dragconfigure: multiple headers ok} -body {
+    .t header dragconfigure all -draw no
+} -result {}
+
+test header-12.26 {header dragconfigure: single header ok} -body {
+    .t header dragconfigure first -draw yes
+} -result {}
+
+test header-13.1 {header dragcget: too few args} -body {
+    .t header dragcget
+} -returnCodes error -result {wrong # args: should be ".t header dragcget ?header? option"}
+
+test header-13.2 {header dragcget: too many args} -body {
+    .t header dragcget a b c
+} -returnCodes error -result {wrong # args: should be ".t header dragcget ?header? option"}
+
+test header-13.3 {header dragcget: unknown option} -body {
+    .t header dragcget -foo
+} -returnCodes error -result {unknown option "-foo"}
+
+test header-13.4 {header dragcget: valid option} -body {
+    .t header dragcget -enable
+} -result {0}
+
+test header-13.5 {header dragcget: unknown header} -body {
+    .t header dragcget foo -bar
+} -returnCodes error -result {header "foo" doesn't exist}
+
+test header-13.6 {header dragcget: multiple headers not allowed} -body {
+    .t header dragcget all -foo
+} -returnCodes error -result {can't specify > 1 header for this command}
+
+test header-13.7 {header dragcget: single header, valid option} -body {
+    .t header dragcget first -enable
 } -result {1}
 
 test header-20.1 {unknown column config options are passed to the first header} -setup {
