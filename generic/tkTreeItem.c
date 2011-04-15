@@ -7494,7 +7494,7 @@ TreeItemList_Sort(
 /*
  *----------------------------------------------------------------------
  *
- * TreeItem_ConfigureSpans --
+ * TreeItemCmd_Span --
  *
  *	The body of the [item span] and [header span] commands.
  *
@@ -7508,16 +7508,18 @@ TreeItemList_Sort(
  */
 
 int
-TreeItem_ConfigureSpans(
-    TreeCtrl *tree,
-    TreeItemList *itemList,
-    int objc,
-    Tcl_Obj *CONST objv[]
+TreeItemCmd_Span(
+    TreeCtrl *tree,		/* Widget info. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *CONST objv[],	/* Argument values. */
+    int doHeaders		/* TRUE to operate on headers, FALSE
+				 * to operate on items. */
     )
 {
     Tcl_Interp *interp = tree->interp;
     TreeColumn treeColumn = tree->columns;
-    TreeItem item = TreeItemList_Nth(itemList, 0);
+    TreeItemList itemList;
+    TreeItem item;
     Column *column;
     Tcl_Obj *listObj;
     struct columnSpan {
@@ -7527,15 +7529,27 @@ TreeItem_ConfigureSpans(
     int i, count = 0, span, changed = FALSE;
     ItemForEach iter;
     ColumnForEach citer;
-    int result = TCL_OK;
+    int flags = 0, result = TCL_OK;
 
-    if ((objc < 2) && (IS_ALL(item) ||
-	    (TreeItemList_Count(itemList) > 1))) {
-	FormatResult(interp, "can't specify > 1 %s for this command",
-	    item->header ? "header" : "item");
+    if (objc < 4) {
+	Tcl_WrongNumArgs(interp, 3, objv,
+	    doHeaders ? "header ?column? ?span? ?column span ...?":
+	    "item ?column? ?span? ?column span ...?");
 	return TCL_ERROR;
     }
-    if (objc == 0) {
+
+    if (objc < 6)
+	flags |= IFO_NOT_NULL | IFO_NOT_MANY;
+    if (doHeaders) {
+	if (TreeHeaderList_FromObj(tree, objv[3], &itemList, flags) != TCL_OK)
+	    return TCL_ERROR;
+    } else {
+	if (TreeItemList_FromObj(tree, objv[3], &itemList, flags) != TCL_OK)
+	    return TCL_ERROR;
+    }
+    item = TreeItemList_Nth(&itemList, 0);
+
+    if (objc == 4) {
 	listObj = Tcl_NewListObj(0, NULL);
 	column = item->columns;
 	while (treeColumn != NULL) {
@@ -7546,23 +7560,23 @@ TreeItem_ConfigureSpans(
 		column = column->next;
 	}
 	Tcl_SetObjResult(interp, listObj);
-	return TCL_OK;
+	goto okExit;
     }
-    if (objc == 1) {
-	if (Item_FindColumnFromObj(tree, item, objv[0], &column, NULL) != TCL_OK) {
-	    return TCL_ERROR;
+    if (objc == 5) {
+	if (Item_FindColumnFromObj(tree, item, objv[4], &column, NULL) != TCL_OK) {
+	    goto errorExit;
 	}
 	Tcl_SetObjResult(interp, Tcl_NewIntObj(column ? column->span : 1));
-	return TCL_OK;
+	goto okExit;
     }
     if (objc & 1) {
 	FormatResult(interp, "missing argument after column \"%s\"",
 		Tcl_GetString(objv[objc - 1]));
-	return TCL_ERROR;
+	goto errorExit;
     }
     /* Gather column/span pairs. */
     STATIC_ALLOC(cs, struct columnSpan, objc / 2);
-    for (i = 0; i < objc; i += 2) {
+    for (i = 4; i < objc; i += 2) {
 	if (TreeColumnList_FromObj(tree, objv[i], &cs[count].columns,
 		CFO_NOT_NULL | CFO_NOT_TAIL) != TCL_OK) {
 	    result = TCL_ERROR;
@@ -7580,7 +7594,7 @@ TreeItem_ConfigureSpans(
 	cs[count].span = span;
 	count++;
     }
-    ITEM_FOR_EACH(item, itemList, NULL, &iter) {
+    ITEM_FOR_EACH(item, &itemList, NULL, &iter) {
 	int changedI = FALSE;
 	for (i = 0; i < count; i++) {
 	    COLUMN_FOR_EACH(treeColumn, &cs[i].columns, NULL, &citer) {
@@ -7612,7 +7626,29 @@ doneSPAN:
 	TreeColumnList_Free(&cs[i].columns);
     }
     STATIC_FREE(cs, struct columnSpan, objc / 2);
+    TreeItemList_Free(&itemList);
     return result;
+
+okExit:
+    TreeItemList_Free(&itemList);
+    return TCL_OK;
+
+errorExit:
+    TreeItemList_Free(&itemList);
+    return TCL_ERROR;
+}
+
+static int
+ItemSpanCmd(
+    ClientData clientData,	/* Widget info. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *CONST objv[]	/* Argument values. */
+    )
+{
+    TreeCtrl *tree = clientData;
+
+    return TreeItemCmd_Span(tree, objc, objv, FALSE);
 }
 
 /*
@@ -8249,8 +8285,7 @@ TreeItemCmd(
 	{ "remove", 1, 1, IFO_NOT_NULL | IFO_NOT_ROOT, 0, 0, "item", NULL },
 	{ "rnc", 1, 1, IFO_NOT_MANY | IFO_NOT_NULL, 0, 0, "item", NULL },
 	{ "sort", 0, 0, 0, 0, 0, NULL, ItemSortCmd },
-	{ "span", 1, 100000, IFO_NOT_NULL, AF_NOT_ITEM, AF_NOT_ITEM,
-		"item ?column? ?span? ?column span ...?", NULL },
+	{ "span", 0, 0, 0, 0, 0, NULL, ItemSpanCmd },
 	{ "state", 0, 0, 0, 0, 0, NULL, ItemStateCmd },
 	{ "style", 0, 0, 0, 0, 0, NULL, ItemStyleCmd },
 	{ "tag", 0, 0, 0, 0, 0, NULL, ItemTagCmd },
@@ -9012,14 +9047,12 @@ reqSameRoot:
 		FormatResult(interp, "%d %d", row, col);
 	    break;
 	}
-
+#if 0
 	/* T item span I ?C? ?span? ?C span ...? */
 	case COMMAND_SPAN: {
-#if 1
 	    if (TreeItem_ConfigureSpans(tree, &itemList, objc - 4, objv + 4) != TCL_OK)
 		goto errorExit;
 	    break;
-#else
 	    TreeColumn treeColumn = tree->columns;
 	    Column *column;
 	    Tcl_Obj *listObj;
@@ -9113,8 +9146,8 @@ doneSPAN:
 	    }
 	    STATIC_FREE(cs, struct columnSpan, objc / 2);
 	    break;
-#endif
 	}
+#endif
 
 #if 0
 	/* T item image I ?C? ?image? ?C image ...? */

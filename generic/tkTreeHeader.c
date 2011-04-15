@@ -3548,21 +3548,8 @@ TreeHeaderCmd(
 	case COMMAND_IMAGE:
 	    return TreeItemCmd_ImageOrText(tree, objc, objv, TRUE, TRUE);
 
-	/* T header span H ?C? ?span? ?C span ...? */
-	case COMMAND_SPAN: {
-	    if (objc < 4) {
-		Tcl_WrongNumArgs(interp, 3, objv, "header ?column? ?span? ?column span ...?");
-		return TCL_ERROR;
-	    }
-	    if (TreeHeaderList_FromObj(tree, objv[3], &items, IFO_NOT_NULL) != TCL_OK)
-		return TCL_ERROR;
-	    if (TreeItem_ConfigureSpans(tree, &items, objc - 4, objv + 4) != TCL_OK) {
-		TreeItemList_Free(&items);
-		return TCL_ERROR;
-	    }
-	    TreeItemList_Free(&items);
-	    break;
-	}
+	case COMMAND_SPAN:
+	    return TreeItemCmd_Span(tree, objc, objv, TRUE);
 
 	case COMMAND_STATE:
 	    return TreeItemCmd_State(tree, objc, objv, TRUE);

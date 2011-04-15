@@ -760,11 +760,11 @@ MODULE_SCOPE int TreeItem_ConsumeHeaderCget(TreeCtrl *tree, TreeItem item,
     Tcl_Obj *objPtr);
 MODULE_SCOPE int TreeItem_ConsumeHeaderConfig(TreeCtrl *tree, TreeItem item,
     int objc, Tcl_Obj *CONST objv[]);
-MODULE_SCOPE int TreeItem_ConfigureSpans(TreeCtrl *tree, TreeItemList *itemList,
-    int objc, Tcl_Obj *CONST objv[]);
 MODULE_SCOPE int TreeItemCmd_Bbox(TreeCtrl *tree, int objc,
     Tcl_Obj *CONST objv[], int doHeaders);
 MODULE_SCOPE int TreeItemCmd_Element(TreeCtrl *tree, int objc,
+    Tcl_Obj *CONST objv[], int doHeaders);
+MODULE_SCOPE int TreeItemCmd_Span(TreeCtrl *tree, int objc,
     Tcl_Obj *CONST objv[], int doHeaders);
 MODULE_SCOPE int TreeItemCmd_State(TreeCtrl *tree, int objc,
     Tcl_Obj *CONST objv[], int doHeaders);
