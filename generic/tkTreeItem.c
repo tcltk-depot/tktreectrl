@@ -1804,7 +1804,7 @@ Qualifiers_Init(
  *
  * Qualifiers_Scan --
  *
- *	Helper routine for TreeItem_FromObj.
+ *	Helper routine for TreeItemList_FromObj.
  *
  * Results:
  *	TCL_OK or TCL_ERROR.
@@ -1962,6 +1962,32 @@ Qualifiers_Free(
 {
     if (q->exprOK)
 	TagExpr_Free(&q->expr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NotManyMsg --
+ *
+ *	Set the interpreter result with an error message.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Changes the interpreter result.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+NotManyMsg(
+    TreeCtrl *tree,
+    int doHeaders
+    )
+{
+    FormatResult(tree->interp, "can't specify > 1 %s for this command",
+	doHeaders ? "header" : "item");
 }
 
 /*
@@ -2591,7 +2617,7 @@ gotFirstPart:
     }
     if ((flags & IFO_NOT_MANY) && (IS_ALL(item) ||
 	    (TreeItemList_Count(items) > 1))) {
-	FormatResult(interp, "can't specify > 1 item for this command");
+	NotManyMsg(tree, FALSE);
 	goto errorExit;
     }
     if (TreeItemList_Count(items)) {
@@ -6349,29 +6375,27 @@ TreeItemCmd_ImageOrText(
     int i, count = 0, changed = FALSE, columnIndex;
     ItemForEach iter;
     ColumnForEach citer;
-    int result = TCL_OK;
+    int flags = 0, result = TCL_OK;
 
     /* T item text I ?C? ?text? ?C text ...? */
     if (objc < 4) {
 	Tcl_WrongNumArgs(interp, 3, objv, "item ?column? ?text? ?column text ...?");
 	return TCL_ERROR;
     }
+
+    if (objc < 6)
+	flags = IFO_NOT_NULL | IFO_NOT_MANY;
     if (doHeaders) {
-	if (TreeHeaderList_FromObj(tree, objv[3], &itemList, IFO_NOT_NULL)
+	if (TreeHeaderList_FromObj(tree, objv[3], &itemList, flags)
 		!= TCL_OK)
 	    return TCL_ERROR;
     } else {
-	if (TreeItemList_FromObj(tree, objv[3], &itemList, IFO_NOT_NULL)
+	if (TreeItemList_FromObj(tree, objv[3], &itemList, flags)
 		!= TCL_OK)
 	    return TCL_ERROR;
     }
     item = TreeItemList_Nth(&itemList, 0);
 
-    if ((objc < 6) && (IS_ALL(item) ||
-	    (TreeItemList_Count(&itemList) > 1))) {
-	FormatResult(interp, "can't specify > 1 item for this command");
-	goto errorExit;
-    }
     if (objc == 4) {
 	Tcl_Obj *listObj = Tcl_NewListObj(0, NULL);
 	column = item->columns;
@@ -8676,7 +8700,7 @@ reqSameRoot:
 		Tcl_Obj *resultObjPtr;
 
 		if (IS_ALL(item) || (TreeItemList_Count(&itemList) > 1)) {
-		    FormatResult(interp, "can't specify > 1 item for this command");
+		    NotManyMsg(tree, FALSE);
 		    goto errorExit;
 		}
 		resultObjPtr = Tk_GetOptionInfo(interp, (char *) item,
@@ -8848,7 +8872,7 @@ reqSameRoot:
 
 	    if (objc == 4) {
 		if (IS_ALL(item) || (TreeItemList_Count(&itemList) > 1)) {
-		    FormatResult(interp, "can't specify > 1 item for this command");
+		    NotManyMsg(tree, FALSE);
 		    goto errorExit;
 		}
 		Tcl_SetObjResult(interp,
