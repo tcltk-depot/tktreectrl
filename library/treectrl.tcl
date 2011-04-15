@@ -542,6 +542,7 @@ proc ::TreeCtrl::SetHeaderState {T H C state} {
     if {[info exists Priv(inheader,$T)]} {
 	lassign $Priv(inheader,$T) Hprev Cprev
     } else {
+	if {$H eq "" || $C eq ""} return
 	set Hprev [set Cprev ""]
     }
     if {$H ne $Hprev || $C ne $Cprev} {
@@ -737,7 +738,8 @@ proc ::TreeCtrl::ButtonPress1 {w x y} {
 	    SetHeaderState $w $action(header) $column pressed
 	} else {
 	    if {[$w column compare $column == "tail"]} return
-	    if {![$w column dragcget -enable]} return
+	    if {![$w header dragcget -enable]} return
+	    if {![$w header dragcget $action(header) -enable]} return
 	    set Priv(buttonMode) dragColumnWait
 	}
 	set Priv(header) $action(header)
@@ -834,15 +836,20 @@ proc ::TreeCtrl::Motion1 {w x y} {
 		if {[$w header cget $Priv(header) $Priv(column) -state] ne "pressed"} {
 		    SetHeaderState $w $Priv(header) $Priv(column) pressed
 		}
-		if {[$w column dragcget -enable] &&
+		if {[$w header dragcget -enable] &&
+		    [$w header dragcget $Priv(header) -enable] &&
 		    (abs($Priv(columnDrag,x) - $x) > 4)} {
 		    set Priv(columnDrag,x) $x
-		    $w column dragconfigure \
+		    $w header dragconfigure \
 			-imagecolumn $Priv(column) \
 			-imageoffset [expr {$x - $Priv(columnDrag,x)}] \
 			-imagespan [$w header span $Priv(header) $Priv(column)]
 		    set Priv(buttonMode) dragColumn
 		    TryEvent $w ColumnDrag begin [list H $Priv(header) C $Priv(column)]
+		    # Allow binding scripts to cancel the drag
+		    if {[$w header dragcget -imagecolumn] eq ""} {
+			set Priv(buttonMode) header
+		    }
 		}
 	    }
 	}
@@ -865,12 +872,16 @@ proc ::TreeCtrl::Motion1 {w x y} {
 	dragColumnWait {
 	    if {(abs($Priv(columnDrag,x) - $x) > 4)} {
 		set Priv(columnDrag,x) $x
-		$w column dragconfigure \
+		$w header dragconfigure \
 		    -imagecolumn $Priv(column) \
 		    -imageoffset [expr {$x - $Priv(columnDrag,x)}] \
 		    -imagespan [$w header span $Priv(header) $Priv(column)]
 		set Priv(buttonMode) dragColumn
 		TryEvent $w ColumnDrag begin [list H $Priv(header) C $Priv(column)]
+		# Allow binding scripts to cancel the drag
+		if {[$w header dragcget -imagecolumn] eq ""} {
+		    unset Priv(buttonMode)
+		}
 	    }
 	}
 	dragColumn {
@@ -880,21 +891,21 @@ proc ::TreeCtrl::Motion1 {w x y} {
 	    } else {
 		set inside 1
 	    }
-	    if {$inside && ([$w column dragcget -imagecolumn] eq "")} {
-		$w column dragconfigure -imagecolumn $Priv(column)
-	    } elseif {!$inside && ([$w column dragcget -imagecolumn] ne "")} {
-		$w column dragconfigure -imagecolumn "" -indicatorcolumn ""
+	    if {$inside && ([$w header dragcget -imagecolumn] eq "")} {
+		$w header dragconfigure -imagecolumn $Priv(column)
+	    } elseif {!$inside && ([$w header dragcget -imagecolumn] ne "")} {
+		$w header dragconfigure -imagecolumn "" -indicatorcolumn ""
 	    }
 	    if {$inside} {
-		$w column dragconfigure -imageoffset [expr {$x - $Priv(columnDrag,x)}]
+		$w header dragconfigure -imageoffset [expr {$x - $Priv(columnDrag,x)}]
 		if {[ColumnDragFindBefore $w $x $Priv(columnDrag,y) $Priv(column) indColumn indSide]} {
-		    $w column dragconfigure \
+		    $w header dragconfigure \
 			-indicatorcolumn $indColumn \
 			-indicatorside $indSide \
 			-indicatorspan [$w header span $Priv(header) $indColumn]
-		    TryEvent ColumnDrag indicator [list H $Priv(header) C $Priv(indColumn)]
+		    TryEvent $w ColumnDrag indicator [list H $Priv(header) C $indColumn]
 		} else {
-		    $w column dragconfigure -indicatorcolumn ""
+		    $w header dragconfigure -indicatorcolumn ""
 		}
 	    }
 	    if {[$w column cget $Priv(column) -lock] eq "none"} {
@@ -1028,15 +1039,15 @@ proc ::TreeCtrl::Release1 {w x y} {
 	dragColumn {
 	    AutoScanCancel $w
 	    ClearHeaderState $w
-	    if {[$w column dragcget -imagecolumn] ne ""} {
+	    if {[$w header dragcget -imagecolumn] ne ""} {
 		set visible 1
 	    } else {
 		set visible 0
 	    }
-	    set column [$w column dragcget -indicatorcolumn]
-	    $w column dragconfigure -imagecolumn "" -indicatorcolumn ""
+	    set column [$w header dragcget -indicatorcolumn]
+	    $w header dragconfigure -imagecolumn "" -indicatorcolumn ""
 	    if {$visible && ($column ne "")} {
-		set side [$w column dragcget -indicatorside]
+		set side [$w header dragcget -indicatorside]
 if 1 {
 		if {[$w column order $Priv(column)] < [$w column order $column]} {
 		    set column [$w column id "$column next visible"]
@@ -1375,13 +1386,13 @@ proc ::TreeCtrl::ColumnDragScrollCheck {w x y} {
 	    set bbox2 [$w column bbox $Priv(column)]
 	    if {[lindex $bbox1 0] != [lindex $bbox2 0]} {
 		incr Priv(columnDrag,x) [expr {[lindex $bbox2 0] - [lindex $bbox1 0]}]
-		$w column dragconfigure -imageoffset [expr {$x - $Priv(columnDrag,x)}]
+		$w header dragconfigure -imageoffset [expr {$x - $Priv(columnDrag,x)}]
 
 		if {[ColumnDragFindBefore $w $x $Priv(columnDrag,y) $Priv(column) indColumn indSide]} {
-		    $w column dragconfigure -indicatorcolumn $indColumn \
+		    $w header dragconfigure -indicatorcolumn $indColumn \
 			-indicatorside $indSide
 		} else {
-		    $w column dragconfigure -indicatorcolumn ""
+		    $w header dragconfigure -indicatorcolumn ""
 		}
 	    }
 	    set Priv(autoscan,afterId,$w) [after 50 [list TreeCtrl::ColumnDragScrollCheckAux $w]]

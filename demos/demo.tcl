@@ -1740,7 +1740,7 @@ proc DemoClear {} {
 
     # Delete all the headers (except the first header, it never gets deleted).
     $T header delete all
-    $T header configure first -ownerdrawn no
+    $T header configure all -ownerdrawn no -visible yes
 
     # Clear all bindings on the demo list added by the previous demo.
     # The bindings are removed from the tag $T only. For those
@@ -1806,7 +1806,8 @@ proc DemoClear {} {
 
     # Enable drag-and-drop column reordering. This also requires the
     # <ColumnDrag> event be installed.
-    $T column dragconfigure -enable yes
+    $T header dragconfigure -enable yes
+    $T header dragconfigure all -enable yes -draw yes
 
     # Re-active the column drag-and-drop binding in case the previous demo
     # deactivated it.

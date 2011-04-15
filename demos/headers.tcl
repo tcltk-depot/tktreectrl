@@ -365,7 +365,7 @@ proc DemoHeaders::ColumnDragBegin {H C} {
     # The treectrl.tcl library script sets -imagespan to the span of the
     # dragged column header.  For the top row span is 4, for the middle
     # row span is 2, and for the bottom row span is 1.
-    set span [$T column dragcget -imagespan]
+#    set span [$T header dragcget -imagespan]
 #set span 6
 #    $T column dragconfigure -indicatorspan $span
 #$T column dragconfigure -imagespan $span
