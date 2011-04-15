@@ -3461,39 +3461,85 @@ TreeHeaderCmd(
 	    break;
 	}
 
-	/* T header dragcget header option */
+	/* T header dragcget ?header? option */
 	case COMMAND_DRAGCGET: {
 	    Tcl_Obj *resultObjPtr;
 
-	    if (objc != 5) {
-		Tcl_WrongNumArgs(interp, 3, objv, "header option");
+	    if (objc < 4 || objc > 5) {
+		Tcl_WrongNumArgs(interp, 3, objv, "?header? option");
 		return TCL_ERROR;
 	    }
-	    if (TreeHeader_FromObj(tree, objv[3], &header) != TCL_OK)
-		return TCL_ERROR;
-	    resultObjPtr = Tk_GetOptionValue(interp, (char *) header,
-		    tree->headerDragOptionTable, objv[4], tree->tkwin);
+	    if (objc == 5) {
+		if (TreeHeader_FromObj(tree, objv[3], &header) != TCL_OK)
+		    return TCL_ERROR;
+		resultObjPtr = Tk_GetOptionValue(interp, (char *) header,
+			tree->headerDragOptionTable, objv[4], tree->tkwin);
+		if (resultObjPtr == NULL)
+		    return TCL_ERROR;
+		Tcl_SetObjResult(interp, resultObjPtr);
+		break;
+	    }
+	    resultObjPtr = Tk_GetOptionValue(interp, (char *) tree,
+		    tree->columnDrag.optionTable, objv[3], tree->tkwin);
 	    if (resultObjPtr == NULL)
 		return TCL_ERROR;
 	    Tcl_SetObjResult(interp, resultObjPtr);
 	    break;
 	}
 
-	/* T header dragconfigure header ?option? ?value? ?option value ...? */
+	/* T header dragconfigure ?header? ?option? ?value? ?option value ...? */
 	case COMMAND_DRAGCONF: {
 	    Tcl_Obj *resultObjPtr;
 	    Tk_SavedOptions savedOptions;
 	    int mask, result, flags = 0;
+	    CONST char *s;
 
-	    if (objc < 4) {
-		Tcl_WrongNumArgs(interp, 3, objv, "header ?option? ?value?");
-		return TCL_ERROR;
+	    if (objc == 3) {
+		resultObjPtr = Tk_GetOptionInfo(interp, (char *) tree,
+			tree->columnDrag.optionTable,
+			(Tcl_Obj *) NULL,
+			tree->tkwin);
+		if (resultObjPtr == NULL)
+		    return TCL_ERROR;
+		Tcl_SetObjResult(interp, resultObjPtr);
+		break;
+	    }
+	    s = Tcl_GetString(objv[3]);
+	    if (s[0] == '-') {
+		if (objc <= 4) {
+		    resultObjPtr = Tk_GetOptionInfo(interp, (char *) tree,
+			    tree->columnDrag.optionTable,
+			    (objc == 3) ? (Tcl_Obj *) NULL : objv[3],
+			    tree->tkwin);
+		    if (resultObjPtr == NULL)
+			return TCL_ERROR;
+		    Tcl_SetObjResult(interp, resultObjPtr);
+		    break;
+		}
+		result = Tk_SetOptions(interp, (char *) tree,
+			tree->columnDrag.optionTable, objc - 3, objv + 3, tree->tkwin,
+			&savedOptions, &mask);
+		if (result != TCL_OK) {
+		    Tk_RestoreSavedOptions(&savedOptions);
+		    return TCL_ERROR;
+		}
+		Tk_FreeSavedOptions(&savedOptions);
+
+		if (tree->columnDrag.alpha < 0)
+		    tree->columnDrag.alpha = 0;
+		if (tree->columnDrag.alpha > 255)
+		    tree->columnDrag.alpha = 255;
+
+		Tree_DInfoChanged(tree, DINFO_DRAW_HEADER);
+		break;
 	    }
 	    if (objc < 6)
-		flags |= IFO_NOT_MANY;
+		flags |= IFO_NOT_MANY | IFO_NOT_NULL;
 	    if (TreeHeaderList_FromObj(tree, objv[3], &items, flags) != TCL_OK)
 		return TCL_ERROR;
 	    if (objc <= 5) {
+		item = TreeItemList_Nth(&items, 0);
+		header = TreeItem_GetHeader(tree, item);
 		resultObjPtr = Tk_GetOptionInfo(interp, (char *) header,
 			tree->headerDragOptionTable,
 			(objc == 4) ? (Tcl_Obj *) NULL : objv[4],
