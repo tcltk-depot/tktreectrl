@@ -1957,6 +1957,23 @@ GetFollowingColumn(
     return column;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeHeaderColumn_DragBounds --
+ *
+ *	Calculates the apparent bounds of a column header during
+ *	column drag-and-drop.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
 int
 TreeHeaderColumn_DragBounds(
     TreeHeader header,		/* Header token. */
@@ -2802,6 +2819,191 @@ TreeHeaderColumn_FromObj(
     return TCL_OK;
 }
 
+typedef struct Qualifiers {
+    TreeCtrl *tree;
+    int visible;		/* 1 for -visible TRUE,
+				   0 for -visible FALSE,
+				   -1 for unspecified. */
+    TagExpr expr;		/* Tag expression. */
+    int exprOK;			/* TRUE if expr is valid. */
+    Tk_Uid tag;			/* Tag (without operators) or NULL. */
+} Qualifiers;
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Qualifiers_Init --
+ *
+ *	Helper routine for TreeItem_FromObj.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+Qualifiers_Init(
+    TreeCtrl *tree,		/* Widget info. */
+    Qualifiers *q		/* Out: Initialized qualifiers. */
+    )
+{
+    q->tree = tree;
+    q->visible = -1;
+    q->exprOK = FALSE;
+    q->tag = NULL;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Qualifiers_Scan --
+ *
+ *	Helper routine for TreeHeaderList_FromObj.
+ *
+ * Results:
+ *	TCL_OK or TCL_ERROR.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+Qualifiers_Scan(
+    Qualifiers *q,		/* Must call Qualifiers_Init first,
+				 * and Qualifiers_Free if result is TCL_OK. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj **objv,		/* Argument values. */
+    int startIndex,		/* First objv[] index to look at. */
+    int *argsUsed		/* Out: number of objv[] used. */
+    )
+{
+    TreeCtrl *tree = q->tree;
+    Tcl_Interp *interp = tree->interp;
+    int qual, j = startIndex;
+
+    static CONST char *qualifiers[] = {
+	"tag", "visible", "!visible", NULL
+    };
+    enum qualEnum {
+	QUAL_TAG, QUAL_VISIBLE, QUAL_NOT_VISIBLE
+    };
+    /* Number of arguments used by qualifiers[]. */
+    static int qualArgs[] = {
+	2, 1, 1
+    };
+
+    *argsUsed = 0;
+
+    for (; j < objc; ) {
+	if (Tcl_GetIndexFromObj(NULL, objv[j], qualifiers, NULL, 0,
+		&qual) != TCL_OK)
+	    break;
+	if (objc - j < qualArgs[qual]) {
+	    Tcl_AppendResult(interp, "missing arguments to \"",
+		    Tcl_GetString(objv[j]), "\" qualifier", NULL);
+	    goto errorExit;
+	}
+	switch ((enum qualEnum) qual) {
+	    case QUAL_TAG: {
+		if (tree->columnTagExpr) {
+		    if (q->exprOK)
+			TagExpr_Free(&q->expr);
+		    if (TagExpr_Init(tree, objv[j + 1], &q->expr) != TCL_OK)
+			return TCL_ERROR;
+		    q->exprOK = TRUE;
+		} else {
+		    q->tag = Tk_GetUid(Tcl_GetString(objv[j + 1]));
+		}
+		break;
+	    }
+	    case QUAL_VISIBLE: {
+		q->visible = 1;
+		break;
+	    }
+	    case QUAL_NOT_VISIBLE: {
+		q->visible = 0;
+		break;
+	    }
+	}
+	*argsUsed += qualArgs[qual];
+	j += qualArgs[qual];
+    }
+    return TCL_OK;
+errorExit:
+    if (q->exprOK)
+	TagExpr_Free(&q->expr);
+    return TCL_ERROR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Qualifies --
+ *
+ *	Helper routine for TreeHeaderList_FromObj.
+ *
+ * Results:
+ *	Returns TRUE if the header meets the given criteria.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+Qualifies(
+    Qualifiers *q,		/* Qualifiers to check. */
+    TreeItem header		/* The header to test. May be NULL. */
+    )
+{
+    TreeCtrl *tree = q->tree;
+    /* Note: if the header is NULL it is a "match" because we have run
+     * out of headers to check. */
+    if (header == NULL)
+	return 1;
+    if ((q->visible == 1) && !TreeItem_ReallyVisible(tree, header))
+	return 0;
+    else if ((q->visible == 0) && TreeItem_ReallyVisible(tree, header))
+	return 0;
+    if (q->exprOK && !TagExpr_Eval(&q->expr, TreeItem_GetTagInfo(tree, header)))
+	return 0;
+    if ((q->tag != NULL) && !TreeItem_HasTag(header, q->tag))
+	return 0;
+    return 1;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Qualifiers_Free --
+ *
+ *	Helper routine for TreeHeaderList_FromObj.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+Qualifiers_Free(
+    Qualifiers *q		/* Out: Initialized qualifiers. */
+    )
+{
+    if (q->exprOK)
+	TagExpr_Free(&q->expr);
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -2836,11 +3038,22 @@ TreeHeaderList_FromObj(
     enum indexEnum {
 	INDEX_ALL, INDEX_END, INDEX_FIRST, INDEX_LAST
     };
+    /* Number of arguments used by indexName[]. */
+    static int indexArgs[] = {
+	1, 1, 1, 1
+    };
+    /* Boolean: can indexName[] be followed by 1 or more qualifiers. */
+    static int indexQual[] = {
+	1, 1, 1, 1
+    };
     int id, index, listIndex, objc;
     Tcl_Obj **objv, *elemPtr;
     TreeItem item = NULL;
+    Qualifiers q;
+    int qualArgsTotal;
 
     TreeItemList_Init(tree, items, 0);
+    Qualifiers_Init(tree, &q);
 
     if (Tcl_ListObjGetElements(NULL, objPtr, &objc, &objv) != TCL_OK)
 	goto baditem;
@@ -2851,11 +3064,28 @@ TreeHeaderList_FromObj(
     elemPtr = objv[listIndex];
     if (Tcl_GetIndexFromObj(NULL, elemPtr, indexName, NULL, 0, &index)
 	    == TCL_OK) {
+
+	if (objc - listIndex < indexArgs[index]) {
+	    Tcl_AppendResult(interp, "missing arguments to \"",
+		    Tcl_GetString(elemPtr), "\" keyword", NULL);
+	    goto errorExit;
+	}
+
+	qualArgsTotal = 0;
+	if (indexQual[index]) {
+	    if (Qualifiers_Scan(&q, objc, objv, listIndex + indexArgs[index],
+		    &qualArgsTotal) != TCL_OK) {
+		goto errorExit;
+	    }
+	}
+
 	switch ((enum indexEnum) index) {
 	    case INDEX_ALL: {
 		item = tree->headerItems;
 		while (item != NULL) {
-		    TreeItemList_Append(items, item);
+		    if (!qualArgsTotal || Qualifies(&q, item)) {
+			TreeItemList_Append(items, item);
+		    }
 		    item = TreeItem_GetNextSibling(tree, item);
 		}
 		item = NULL;
@@ -2863,17 +3093,22 @@ TreeHeaderList_FromObj(
 	    }
 	    case INDEX_FIRST: {
 		item = tree->headerItems;
+		while (!Qualifies(&q, item))
+		    item = TreeItem_GetNextSibling(tree, item);
 		break;
 	    }
 	    case INDEX_END:
 	    case INDEX_LAST: {
-		item = tree->headerItems;
-		while (item != NULL && TreeItem_GetNextSibling(tree, item) != NULL) {
-		    item = TreeItem_GetNextSibling(tree, item);
+		TreeItem walk = tree->headerItems;
+		while (walk != NULL) {
+		    if (Qualifies(&q, walk))
+			item = walk;
+		    walk = TreeItem_GetNextSibling(tree, walk);
 		}
 		break;
 	    }
 	}
+	listIndex += indexArgs[index] + qualArgsTotal;
 
     /* No indexName[] was found. */
     } else {
@@ -2893,14 +3128,39 @@ TreeHeaderList_FromObj(
 	    goto gotFirstPart;
 	}
 
-	/* Try a tag or tag expression. */
+	/* Try a list of qualifiers. This has the same effect as
+	 * "all QUALIFIERS". */
+	if (Qualifiers_Scan(&q, objc, objv, listIndex, &qualArgsTotal)
+		!= TCL_OK) {
+	    goto errorExit;
+	}
+	if (qualArgsTotal) {
+	    item = tree->headerItems;
+	    while (item != NULL) {
+		if (Qualifies(&q, item)) {
+		    TreeItemList_Append(items, item);
+		}
+		item = TreeItem_GetNextSibling(tree, item);
+	    }
+	    item = NULL;
+	    listIndex += qualArgsTotal;
+	    goto gotFirstPart;
+	}
+
+	/* Try a tag or tag expression followed by qualifiers. */
+	if (objc > 1) {
+	    if (Qualifiers_Scan(&q, objc, objv, listIndex + 1,
+		    &qualArgsTotal) != TCL_OK) {
+		goto errorExit;
+	    }
+	}
 	if (tree->itemTagExpr) { /* FIXME: headerTagExpr */
 	    TagExpr expr;
 	    if (TagExpr_Init(tree, elemPtr, &expr) != TCL_OK)
 		goto errorExit;
 	    item = tree->headerItems;
 	    while (item != NULL) {
-		if (TagExpr_Eval(&expr, TreeItem_GetTagInfo(tree, item)) /*&& Qualifies(&q, item)*/) {
+		if (TagExpr_Eval(&expr, TreeItem_GetTagInfo(tree, item)) && Qualifies(&q, item)) {
 		    TreeItemList_Append(items, item);
 		}
 		item = TreeItem_GetNextSibling(tree, item);
@@ -2910,13 +3170,14 @@ TreeHeaderList_FromObj(
 	    Tk_Uid tag = Tk_GetUid(Tcl_GetString(elemPtr));
 	    item = tree->headerItems;
 	    while (item != NULL) {
-		if (TreeItem_HasTag(item, tag) /*&& Qualifies(&q, item)*/) {
+		if (TreeItem_HasTag(item, tag) && Qualifies(&q, item)) {
 		    TreeItemList_Append(items, item);
 		}
 		item = TreeItem_GetNextSibling(tree, item);
 	    }
 	}
 	item = NULL;
+	listIndex += 1 + qualArgsTotal;
     }
 
 gotFirstPart:
@@ -2938,6 +3199,7 @@ gotFirstPart:
 	TreeItemList_Append(items, item);
 
 goodExit:
+    Qualifiers_Free(&q);
     return TCL_OK;
 
 baditem:
@@ -2950,6 +3212,7 @@ noitem:
 	    "\" doesn't exist", NULL);
 
 errorExit:
+    Qualifiers_Free(&q);
     TreeItemList_Free(items);
     return TCL_ERROR;
 }
