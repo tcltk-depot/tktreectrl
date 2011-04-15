@@ -192,11 +192,11 @@ static Tk_OptionSpec columnSpecs[] = {
 };
 
 static Tk_OptionSpec dragSpecs[] = {
-    {TK_OPTION_BOOLEAN, "-enable", (char *) NULL, (char *) NULL,
-     "0", -1, Tk_Offset(TreeHeader_, columnDrag.enable),
-     0, (ClientData) NULL, 0},
     {TK_OPTION_BOOLEAN, "-draw", (char *) NULL, (char *) NULL,
      "1", -1, Tk_Offset(TreeHeader_, columnDrag.draw),
+     0, (ClientData) NULL, 0},
+    {TK_OPTION_BOOLEAN, "-enable", (char *) NULL, (char *) NULL,
+     "1", -1, Tk_Offset(TreeHeader_, columnDrag.enable),
      0, (ClientData) NULL, 0},
     {TK_OPTION_END, (char *) NULL, (char *) NULL, (char *) NULL,
      (char *) NULL, 0, -1, 0, 0, 0}
