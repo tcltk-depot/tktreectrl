@@ -592,7 +592,7 @@ typedef struct Qualifiers {
  *
  * Qualifiers_Init --
  *
- *	Helper routine for TreeItem_FromObj.
+ *	Helper routine for TreeColumnList_FromObj.
  *
  * Results:
  *	None.
@@ -622,7 +622,7 @@ Qualifiers_Init(
  *
  * Qualifiers_Scan --
  *
- *	Helper routine for TreeItem_FromObj.
+ *	Helper routine for TreeColumnList_FromObj.
  *
  * Results:
  *	TCL_OK or TCL_ERROR.
@@ -716,10 +716,10 @@ errorExit:
  *
  * Qualifies --
  *
- *	Helper routine for TreeItem_FromObj.
+ *	Helper routine for TreeColumnList_FromObj.
  *
  * Results:
- *	Returns TRUE if the item meets the given criteria.
+ *	Returns TRUE if the column meets the given criteria.
  *
  * Side effects:
  *	None.
@@ -757,7 +757,7 @@ Qualifies(
  *
  * Qualifiers_Free --
  *
- *	Helper routine for TreeItem_FromObj.
+ *	Helper routine for TreeColumnList_FromObj.
  *
  * Results:
  *	None.
