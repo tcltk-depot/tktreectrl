@@ -4476,8 +4476,19 @@ SpanWalkProc_Draw(
 	    itemColumn ? itemColumn->headerColumn : NULL,
 	    spanPtr->visIndex, &drawArgsCopy);
 
-	return drawArgsCopy.x + drawArgsCopy.width >= data->maxX &&
-	    drawArgs->x + drawArgs->width >= data->maxX;
+	/* Don't stop drawing if there are columns still to the right that
+	 * are drag or indicator columns. */
+	if (tree->columnDrag.column != NULL && tree->columnDrag.indColumn != NULL) {
+	    int index1min = TreeColumn_Index(tree->columnDrag.column);
+	    int index1max = index1min + MAX(tree->columnDrag.span, 1);
+	    int index2min = TreeColumn_Index(tree->columnDrag.indColumn);
+	    int index2max = index2min + MAX(tree->columnDrag.indSpan, 1);
+	    int index3 = TreeColumn_Index(treeColumn);
+	    if (index3 < MAX(index1max, index2max))
+		return 0;
+	}
+
+	return drawArgs->x + drawArgs->width >= data->maxX;
     }
 
     /* Draw nothing if the entire span is out-of-bounds. */
