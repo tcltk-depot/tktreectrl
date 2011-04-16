@@ -899,11 +899,14 @@ proc ::TreeCtrl::Motion1 {w x y} {
 	    if {$inside} {
 		$w header dragconfigure -imageoffset [expr {$x - $Priv(columnDrag,x)}]
 		if {[ColumnDragFindBefore $w $x $Priv(columnDrag,y) $Priv(column) indColumn indSide]} {
+		    set prevIndColumn [$w header dragcget -indicatorcolumn]
 		    $w header dragconfigure \
 			-indicatorcolumn $indColumn \
 			-indicatorside $indSide \
 			-indicatorspan [$w header span $Priv(header) $indColumn]
-		    TryEvent $w ColumnDrag indicator [list H $Priv(header) C $indColumn]
+		    if {$indColumn != $prevIndColumn} {
+			TryEvent $w ColumnDrag indicator [list H $Priv(header) C $indColumn]
+		    }
 		} else {
 		    $w header dragconfigure -indicatorcolumn ""
 		}
