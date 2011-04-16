@@ -249,6 +249,7 @@ struct TreeCtrlColumnDrag
     XColor *indColor;		/* -indicatorcolor */
     int indSide;		/* -indicatorside */
     int indSpan;		/* -indicatorspan */
+    int imageEpoch;
 };
 
 struct TreeCtrl
@@ -637,6 +638,7 @@ MODULE_SCOPE int TreeHeaderColumn_NeededHeight(TreeHeader header, TreeHeaderColu
 MODULE_SCOPE int TreeHeaders_NeededWidthOfColumn(TreeCtrl *tree, TreeColumn treeColumn);
 MODULE_SCOPE int Tree_HeaderHeight(TreeCtrl *tree);
 MODULE_SCOPE TreeItem TreeHeader_GetItem(TreeHeader header);
+MODULE_SCOPE void TreeHeader_ColumnDeleted(TreeCtrl *tree, TreeColumn treeColumn);
 
 MODULE_SCOPE Tcl_Obj *TreeHeaderColumn_GetImageOrText(TreeHeader header,
     TreeHeaderColumn column, int isImage);

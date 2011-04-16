@@ -71,6 +71,9 @@ struct TreeHeaderColumn_
 #define TEXT_WRAP_WORD 1
     int textWrap;		/* -textwrap */
     int textLines;		/* -textlines */
+
+    Tk_Image dragImage;		/* Used during drag-and-drop. */
+    int imageEpoch;
 };
 
 struct TreeHeaderDrag
@@ -573,6 +576,13 @@ Column_Configure(
     /* Redraw header only */
     else if (mask & COLU_CONF_DISPLAY) {
 	Tree_DInfoChanged(tree, DINFO_DRAW_HEADER);
+    }
+
+    if (mask & COLU_CONF_DISPLAY) {
+	if (column->dragImage != NULL) {
+	    Tk_FreeImage(column->dragImage);
+	    column->dragImage = NULL;
+	}
     }
 
     return TCL_OK;
@@ -2144,6 +2154,18 @@ TreeHeaderColumn_Draw(
     }
 }
 
+static void
+RequiredDummyChangedProc(
+    ClientData clientData,		/* Widget info. */
+    int x, int y,			/* Upper left pixel (within image)
+					 * that must be redisplayed. */
+    int width, int height,		/* Dimensions of area to redisplay
+					 * (may be <= 0). */
+    int imageWidth, int imageHeight	/* New dimensions of image. */
+    )
+{
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -2181,11 +2203,20 @@ SetImageForColumn(
     TreeDrawable td;
     XImage *ximage;
     int visIndex = TreeColumn_VisIndex(treeColumn);
+    char imageName[128];
 
-    photoH = Tk_FindPhoto(tree->interp, "::TreeCtrl::ImageColumn");
+    if ((column->dragImage != NULL) && (column->imageEpoch == tree->columnDrag.imageEpoch))
+	return column->dragImage;
+
+    snprintf(imageName, sizeof(imageName), "::TreeCtrl::ImageColumnH%dC%d",
+	TreeItem_GetID(tree, header->item), TreeColumn_GetID(treeColumn));
+
+    photoH = Tk_FindPhoto(tree->interp, imageName);
     if (photoH == NULL) {
-	Tcl_GlobalEval(tree->interp, "image create photo ::TreeCtrl::ImageColumn");
-	photoH = Tk_FindPhoto(tree->interp, "::TreeCtrl::ImageColumn");
+	char buf[256];
+	snprintf(buf, sizeof(buf), "image create photo %s", imageName);
+	Tcl_GlobalEval(tree->interp, buf);
+	photoH = Tk_FindPhoto(tree->interp, imageName);
 	if (photoH == NULL)
 	    return NULL;
     }
@@ -2249,8 +2280,10 @@ SetImageForColumn(
     XDestroyImage(ximage);
     Tk_FreePixmap(tree->display, td.drawable);
 
-    return Tk_GetImage(tree->interp, tree->tkwin, "::TreeCtrl::ImageColumn",
-	NULL, (ClientData) NULL);
+    column->dragImage = Tk_GetImage(tree->interp, tree->tkwin, imageName,
+	RequiredDummyChangedProc, (ClientData) NULL);
+    column->imageEpoch = tree->columnDrag.imageEpoch;
+    return column->dragImage;
 }
 
 /*
@@ -2309,7 +2342,7 @@ TreeHeader_DrawDragImagery(
 	    column = TreeItemColumn_GetHeaderColumn(tree, itemColumn);
 	    image = SetImageForColumn(header, column, treeColumn, 0, iw, ih);
 	    Tree_RedrawImage(image, ix, iy, iw, ih, td, x + TreeColumn_Offset(treeColumn), y);
-	    Tk_FreeImage(image);
+/*	    Tk_FreeImage(image);*/
 	}
 	if (treeColumn == column1max)
 	    break;
@@ -2558,6 +2591,76 @@ TreeHeader_CreateWithItem(
 /*
  *----------------------------------------------------------------------
  *
+ * FreeDragImages --
+ *
+ *	Free the drag-and-drop images for all header-columns that have
+ *	one.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Images may be freed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+FreeDragImages(
+    TreeCtrl *tree
+    )
+{
+    TreeItem item;
+    TreeItemColumn itemColumn;
+
+    for (item = tree->headerItems;
+	    item != NULL;
+	    item = TreeItem_GetNextSibling(tree, item)) {
+	for (itemColumn = TreeItem_GetFirstColumn(tree, item);
+		itemColumn != NULL;
+		itemColumn = TreeItemColumn_GetNext(tree, itemColumn)) {
+	    TreeHeaderColumn column = TreeItemColumn_GetHeaderColumn(tree, itemColumn);
+	    if (column->dragImage != NULL) {
+		Tk_FreeImage(column->dragImage);
+		column->dragImage = NULL;
+	    }
+	}
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeHeader_ColumnDeleted --
+ *
+ *	Called when a tree-column is deleted.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TreeHeader_ColumnDeleted(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeColumn treeColumn	/* Column being deleted. */
+    )
+{
+    if (treeColumn == tree->columnDrag.column) {
+	FreeDragImages(tree);
+	tree->columnDrag.column = NULL;
+    }
+    if (treeColumn == tree->columnDrag.indColumn)
+	tree->columnDrag.indColumn = NULL;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TreeHeaderColumn_FreeResources --
  *
  *	Frees any memory and options associated with a header-column.
@@ -2583,6 +2686,8 @@ TreeHeaderColumn_FreeResources(
 	Tree_FreeImage(tree, column->image);
     if (column->textLayout != NULL)
 	TextLayout_Free(column->textLayout);
+    if (column->dragImage != NULL)
+	Tk_FreeImage(column->dragImage);
 
     Tk_FreeConfigOptions((char *) column, tree->headerColumnOptionTable, tree->tkwin);
     WFREE(column, HeaderColumn);
@@ -3769,6 +3874,9 @@ TreeHeaderCmd(
 	    }
 	    s = Tcl_GetString(objv[3]);
 	    if (s[0] == '-') {
+		int alpha = tree->columnDrag.alpha;
+		TreeColumn dragColumn = tree->columnDrag.column;
+
 		if (objc <= 4) {
 		    resultObjPtr = Tk_GetOptionInfo(interp, (char *) tree,
 			    tree->columnDrag.optionTable,
@@ -3792,6 +3900,14 @@ TreeHeaderCmd(
 		    tree->columnDrag.alpha = 0;
 		if (tree->columnDrag.alpha > 255)
 		    tree->columnDrag.alpha = 255;
+
+		if (alpha != tree->columnDrag.alpha)
+		    tree->columnDrag.imageEpoch++;
+
+		/* Free header drag images if -imagecolumn changes to "" */
+		if ((dragColumn != NULL) && (tree->columnDrag.column == NULL)) {
+		    FreeDragImages(tree);
+		}
 
 		Tree_DInfoChanged(tree, DINFO_DRAW_HEADER);
 		break;

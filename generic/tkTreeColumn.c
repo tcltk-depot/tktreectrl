@@ -3260,6 +3260,7 @@ TreeColumnCmd(
 		    column = tree->columns;
 		    while (column != NULL) {
 			TreeDisplay_ColumnDeleted(tree, column);
+			TreeHeader_ColumnDeleted(tree, column);
 			TreeGradient_ColumnDeleted(tree, column);
 #if COLUMNGRID == 1
 			if (column->visible &&
@@ -3293,7 +3294,6 @@ TreeColumnCmd(
 		    }
 
 		    tree->columnTree = NULL;
-		    tree->columnDrag.column = tree->columnDrag.indColumn = NULL;
 		    tree->widthOfColumns = tree->headerHeight = -1;
 		    tree->widthOfColumnsLeft = tree->widthOfColumnsRight = -1;
 		    Tree_DInfoChanged(tree, DINFO_REDO_COLUMN_WIDTH);
@@ -3318,6 +3318,7 @@ TreeColumnCmd(
 		}
 
 		TreeDisplay_ColumnDeleted(tree, column);
+		TreeHeader_ColumnDeleted(tree, column);
 		TreeGradient_ColumnDeleted(tree, column);
 #if COLUMNGRID == 1
 		if (column->visible &&
@@ -3342,10 +3343,6 @@ TreeColumnCmd(
 
 		if (column == tree->columnTree)
 		    tree->columnTree = NULL;
-		if (column == tree->columnDrag.column)
-		    tree->columnDrag.column = NULL;
-		if (column == tree->columnDrag.indColumn)
-		    tree->columnDrag.indColumn = NULL;
 
 		(void) Column_Free(column);
 
