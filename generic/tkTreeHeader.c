@@ -73,9 +73,15 @@ struct TreeHeaderColumn_
     int textLines;		/* -textlines */
 
     Tk_Image dragImage;		/* Used during drag-and-drop. */
-    int imageEpoch;
+    int imageEpoch;		/* If this value doesn't match
+				 * tree->columnDrag.imageEpoch the drag image
+				 * for this column is recreated. */
+    Tk_Uid dragImageName;	/* Name needed to delete the drag image. */
 };
 
+/*
+ * The following structure holds [dragconfigure] option info for a TreeHeader.
+ */
 struct TreeHeaderDrag
 {
     int enable;			/* -enable */
@@ -580,8 +586,7 @@ Column_Configure(
 
     if (mask & COLU_CONF_DISPLAY) {
 	if (column->dragImage != NULL) {
-	    Tk_FreeImage(column->dragImage);
-	    column->dragImage = NULL;
+	    column->imageEpoch = tree->columnDrag.imageEpoch - 1;
 	}
     }
 
@@ -2210,6 +2215,7 @@ SetImageForColumn(
 
     snprintf(imageName, sizeof(imageName), "::TreeCtrl::ImageColumnH%dC%d",
 	TreeItem_GetID(tree, header->item), TreeColumn_GetID(treeColumn));
+    column->dragImageName = Tk_GetUid(imageName);
 
     photoH = Tk_FindPhoto(tree->interp, imageName);
     if (photoH == NULL) {
@@ -2622,6 +2628,7 @@ FreeDragImages(
 	    TreeHeaderColumn column = TreeItemColumn_GetHeaderColumn(tree, itemColumn);
 	    if (column->dragImage != NULL) {
 		Tk_FreeImage(column->dragImage);
+		Tk_DeleteImage(tree->interp, column->dragImageName);
 		column->dragImage = NULL;
 	    }
 	}
@@ -2686,8 +2693,10 @@ TreeHeaderColumn_FreeResources(
 	Tree_FreeImage(tree, column->image);
     if (column->textLayout != NULL)
 	TextLayout_Free(column->textLayout);
-    if (column->dragImage != NULL)
+    if (column->dragImage != NULL) {
 	Tk_FreeImage(column->dragImage);
+	Tk_DeleteImage(tree->interp, column->dragImageName);
+    }
 
     Tk_FreeConfigOptions((char *) column, tree->headerColumnOptionTable, tree->tkwin);
     WFREE(column, HeaderColumn);
