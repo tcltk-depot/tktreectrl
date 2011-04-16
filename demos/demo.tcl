@@ -982,6 +982,7 @@ proc MakeMainWindow {} {
 
     [DemoList] notify install <ColumnDrag-begin>
     [DemoList] notify install <ColumnDrag-end>
+    [DemoList] notify install <ColumnDrag-indicator>
     [DemoList] notify install <ColumnDrag-receive>
 
     [DemoList] notify install <Drag-begin>
@@ -1167,7 +1168,14 @@ proc MakeHeaderPopup {T} {
     $m1 add checkbutton -label "Visible" -variable Popup(header,visible) \
 	-command [list eval $T header configure \$Popup(header) -visible \$Popup(header,visible)]
 
-    ### Header-column
+    set m2 [menu $m1.mDnD -tearoff no]
+    $m1 add cascade -label "Drag and Drop" -menu $m2
+    $m2 add checkbutton -label "Draw" -variable Popup(header,drag,draw) \
+	-command [list eval $T header dragconfigure \$Popup(header) -draw \$Popup(header,drag,draw)]
+    $m2 add checkbutton -label "Enable" -variable Popup(header,drag,enable) \
+	-command [list eval $T header dragconfigure \$Popup(header) -enable \$Popup(header,drag,enable)]
+
+    ### Header column
 
     set m1 [menu $m.mHeaderColumn -tearoff no]
     $m add cascade -label "Header Column" -menu $m1
@@ -1203,6 +1211,9 @@ proc MakeHeaderPopup {T} {
     $m2 add radiobutton -label "Right" -variable Popup(header,justify) -value right \
 	-command {$Popup(T) header configure $Popup(header) $Popup(column) -justify right}
 
+    ### Tree column
+    $m add command -label "Column"
+
     return
 }
 
@@ -1220,11 +1231,15 @@ proc MakeHeaderSubmenu {T H parentMenu} {
     return $m1
 }
 
-proc MakeColumnSubmenu {T C parentMenu} {
+proc MakeColumnSubmenu {T C parentMenu {menuName ""}} {
 
     ### Tree-column
 if 1 {
-    set m1 [menu $parentMenu.mColumn$C -tearoff no]
+    if {$menuName ne ""} {
+	set m1 [menu $parentMenu.mColumn$menuName -tearoff no]
+    } else {
+	set m1 [menu $parentMenu.mColumn$C -tearoff no]
+    }
 } else {
     set m1 $parentMenu.mColumn$C
     $m1 delete 0 end
@@ -1265,8 +1280,8 @@ if 1 {
 	-command [list eval $T column configure $C -resize \$Popup(column,resize,$C)]
     $m1 add checkbutton -label "Squeeze" -variable Popup(column,squeeze,$C) \
 	-command [list eval $T column configure $C -squeeze \$Popup(column,squeeze,$C)]
-    $m1 add checkbutton -label "Tree Column" -variable Popup(treecolumn,$C) \
-	-command [list eval $T configure -treecolumn "\[expr {\$Popup(treecolumn,$C) ? $C : {}}\]"]
+    $m1 add checkbutton -label "Tree Column" -variable Popup(column,treecolumn,$C) \
+	-command [list eval $T configure -treecolumn "\[expr {\$Popup(column,treecolumn,$C) ? $C : {}}\]"]
     $m1 add checkbutton -label "Visible" -variable Popup(column,visible,$C) \
 	-command [list eval $T column configure $C -visible \$Popup(column,visible,$C) \; \
 	    TreeCtrl::TryEvent $T DemoColumnVisibility {} [list C $C] ]
@@ -1305,14 +1320,23 @@ proc ShowPopup {T x y X Y} {
 	    set Popup(header,ownerdrawn) [$T header cget $Popup(header) -ownerdrawn]
 	    set Popup(header,visible) [$T header cget $Popup(header) -visible]
 
-	    set Popup(expand) [$T column cget $Popup(column) -expand]
-	    set Popup(resize) [$T column cget $Popup(column) -resize]
-	    set Popup(squeeze) [$T column cget $Popup(column) -squeeze]
-	    set Popup(itemjustify) [$T column cget $Popup(column) -itemjustify]
-	    if {$Popup(itemjustify) eq ""} { set Popup(itemjustify) none }
-	    set Popup(justify) [$T column cget $Popup(column) -justify]
-	    set Popup(lock) [$T column cget $Popup(column) -lock]
-	    set Popup(treecolumn) [expr {[$T column id tree] eq $Popup(column)}]
+	    set Popup(header,drag,draw) [$T header dragcget $Popup(header) -draw]
+	    set Popup(header,drag,enable) [$T header dragcget $Popup(header) -enable]
+
+	    set C $id(column)
+	    set Popup(column,expand,$C) [$T column cget $Popup(column) -expand]
+	    set Popup(column,resize,$C) [$T column cget $Popup(column) -resize]
+	    set Popup(column,squeeze,$C) [$T column cget $Popup(column) -squeeze]
+	    set Popup(column,itemjustify,$C) [$T column cget $Popup(column) -itemjustify]
+	    if {$Popup(column,itemjustify,$C) eq ""} { set Popup(column,itemjustify) none }
+	    set Popup(column,justify,$C) [$T column cget $Popup(column) -justify]
+	    set Popup(column,lock,$C) [$T column cget $Popup(column) -lock]
+	    set Popup(column,treecolumn,$C) [expr {[$T column id tree] eq $Popup(column)}]
+	    $T.mColumn delete "Column"
+	    destroy $T.mColumn.mColumnX
+	    set m1 [MakeColumnSubmenu $T $C $T.mColumn "X"]
+	    $T.mColumn add cascade -label "Column" -menu $m1
+
 	    tk_popup $T.mColumn $X $Y
 	    return
 	}
