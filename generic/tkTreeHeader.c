@@ -2213,14 +2213,14 @@ SetImageForColumn(
     if ((column->dragImage != NULL) && (column->imageEpoch == tree->columnDrag.imageEpoch))
 	return column->dragImage;
 
-    snprintf(imageName, sizeof(imageName), "::TreeCtrl::ImageColumnH%dC%d",
+    sprintf(imageName, "::TreeCtrl::ImageColumnH%dC%d",
 	TreeItem_GetID(tree, header->item), TreeColumn_GetID(treeColumn));
     column->dragImageName = Tk_GetUid(imageName);
 
     photoH = Tk_FindPhoto(tree->interp, imageName);
     if (photoH == NULL) {
 	char buf[256];
-	snprintf(buf, sizeof(buf), "image create photo %s", imageName);
+	sprintf(buf, "image create photo %s", imageName);
 	Tcl_GlobalEval(tree->interp, buf);
 	photoH = Tk_FindPhoto(tree->interp, imageName);
 	if (photoH == NULL)
