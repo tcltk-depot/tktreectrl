@@ -576,6 +576,27 @@ test header-12.26 {header dragconfigure: single header ok} -body {
     .t header dragconfigure first -draw yes
 } -result {}
 
+test header-12.30 {header dragconfigure: deleting a column clears -imagecolumn} -setup {
+#    .t header configure 0 -visible yes
+    .t column delete all
+    .t column create -tags column0 -text "Column 0"
+    .t column create -tags column1 -text "Column 1"
+    .t column create -tags column2 -text "Column 2"
+    .t header dragconfigure -imagecolumn column0
+    update
+    .t column delete column0
+} -body {
+    .t header dragcget -imagecolumn
+} -result {}
+
+test header-12.31 {header dragconfigure: deleting a column clears -indicatorcolumn} -setup {
+    .t header dragconfigure -indicatorcolumn column1
+    update
+    .t column delete column1
+} -body {
+    .t header dragcget -indicatorcolumn
+} -result {}
+
 test header-13.1 {header dragcget: too few args} -body {
     .t header dragcget
 } -returnCodes error -result {wrong # args: should be ".t header dragcget ?header? option"}
