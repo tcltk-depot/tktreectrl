@@ -2236,6 +2236,10 @@ Tree_FreeImage(
     TreeImageRef *ref;
 
     hPtr = Tcl_FindHashEntry(&tree->imageTokenHash, (char *) image);
+#ifdef TREECTRL_DEBUG
+    if (hPtr == NULL)
+	panic("Tree_FreeImage called with an image not in the hash table");
+#endif
     if (hPtr != NULL) {
 	ref = (TreeImageRef *) Tcl_GetHashValue(hPtr);
 	if (--ref->count == 0) {
