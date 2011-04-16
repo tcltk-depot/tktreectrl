@@ -2299,7 +2299,7 @@ SetImageForColumn(
  *
  *	Draws the drag-and-drop feedback for a single TreeHeader.
  *	This is called after the header has been drawn.  It renders
- *	the transparent drag image on top of what was already drawn.
+ *	the transparent drag image(s) on top of what was already drawn.
  *
  * Results:
  *	None.
@@ -2321,11 +2321,12 @@ TreeHeader_DrawDragImagery(
 {
     TreeCtrl *tree = header->tree;
     TreeItem item = header->item;
-    TreeRectangle bbox1;
+    TreeRectangle bbox1, bounds;
     Tk_Image image;
     TreeColumn treeColumn, column1min, column1max;
     TreeItemColumn itemColumn;
     TreeHeaderColumn column;
+    int area = TREE_AREA_HEADER_NONE;
 
     if (tree->columnDrag.column == NULL)
 	return;
@@ -2336,19 +2337,33 @@ TreeHeader_DrawDragImagery(
     if (lock != TreeColumn_Lock(tree->columnDrag.column))
 	return;
 
+    switch (lock) {
+	case COLUMN_LOCK_LEFT:  area = TREE_AREA_HEADER_LEFT; break;
+	case COLUMN_LOCK_RIGHT: area = TREE_AREA_HEADER_RIGHT; break;
+    }
+    if (!Tree_AreaBbox(tree, area, &bounds))
+	return; /* never happens */
+    bounds.x += tree->drawableXOrigin;
+    bounds.y += tree->drawableYOrigin;
+
     x += tree->columnDrag.offset;
     column1min = tree->columnDrag.column;
     column1max = GetFollowingColumn(column1min, tree->columnDrag.span, NULL);
+
     for (treeColumn = column1min; ; treeColumn = TreeColumn_Next(treeColumn)) {
-	if (TreeItem_GetRects(tree, item, treeColumn, 0, NULL, &bbox1) == 1) {
+	int destX = x + TreeColumn_Offset(treeColumn);
+	if (TreeItem_GetRects(tree, item, treeColumn, 0, NULL, &bbox1) == 1 &&
+		destX < TreeRect_Right(bounds) &&
+		destX + bbox1.width /*- indent1*/ > TreeRect_Left(bounds)) {
 	    int indent1 = TreeItem_Indent(tree, treeColumn, item);
 	    int ix = 0, iy = 0, iw = bbox1.width - indent1, ih = bbox1.height;
 
 	    itemColumn = TreeItem_FindColumn(tree, item, TreeColumn_Index(treeColumn));
 	    column = TreeItemColumn_GetHeaderColumn(tree, itemColumn);
 	    image = SetImageForColumn(header, column, treeColumn, 0, iw, ih);
-	    Tree_RedrawImage(image, ix, iy, iw, ih, td, x + TreeColumn_Offset(treeColumn), y);
-/*	    Tk_FreeImage(image);*/
+	    if (image != NULL) {
+		Tree_RedrawImage(image, ix, iy, iw, ih, td, destX, y);
+	    }
 	}
 	if (treeColumn == column1max)
 	    break;
