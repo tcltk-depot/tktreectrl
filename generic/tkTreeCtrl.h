@@ -764,6 +764,8 @@ MODULE_SCOPE int TreeItem_ConsumeHeaderCget(TreeCtrl *tree, TreeItem item,
     Tcl_Obj *objPtr);
 MODULE_SCOPE int TreeItem_ConsumeHeaderConfig(TreeCtrl *tree, TreeItem item,
     int objc, Tcl_Obj *CONST objv[]);
+MODULE_SCOPE int TreeItem_GetHeaderOptionInfo(TreeCtrl *tree,
+    TreeHeader header, Tcl_Obj *objPtr, Tcl_Obj *resultObjPtr);
 MODULE_SCOPE int TreeItemCmd_Bbox(TreeCtrl *tree, int objc,
     Tcl_Obj *CONST objv[], int doHeaders);
 MODULE_SCOPE int TreeItemCmd_Element(TreeCtrl *tree, int objc,

@@ -10002,6 +10002,39 @@ TreeItemColumn_GetHeaderColumn(
 /*
  *----------------------------------------------------------------------
  *
+ * IsHeaderOption --
+ *
+ *	Determine if an option is a valid option implemented for a header
+ *	by its underlying item.
+ *
+ * Results:
+ *	TRUE if the optoin.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+IsHeaderOption(
+    Tcl_Interp *interp,		/* Interp. */
+    Tcl_Obj *objPtr		/* Name of the option. */
+    )
+{
+    static CONST char *headerOptions[] = {
+	"-height", "-tags", "-visible", NULL
+    };
+    int index;
+    if (Tcl_GetIndexFromObj(interp, objPtr, headerOptions,
+	    "option", 0, &index) != TCL_OK)
+	return FALSE;
+    return TRUE;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TreeItem_ConsumeHeaderCget --
  *
  *	Sets the interpreter result with the value of a single
@@ -10024,13 +10057,18 @@ TreeItem_ConsumeHeaderCget(
     Tcl_Obj *objPtr		/* Option name. */
     )
 {
+    Tcl_Interp *interp = tree->interp;
     Tcl_Obj *resultObjPtr;
 
-    resultObjPtr = Tk_GetOptionValue(tree->interp, (char *) item,
+    if (!IsHeaderOption(interp, objPtr)) {
+	FormatResult(interp, "unknown option \"%s\"", Tcl_GetString(objPtr));
+	return TCL_ERROR;
+    }
+    resultObjPtr = Tk_GetOptionValue(interp, (char *) item,
 	    tree->itemOptionTable, objPtr, tree->tkwin);
     if (resultObjPtr == NULL)
 	return TCL_ERROR;
-    Tcl_SetObjResult(tree->interp, resultObjPtr);
+    Tcl_SetObjResult(interp, resultObjPtr);
     return TCL_OK;
 }
 
@@ -10059,10 +10097,78 @@ TreeItem_ConsumeHeaderConfig(
     Tcl_Obj *CONST objv[]	/* Argument values. */
     )
 {
+    Tcl_Interp *interp = tree->interp;
+    int i;
+
     if (objc <= 0)
 	return TCL_OK;
-
+    for (i = 0; i < objc; i += 2) {
+	if (!IsHeaderOption(interp, objv[i])) {
+	    FormatResult(interp, "unknown option \"%s\"", Tcl_GetString(objv[i]));
+	    return TCL_ERROR;
+	}
+    }
     return Item_Configure(tree, item, objc, objv);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeItem_AppendHeaderOptionInfo --
+ *
+ *	Gets a config list for each item option that is relevent
+ *	to a header.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TreeItem_GetHeaderOptionInfo(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeHeader header,		/* Header token. */
+    Tcl_Obj *objPtr,		/* Option name, or NULL for all options. */
+    Tcl_Obj *resultObjPtr	/* List object to append to, or NULL
+				 * if objPtr is not NULL. */
+    )
+{
+    Tcl_Interp *interp = tree->interp;
+    TreeItem item = TreeHeader_GetItem(header);
+    Tcl_Obj *listObjPtr;
+    static CONST char *headerOptions[] = {
+	"-height", "-tags", "-visible", NULL
+    };
+    int i;
+
+    if (objPtr != NULL) {
+	if (!IsHeaderOption(interp, objPtr)) {
+	    FormatResult(interp, "unknown option \"%s\"", Tcl_GetString(objPtr));
+	    return TCL_ERROR;
+	}
+	listObjPtr = Tk_GetOptionInfo(tree->interp, (char *) item,
+		tree->itemOptionTable, objPtr, tree->tkwin);
+	if (listObjPtr == NULL)
+	    return TCL_ERROR;
+	Tcl_SetObjResult(interp, listObjPtr);
+	return TCL_OK;
+    }
+    for (i = 0; headerOptions[i] != NULL; i++) {
+	objPtr = Tcl_NewStringObj(headerOptions[i], -1);
+	Tcl_IncrRefCount(objPtr);
+	listObjPtr = Tk_GetOptionInfo(tree->interp, (char *) item,
+		tree->itemOptionTable, objPtr, tree->tkwin);
+	Tcl_DecrRefCount(objPtr);
+	if (listObjPtr == NULL)
+	    return TCL_ERROR;
+	if (Tcl_ListObjAppendElement(tree->interp, resultObjPtr, listObjPtr) != TCL_OK)
+	    return TCL_ERROR;
+    }
+    return TCL_OK;
 }
 
 /*
