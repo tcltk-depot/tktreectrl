@@ -1151,6 +1151,260 @@ or not the platform supports native transparent gradients.  The [arg preference]
 argument is a boolean that indicates whether native gradients should be used;
 this can be used to test the appearance of the application.
 
+[list_end]
+
+
+[call [arg pathName] [cmd header] [arg option] [opt [arg {arg ...}]]]
+This command is used to manipulate column headers.
+The exact behavior of the command depends on the [arg option] argument
+that follows the [cmd header] argument.
+The following forms of the command are supported:
+
+[list_begin definitions]
+
+[call [arg pathName] [cmd {header bbox}] [arg headerDesc] [opt [arg column]] \
+     [opt [arg element]]]
+See [cmd {item bbox}].
+
+[call [arg pathName] [cmd {header compare}] [arg headerDesc1] [arg op] [arg headerDesc2]]
+See [cmd {item compare}].
+
+[call [arg pathName] [cmd {header configure}] [arg headerDesc] [opt [arg {arg ...}]]]
+There are two forms of this command distinguished by whether or not a
+[sectref {COLUMN DESCRIPTION} {column description}] appears after the
+[arg headerDesc] argument.  If the first argument after [arg headerDesc] begins
+with a '-' character it is assumed to be an option name, not a column description,
+in which case the command applies to the header-row.  If the first argument
+after [arg headerDesc] does not being with a '-' it is assumed to be a
+column description, in which case the command applies to a header-column.
+
+[list_begin definitions]
+[call [arg pathName] [cmd {header configure}] [arg headerDesc] [opt [arg option]] [opt [arg value]] [opt [arg {option value ...}]]]
+
+If no [arg option] is specified, returns a list describing all of the available
+options for the header given by [arg headerDesc] (see [fun Tk_ConfigureInfo] for
+information on the format of this list). If [arg option] is specified with no
+value, then the command returns a list describing the one named option (this
+list will be identical to the corresponding sublist of the value returned if
+no [arg option] is specified).
+[para]
+If one or more [arg option]-[arg value] pairs
+are specified, then the command modifies the given option(s) to have the
+given value(s); in this case the command returns an empty string. This is the
+only case where [arg headerDesc] may refer to multiple header-rows.
+[para]
+The following options are supported by this command (see [cmd {header create}] for
+the meaning of each option):
+
+[list_begin options]
+
+[opt_def [option -height] [arg height]]
+[opt_def [option -ownerdrawn] [arg boolean]]
+[opt_def [option -visible] [arg boolean]]
+
+[list_end]
+
+[call [arg pathName] [cmd {header configure}] [arg headerDesc] [arg column] [opt [arg option]] [opt [arg value]] [opt [arg {option value ...}]]]
+
+If no [arg option] is specified, returns a list describing all of the available
+options for the single column [arg column] of the header-row given by [arg headerDesc]
+(see [fun Tk_ConfigureInfo] for information on the format of this list).
+If [arg option] is specified with no value, then the command returns a list
+describing the one named option (this list will be identical to the corresponding
+sublist of the value returned if no [arg option] is specified).
+[para]
+If one or more [arg option]-[arg value] pairs
+are specified, then the command modifies the given option(s) to have the
+given value(s); in this case the command returns an empty string. This is the
+only case where both [arg headerDesc] may refer to multiple header-rows and
+[arg column] may refer to multiple header-columns.
+[para]
+The following options are supported by this command (see [sectref HEADERS]) for
+the meaning of each option):
+
+[list_begin options]
+[opt_def [option -arrow] [arg direction]]
+[opt_def [option -arrowbitmap] [arg bitmap]]
+[opt_def [option -arrowimage] [arg image]]
+[opt_def [option -arrowside] [arg side]]
+[opt_def [option -arrowgravity] [arg direction]]
+[opt_def [option -arrowpadx] [arg amount]]
+[opt_def [option -arrowpady] [arg amount]]
+[opt_def [option -background] [arg color]]
+[opt_def [option -bitmap] [arg bitmap]]
+[opt_def [option -borderwidth] [arg size]]
+[opt_def [option -button] [arg boolean]]
+[opt_def [option -font] [arg fontName]]
+[opt_def [option -image] [arg image]]
+[opt_def [option -imagepadx] [arg amount]]
+[opt_def [option -imagepady] [arg amount]]
+[opt_def [option -justify] [arg justification]]
+[opt_def [option -state] [arg state]]
+[opt_def [option -text] [arg text]]
+[opt_def [option -textcolor] [arg color]]
+[opt_def [option -textlines] [arg count]]
+[opt_def [option -textpadx] [arg amount]]
+[opt_def [option -textpady] [arg amount]]
+[list_end]
+
+[list_end]
+
+[call [arg pathName] [cmd {header count}] [opt [arg headerDesc]]]
+If no additional arguments are given, the result is a decimal string giving
+the number of header-rows created by the [cmd {header create}] widget command
+which haven't been deleted by the [cmd {header delete}] widget command, plus 1
+for the ever-present top header-row created along with the widget.
+If the optional argument [arg headerDesc] is given, then the result is the
+number of header-rows that match that [sectref {HEADER DESCRIPTION} {header description}].
+
+[call [arg pathName] [cmd {header create}] [opt [arg {option value}]]]
+Creates a new header-row and returns its unique identifier.
+The following configuration options are supported:
+[list_begin options]
+[opt_def [option -height] [arg height]]
+[opt_def [option -ownerdrawn] [arg boolean]]
+[opt_def [option -visible] [arg boolean]]
+[list_end]
+
+[call [arg pathName] [cmd {header delete}] [arg headerDesc]]
+Deletes the header-rows given by the [sectref {HEADER DESCRIPTION} {header description}]
+[arg headerDesc].  Attempts to delete the ever-present top header-row are
+ignored without raising an error.
+
+[call [arg pathName] [cmd {header dragcget}] [opt [arg {arg ...}]]]
+There are two forms of this command distinguished by whether or not a
+[sectref {HEADER DESCRIPTION} {header description}] appears as the first
+argument.  If the first argument begins with a '-' character it is assumed to
+be an option name, not a header description, in which case the command applies
+to the header-drag-and-drop options for the widget.  If the first argument
+does not being with a '-' it is assumed to be a header description, in which
+case the command applies to a header-row.
+
+[list_begin definitions]
+[call [arg pathName] [cmd {header dragcget}] [arg option]]
+
+This command returns the current value of the header-drag-and-drop option named
+[arg option] for the widget.
+The following configuration options are supported:
+[list_begin options]
+[opt_def [option -enable] [arg boolean]]
+[opt_def [option -imagealpha] [arg alpha]]
+[opt_def [option -imagecolor] [arg background]]
+[opt_def [option -imagecolumn] [arg column]]
+[opt_def [option -imageoffset] [arg offset]]
+[opt_def [option -imagespan] [arg span]]
+[opt_def [option -indicatorcolor] [arg color]]
+[opt_def [option -indicatorcolumn] [arg column]]
+[opt_def [option -indicatorside] [arg side]]
+[opt_def [option -indicatorspan] [arg span]]
+[list_end]
+
+[call [arg pathName] [cmd {header dragcget}] [arg headerDesc] [arg option]]
+
+This command returns the current value of the header-drag-and-drop option named
+[arg option] for a header-row.
+The following configuration options are supported:
+[list_begin options]
+[opt_def [option -draw] [arg boolean]]
+[opt_def [option -enable] [arg boolean]]
+[list_end]
+
+[list_end]
+
+[call [arg pathName] [cmd {header dragconfigure}] [opt [arg {arg ...}]]]
+There are two forms of this command distinguished by whether or not a
+[sectref {HEADER DESCRIPTION} {header description}] appears as the first
+argument.  If the first argument begins with a '-' character it is assumed to
+be an option name, not a header description, in which case the command applies
+to the header-drag-and-drop options for the widget.  If the first argument
+does not being with a '-' it is assumed to be a header description, in which
+case the command applies to a header-row.
+[list_begin definitions]
+
+[call [arg pathName] [cmd {header dragconfigure}] \
+     [opt [arg option]] [opt [arg value]] [opt [arg {option value ...}]]]
+
+The following configuration options are supported:
+[list_begin options]
+[opt_def [option -enable] [arg boolean]]
+Controls whether the user is allowed to rearrange columns by drag-and-drop.
+The default is false.
+
+[opt_def [option -imagealpha] [arg alpha]]
+[arg Alpha] is an integer from 0 (invisible) to 255 (opaque) controlling the
+transparency of the drag image. Any value outside this range is clipped.
+The default is 128.
+
+[opt_def [option -imagecolor] [arg background]]
+[arg Background] is the color of the drag image background rectangle.
+The default is "gray75".
+
+[opt_def [option -imagecolumn] [arg column]]
+[arg Column] specifies the column to create the drag image from.
+
+[opt_def [option -imageoffset] [arg offset]]
+[arg Offset] is the horizontal screen distance the drag image is offset from its
+starting position.
+
+[opt_def [option -indicatorcolor] [arg color]]
+[arg Color] is the color of the 2-pixel-thick line.  The default is "black".
+
+[opt_def [option -indicatorcolumn] [arg column]]
+The 2-pixel-thick line will be drawn over the left or right edge of [arg column].
+
+[opt_def [option -indicatorside] [arg side]]
+Specifies whether the 2-pixel-thick line will be drawn over the [const left]
+or [const right] edge of the column specified by [option -indicatorcolumn].
+[list_end]
+
+[call [arg pathName] [cmd {header dragconfigure}] [arg header] \
+     [opt [arg option]] [opt [arg value]] [opt [arg {option value ...}]]]
+[list_begin options]
+[opt_def [option -draw] [arg boolean]]
+[opt_def [option -enable] [arg boolean]]
+[list_end]
+
+[list_end]
+
+[call [arg pathName] [cmd {header element}] [opt [arg {arg ...}]]]
+See [cmd {item element}].
+
+[call [arg pathName] [cmd {header id}] [arg headerDesc]]
+This command resolves the [sectref {HEADER DESCRIPTION} {header description}]
+[arg headerDesc] into a list of unique header-row identifiers. If [arg headerDesc]
+doesn't refer to any existing header-rows, then this command returns an empty list.
+
+[call [arg pathName] [cmd {header image}] [arg headerDesc] [opt [arg column]] \
+     [opt [arg image]] [opt [arg {column image ...}]]]
+The behavior of this command depends on whether or not a column header was assigned
+a style containing an image element.  If a column header has no style or no style
+with an image element then this command operates on the same -image option as
+[cmd {header configure}].  Otherwise this command operates on the -image option
+of the first image element in a column header's style.  See [cmd {item image}].
+
+[call [arg pathName] [cmd {header span}] [arg headerDesc] [opt [arg column]] \
+     [opt [arg numColumns]] [opt [arg {column numColumns ...}]]]
+See [cmd {item span}].
+
+[call [arg pathName] [cmd {header state}] [arg command] [arg headerDesc] \
+     [opt [arg {arg ...}]]]
+See [cmd {item state}].
+
+[call [arg pathName] [cmd {header style}] [arg command] [arg headerDesc] \
+     [opt [arg {arg ...}]]]
+See [cmd {item style}].
+
+[call [arg pathName] [cmd {header text}] [arg headerDesc] [opt [arg column]] \
+     [opt [arg text]] [opt [arg {column text ...}]]]
+The behavior of this command depends on whether or not a column header was assigned
+a style containing a text element.  If a column header has no style or no style
+with a text element then this command operates on the same -text option as
+[cmd {header configure}].  Otherwise this command operates on the -text option
+of the first text element in a column header's style.  See [cmd {item text}].
+
+[call [arg pathName] [cmd {header tag}] [arg command] [arg headerDesc] \
+     [opt [arg {arg ...}]]]
+See [cmd {item tag}].
 
 [list_end]
 
@@ -2574,32 +2828,35 @@ A [const <Scroll-y>] event is generated.
 [list_end]
 [list_end]
 
-[section COLUMNS]
-A treectrl widget is capable of displaying multiple columns next to each
-other.
-An item can be considered as a row, which reaches over all columns.
+[section HEADERS]
 
+A treectrl widget can display zero or more rows of column headers.
+When a treectrl widget is created, a single row of column headers (aka a header-row)
+is created as well; this top header-row cannot be deleted.  Additional header-rows
+can be created with the [cmd {header create}] command and deleted with [cmd {header delete}].
 [para]
-Columns in a treectrl may be specified in a number of ways.
-See [sectref {COLUMN DESCRIPTION}] below.
-
+There are no commands for changing the order of header-rows;  they are displayed
+from top to bottom in the order they were created.
 [para]
-There is always one special column, the [const tail] column, which fills
-all space to the right of the last ordinary column.
-This column has no number;
-it can only be specified by the keyword [const tail].
-
+Drag-and-drop reordering of column headers is supported within a widget.
+To control column header drag-and-drop, use the [cmd {header dragconfigure}] command.
 [para]
-When a column configuration option is specified as [sectref {PER-STATE OPTIONS} per-state],
-the state names are [const normal], [const active], [const pressed] or [const up], i.e.
-do not use item state names.
-
+Header-rows in a treectrl may be specified in a number of ways.
+See [sectref {HEADER DESCRIPTION}] below.
 [para]
-The following options are supported for columns:
-
+The appearance of individual column headers within a header-row may be
+customized in two different ways:
+[list_begin enum]
+[enum]
+By configuring various column header options with the [cmd {header configure}] command
+[enum]
+By assigning a style to a column header with the [cmd {header style}] command.
+[list_end]
+[para]
+The following options are supported for each individual column header:
 [list_begin options]
 [opt_def [option -arrow] [arg direction]]
-Indicates whether or not an arrow should be drawn in the column header.
+Indicates whether or not a sort arrow should be drawn in the column header.
 [arg Direction] must have one of the values
 [const none] (the default), [const up], or [const down].
 
@@ -2609,28 +2866,28 @@ use to draw the arrow if this column's -arrow option is not [const none].
 
 [opt_def [option -arrowimage] [arg image]]
 Specifies as a [sectref {PER-STATE OPTIONS} per-state] option the name of an image to
-use to draw the arrow if this column's -arrow option is not [const none].
+use to draw the sort arrow if this column's -arrow option is not [const none].
 If an image is specified for a certain state, it overrides the -arrowbitmap option.
 
 [opt_def [option -arrowside] [arg side]]
-Indicates on which side of the bitmap/image/text the arrow should be drawn.
+Indicates on which side of the bitmap/image/text the sort arrow should be drawn.
 [arg Side] must be either [const left] or [const right] (the default).
 
-[opt_def [option -arrowgravity] [arg side]]
-Indicates onto which side an arrow should be packed,
+[opt_def [option -arrowgravity] [arg direction]]
+Indicates onto which side the sort arrow should be packed,
 if there is more space available for drawing the arrow then needed.
-[arg Side] must be either [const left] (the default) or [const right].
+[arg direction] must be either [const left] (the default) or [const right].
 
 [opt_def [option -arrowpadx] [arg amount]]
 [arg Amount] specifies how much padding to
-leave on the left and right of the arrow.
+leave on the left and right of the sort arrow.
 [arg Amount] may be a list
 of two values to specify padding for left and right separately;
 it defaults to 6.
 
 [opt_def [option -arrowpady] [arg amount]]
 [arg Amount] specifies how much padding to
-leave on the top and bottom of the arrow.
+leave on the top and bottom of the sort arrow.
 [arg Amount] may be a list
 of two values to specify padding for top and bottom separately;
 it defaults to 0.
@@ -2655,20 +2912,8 @@ When this option is true, the default bindings track <Button-1> events
 in the header and generate a <Header-invoke> event when a <ButtonRelease-1>
 event occurs in the header. See [sectref {DYNAMIC EVENTS}].
 
-[opt_def [option -expand] [arg boolean]]
-Indicates whether or not any extra horizontal space should be distributed
-to this column.
-This option has no effect if the [option -width] option is set.
-
 [opt_def [option -font] [arg fontName]]
 Specifies the font to use for the column title inside the column header.
-
-[opt_def [option -gridleftcolor] [arg color]]
-[opt_def [option -gridrightcolor] [arg color]]
-Specifies the color of the lines drawn down the left and right edges of the
-column.  These so-called "grid lines" are drawn over the elements of each item
-style in the column and down into the whitespace region below any items.
-The default value for each option is an empty string meaning no lines are drawn.
 
 [opt_def [option -image] [arg image]]
 Specifies the name of an image to display to the left of the column title.
@@ -2687,6 +2932,144 @@ leave on the top and bottom of the image (or bitmap).
 [arg Amount] may be a list
 of two values to specify padding for top and bottom separately;
 it defaults to 0.
+
+[opt_def [option -justify] [arg justification]]
+This option determines how the image and text in the column header are
+positioned.
+Must be one of [const left] (the default), [const center], or [const right].
+
+[opt_def [option -state] [arg state]]
+Specifies one of three states for the column header: [const normal], [const active],
+or [const pressed]. The active state is used when the mouse is over the header.
+The pressed state is used when the mouse button is pressed in the header.
+
+[opt_def [option -text] [arg text]]
+Specifies a text string to be displayed as the column title.
+
+[opt_def [option -textcolor] [arg color]]
+Specifies as a [sectref {PER-STATE OPTIONS} per-state] option the color to
+display the column title with.  When the value of this option is unspecified,
+the title will be drawn according to the system theme, if any, otherwise
+the Tk button foreground color (usually black) is used.  The default is unspecified.
+
+[opt_def [option -textlines] [arg count]]
+Specifies the maximum number of lines of text to display in the column title.
+If this value is zero, the number of lines displayed is determined by any newline
+characters and the effects of wrapping when the column width is less than
+needed. The default is 1. Note: Under OSX/Aqua this value is always set to 1 when the
+treectrl's [option -usetheme] option is true, because the Appearance Manager
+uses a fixed height for the column header; there is only room for a single line
+of text.
+
+[opt_def [option -textpadx] [arg amount]]
+[arg Amount] specifies how much padding to
+leave on the left and right of the text.
+[arg Amount] may be a list
+of two values to specify padding for left and right separately;
+it defaults to 6.
+
+[opt_def [option -textpady] [arg amount]]
+[arg Amount] specifies how much padding to
+leave on the top and bottom of the text.
+[arg Amount] may be a list
+of two values to specify padding for top and bottom separately;
+it defaults to 0.
+[list_end]
+
+[section {HEADER DESCRIPTION}]
+Many of the commands for a treectrl take as an argument a description of which
+header-rows to operate on.  A [emph {header description}] is a properly-formed
+tcl list of keywords and arguments. The first word of a header description must
+be one of the following:
+
+[list_begin definitions]
+[def [arg id]]
+Specifies a unique header-row identifier, where [arg id] should be
+the return value of a prior call of the [cmd {header create}] widget command,
+or [const 0] to specify the ever-present top header-row.
+
+[def [arg QUALIFIERS]]
+Specifies a list of qualifiers. This gives the same result as [const all] followed
+by [arg QUALIFIERS]; i.e., every header-row is tested for a match.
+
+[def "[arg tagExpr] [arg QUALIFIERS]"]
+[arg TagExpr] is a tag expression (see [sectref {ITEM AND COLUMN TAGS}]) against
+which every header-row's tags are tested for a match.
+You may run into trouble if [arg tagExpr] looks like a header-row id
+or other keyword; also, [arg tagExpr] must look like a single list element
+since header-row descriptions are properly-formed lists. To be safe you may want to
+use the [const tag] qualifier followed by [arg tagExpr].
+[example_begin]
+.t header dragconfigure {tag -funky} -draw yes
+[example_end]
+
+[def "[const all] [arg QUALIFIERS]"]
+Matches every header-row which satisfies [arg QUALIFIERS].
+
+[def "[const first] [arg QUALIFIERS]"]
+Indicates the top header-row of the treectrl, or the first header-row starting
+from the top that satisfies [arg QUALIFIERS].
+
+[def "[const end] [arg QUALIFIERS]"]
+[def "[const last] [arg QUALIFIERS]"]
+Indicates the last header-row which satisfies [arg QUALIFIERS].
+[list_end]
+
+The word [arg QUALIFIERS] above represents a series of zero or more of the
+following terms that changes which header-row is chosen:
+
+[list_begin definitions]
+[def "[const tag] [arg tagExpr]"]
+[arg TagExpr] is a tag expression (see [sectref {ITEM AND COLUMN TAGS}]) against which
+a header-row's tags are tested for a match.
+
+[def [const visible]]
+When this qualifier is given, only header-rows that are displayed are matched.
+A header-row is displayed only if both the [const -showheader] widget option and
+[const -visible] header-row option are true.
+
+[def [const !visible]]
+When this qualifier is given, only header-rows that are *not* displayed are
+matched.
+[list_end]
+
+
+[section COLUMNS]
+A treectrl widget is capable of displaying multiple columns next to each
+other.
+An item can be considered as a row, which reaches over all columns.
+
+[para]
+Columns in a treectrl may be specified in a number of ways.
+See [sectref {COLUMN DESCRIPTION}] below.
+
+[para]
+There is always one special column, the [const tail] column, which fills
+all space to the right of the last ordinary column.
+This column has no number;
+it can only be specified by the keyword [const tail].
+
+[para]
+When a column configuration option is specified as [sectref {PER-STATE OPTIONS} per-state],
+the state names are [const normal], [const active], [const pressed] or [const up], i.e.
+do not use item state names.
+
+[para]
+The following options are supported for columns:
+
+[list_begin options]
+
+[opt_def [option -expand] [arg boolean]]
+Indicates whether or not any extra horizontal space should be distributed
+to this column.
+This option has no effect if the [option -width] option is set.
+
+[opt_def [option -gridleftcolor] [arg color]]
+[opt_def [option -gridrightcolor] [arg color]]
+Specifies the color of the lines drawn down the left and right edges of the
+column.  These so-called "grid lines" are drawn over the elements of each item
+style in the column and down into the whitespace region below any items.
+The default value for each option is an empty string meaning no lines are drawn.
 
 [opt_def [option -itembackground] [arg colorList]]
 Specifies a list of zero or more colors, which are used as
@@ -2737,49 +3120,12 @@ smaller than its needed width. The column will not get smaller than the value
 of its [option -minwidth] option, if specified. This option has no effect if the
 [option -width] option is set.
 
-[opt_def [option -state] [arg state]]
-Specifies one of three states for the column header: [const normal], [const active],
-or [const pressed]. The active state is used when the mouse is over the header.
-The pressed state is used when the mouse button is pressed in the header.
-
 [opt_def [option -stepwidth] [arg size]]
 Deprecated. Use the treectrl's [option -itemwidthmultiple] option instead.
 
 [opt_def [option -tags] [arg tagList]]
 [arg TagList] is a list of tag names that can be used to identify the column.
 See also the [cmd {column tag}] command.
-
-[opt_def [option -text] [arg text]]
-Specifies a text string to be displayed as the column title.
-
-[opt_def [option -textcolor] [arg color]]
-Specifies as a [sectref {PER-STATE OPTIONS} per-state] option the color to
-display the column title with.  When the value of this option is unspecified,
-the title will be drawn according to the system theme, if any, otherwise
-the Tk button foreground color (usually black) is used.  The default is unspecified.
-
-[opt_def [option -textlines] [arg count]]
-Specifies the maximum number of lines of text to display in the column title.
-If this value is zero, the number of lines displayed is determined by any newline
-characters and the effects of wrapping when the column width is less than
-needed. The default is 1. Note: Under OSX/Aqua this value is always set to 1 when the
-treectrl's [option -usetheme] option is true, because the Appearance Manager
-uses a fixed height for the column header; there is only room for a single line
-of text.
-
-[opt_def [option -textpadx] [arg amount]]
-[arg Amount] specifies how much padding to
-leave on the left and right of the text.
-[arg Amount] may be a list
-of two values to specify padding for left and right separately;
-it defaults to 6.
-
-[opt_def [option -textpady] [arg amount]]
-[arg Amount] specifies how much padding to
-leave on the top and bottom of the text.
-[arg Amount] may be a list
-of two values to specify padding for top and bottom separately;
-it defaults to 0.
 
 [opt_def [option -uniform] [arg group]]
 When a non-empty value is supplied, this option places the column in a

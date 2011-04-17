@@ -366,6 +366,52 @@ package require \fBtreectrl  2.3.2\fR
 .sp
 \fIpathName\fR \fBgradient native\fR ?\fIpreference\fR?
 .sp
+\fIpathName\fR \fBheader\fR \fIoption\fR ?\fIarg ...\fR?
+.sp
+\fIpathName\fR \fBheader bbox\fR \fIheaderDesc\fR ?\fIcolumn\fR? ?\fIelement\fR?
+.sp
+\fIpathName\fR \fBheader compare\fR \fIheaderDesc1\fR \fIop\fR \fIheaderDesc2\fR
+.sp
+\fIpathName\fR \fBheader configure\fR \fIheaderDesc\fR ?\fIarg ...\fR?
+.sp
+\fIpathName\fR \fBheader configure\fR \fIheaderDesc\fR ?\fIoption\fR? ?\fIvalue\fR? ?\fIoption value ...\fR?
+.sp
+\fIpathName\fR \fBheader configure\fR \fIheaderDesc\fR \fIcolumn\fR ?\fIoption\fR? ?\fIvalue\fR? ?\fIoption value ...\fR?
+.sp
+\fIpathName\fR \fBheader count\fR ?\fIheaderDesc\fR?
+.sp
+\fIpathName\fR \fBheader create\fR ?\fIoption value\fR?
+.sp
+\fIpathName\fR \fBheader delete\fR \fIheaderDesc\fR
+.sp
+\fIpathName\fR \fBheader dragcget\fR ?\fIarg ...\fR?
+.sp
+\fIpathName\fR \fBheader dragcget\fR \fIoption\fR
+.sp
+\fIpathName\fR \fBheader dragcget\fR \fIheaderDesc\fR \fIoption\fR
+.sp
+\fIpathName\fR \fBheader dragconfigure\fR ?\fIarg ...\fR?
+.sp
+\fIpathName\fR \fBheader dragconfigure\fR ?\fIoption\fR? ?\fIvalue\fR? ?\fIoption value ...\fR?
+.sp
+\fIpathName\fR \fBheader dragconfigure\fR \fIheader\fR ?\fIoption\fR? ?\fIvalue\fR? ?\fIoption value ...\fR?
+.sp
+\fIpathName\fR \fBheader element\fR ?\fIarg ...\fR?
+.sp
+\fIpathName\fR \fBheader id\fR \fIheaderDesc\fR
+.sp
+\fIpathName\fR \fBheader image\fR \fIheaderDesc\fR ?\fIcolumn\fR? ?\fIimage\fR? ?\fIcolumn image ...\fR?
+.sp
+\fIpathName\fR \fBheader span\fR \fIheaderDesc\fR ?\fIcolumn\fR? ?\fInumColumns\fR? ?\fIcolumn numColumns ...\fR?
+.sp
+\fIpathName\fR \fBheader state\fR \fIcommand\fR \fIheaderDesc\fR ?\fIarg ...\fR?
+.sp
+\fIpathName\fR \fBheader style\fR \fIcommand\fR \fIheaderDesc\fR ?\fIarg ...\fR?
+.sp
+\fIpathName\fR \fBheader text\fR \fIheaderDesc\fR ?\fIcolumn\fR? ?\fItext\fR? ?\fIcolumn text ...\fR?
+.sp
+\fIpathName\fR \fBheader tag\fR \fIcommand\fR \fIheaderDesc\fR ?\fIarg ...\fR?
+.sp
 \fIpathName\fR \fBidentify\fR \fIx\fR \fIy\fR
 .sp
 \fIpathName\fR \fBindex\fR \fIitemDesc\fR
@@ -2122,6 +2168,280 @@ argument is a boolean that indicates whether native gradients should be used;
 this can be used to test the appearance of the application.
 .RE
 .TP
+\fIpathName\fR \fBheader\fR \fIoption\fR ?\fIarg ...\fR?
+This command is used to manipulate column headers.
+The exact behavior of the command depends on the \fIoption\fR argument
+that follows the \fBheader\fR argument.
+The following forms of the command are supported:
+.RS
+.TP
+\fIpathName\fR \fBheader bbox\fR \fIheaderDesc\fR ?\fIcolumn\fR? ?\fIelement\fR?
+See \fBitem bbox\fR.
+.TP
+\fIpathName\fR \fBheader compare\fR \fIheaderDesc1\fR \fIop\fR \fIheaderDesc2\fR
+See \fBitem compare\fR.
+.TP
+\fIpathName\fR \fBheader configure\fR \fIheaderDesc\fR ?\fIarg ...\fR?
+There are two forms of this command distinguished by whether or not a
+\fBcolumn description\fR appears after the
+\fIheaderDesc\fR argument.  If the first argument after \fIheaderDesc\fR begins
+with a '-' character it is assumed to be an option name, not a column description,
+in which case the command applies to the header-row.  If the first argument
+after \fIheaderDesc\fR does not being with a '-' it is assumed to be a
+column description, in which case the command applies to a header-column.
+.RS
+.TP
+\fIpathName\fR \fBheader configure\fR \fIheaderDesc\fR ?\fIoption\fR? ?\fIvalue\fR? ?\fIoption value ...\fR?
+If no \fIoption\fR is specified, returns a list describing all of the available
+options for the header given by \fIheaderDesc\fR (see \fBTk_ConfigureInfo\fR for
+information on the format of this list). If \fIoption\fR is specified with no
+value, then the command returns a list describing the one named option (this
+list will be identical to the corresponding sublist of the value returned if
+no \fIoption\fR is specified).
+.sp
+If one or more \fIoption\fR-\fIvalue\fR pairs
+are specified, then the command modifies the given option(s) to have the
+given value(s); in this case the command returns an empty string. This is the
+only case where \fIheaderDesc\fR may refer to multiple header-rows.
+.sp
+The following options are supported by this command (see \fBheader create\fR for
+the meaning of each option):
+.RS
+.TP
+\fB\fB-height\fR\fR \fIheight\fR
+.TP
+\fB\fB-ownerdrawn\fR\fR \fIboolean\fR
+.TP
+\fB\fB-visible\fR\fR \fIboolean\fR
+.RE
+.TP
+\fIpathName\fR \fBheader configure\fR \fIheaderDesc\fR \fIcolumn\fR ?\fIoption\fR? ?\fIvalue\fR? ?\fIoption value ...\fR?
+If no \fIoption\fR is specified, returns a list describing all of the available
+options for the single column \fIcolumn\fR of the header-row given by \fIheaderDesc\fR
+(see \fBTk_ConfigureInfo\fR for information on the format of this list).
+If \fIoption\fR is specified with no value, then the command returns a list
+describing the one named option (this list will be identical to the corresponding
+sublist of the value returned if no \fIoption\fR is specified).
+.sp
+If one or more \fIoption\fR-\fIvalue\fR pairs
+are specified, then the command modifies the given option(s) to have the
+given value(s); in this case the command returns an empty string. This is the
+only case where both \fIheaderDesc\fR may refer to multiple header-rows and
+\fIcolumn\fR may refer to multiple header-columns.
+.sp
+The following options are supported by this command (see \fBHEADERS\fR) for
+the meaning of each option):
+.RS
+.TP
+\fB\fB-arrow\fR\fR \fIdirection\fR
+.TP
+\fB\fB-arrowbitmap\fR\fR \fIbitmap\fR
+.TP
+\fB\fB-arrowimage\fR\fR \fIimage\fR
+.TP
+\fB\fB-arrowside\fR\fR \fIside\fR
+.TP
+\fB\fB-arrowgravity\fR\fR \fIdirection\fR
+.TP
+\fB\fB-arrowpadx\fR\fR \fIamount\fR
+.TP
+\fB\fB-arrowpady\fR\fR \fIamount\fR
+.TP
+\fB\fB-background\fR\fR \fIcolor\fR
+.TP
+\fB\fB-bitmap\fR\fR \fIbitmap\fR
+.TP
+\fB\fB-borderwidth\fR\fR \fIsize\fR
+.TP
+\fB\fB-button\fR\fR \fIboolean\fR
+.TP
+\fB\fB-font\fR\fR \fIfontName\fR
+.TP
+\fB\fB-image\fR\fR \fIimage\fR
+.TP
+\fB\fB-imagepadx\fR\fR \fIamount\fR
+.TP
+\fB\fB-imagepady\fR\fR \fIamount\fR
+.TP
+\fB\fB-justify\fR\fR \fIjustification\fR
+.TP
+\fB\fB-state\fR\fR \fIstate\fR
+.TP
+\fB\fB-text\fR\fR \fItext\fR
+.TP
+\fB\fB-textcolor\fR\fR \fIcolor\fR
+.TP
+\fB\fB-textlines\fR\fR \fIcount\fR
+.TP
+\fB\fB-textpadx\fR\fR \fIamount\fR
+.TP
+\fB\fB-textpady\fR\fR \fIamount\fR
+.RE
+.RE
+.TP
+\fIpathName\fR \fBheader count\fR ?\fIheaderDesc\fR?
+If no additional arguments are given, the result is a decimal string giving
+the number of header-rows created by the \fBheader create\fR widget command
+which haven't been deleted by the \fBheader delete\fR widget command, plus 1
+for the ever-present top header-row created along with the widget.
+If the optional argument \fIheaderDesc\fR is given, then the result is the
+number of header-rows that match that \fBheader description\fR.
+.TP
+\fIpathName\fR \fBheader create\fR ?\fIoption value\fR?
+Creates a new header-row and returns its unique identifier.
+The following configuration options are supported:
+.RS
+.TP
+\fB\fB-height\fR\fR \fIheight\fR
+.TP
+\fB\fB-ownerdrawn\fR\fR \fIboolean\fR
+.TP
+\fB\fB-visible\fR\fR \fIboolean\fR
+.RE
+.TP
+\fIpathName\fR \fBheader delete\fR \fIheaderDesc\fR
+Deletes the header-rows given by the \fBheader description\fR
+\fIheaderDesc\fR.  Attempts to delete the ever-present top header-row are
+ignored without raising an error.
+.TP
+\fIpathName\fR \fBheader dragcget\fR ?\fIarg ...\fR?
+There are two forms of this command distinguished by whether or not a
+\fBheader description\fR appears as the first
+argument.  If the first argument begins with a '-' character it is assumed to
+be an option name, not a header description, in which case the command applies
+to the header-drag-and-drop options for the widget.  If the first argument
+does not being with a '-' it is assumed to be a header description, in which
+case the command applies to a header-row.
+.RS
+.TP
+\fIpathName\fR \fBheader dragcget\fR \fIoption\fR
+This command returns the current value of the header-drag-and-drop option named
+\fIoption\fR for the widget.
+The following configuration options are supported:
+.RS
+.TP
+\fB\fB-enable\fR\fR \fIboolean\fR
+.TP
+\fB\fB-imagealpha\fR\fR \fIalpha\fR
+.TP
+\fB\fB-imagecolor\fR\fR \fIbackground\fR
+.TP
+\fB\fB-imagecolumn\fR\fR \fIcolumn\fR
+.TP
+\fB\fB-imageoffset\fR\fR \fIoffset\fR
+.TP
+\fB\fB-imagespan\fR\fR \fIspan\fR
+.TP
+\fB\fB-indicatorcolor\fR\fR \fIcolor\fR
+.TP
+\fB\fB-indicatorcolumn\fR\fR \fIcolumn\fR
+.TP
+\fB\fB-indicatorside\fR\fR \fIside\fR
+.TP
+\fB\fB-indicatorspan\fR\fR \fIspan\fR
+.RE
+.TP
+\fIpathName\fR \fBheader dragcget\fR \fIheaderDesc\fR \fIoption\fR
+This command returns the current value of the header-drag-and-drop option named
+\fIoption\fR for a header-row.
+The following configuration options are supported:
+.RS
+.TP
+\fB\fB-draw\fR\fR \fIboolean\fR
+.TP
+\fB\fB-enable\fR\fR \fIboolean\fR
+.RE
+.RE
+.TP
+\fIpathName\fR \fBheader dragconfigure\fR ?\fIarg ...\fR?
+There are two forms of this command distinguished by whether or not a
+\fBheader description\fR appears as the first
+argument.  If the first argument begins with a '-' character it is assumed to
+be an option name, not a header description, in which case the command applies
+to the header-drag-and-drop options for the widget.  If the first argument
+does not being with a '-' it is assumed to be a header description, in which
+case the command applies to a header-row.
+.RS
+.TP
+\fIpathName\fR \fBheader dragconfigure\fR ?\fIoption\fR? ?\fIvalue\fR? ?\fIoption value ...\fR?
+The following configuration options are supported:
+.RS
+.TP
+\fB\fB-enable\fR\fR \fIboolean\fR
+Controls whether the user is allowed to rearrange columns by drag-and-drop.
+The default is false.
+.TP
+\fB\fB-imagealpha\fR\fR \fIalpha\fR
+\fIAlpha\fR is an integer from 0 (invisible) to 255 (opaque) controlling the
+transparency of the drag image. Any value outside this range is clipped.
+The default is 128.
+.TP
+\fB\fB-imagecolor\fR\fR \fIbackground\fR
+\fIBackground\fR is the color of the drag image background rectangle.
+The default is "gray75".
+.TP
+\fB\fB-imagecolumn\fR\fR \fIcolumn\fR
+\fIColumn\fR specifies the column to create the drag image from.
+.TP
+\fB\fB-imageoffset\fR\fR \fIoffset\fR
+\fIOffset\fR is the horizontal screen distance the drag image is offset from its
+starting position.
+.TP
+\fB\fB-indicatorcolor\fR\fR \fIcolor\fR
+\fIColor\fR is the color of the 2-pixel-thick line.  The default is "black".
+.TP
+\fB\fB-indicatorcolumn\fR\fR \fIcolumn\fR
+The 2-pixel-thick line will be drawn over the left or right edge of \fIcolumn\fR.
+.TP
+\fB\fB-indicatorside\fR\fR \fIside\fR
+Specifies whether the 2-pixel-thick line will be drawn over the \fBleft\fR
+or \fBright\fR edge of the column specified by \fB-indicatorcolumn\fR.
+.RE
+.TP
+\fIpathName\fR \fBheader dragconfigure\fR \fIheader\fR ?\fIoption\fR? ?\fIvalue\fR? ?\fIoption value ...\fR?
+.RS
+.TP
+\fB\fB-draw\fR\fR \fIboolean\fR
+.TP
+\fB\fB-enable\fR\fR \fIboolean\fR
+.RE
+.RE
+.TP
+\fIpathName\fR \fBheader element\fR ?\fIarg ...\fR?
+See \fBitem element\fR.
+.TP
+\fIpathName\fR \fBheader id\fR \fIheaderDesc\fR
+This command resolves the \fBheader description\fR
+\fIheaderDesc\fR into a list of unique header-row identifiers. If \fIheaderDesc\fR
+doesn't refer to any existing header-rows, then this command returns an empty list.
+.TP
+\fIpathName\fR \fBheader image\fR \fIheaderDesc\fR ?\fIcolumn\fR? ?\fIimage\fR? ?\fIcolumn image ...\fR?
+The behavior of this command depends on whether or not a column header was assigned
+a style containing an image element.  If a column header has no style or no style
+with an image element then this command operates on the same -image option as
+\fBheader configure\fR.  Otherwise this command operates on the -image option
+of the first image element in a column header's style.  See \fBitem image\fR.
+.TP
+\fIpathName\fR \fBheader span\fR \fIheaderDesc\fR ?\fIcolumn\fR? ?\fInumColumns\fR? ?\fIcolumn numColumns ...\fR?
+See \fBitem span\fR.
+.TP
+\fIpathName\fR \fBheader state\fR \fIcommand\fR \fIheaderDesc\fR ?\fIarg ...\fR?
+See \fBitem state\fR.
+.TP
+\fIpathName\fR \fBheader style\fR \fIcommand\fR \fIheaderDesc\fR ?\fIarg ...\fR?
+See \fBitem style\fR.
+.TP
+\fIpathName\fR \fBheader text\fR \fIheaderDesc\fR ?\fIcolumn\fR? ?\fItext\fR? ?\fIcolumn text ...\fR?
+The behavior of this command depends on whether or not a column header was assigned
+a style containing a text element.  If a column header has no style or no style
+with a text element then this command operates on the same -text option as
+\fBheader configure\fR.  Otherwise this command operates on the -text option
+of the first text element in a column header's style.  See \fBitem text\fR.
+.TP
+\fIpathName\fR \fBheader tag\fR \fIcommand\fR \fIheaderDesc\fR ?\fIarg ...\fR?
+See \fBitem tag\fR.
+.RE
+.TP
 \fIpathName\fR \fBidentify\fR \fIx\fR \fIy\fR
 Returns a list describing what
 is displayed at the given window coordinates \fIx\fR and \fIy\fR.
@@ -3493,27 +3813,33 @@ becomes visible.
 A \fB<Scroll-y>\fR event is generated.
 .RE
 .PP
-.SH COLUMNS
-A treectrl widget is capable of displaying multiple columns next to each
-other.
-An item can be considered as a row, which reaches over all columns.
+.SH HEADERS
+A treectrl widget can display zero or more rows of column headers.
+When a treectrl widget is created, a single row of column headers (aka a header-row)
+is created as well; this top header-row cannot be deleted.  Additional header-rows
+can be created with the \fBheader create\fR command and deleted with \fBheader delete\fR.
 .PP
-Columns in a treectrl may be specified in a number of ways.
-See \fBCOLUMN DESCRIPTION\fR below.
+There are no commands for changing the order of header-rows;  they are displayed
+from top to bottom in the order they were created.
 .PP
-There is always one special column, the \fBtail\fR column, which fills
-all space to the right of the last ordinary column.
-This column has no number;
-it can only be specified by the keyword \fBtail\fR.
+Drag-and-drop reordering of column headers is supported within a widget.
+To control column header drag-and-drop, use the \fBheader dragconfigure\fR command.
 .PP
-When a column configuration option is specified as \fBper-state\fR,
-the state names are \fBnormal\fR, \fBactive\fR, \fBpressed\fR or \fBup\fR, i.e.
-do not use item state names.
+Header-rows in a treectrl may be specified in a number of ways.
+See \fBHEADER DESCRIPTION\fR below.
 .PP
-The following options are supported for columns:
+The appearance of individual column headers within a header-row may be
+customized in two different ways:
+.IP [1]
+By configuring various column header options with the \fBheader configure\fR command
+.IP [2]
+By assigning a style to a column header with the \fBheader style\fR command.
+.PP
+.PP
+The following options are supported for each individual column header:
 .TP
 \fB\fB-arrow\fR\fR \fIdirection\fR
-Indicates whether or not an arrow should be drawn in the column header.
+Indicates whether or not a sort arrow should be drawn in the column header.
 \fIDirection\fR must have one of the values
 \fBnone\fR (the default), \fBup\fR, or \fBdown\fR.
 .TP
@@ -3523,28 +3849,28 @@ use to draw the arrow if this column's -arrow option is not \fBnone\fR.
 .TP
 \fB\fB-arrowimage\fR\fR \fIimage\fR
 Specifies as a \fBper-state\fR option the name of an image to
-use to draw the arrow if this column's -arrow option is not \fBnone\fR.
+use to draw the sort arrow if this column's -arrow option is not \fBnone\fR.
 If an image is specified for a certain state, it overrides the -arrowbitmap option.
 .TP
 \fB\fB-arrowside\fR\fR \fIside\fR
-Indicates on which side of the bitmap/image/text the arrow should be drawn.
+Indicates on which side of the bitmap/image/text the sort arrow should be drawn.
 \fISide\fR must be either \fBleft\fR or \fBright\fR (the default).
 .TP
-\fB\fB-arrowgravity\fR\fR \fIside\fR
-Indicates onto which side an arrow should be packed,
+\fB\fB-arrowgravity\fR\fR \fIdirection\fR
+Indicates onto which side the sort arrow should be packed,
 if there is more space available for drawing the arrow then needed.
-\fISide\fR must be either \fBleft\fR (the default) or \fBright\fR.
+\fIdirection\fR must be either \fBleft\fR (the default) or \fBright\fR.
 .TP
 \fB\fB-arrowpadx\fR\fR \fIamount\fR
 \fIAmount\fR specifies how much padding to
-leave on the left and right of the arrow.
+leave on the left and right of the sort arrow.
 \fIAmount\fR may be a list
 of two values to specify padding for left and right separately;
 it defaults to 6.
 .TP
 \fB\fB-arrowpady\fR\fR \fIamount\fR
 \fIAmount\fR specifies how much padding to
-leave on the top and bottom of the arrow.
+leave on the top and bottom of the sort arrow.
 \fIAmount\fR may be a list
 of two values to specify padding for top and bottom separately;
 it defaults to 0.
@@ -3569,21 +3895,8 @@ When this option is true, the default bindings track <Button-1> events
 in the header and generate a <Header-invoke> event when a <ButtonRelease-1>
 event occurs in the header. See \fBDYNAMIC EVENTS\fR.
 .TP
-\fB\fB-expand\fR\fR \fIboolean\fR
-Indicates whether or not any extra horizontal space should be distributed
-to this column.
-This option has no effect if the \fB-width\fR option is set.
-.TP
 \fB\fB-font\fR\fR \fIfontName\fR
 Specifies the font to use for the column title inside the column header.
-.TP
-\fB\fB-gridleftcolor\fR\fR \fIcolor\fR
-.TP
-\fB\fB-gridrightcolor\fR\fR \fIcolor\fR
-Specifies the color of the lines drawn down the left and right edges of the
-column.  These so-called "grid lines" are drawn over the elements of each item
-style in the column and down into the whitespace region below any items.
-The default value for each option is an empty string meaning no lines are drawn.
 .TP
 \fB\fB-image\fR\fR \fIimage\fR
 Specifies the name of an image to display to the left of the column title.
@@ -3602,6 +3915,136 @@ leave on the top and bottom of the image (or bitmap).
 \fIAmount\fR may be a list
 of two values to specify padding for top and bottom separately;
 it defaults to 0.
+.TP
+\fB\fB-justify\fR\fR \fIjustification\fR
+This option determines how the image and text in the column header are
+positioned.
+Must be one of \fBleft\fR (the default), \fBcenter\fR, or \fBright\fR.
+.TP
+\fB\fB-state\fR\fR \fIstate\fR
+Specifies one of three states for the column header: \fBnormal\fR, \fBactive\fR,
+or \fBpressed\fR. The active state is used when the mouse is over the header.
+The pressed state is used when the mouse button is pressed in the header.
+.TP
+\fB\fB-text\fR\fR \fItext\fR
+Specifies a text string to be displayed as the column title.
+.TP
+\fB\fB-textcolor\fR\fR \fIcolor\fR
+Specifies as a \fBper-state\fR option the color to
+display the column title with.  When the value of this option is unspecified,
+the title will be drawn according to the system theme, if any, otherwise
+the Tk button foreground color (usually black) is used.  The default is unspecified.
+.TP
+\fB\fB-textlines\fR\fR \fIcount\fR
+Specifies the maximum number of lines of text to display in the column title.
+If this value is zero, the number of lines displayed is determined by any newline
+characters and the effects of wrapping when the column width is less than
+needed. The default is 1. Note: Under OSX/Aqua this value is always set to 1 when the
+treectrl's \fB-usetheme\fR option is true, because the Appearance Manager
+uses a fixed height for the column header; there is only room for a single line
+of text.
+.TP
+\fB\fB-textpadx\fR\fR \fIamount\fR
+\fIAmount\fR specifies how much padding to
+leave on the left and right of the text.
+\fIAmount\fR may be a list
+of two values to specify padding for left and right separately;
+it defaults to 6.
+.TP
+\fB\fB-textpady\fR\fR \fIamount\fR
+\fIAmount\fR specifies how much padding to
+leave on the top and bottom of the text.
+\fIAmount\fR may be a list
+of two values to specify padding for top and bottom separately;
+it defaults to 0.
+.PP
+.SH "HEADER DESCRIPTION"
+Many of the commands for a treectrl take as an argument a description of which
+header-rows to operate on.  A \fIheader description\fR is a properly-formed
+tcl list of keywords and arguments. The first word of a header description must
+be one of the following:
+.TP
+\fIid\fR
+Specifies a unique header-row identifier, where \fIid\fR should be
+the return value of a prior call of the \fBheader create\fR widget command,
+or \fB0\fR to specify the ever-present top header-row.
+.TP
+\fIQUALIFIERS\fR
+Specifies a list of qualifiers. This gives the same result as \fBall\fR followed
+by \fIQUALIFIERS\fR; i.e., every header-row is tested for a match.
+.TP
+\fItagExpr\fR \fIQUALIFIERS\fR
+\fITagExpr\fR is a tag expression (see \fBITEM AND COLUMN TAGS\fR) against
+which every header-row's tags are tested for a match.
+You may run into trouble if \fItagExpr\fR looks like a header-row id
+or other keyword; also, \fItagExpr\fR must look like a single list element
+since header-row descriptions are properly-formed lists. To be safe you may want to
+use the \fBtag\fR qualifier followed by \fItagExpr\fR.
+.nf
+
+.t header configure {tag -funky} -visible yes
+
+.fi
+.TP
+\fBall\fR \fIQUALIFIERS\fR
+Matches every header-row which satisfies \fIQUALIFIERS\fR.
+.TP
+\fBfirst\fR \fIQUALIFIERS\fR
+Indicates the top header-row of the treectrl, or the first header-row starting
+from the top that satisfies \fIQUALIFIERS\fR.
+.TP
+\fBend\fR \fIQUALIFIERS\fR
+.TP
+\fBlast\fR \fIQUALIFIERS\fR
+Indicates the last header-row which satisfies \fIQUALIFIERS\fR.
+.PP
+The word \fIQUALIFIERS\fR above represents a series of zero or more of the
+following terms that changes which header-row is chosen:
+.TP
+\fBtag\fR \fItagExpr\fR
+\fITagExpr\fR is a tag expression (see \fBITEM AND COLUMN TAGS\fR) against which
+a header-row's tags are tested for a match.
+.TP
+\fBvisible\fR
+When this qualifier is given, only header-rows that are displayed are considered.
+A header-row is displayed only if the \fB-showheader\fR widget option and
+\fB-visible\fR header-row option are true.
+.TP
+\fB!visible\fR
+When this qualifier is given, only header-rows that are *not* displayed are
+matched.
+.PP
+.SH COLUMNS
+A treectrl widget is capable of displaying multiple columns next to each
+other.
+An item can be considered as a row, which reaches over all columns.
+.PP
+Columns in a treectrl may be specified in a number of ways.
+See \fBCOLUMN DESCRIPTION\fR below.
+.PP
+There is always one special column, the \fBtail\fR column, which fills
+all space to the right of the last ordinary column.
+This column has no number;
+it can only be specified by the keyword \fBtail\fR.
+.PP
+When a column configuration option is specified as \fBper-state\fR,
+the state names are \fBnormal\fR, \fBactive\fR, \fBpressed\fR or \fBup\fR, i.e.
+do not use item state names.
+.PP
+The following options are supported for columns:
+.TP
+\fB\fB-expand\fR\fR \fIboolean\fR
+Indicates whether or not any extra horizontal space should be distributed
+to this column.
+This option has no effect if the \fB-width\fR option is set.
+.TP
+\fB\fB-gridleftcolor\fR\fR \fIcolor\fR
+.TP
+\fB\fB-gridrightcolor\fR\fR \fIcolor\fR
+Specifies the color of the lines drawn down the left and right edges of the
+column.  These so-called "grid lines" are drawn over the elements of each item
+style in the column and down into the whitespace region below any items.
+The default value for each option is an empty string meaning no lines are drawn.
 .TP
 \fB\fB-itembackground\fR\fR \fIcolorList\fR
 Specifies a list of zero or more colors, which are used as
@@ -3652,49 +4095,12 @@ smaller than its needed width. The column will not get smaller than the value
 of its \fB-minwidth\fR option, if specified. This option has no effect if the
 \fB-width\fR option is set.
 .TP
-\fB\fB-state\fR\fR \fIstate\fR
-Specifies one of three states for the column header: \fBnormal\fR, \fBactive\fR,
-or \fBpressed\fR. The active state is used when the mouse is over the header.
-The pressed state is used when the mouse button is pressed in the header.
-.TP
 \fB\fB-stepwidth\fR\fR \fIsize\fR
 Deprecated. Use the treectrl's \fB-itemwidthmultiple\fR option instead.
 .TP
 \fB\fB-tags\fR\fR \fItagList\fR
 \fITagList\fR is a list of tag names that can be used to identify the column.
 See also the \fBcolumn tag\fR command.
-.TP
-\fB\fB-text\fR\fR \fItext\fR
-Specifies a text string to be displayed as the column title.
-.TP
-\fB\fB-textcolor\fR\fR \fIcolor\fR
-Specifies as a \fBper-state\fR option the color to
-display the column title with.  When the value of this option is unspecified,
-the title will be drawn according to the system theme, if any, otherwise
-the Tk button foreground color (usually black) is used.  The default is unspecified.
-.TP
-\fB\fB-textlines\fR\fR \fIcount\fR
-Specifies the maximum number of lines of text to display in the column title.
-If this value is zero, the number of lines displayed is determined by any newline
-characters and the effects of wrapping when the column width is less than
-needed. The default is 1. Note: Under OSX/Aqua this value is always set to 1 when the
-treectrl's \fB-usetheme\fR option is true, because the Appearance Manager
-uses a fixed height for the column header; there is only room for a single line
-of text.
-.TP
-\fB\fB-textpadx\fR\fR \fIamount\fR
-\fIAmount\fR specifies how much padding to
-leave on the left and right of the text.
-\fIAmount\fR may be a list
-of two values to specify padding for left and right separately;
-it defaults to 6.
-.TP
-\fB\fB-textpady\fR\fR \fIamount\fR
-\fIAmount\fR specifies how much padding to
-leave on the top and bottom of the text.
-\fIAmount\fR may be a list
-of two values to specify padding for top and bottom separately;
-it defaults to 0.
 .TP
 \fB\fB-uniform\fR\fR \fIgroup\fR
 When a non-empty value is supplied, this option places the column in a
