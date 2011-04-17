@@ -2343,8 +2343,9 @@ TreeHeader_DrawDragImagery(
     }
     if (!Tree_AreaBbox(tree, area, &bounds))
 	return; /* never happens */
-    bounds.x += tree->drawableXOrigin;
-    bounds.y += tree->drawableYOrigin;
+    /* Window -> drawable */
+    bounds.x += tree->xOrigin - tree->drawableXOrigin;
+    bounds.y += tree->yOrigin - tree->drawableYOrigin;
 
     x += tree->columnDrag.offset;
     column1min = tree->columnDrag.column;
