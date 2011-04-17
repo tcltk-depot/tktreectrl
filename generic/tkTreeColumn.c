@@ -3393,9 +3393,7 @@ doneDELETE:
 			CFO_NOT_NULL) != TCL_OK)
 		return TCL_ERROR;
 
-	    /* Update layout if needed */
-	    (void) Tree_WidthOfColumns(tree);
-	    Tcl_SetObjResult(interp, Tcl_NewIntObj(column->useWidth));
+	    Tcl_SetObjResult(interp, Tcl_NewIntObj(TreeColumn_UseWidth(column)));
 	    break;
 	}
 
@@ -4031,6 +4029,11 @@ Tree_WidthOfColumns(
 	tree->columnTreeLeft = 0;
 	tree->columnTreeVis = FALSE;
     }
+
+    /* I can't calculate the width of the tail column here because it
+     * depends on Tree_FakeCanvasWidth which calls this function. */
+    tree->columnTail->offset = tree->widthOfColumns;
+    tree->columnTail->useWidth = 1; /* hack */
 
     return tree->widthOfColumns;
 }
