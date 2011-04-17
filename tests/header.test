@@ -639,12 +639,12 @@ test header-20.2 {unknown column config options are retrieved from the first hea
 } -result {Header 0, Column 0}
 
 test header-20.3 {unknown header config options are passed to the underlying item} -body {
-    .t header configure first -button auto ; # FIXME
+    .t header configure first -visible no
 } -result {}
 
 test header-20.4 {unknown header config options are retrieved from the underlying item} -body {
-    .t header cget first -button ; # FIXME
-} -result {auto}
+    .t header cget first -visible
+} -result {0}
 
 test header-21.1 {column create doesn't mess up header-columns} -setup {
     .t header delete all
