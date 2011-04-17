@@ -7940,11 +7940,12 @@ ItemStateCmd(
  */
 
 static int
-ItemTagCmd(
-    ClientData clientData,	/* Widget info. */
-    Tcl_Interp *interp,		/* Current interpreter. */
+TreeItemCmd_Tag(
+    TreeCtrl *tree,		/* Widget info. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[]	/* Argument values. */
+    Tcl_Obj *CONST objv[],	/* Argument values. */
+    int doHeaders		/* TRUE to operate on headers, FALSE
+				 * to operate on items. */
     )
 {
     TreeCtrl *tree = clientData;
@@ -7981,8 +7982,14 @@ ItemTagCmd(
 		Tcl_WrongNumArgs(interp, 4, objv, "item tagList");
 		return TCL_ERROR;
 	    }
-	    if (TreeItemList_FromObj(tree, objv[4], &items, IFO_NOT_NULL) != TCL_OK) {
-		return TCL_ERROR;
+	    if (doHeaders) {
+		if (TreeHeaderList_FromObj(tree, objv[4], &items, IFO_NOT_NULL) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+	    } else {
+		if (TreeItemList_FromObj(tree, objv[4], &items, IFO_NOT_NULL) != TCL_OK) {
+		    return TCL_ERROR;
+		}
 	    }
 	    if (Tcl_ListObjGetElements(interp, objv[5], &numTags, &listObjv) != TCL_OK) {
 		result = TCL_ERROR;
@@ -8008,8 +8015,14 @@ ItemTagCmd(
 		Tcl_WrongNumArgs(interp, 4, objv, "item tagExpr");
 		return TCL_ERROR;
 	    }
-	    if (TreeItemList_FromObj(tree, objv[4], &items, IFO_NOT_NULL) != TCL_OK) {
-		return TCL_ERROR;
+	    if (doHeaders) {
+		if (TreeHeaderList_FromObj(tree, objv[4], &items, IFO_NOT_NULL) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+	    } else {
+		if (TreeItemList_FromObj(tree, objv[4], &items, IFO_NOT_NULL) != TCL_OK) {
+		    return TCL_ERROR;
+		}
 	    }
 	    if (TagExpr_Init(tree, objv[5], &expr) != TCL_OK) {
 		result = TCL_ERROR;
@@ -8036,8 +8049,14 @@ ItemTagCmd(
 		Tcl_WrongNumArgs(interp, 4, objv, "item");
 		return TCL_ERROR;
 	    }
-	    if (TreeItemList_FromObj(tree, objv[4], &items, IFO_NOT_NULL) != TCL_OK) {
-		return TCL_ERROR;
+	    if (doHeaders) {
+		if (TreeHeaderList_FromObj(tree, objv[4], &items, IFO_NOT_NULL) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+	    } else {
+		if (TreeItemList_FromObj(tree, objv[4], &items, IFO_NOT_NULL) != TCL_OK) {
+		    return TCL_ERROR;
+		}
 	    }
 	    ITEM_FOR_EACH(item, &items, NULL, &iter) {
 		tags = TagInfo_Names(tree, item->tagInfo, tags, &numTags, &tagSpace);
@@ -8064,8 +8083,14 @@ ItemTagCmd(
 		Tcl_WrongNumArgs(interp, 4, objv, "item tagList");
 		return TCL_ERROR;
 	    }
-	    if (TreeItemList_FromObj(tree, objv[4], &items, IFO_NOT_NULL) != TCL_OK) {
-		return TCL_ERROR;
+	    if (doHeaders) {
+		if (TreeHeaderList_FromObj(tree, objv[4], &items, IFO_NOT_NULL) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+	    } else {
+		if (TreeItemList_FromObj(tree, objv[4], &items, IFO_NOT_NULL) != TCL_OK) {
+		    return TCL_ERROR;
+		}
 	    }
 	    if (Tcl_ListObjGetElements(interp, objv[5], &numTags, &listObjv) != TCL_OK) {
 		result = TCL_ERROR;
@@ -8085,6 +8110,19 @@ ItemTagCmd(
 
     TreeItemList_Free(&items);
     return result;
+}
+
+static int
+ItemTagCmd(
+    ClientData clientData,	/* Widget info. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *CONST objv[]	/* Argument values. */
+    )
+{
+    TreeCtrl *tree = clientData;
+
+    return TreeItemCmd_Tag(tree, objc, objv, FALSE);
 }
 
 /*

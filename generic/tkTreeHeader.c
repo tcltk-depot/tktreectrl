@@ -4006,6 +4006,9 @@ TreeHeaderCmd(
 	case COMMAND_STYLE:
 	    return TreeItemCmd_Style(tree, objc, objv, TRUE);
 
+	case COMMAND_TAG:
+	    return TreeItemCmd_Tag(tree, objc, objv, TRUE);
+
 	case COMMAND_TEXT:
 	    return TreeItemCmd_ImageOrText(tree, objc, objv, FALSE, TRUE);
     }

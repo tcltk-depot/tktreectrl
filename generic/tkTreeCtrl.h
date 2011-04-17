@@ -776,6 +776,8 @@ MODULE_SCOPE int TreeItemCmd_Style(TreeCtrl *tree, int objc,
     Tcl_Obj *CONST objv[], int doHeaders);
 MODULE_SCOPE int TreeItemCmd_ImageOrText(TreeCtrl *tree, int objc,
     Tcl_Obj *CONST objv[], int doImage, int doHeaders);
+MODULE_SCOPE int TreeItemCmd_Tag(TreeCtrl *tree, int objc,
+    Tcl_Obj *CONST objv[], int doImage, int doHeaders);
 
 MODULE_SCOPE void TreeItem_AppendChild(TreeCtrl *tree, TreeItem self, TreeItem child);
 MODULE_SCOPE void TreeItem_RemoveFromParent(TreeCtrl *tree, TreeItem self);
