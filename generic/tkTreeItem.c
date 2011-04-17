@@ -7939,7 +7939,7 @@ ItemStateCmd(
  *----------------------------------------------------------------------
  */
 
-static int
+int
 TreeItemCmd_Tag(
     TreeCtrl *tree,		/* Widget info. */
     int objc,			/* Number of arguments. */
@@ -7948,7 +7948,7 @@ TreeItemCmd_Tag(
 				 * to operate on items. */
     )
 {
-    TreeCtrl *tree = clientData;
+    Tcl_Interp *interp = tree->interp;
     static CONST char *commandNames[] = {
 	"add", "expr", "names", "remove", (char *) NULL
     };
