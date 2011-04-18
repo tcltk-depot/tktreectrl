@@ -351,7 +351,7 @@ proc MakeMenuBar {} {
 	$m2 add separator
 	$m2 add command -label "Inspector" -command ToggleThemeWindow
     }
-    
+
     return
 }
 
@@ -518,14 +518,14 @@ proc ToggleEventsWindow {} {
 }
 proc ToggleEvent {T pattern} {
     [DemoList] notify configure $T $pattern -active $::EventTrack($pattern)
-    return    
+    return
 }
 proc ToggleEvents {T patterns} {
     foreach pattern $patterns {
 	set ::EventTrack($pattern) [expr {!$::EventTrack($pattern)}]
 	ToggleEvent $T $pattern
     }
-    return    
+    return
 }
 
 proc MakeIdentifyWindow {} {
@@ -543,6 +543,7 @@ proc MakeIdentifyWindow {} {
 proc UpdateIdentifyWindow {T x y} {
     set w .identify
     if {![winfo exists $w]} return
+    if {![winfo ismapped $w]} return
     set wText $w.text
     $wText configure -state normal
     $wText delete 1.0 end
@@ -851,7 +852,7 @@ proc TreePlusScrollbarsInAFrame {f h v} {
 
     MakeListPopup $f.t
     MakeHeaderPopup $f.t
-    
+
     switch -- $::thisPlatform {
 	macintosh -
 	macosx {
