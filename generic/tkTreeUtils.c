@@ -1,4 +1,4 @@
-/* 
+/*
  * tkTreeUtils.c --
  *
  *	This module implements misc routines for treectrl widgets.
@@ -1087,7 +1087,7 @@ void TextLayout_Draw(
 		CONST char *sndBytePtr = Tcl_UtfNext(fstBytePtr);
 		Tk_UnderlineChars(display, drawable, gc,
 			layoutPtr->tkfont, firstByte,
-			x + chunkPtr->x + drawX, y + chunkPtr->y, 
+			x + chunkPtr->x + drawX, y + chunkPtr->y,
 			(int) (fstBytePtr - chunkPtr->start),
 			(int) (sndBytePtr - chunkPtr->start));
 	    }
@@ -1111,7 +1111,7 @@ void TextLayout_Draw(
  *	A pad amount (typically the value of an option -XXXpadx or
  *	-XXXpady, where XXX may be a possibly empty string) can
  *	be either a single pixel width, or a list of two pixel widths.
- *	If a single pixel width, the amount specified is used for 
+ *	If a single pixel width, the amount specified is used for
  *	padding on both sides.  If two amounts are specified, then
  *	they specify the left/right or top/bottom padding.
  *
@@ -1233,7 +1233,7 @@ TreeCtrl_NewPadAmountObj(
  *	A pad amount (typically the value of an option -XXXpadx or
  *	-XXXpady, where XXX may be a possibly empty string) can
  *	be either a single pixel width, or a list of two pixel widths.
- *	If a single pixel width, the amount specified is used for 
+ *	If a single pixel width, the amount specified is used for
  *	padding on both sides.  If two amounts are specified, then
  *	they specify the left/right or top/bottom padding.
  *
@@ -4074,7 +4074,7 @@ _TagExpr_Eval(
 			    uid == searchUids->negparenUid) {
 			parendepth++;
 			continue;
-		    } 
+		    }
 		    if (uid == searchUids->endparenUid) {
 			parendepth--;
 			if (parendepth < 0) {
@@ -5613,6 +5613,35 @@ Tree_GetIntForIndex(
     return TCL_OK;
 }
 
+#if 0
+void
+Tcl_WrongNumArgs2(
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments to print from objv. */
+    Tcl_Obj *const objv[],	/* Initial argument objects, which should be
+				 * included in the error message. */
+    const char *message,	/* First string to append. */
+    ...				/* NULL-terminated list of strings to append. */
+    )
+{
+    va_list ap;
+    Tcl_DString dString;
+    const char *string = message;
+
+    Tcl_DStringInit(&dString);
+
+    va_start(ap, message);
+    while (string != NULL) {
+	Tcl_DStringAppend(&dString, string, -1);
+	string = va_arg(ap, char *);
+    }
+    va_end(ap);
+    Tcl_WrongNumArgs(interp, objc, objv, Tcl_DStringValue(&dString));
+
+    Tcl_DStringFree(&dString);
+}
+#endif
+
 /*
  *----------------------------------------------------------------------
  *
@@ -6131,7 +6160,7 @@ NewGradientStop(
     )
 {
     GradientStop *stopPtr;
-    
+
     stopPtr = (GradientStop *) ckalloc(sizeof(GradientStop));
     memset(stopPtr, '\0', sizeof(GradientStop));
     stopPtr->offset = offset;
@@ -6215,7 +6244,7 @@ StopsSet(
     Tcl_Obj *obj;
     XColor *color;
     GradientStopArray *new = NULL;
-    
+
     valuePtr = *value;
     if (internalOffset >= 0)
 	internalPtr = recordPtr + internalOffset;
@@ -6226,7 +6255,7 @@ StopsSet(
     if ((flags & TK_OPTION_NULL_OK) && objEmpty) {
         valuePtr = NULL;
     } else {
-        
+
         /* Deal with each stop list in turn. */
         if (Tcl_ListObjGetElements(interp, valuePtr, &nstops, &objv) != TCL_OK) {
             return TCL_ERROR;
@@ -6237,7 +6266,7 @@ StopsSet(
         }
         new = NewGradientStopArray(nstops);
         lastOffset = 0.0;
-        
+
         for (i = 0; i < nstops; i++) {
             stopObj = objv[i];
             if (Tcl_ListObjLength(interp, stopObj, &stopLen) != TCL_OK) {
@@ -6282,7 +6311,7 @@ StopsSet(
 	    } else {
 		opacity = 1.0;
 	    }
-	    
+
 	    /* Make new stop. */
 	    new->stops[i] = NewGradientStop(offset, color, opacity);
 	    lastOffset = offset;
@@ -6293,7 +6322,7 @@ StopsSet(
         *((GradientStopArray **) internalPtr) = new;
     }
     return TCL_OK;
-    
+
 error:
     if (new != NULL) {
         FreeStopArray(new);
@@ -6321,10 +6350,10 @@ StopsFree(
 {
     if (*((char **) internalPtr) != NULL) {
         FreeStopArray(*(GradientStopArray **)internalPtr);
-    }    
+    }
 }
 
-static Tk_ObjCustomOption stopsCO = 
+static Tk_ObjCustomOption stopsCO =
 {
     "stops",
     StopsSet,
@@ -6382,7 +6411,7 @@ GradientCoordSet(
     TreeColumn column = NULL;
     TreeItem item = NULL;
     int area = TREE_AREA_NONE;
-    
+
     valuePtr = *value;
     if (internalOffset >= 0)
 	internalPtr = recordPtr + internalOffset;
@@ -6468,10 +6497,10 @@ GradientCoordFree(
 {
     if (*((char **) internalPtr) != NULL) {
         ckfree(*(char **)internalPtr);
-    }    
+    }
 }
 
-static Tk_ObjCustomOption gradientCoordCO = 
+static Tk_ObjCustomOption gradientCoordCO =
 {
     "coordinate",
     GradientCoordSet,
@@ -6911,7 +6940,7 @@ TreeGradient_IsRelativeToCanvas(
     )
 {
     (*relX) = (*relY) = 1;
-	
+
     if (gradient->vertical == 0 &&
 	    ((gradient->left != NULL &&
 	    gradient->left->type == GCT_AREA) ||
@@ -7248,7 +7277,7 @@ Gradient_Config(
 	    /*
 	     * Step 1: Save old values
 	     */
-	    
+
 	    if (mask & (GRAD_CONF_STOPS | GRAD_CONF_STEPS)) {
 		saved.nStepColors = gradient->nStepColors;
 		saved.stepColors = gradient->stepColors;
@@ -7739,7 +7768,7 @@ TreeGradient_Init(
     )
 {
     tree->gradientOptionTable = Tk_CreateOptionTable(tree->interp,
-	gradientOptionSpecs); 
+	gradientOptionSpecs);
     tree->nativeGradients = 1; /* Preference, not availability */
 }
 
