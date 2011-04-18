@@ -2212,6 +2212,8 @@ the meaning of each option):
 .TP
 \fB\fB-ownerdrawn\fR\fR \fIboolean\fR
 .TP
+\fB\fB-tags\fR\fR \fItagList\fR
+.TP
 \fB\fB-visible\fR\fR \fIboolean\fR
 .RE
 .TP
@@ -2293,10 +2295,28 @@ The following configuration options are supported:
 .RS
 .TP
 \fB\fB-height\fR\fR \fIheight\fR
+Specifies a fixed height for the header-row in any of the forms acceptable to
+\fBTk_GetPixels\fR. Must be >= 0.  If \fIheight\fR is zero then the
+header-row's height is the maximum height of all of its column headers.
+Defaults to 0.
 .TP
 \fB\fB-ownerdrawn\fR\fR \fIboolean\fR
+\fIBoolean\fR must have one of the forms accepted by \fBTcl_GetBoolean\fR.
+When the value of this option is true, only the style (if any) assigned to a
+column header is drawn;  in this case none of the bitmap, image, text, sort arrow
+or header background parts is drawn or affects the height of the header.
+When the value of this option is false, the style (if any) assigned to a
+column header is drawn overtop of the bitmap, image, text, etc.
+.TP
+\fB\fB-tags\fR\fR \fItagList\fR
+\fITagList\fR is a list of tag names to be added to the new header-row.  The
+\fBheader tag\fR command can also be used to manipulate this list of tags.
 .TP
 \fB\fB-visible\fR\fR \fIboolean\fR
+\fIBoolean\fR must have one of the forms accepted by \fBTcl_GetBoolean\fR. It
+indicates whether or not the header-row should be displayed.  If the widget
+option \fB-showheader\fR is false then the header-row will not be displayed
+regardless of the value of this option.
 .RE
 .TP
 \fIpathName\fR \fBheader delete\fR \fIheaderDesc\fR
@@ -2317,7 +2337,8 @@ case the command applies to a header-row.
 \fIpathName\fR \fBheader dragcget\fR \fIoption\fR
 This command returns the current value of the header-drag-and-drop option named
 \fIoption\fR for the widget.
-The following configuration options are supported:
+The following configuration options are supported (see \fBheader dragconfigure\fR
+for the meaning of each option):
 .RS
 .TP
 \fB\fB-enable\fR\fR \fIboolean\fR
@@ -2330,7 +2351,7 @@ The following configuration options are supported:
 .TP
 \fB\fB-imageoffset\fR\fR \fIoffset\fR
 .TP
-\fB\fB-imagespan\fR\fR \fIspan\fR
+\fB\fB-imagespan\fR\fR \fIcount\fR
 .TP
 \fB\fB-indicatorcolor\fR\fR \fIcolor\fR
 .TP
@@ -2338,13 +2359,14 @@ The following configuration options are supported:
 .TP
 \fB\fB-indicatorside\fR\fR \fIside\fR
 .TP
-\fB\fB-indicatorspan\fR\fR \fIspan\fR
+\fB\fB-indicatorspan\fR\fR \fIcount\fR
 .RE
 .TP
 \fIpathName\fR \fBheader dragcget\fR \fIheaderDesc\fR \fIoption\fR
 This command returns the current value of the header-drag-and-drop option named
 \fIoption\fR for a header-row.
-The following configuration options are supported:
+The following configuration options are supported (see \fBheader dragconfigure\fR
+for the meaning of each option):
 .RS
 .TP
 \fB\fB-draw\fR\fR \fIboolean\fR
@@ -2369,7 +2391,8 @@ The following configuration options are supported:
 .TP
 \fB\fB-enable\fR\fR \fIboolean\fR
 Controls whether the user is allowed to rearrange columns by drag-and-drop.
-The default is false.
+The default is false.  Each header-row also has an \fB-enable\fR
+dragconfigure option.
 .TP
 \fB\fB-imagealpha\fR\fR \fIalpha\fR
 \fIAlpha\fR is an integer from 0 (invisible) to 255 (opaque) controlling the
@@ -2387,6 +2410,10 @@ The default is "gray75".
 \fIOffset\fR is the horizontal screen distance the drag image is offset from its
 starting position.
 .TP
+\fB\fB-imagespan\fR\fR \fIcount\fR
+\fICount\fR is the number of columns, starting with -imagecolumn, that will
+be dragged as a group.
+.TP
 \fB\fB-indicatorcolor\fR\fR \fIcolor\fR
 \fIColor\fR is the color of the 2-pixel-thick line.  The default is "black".
 .TP
@@ -2396,14 +2423,22 @@ The 2-pixel-thick line will be drawn over the left or right edge of \fIcolumn\fR
 \fB\fB-indicatorside\fR\fR \fIside\fR
 Specifies whether the 2-pixel-thick line will be drawn over the \fBleft\fR
 or \fBright\fR edge of the column specified by \fB-indicatorcolumn\fR.
+.TP
+\fB\fB-indicatorspan\fR\fR \fIcount\fR
+\fICount\fR is the number of columns, starting with -indicatorcolumn, that
+will be displaced as a group by the dragged column(s)
 .RE
 .TP
 \fIpathName\fR \fBheader dragconfigure\fR \fIheader\fR ?\fIoption\fR? ?\fIvalue\fR? ?\fIoption value ...\fR?
 .RS
 .TP
 \fB\fB-draw\fR\fR \fIboolean\fR
+Controls whether a header-row displays any feedback during header drag-and-drop.
+The default is true.
 .TP
 \fB\fB-enable\fR\fR \fIboolean\fR
+Controls whether clicking and dragging in this header-row initiates drag-and-drop.
+The default is true.
 .RE
 .RE
 .TP
@@ -2652,6 +2687,7 @@ console or to improve performance. Default is true.
 .TP
 \fB\fB-tags\fR\fR \fItagList\fR
 \fITagList\fR is a list of tag names to be added to the new items.
+The \fBitem tag\fR command can also be used to manipulate this list of tags.
 .TP
 \fB\fB-visible\fR\fR \fIboolean\fR
 \fIBoolean\fR must have one of the forms accepted by \fBTcl_GetBoolean\fR. It
@@ -3982,7 +4018,7 @@ since header-row descriptions are properly-formed lists. To be safe you may want
 use the \fBtag\fR qualifier followed by \fItagExpr\fR.
 .nf
 
-.t header configure {tag -funky} -visible yes
+.t header dragconfigure {tag -funky} -draw yes
 
 .fi
 .TP
@@ -4006,8 +4042,8 @@ following terms that changes which header-row is chosen:
 a header-row's tags are tested for a match.
 .TP
 \fBvisible\fR
-When this qualifier is given, only header-rows that are displayed are considered.
-A header-row is displayed only if the \fB-showheader\fR widget option and
+When this qualifier is given, only header-rows that are displayed are matched.
+A header-row is displayed only if both the \fB-showheader\fR widget option and
 \fB-visible\fR header-row option are true.
 .TP
 \fB!visible\fR

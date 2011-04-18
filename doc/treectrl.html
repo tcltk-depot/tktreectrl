@@ -347,7 +347,7 @@
 </div>
 </div>
 <div id="section1" class="section"><h2><a name="section1">Description</a></h2>
-<dl class="definitions"> 
+<dl class="definitions">
 <dt><a name="1"><b class="cmd">treectrl</b> <i class="arg">pathName</i> <span class="opt">?<i class="arg">options</i>?</span></a></dt>
 <dd></dd>
 </dl>
@@ -838,7 +838,7 @@ Database Class:	<b class="optdbclass">ScrollDelay</b><br>
 <dd><p>This option controls how quickly horizontal scrolling occurs while dragging
 the mouse with button 1 pressed.
 The value should be a list of 1 or 2 integers interpreted as milliseconds.
-If 2 values are specified, then the first value determines the intial delay 
+If 2 values are specified, then the first value determines the intial delay
 after the first scroll, and the second value determines the delay for all
 scrolling after the first. If only 1 value is specified, each scroll takes
 place after that delay.</p></dd>
@@ -874,7 +874,7 @@ Database Class:	<b class="optdbclass">ScrollDelay</b><br>
 <dd><p>This option controls how quickly vertical scrolling occurs while dragging
 the mouse with button 1 pressed.
 The value should be a list of 1 or 2 integers interpreted as milliseconds.
-If 2 values are specified, then the first value determines the intial delay 
+If 2 values are specified, then the first value determines the intial delay
 after the first scroll, and the second value determines the delay for all
 scrolling after the first. If only 1 value is specified, each scroll takes
 place after that delay.</p></dd>
@@ -1521,6 +1521,8 @@ the meaning of each option):</p>
 <dd></dd>
 <dt><b class="option"><b class="option">-ownerdrawn</b></b> <i class="arg">boolean</i></dt>
 <dd></dd>
+<dt><b class="option"><b class="option">-tags</b></b> <i class="arg">tagList</i></dt>
+<dd></dd>
 <dt><b class="option"><b class="option">-visible</b></b> <i class="arg">boolean</i></dt>
 <dd></dd>
 </dl></dd>
@@ -1597,11 +1599,25 @@ number of header-rows that match that <span class="sectref"><a href="#section8">
 The following configuration options are supported:</p>
 <dl class="options">
 <dt><b class="option"><b class="option">-height</b></b> <i class="arg">height</i></dt>
-<dd></dd>
+<dd><p>Specifies a fixed height for the header-row in any of the forms acceptable to
+<b class="function">Tk_GetPixels</b>. Must be &gt;= 0.  If <i class="arg">height</i> is zero then the
+header-row's height is the maximum height of all of its column headers.
+Defaults to 0.</p></dd>
 <dt><b class="option"><b class="option">-ownerdrawn</b></b> <i class="arg">boolean</i></dt>
-<dd></dd>
+<dd><p><i class="arg">Boolean</i> must have one of the forms accepted by <b class="function">Tcl_GetBoolean</b>.
+When the value of this option is true, only the style (if any) assigned to a
+column header is drawn;  in this case none of the bitmap, image, text, sort arrow
+or header background parts is drawn or affects the height of the header.
+When the value of this option is false, the style (if any) assigned to a
+column header is drawn overtop of the bitmap, image, text, etc.</p></dd>
+<dt><b class="option"><b class="option">-tags</b></b> <i class="arg">tagList</i></dt>
+<dd><p><i class="arg">TagList</i> is a list of tag names to be added to the new header-row.  The
+<b class="cmd">header tag</b> command can also be used to manipulate this list of tags.</p></dd>
 <dt><b class="option"><b class="option">-visible</b></b> <i class="arg">boolean</i></dt>
-<dd></dd>
+<dd><p><i class="arg">Boolean</i> must have one of the forms accepted by <b class="function">Tcl_GetBoolean</b>. It
+indicates whether or not the header-row should be displayed.  If the widget
+option <b class="option">-showheader</b> is false then the header-row will not be displayed
+regardless of the value of this option.</p></dd>
 </dl></dd>
 <dt><a name="70"><i class="arg">pathName</i> <b class="cmd">header delete</b> <i class="arg">headerDesc</i></a></dt>
 <dd><p>Deletes the header-rows given by the <span class="sectref"><a href="#section8">header description</a></span>
@@ -1619,7 +1635,8 @@ case the command applies to a header-row.</p>
 <dt><a name="72"><i class="arg">pathName</i> <b class="cmd">header dragcget</b> <i class="arg">option</i></a></dt>
 <dd><p>This command returns the current value of the header-drag-and-drop option named
 <i class="arg">option</i> for the widget.
-The following configuration options are supported:</p>
+The following configuration options are supported (see <b class="cmd">header dragconfigure</b>
+for the meaning of each option):</p>
 <dl class="options">
 <dt><b class="option"><b class="option">-enable</b></b> <i class="arg">boolean</i></dt>
 <dd></dd>
@@ -1631,7 +1648,7 @@ The following configuration options are supported:</p>
 <dd></dd>
 <dt><b class="option"><b class="option">-imageoffset</b></b> <i class="arg">offset</i></dt>
 <dd></dd>
-<dt><b class="option"><b class="option">-imagespan</b></b> <i class="arg">span</i></dt>
+<dt><b class="option"><b class="option">-imagespan</b></b> <i class="arg">count</i></dt>
 <dd></dd>
 <dt><b class="option"><b class="option">-indicatorcolor</b></b> <i class="arg">color</i></dt>
 <dd></dd>
@@ -1639,13 +1656,14 @@ The following configuration options are supported:</p>
 <dd></dd>
 <dt><b class="option"><b class="option">-indicatorside</b></b> <i class="arg">side</i></dt>
 <dd></dd>
-<dt><b class="option"><b class="option">-indicatorspan</b></b> <i class="arg">span</i></dt>
+<dt><b class="option"><b class="option">-indicatorspan</b></b> <i class="arg">count</i></dt>
 <dd></dd>
 </dl></dd>
 <dt><a name="73"><i class="arg">pathName</i> <b class="cmd">header dragcget</b> <i class="arg">headerDesc</i> <i class="arg">option</i></a></dt>
 <dd><p>This command returns the current value of the header-drag-and-drop option named
 <i class="arg">option</i> for a header-row.
-The following configuration options are supported:</p>
+The following configuration options are supported (see <b class="cmd">header dragconfigure</b>
+for the meaning of each option):</p>
 <dl class="options">
 <dt><b class="option"><b class="option">-draw</b></b> <i class="arg">boolean</i></dt>
 <dd></dd>
@@ -1667,7 +1685,8 @@ case the command applies to a header-row.</p>
 <dl class="options">
 <dt><b class="option"><b class="option">-enable</b></b> <i class="arg">boolean</i></dt>
 <dd><p>Controls whether the user is allowed to rearrange columns by drag-and-drop.
-The default is false.</p></dd>
+The default is false.  Each header-row also has an <b class="option">-enable</b>
+dragconfigure option.</p></dd>
 <dt><b class="option"><b class="option">-imagealpha</b></b> <i class="arg">alpha</i></dt>
 <dd><p><i class="arg">Alpha</i> is an integer from 0 (invisible) to 255 (opaque) controlling the
 transparency of the drag image. Any value outside this range is clipped.
@@ -1680,6 +1699,9 @@ The default is &quot;gray75&quot;.</p></dd>
 <dt><b class="option"><b class="option">-imageoffset</b></b> <i class="arg">offset</i></dt>
 <dd><p><i class="arg">Offset</i> is the horizontal screen distance the drag image is offset from its
 starting position.</p></dd>
+<dt><b class="option"><b class="option">-imagespan</b></b> <i class="arg">count</i></dt>
+<dd><p><i class="arg">Count</i> is the number of columns, starting with -imagecolumn, that will
+be dragged as a group.</p></dd>
 <dt><b class="option"><b class="option">-indicatorcolor</b></b> <i class="arg">color</i></dt>
 <dd><p><i class="arg">Color</i> is the color of the 2-pixel-thick line.  The default is &quot;black&quot;.</p></dd>
 <dt><b class="option"><b class="option">-indicatorcolumn</b></b> <i class="arg">column</i></dt>
@@ -1687,13 +1709,18 @@ starting position.</p></dd>
 <dt><b class="option"><b class="option">-indicatorside</b></b> <i class="arg">side</i></dt>
 <dd><p>Specifies whether the 2-pixel-thick line will be drawn over the <b class="const">left</b>
 or <b class="const">right</b> edge of the column specified by <b class="option">-indicatorcolumn</b>.</p></dd>
+<dt><b class="option"><b class="option">-indicatorspan</b></b> <i class="arg">count</i></dt>
+<dd><p><i class="arg">Count</i> is the number of columns, starting with -indicatorcolumn, that
+will be displaced as a group by the dragged column(s)</p></dd>
 </dl></dd>
 <dt><a name="76"><i class="arg">pathName</i> <b class="cmd">header dragconfigure</b> <i class="arg">header</i> <span class="opt">?<i class="arg">option</i>?</span> <span class="opt">?<i class="arg">value</i>?</span> <span class="opt">?<i class="arg">option value ...</i>?</span></a></dt>
 <dd><dl class="options">
 <dt><b class="option"><b class="option">-draw</b></b> <i class="arg">boolean</i></dt>
-<dd></dd>
+<dd><p>Controls whether a header-row displays any feedback during header drag-and-drop.
+The default is true.</p></dd>
 <dt><b class="option"><b class="option">-enable</b></b> <i class="arg">boolean</i></dt>
-<dd></dd>
+<dd><p>Controls whether clicking and dragging in this header-row initiates drag-and-drop.
+The default is true.</p></dd>
 </dl></dd>
 </dl></dd>
 <dt><a name="77"><i class="arg">pathName</i> <b class="cmd">header element</b> <span class="opt">?<i class="arg">arg ...</i>?</span></a></dt>
@@ -1896,7 +1923,8 @@ will have the same parent as <i class="arg">itemDesc</i>.</p></dd>
 created items. Specifying false is useful when creating a large number of items in the
 console or to improve performance. Default is true.</p></dd>
 <dt><b class="option"><b class="option">-tags</b></b> <i class="arg">tagList</i></dt>
-<dd><p><i class="arg">TagList</i> is a list of tag names to be added to the new items.</p></dd>
+<dd><p><i class="arg">TagList</i> is a list of tag names to be added to the new items.
+The <b class="cmd">item tag</b> command can also be used to manipulate this list of tags.</p></dd>
 <dt><b class="option"><b class="option">-visible</b></b> <i class="arg">boolean</i></dt>
 <dd><p><i class="arg">Boolean</i> must have one of the forms accepted by <b class="function">Tcl_GetBoolean</b>. It
 indicates that the item should be displayed in the list. The item will only be
@@ -2423,7 +2451,7 @@ will be used if it was provided. If the event is static or no %-substitution
 command is available, then all %-substitution is done using <i class="arg">charMap</i> only .
 See <b class="cmd">notify install</b> for a description of <i class="arg">percentsCommand</i>.</p></dd>
 <dt><a name="153"><i class="arg">pathName</i> <b class="cmd">notify install</b> <i class="arg">pattern</i> <span class="opt">?<i class="arg">percentsCommand</i>?</span></a></dt>
-<dd><p>This command installs a new event or detail specified by <i class="arg">pattern</i>. 
+<dd><p>This command installs a new event or detail specified by <i class="arg">pattern</i>.
 Events created by this command are called dynamic,
 whereas events created by the treectrl widget itself are called static.
 This command may be called to set or retrieve the <i class="arg">percentsCommand</i> for
@@ -3024,7 +3052,7 @@ or other keyword; also, <i class="arg">tagExpr</i> must look like a single list 
 since header-row descriptions are properly-formed lists. To be safe you may want to
 use the <b class="const">tag</b> qualifier followed by <i class="arg">tagExpr</i>.</p>
 <pre class="example">
-.t header configure {tag -funky} -visible yes
+.t header dragconfigure {tag -funky} -draw yes
 </pre>
 </dd>
 <dt><b class="const">all</b> <i class="arg">QUALIFIERS</i></dt>
@@ -3044,8 +3072,8 @@ following terms that changes which header-row is chosen:</p>
 <dd><p><i class="arg">TagExpr</i> is a tag expression (see <span class="sectref"><a href="#section5">ITEM AND COLUMN TAGS</a></span>) against which
 a header-row's tags are tested for a match.</p></dd>
 <dt><b class="const">visible</b></dt>
-<dd><p>When this qualifier is given, only header-rows that are displayed are considered.
-A header-row is displayed only if the <b class="const">-showheader</b> widget option and
+<dd><p>When this qualifier is given, only header-rows that are displayed are matched.
+A header-row is displayed only if both the <b class="const">-showheader</b> widget option and
 <b class="const">-visible</b> header-row option are true.</p></dd>
 <dt><b class="const">!visible</b></dt>
 <dd><p>When this qualifier is given, only header-rows that are *not* displayed are
@@ -3443,7 +3471,7 @@ columns or items.
 <i class="arg">Open</i> is a string that contains zero or more of the characters
 <b class="const">n</b>, <b class="const">s</b>, <b class="const">e</b> or <b class="const">w</b>.
 Each letter refers to an edge (north, south, east, or west) on which the outline
-and rounded corners will not be drawn. 
+and rounded corners will not be drawn.
 The default is the empty string, which causes all rounded corners and the outline
 to be drawn.</p></dd>
 <dt><b class="option"><b class="option">-outline</b></b> <i class="arg">color</i></dt>

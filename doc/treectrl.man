@@ -11,7 +11,7 @@
 [require treectrl 2.3.2]
 
 [description]
-[list_begin definitions] 
+[list_begin definitions]
 [call [cmd treectrl] [arg pathName] [opt [arg options]]]
 [list_end]
 
@@ -239,7 +239,7 @@ in any of the forms acceptable to [fun Tk_GetPixels]. If non-zero, this
 option overrides the requested height of an item and the -minitemheight option.
 If an item's own -height option is specified then that is the height used for
 the item. In any case, items are never shorter than the maximum height of a
-button if they display one.  The default is 0. 
+button if they display one.  The default is 0.
 
 [tkoption_def -itemprefix itemPrefix ItemPrefix]
 Specifies an ascii string that changes the way item ids are reported and
@@ -324,7 +324,7 @@ Specifies a boolean value that determines whether this widget
 leaves indentation space to display the expand/collapse buttons next to items.
 The default value is true.
 The item option [option -button] determines whether an item has a button.
-See also the widget options [option -showrootbutton] and [option -showrootchildbuttons]. 
+See also the widget options [option -showrootbutton] and [option -showrootchildbuttons].
 
 [tkoption_def -showheader showHeader ShowHeader]
 Specifies a boolean value that determines whether this widget
@@ -401,7 +401,7 @@ the item option -wrap.  See the [cmd {item create}] command for that option.
 This option controls how quickly horizontal scrolling occurs while dragging
 the mouse with button 1 pressed.
 The value should be a list of 1 or 2 integers interpreted as milliseconds.
-If 2 values are specified, then the first value determines the intial delay 
+If 2 values are specified, then the first value determines the intial delay
 after the first scroll, and the second value determines the delay for all
 scrolling after the first. If only 1 value is specified, each scroll takes
 place after that delay.
@@ -431,7 +431,7 @@ scrolling is done in coarser increments.  The default value is false.
 This option controls how quickly vertical scrolling occurs while dragging
 the mouse with button 1 pressed.
 The value should be a list of 1 or 2 integers interpreted as milliseconds.
-If 2 values are specified, then the first value determines the intial delay 
+If 2 values are specified, then the first value determines the intial delay
 after the first scroll, and the second value determines the delay for all
 scrolling after the first. If only 1 value is specified, each scroll takes
 place after that delay.
@@ -1200,6 +1200,7 @@ the meaning of each option):
 
 [opt_def [option -height] [arg height]]
 [opt_def [option -ownerdrawn] [arg boolean]]
+[opt_def [option -tags] [arg tagList]]
 [opt_def [option -visible] [arg boolean]]
 
 [list_end]
@@ -1262,8 +1263,28 @@ Creates a new header-row and returns its unique identifier.
 The following configuration options are supported:
 [list_begin options]
 [opt_def [option -height] [arg height]]
+Specifies a fixed height for the header-row in any of the forms acceptable to
+[fun Tk_GetPixels]. Must be >= 0.  If [arg height] is zero then the
+header-row's height is the maximum height of all of its column headers.
+Defaults to 0.
+
 [opt_def [option -ownerdrawn] [arg boolean]]
+[arg Boolean] must have one of the forms accepted by [fun Tcl_GetBoolean].
+When the value of this option is true, only the style (if any) assigned to a
+column header is drawn;  in this case none of the bitmap, image, text, sort arrow
+or header background parts is drawn or affects the height of the header.
+When the value of this option is false, the style (if any) assigned to a
+column header is drawn overtop of the bitmap, image, text, etc.
+
+[opt_def [option -tags] [arg tagList]]
+[arg TagList] is a list of tag names to be added to the new header-row.  The
+[cmd {header tag}] command can also be used to manipulate this list of tags.
+
 [opt_def [option -visible] [arg boolean]]
+[arg Boolean] must have one of the forms accepted by [fun Tcl_GetBoolean]. It
+indicates whether or not the header-row should be displayed.  If the widget
+option [option -showheader] is false then the header-row will not be displayed
+regardless of the value of this option.
 [list_end]
 
 [call [arg pathName] [cmd {header delete}] [arg headerDesc]]
@@ -1285,25 +1306,27 @@ case the command applies to a header-row.
 
 This command returns the current value of the header-drag-and-drop option named
 [arg option] for the widget.
-The following configuration options are supported:
+The following configuration options are supported (see [cmd {header dragconfigure}]
+for the meaning of each option):
 [list_begin options]
 [opt_def [option -enable] [arg boolean]]
 [opt_def [option -imagealpha] [arg alpha]]
 [opt_def [option -imagecolor] [arg background]]
 [opt_def [option -imagecolumn] [arg column]]
 [opt_def [option -imageoffset] [arg offset]]
-[opt_def [option -imagespan] [arg span]]
+[opt_def [option -imagespan] [arg count]]
 [opt_def [option -indicatorcolor] [arg color]]
 [opt_def [option -indicatorcolumn] [arg column]]
 [opt_def [option -indicatorside] [arg side]]
-[opt_def [option -indicatorspan] [arg span]]
+[opt_def [option -indicatorspan] [arg count]]
 [list_end]
 
 [call [arg pathName] [cmd {header dragcget}] [arg headerDesc] [arg option]]
 
 This command returns the current value of the header-drag-and-drop option named
 [arg option] for a header-row.
-The following configuration options are supported:
+The following configuration options are supported (see [cmd {header dragconfigure}]
+for the meaning of each option):
 [list_begin options]
 [opt_def [option -draw] [arg boolean]]
 [opt_def [option -enable] [arg boolean]]
@@ -1328,7 +1351,8 @@ The following configuration options are supported:
 [list_begin options]
 [opt_def [option -enable] [arg boolean]]
 Controls whether the user is allowed to rearrange columns by drag-and-drop.
-The default is false.
+The default is false.  Each header-row also has an [option -enable]
+dragconfigure option.
 
 [opt_def [option -imagealpha] [arg alpha]]
 [arg Alpha] is an integer from 0 (invisible) to 255 (opaque) controlling the
@@ -1346,6 +1370,10 @@ The default is "gray75".
 [arg Offset] is the horizontal screen distance the drag image is offset from its
 starting position.
 
+[opt_def [option -imagespan] [arg count]]
+[arg Count] is the number of columns, starting with -imagecolumn, that will
+be dragged as a group.
+
 [opt_def [option -indicatorcolor] [arg color]]
 [arg Color] is the color of the 2-pixel-thick line.  The default is "black".
 
@@ -1355,13 +1383,25 @@ The 2-pixel-thick line will be drawn over the left or right edge of [arg column]
 [opt_def [option -indicatorside] [arg side]]
 Specifies whether the 2-pixel-thick line will be drawn over the [const left]
 or [const right] edge of the column specified by [option -indicatorcolumn].
+
+[opt_def [option -indicatorspan] [arg count]]
+[arg Count] is the number of columns, starting with -indicatorcolumn, that
+will be displaced as a group by the dragged column(s)
+
 [list_end]
 
 [call [arg pathName] [cmd {header dragconfigure}] [arg header] \
      [opt [arg option]] [opt [arg value]] [opt [arg {option value ...}]]]
 [list_begin options]
+
 [opt_def [option -draw] [arg boolean]]
+Controls whether a header-row displays any feedback during header drag-and-drop.
+The default is true.
+
 [opt_def [option -enable] [arg boolean]]
+Controls whether clicking and dragging in this header-row initiates drag-and-drop.
+The default is true.
+
 [list_end]
 
 [list_end]
@@ -1620,6 +1660,7 @@ console or to improve performance. Default is true.
 
 [opt_def [option -tags] [arg tagList]]
 [arg TagList] is a list of tag names to be added to the new items.
+The [cmd {item tag}] command can also be used to manipulate this list of tags.
 
 [opt_def [option -visible] [arg boolean]]
 [arg Boolean] must have one of the forms accepted by [fun Tcl_GetBoolean]. It
@@ -1629,7 +1670,7 @@ displayed if:
 [enum]
 each ancestor is a descendant of the root item (not an orphan), and
 [enum]
-each ancestor's [option -visible] option is true 
+each ancestor's [option -visible] option is true
 [list_end]
 
 [opt_def [option -wrap] [arg boolean]]
@@ -2220,7 +2261,7 @@ If [arg pattern] is specified without a [arg script], then the script currently
 bound to [arg pattern] is returned, or an empty string is returned if there is
 no binding for [arg pattern]. If neither [arg pattern] nor [arg script] is
 specified, then the return value is a list whose elements are all the patterns
-for which there exist bindings for [arg object]. 
+for which there exist bindings for [arg object].
 [para]
 The [arg object] argument determines which window(s) the binding applies to.
 If [arg object] begins with a dot, as in .a.b.c, then it must be the path name
@@ -2290,7 +2331,7 @@ command is available, then all %-substitution is done using [arg charMap] only .
 See [cmd {notify install}] for a description of [arg percentsCommand].
 
 [call [arg pathName] [cmd {notify install}] [arg pattern] [opt [arg percentsCommand]]]
-This command installs a new event or detail specified by [arg pattern]. 
+This command installs a new event or detail specified by [arg pattern].
 Events created by this command are called dynamic,
 whereas events created by the treectrl widget itself are called static.
 This command may be called to set or retrieve the [arg percentsCommand] for
@@ -2382,14 +2423,14 @@ Deprecated. Use the [cmd {item range}] command instead.
 
 [call [arg pathName] [cmd scan] [arg option] [arg args]]
 This command is used to implement scanning on treectrls. It has two forms,
-depending on [arg option]: 
+depending on [arg option]:
 [list_begin definitions]
 
 [call [arg pathName] [cmd {scan mark}] [arg x] [arg y]]
 Records [arg x] and [arg y] and the treectrl's current view;  used in conjunction with
 later [cmd {scan dragto}] commands. Typically this command is associated with a
 mouse button press in the widget and [arg x] and [arg y] are the coordinates of the
-mouse. It returns an empty string. 
+mouse. It returns an empty string.
 
 [call [arg pathName] [cmd {scan dragto}] [arg x] [arg y] [opt [arg gain]]]
 This command computes the difference between its [arg x] and [arg y] arguments (which
@@ -2657,7 +2698,7 @@ button/line area in the tree column.  When false, the element is displayed
 beneath the buttons and lines in the tree column.
 This option is ignored unless the [option -detach] option is true.
 The default is true.
-  
+
 [opt_def [option -ipadx] [arg amount]]
 [opt_def [option -ipady] [arg amount]]
 [arg Amount] specifies how much internal padding to leave on the left and
@@ -3510,7 +3551,7 @@ columns or items.
 [arg Open] is a string that contains zero or more of the characters
 [const n], [const s], [const e] or [const w].
 Each letter refers to an edge (north, south, east, or west) on which the outline
-and rounded corners will not be drawn. 
+and rounded corners will not be drawn.
 The default is the empty string, which causes all rounded corners and the outline
 to be drawn.
 
