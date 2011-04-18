@@ -7486,7 +7486,7 @@ Gradient_Changed(
     TreeGradient gradient	/* Gradient token. */
     )
 {
-    Tree_DInfoChanged(tree, DINFO_INVALIDATE | DINFO_OUT_OF_DATE);
+    Tree_DInfoChanged(tree, DINFO_INVALIDATE | DINFO_OUT_OF_DATE | DINFO_DRAW_HEADER);
 }
 
 static void
