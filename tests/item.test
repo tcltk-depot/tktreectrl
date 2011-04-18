@@ -519,7 +519,7 @@ test item-16.3 {item state get: unknown item} -body {
 
 test item-16.4 {item state get: too much arg} -body {
     .t item state get 8 open enabled
-} -returnCodes error -result {wrong # args: should be ".t item state get 8 ?state?"}
+} -returnCodes error -result {wrong # args: should be ".t item state get item ?state?"}
 
 test item-16.5 {item state get: invalid arg} -body {
     .t item state get 8 !open
@@ -551,7 +551,7 @@ test item-16.10 {item state get: user defined state not set} -body {
 
 test item-16.11 {item state set: missing arg} -body {
     .t item state set 8
-} -returnCodes error -result {wrong # args: should be ".t item state set 8 ?last? stateList"}
+} -returnCodes error -result {wrong # args: should be ".t item state set item ?last? stateList"}
 
 test item-16.12 {item state: try to reset predefined state} -body {
     .t item state set 8 open
