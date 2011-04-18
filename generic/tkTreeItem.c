@@ -1,4 +1,4 @@
-/* 
+/*
  * tkTreeItem.c --
  *
  *	This module implements items for treectrl widgets.
@@ -158,7 +158,7 @@ Column_Alloc(
 	    panic("TreeHeaderColumn_CreateWithItemColumn failed");
 #endif
     }
-    
+
     return column;
 }
 
@@ -2050,7 +2050,7 @@ NotManyMsg(
  *   $T item id "first visible firstchild"
  *   $T item id "first visible firstchild visible"
  *   $T item id "nearest x y nextsibling visible"
- *   $T item id "last visible state enabled" 
+ *   $T item id "last visible state enabled"
  *
  * Results:
  *	TCL_OK or TCL_ERROR.
@@ -3235,7 +3235,7 @@ RemoveFromParentAux(
  *	None.
  *
  * Side effects:
- *	Display changes. 
+ *	Display changes.
  *
  *----------------------------------------------------------------------
  */
@@ -3314,7 +3314,7 @@ TreeItem_RemoveFromParent(
  *	None.
  *
  * Side effects:
- *	Memory is deallocated. 
+ *	Memory is deallocated.
  *
  *----------------------------------------------------------------------
  */
@@ -3361,7 +3361,7 @@ TreeItem_RemoveColumns(
  *	None.
  *
  * Side effects:
- *	Memory is deallocated. 
+ *	Memory is deallocated.
  *
  *----------------------------------------------------------------------
  */
@@ -3882,7 +3882,7 @@ TreeItem_ColumnFromObj(
  * TreeItem_Indent --
  *
  *	Return the amount of indentation for the given item. This is
- *	the width of the buttons/lines. 
+ *	the width of the buttons/lines.
  *
  * Results:
  *	Pixel value >= 0.
@@ -4973,7 +4973,7 @@ SpanWalkProc_UpdateWindowPositions(
 
     TreeDisplay_GetReadyForTrouble(tree, &requests);
 
-    drawArgsCopy = *drawArgs; 
+    drawArgsCopy = *drawArgs;
     TreeStyle_UpdateWindowPositions(&drawArgsCopy);
 
     if (TreeDisplay_WasThereTrouble(tree, requests))
@@ -5332,8 +5332,10 @@ TreeItemCmd_Bbox(
     TreeRectangle rect;
 
     if (objc < 4 || objc > 6) {
-	Tcl_WrongNumArgs(interp, 3, objv, doHeaders ? "header ?column? ?element?"
-	    : "item ?column? ?element?");
+	Tcl_WrongNumArgs(interp, 3, objv,
+	    doHeaders ?
+		"header ?column? ?element?" :
+		"item ?column? ?element?");
 	return TCL_ERROR;
     }
 
@@ -5750,10 +5752,13 @@ TreeItemCmd_Element(
     TreeItem item;
     int flags = IFO_NOT_NULL;
     int result = TCL_OK;
-    int tailFlag = doHeaders ? 0 : CFO_NOT_TAIL; /* styles allowed in tail ?*/
+    int tailFlag = doHeaders ? 0 : CFO_NOT_TAIL; /* styles allowed in tail? */
 
     if (objc < 7) {
-	Tcl_WrongNumArgs(interp, 3, objv, "command item column element ?arg ...?");
+	Tcl_WrongNumArgs(interp, 3, objv,
+	    doHeaders ?
+		"command header column element ?arg ...?" :
+		"command item column element ?arg ...?");
 	return TCL_ERROR;
     }
 
@@ -5788,6 +5793,8 @@ TreeItemCmd_Element(
 
 	    if (objc < 8 || objc > 9) {
 		Tcl_WrongNumArgs(tree->interp, 4, objv,
+		    doHeaders ?
+			"header column element option ?stateList?" :
 			"item column element option ?stateList?");
 		result = TCL_ERROR;
 		break;
@@ -5822,6 +5829,8 @@ TreeItemCmd_Element(
 	case COMMAND_CGET: {
 	    if (objc != 8) {
 		Tcl_WrongNumArgs(tree->interp, 4, objv,
+		    doHeaders ?
+			"header column element option" :
 			"item column element option");
 		result = TCL_ERROR;
 		break;
@@ -5955,9 +5964,9 @@ TreeItemCmd_Element(
 		for (index = 5; index < objc; index += co[index].numArgs + 1) {
 		    ColumnForEach citer;
 		    TreeColumn treeColumn;
-
+#ifdef TREECTRL_DEBUG
 if (!co[index].isColumn) panic("isColumn == FALSE");
-
+#endif
 		    COLUMN_FOR_EACH(treeColumn, &co[index].columns, NULL, &citer) {
 			int columnIndex, cMask = 0;
 
@@ -5974,8 +5983,9 @@ if (!co[index].isColumn) panic("isColumn == FALSE");
 			/* Do each element in this column */
 			while (1) {
 			    int eMask, index2;
-
+#ifdef TREECTRL_DEBUG
 if (co[indexElem].numArgs == -1) panic("indexElem=%d (%s) objc=%d numArgs == -1", indexElem, Tcl_GetString(objv[indexElem]), objc);
+#endif
 			    result = TreeStyle_ElementConfigure(tree, item,
 				    (TreeItemColumn) column, column->style, objv[indexElem],
 				    co[indexElem].numArgs, (Tcl_Obj **) objv + indexElem + 1, &eMask);
@@ -6085,7 +6095,10 @@ TreeItemCmd_Style(
     int tailFlag = doHeaders ? 0 : CFO_NOT_TAIL;
 
     if (objc < 5) {
-	Tcl_WrongNumArgs(interp, 3, objv, "command item ?arg ...?");
+	Tcl_WrongNumArgs(interp, 3, objv,
+	    doHeaders ?
+		"command header ?arg ...?" :
+		"command item ?arg ...?");
 	return TCL_ERROR;
     }
 
@@ -6116,7 +6129,8 @@ TreeItemCmd_Style(
 	    int columnIndex;
 
 	    if (objc != 6) {
-		Tcl_WrongNumArgs(interp, 4, objv, "item column");
+		Tcl_WrongNumArgs(interp, 4, objv,
+		    doHeaders ? "header column" : "item column");
 		result = TCL_ERROR;
 		break;
 	    }
@@ -6147,7 +6161,10 @@ TreeItemCmd_Style(
 	    ColumnForEach citer;
 
 	    if (objc != 8) {
-		Tcl_WrongNumArgs(interp, 4, objv, "item column style map");
+		Tcl_WrongNumArgs(interp, 4, objv,
+		    doHeaders ?
+			"header column style map" :
+			"item column style map");
 		return TCL_ERROR;
 	    }
 	    if (TreeColumnList_FromObj(tree, objv[5], &columns,
@@ -6210,7 +6227,10 @@ doneMAP:
 	    ColumnForEach citer;
 
 	    if (objc < 5) {
-		Tcl_WrongNumArgs(interp, 4, objv, "item ?column? ?style? ?column style ...?");
+		Tcl_WrongNumArgs(interp, 4, objv,
+		    doHeaders ?
+			"header ?column? ?style? ?column style ...?" :
+			"item ?column? ?style? ?column style ...?");
 		return TCL_ERROR;
 	    }
 	    /* Return list of styles. */
@@ -6379,7 +6399,10 @@ TreeItemCmd_ImageOrText(
 
     /* T item text I ?C? ?text? ?C text ...? */
     if (objc < 4) {
-	Tcl_WrongNumArgs(interp, 3, objv, "item ?column? ?text? ?column text ...?");
+	Tcl_WrongNumArgs(interp, 3, objv,
+	    doHeaders ?
+		"header ?column? ?text? ?column text ...?" :
+		"item ?column? ?text? ?column text ...?");
 	return TCL_ERROR;
     }
 
@@ -6580,7 +6603,7 @@ struct SortElement
 /* One per TreeColumn */
 struct SortColumn
 {
-    int (*proc)(SortData *, struct SortItem *, struct SortItem *, int); 
+    int (*proc)(SortData *, struct SortItem *, struct SortItem *, int);
     int sortBy;
     int column;
     int order;
@@ -7568,8 +7591,9 @@ TreeItemCmd_Span(
 
     if (objc < 4) {
 	Tcl_WrongNumArgs(interp, 3, objv,
-	    doHeaders ? "header ?column? ?span? ?column span ...?":
-	    "item ?column? ?span? ?column span ...?");
+	    doHeaders ?
+		"header ?column? ?span? ?column span ...?":
+		"item ?column? ?span? ?column span ...?");
 	return TCL_ERROR;
     }
 
@@ -7724,7 +7748,10 @@ TreeItemCmd_State(
     TreeItem item;
 
     if (objc < 5) {
-	Tcl_WrongNumArgs(interp, 3, objv, "command item ?arg ...?");
+	Tcl_WrongNumArgs(interp, 3, objv,
+	    doHeaders ?
+		"command header ?arg ...?" :
+		"command item ?arg ...?");
 	return TCL_ERROR;
     }
 
@@ -7748,7 +7775,10 @@ TreeItemCmd_State(
 	    int result = TCL_OK;
 
 	    if (objc < 6 || objc > 7) {
-		Tcl_WrongNumArgs(interp, 4, objv, "item column ?stateList?");
+		Tcl_WrongNumArgs(interp, 4, objv,
+		    doHeaders ?
+			"header column ?stateList?" :
+			"item column ?stateList?");
 		return TCL_ERROR;
 	    }
 	    /* Without a stateList only one item is accepted. */
@@ -7820,7 +7850,8 @@ doneFORC:
 	    int i, states[3];
 
 	    if (objc > 6) {
-		Tcl_WrongNumArgs(interp, 5, objv, "?state?");
+		Tcl_WrongNumArgs(interp, 4, objv,
+		    doHeaders ? "header ?state?" : "item ?state?");
 		return TCL_ERROR;
 	    }
 	    if (doHeaders) {
@@ -7863,7 +7894,8 @@ doneFORC:
 	    int result = TCL_OK;
 
 	    if (objc < 6 || objc > 7) {
-		Tcl_WrongNumArgs(interp, 5, objv, "?last? stateList");
+		Tcl_WrongNumArgs(interp, 4, objv,
+		    doHeaders ? "header ?last? stateList" : "item ?last? stateList");
 		return TCL_ERROR;
 	    }
 	    if (doHeaders) {
@@ -7979,7 +8011,8 @@ TreeItemCmd_Tag(
 	    Tk_Uid staticTags[STATIC_SIZE], *tags = staticTags;
 
 	    if (objc != 6) {
-		Tcl_WrongNumArgs(interp, 4, objv, "item tagList");
+		Tcl_WrongNumArgs(interp, 4, objv,
+		    doHeaders ? "header tagList" : "item tagList");
 		return TCL_ERROR;
 	    }
 	    if (doHeaders) {
@@ -8012,7 +8045,8 @@ TreeItemCmd_Tag(
 	    int ok = TRUE;
 
 	    if (objc != 6) {
-		Tcl_WrongNumArgs(interp, 4, objv, "item tagExpr");
+		Tcl_WrongNumArgs(interp, 4, objv,
+		    doHeaders ? "header tagExpr" : "item tagExpr");
 		return TCL_ERROR;
 	    }
 	    if (doHeaders) {
@@ -8046,7 +8080,7 @@ TreeItemCmd_Tag(
 	    int i, tagSpace, numTags = 0;
 
 	    if (objc != 5) {
-		Tcl_WrongNumArgs(interp, 4, objv, "item");
+		Tcl_WrongNumArgs(interp, 4, objv, doHeaders ? "header" : "item");
 		return TCL_ERROR;
 	    }
 	    if (doHeaders) {
@@ -8080,7 +8114,8 @@ TreeItemCmd_Tag(
 	    Tk_Uid staticTags[STATIC_SIZE], *tags = staticTags;
 
 	    if (objc != 6) {
-		Tcl_WrongNumArgs(interp, 4, objv, "item tagList");
+		Tcl_WrongNumArgs(interp, 4, objv,
+		    doHeaders ? "header tagList" : "item tagList");
 		return TCL_ERROR;
 	    }
 	    if (doHeaders) {
