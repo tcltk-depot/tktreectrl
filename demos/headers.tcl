@@ -4,7 +4,7 @@ proc DemoHeaders {} {
     set T [DemoList]
 
     $T configure \
-	-showroot no -xscrollsmoothing yes -itemheight 22 \
+	-showroot no -xscrollsmoothing yes \
 	-selectmode multiple -xscrollincrement 20 -canvaspadx 40
 
     #
@@ -20,7 +20,7 @@ proc DemoHeaders {} {
 
     for {set i 1} {$i <= 8} {incr i} {
 	$T column create -text "C$i" -tags C$i -width 80 -justify center \
-	    -gridrightcolor gray90 -itembackground $itembg 
+	    -gridrightcolor gray90 -itembackground $itembg
     }
 
     $T column create -text "Right" -tags Cright -width 80 -justify center \
@@ -107,11 +107,69 @@ if 0 {
     $T style elements $S header.check
     $T style layout $S header.check -expand nes -padx 6
 
-    set S header2
+    #
+    # Create a style for our custom headers,
+    # a gradient-filled rectangle with centered text.
+    #
+
+    $T gradient create Gnormal -orient vertical -stops {{0.0 gray95} {0.3 gray95} {1.0 gray80}} -steps 6
+    $T gradient create Gactive -orient vertical -stops {{0.0 #edf7fa} {0.3 #edf7fa} {1.0 {light blue}}} -steps 6
+    $T gradient create Gpressed -orient vertical -stops {{0.0 gray90} {0.3 gray90} {1.0 gray75}} -steps 6
+    $T element create header.rect1 rect -fill {
+	Gactive headeractive
+	Gpressed headerpressed
+	Gnormal {}
+    } -outline {
+	{sky blue} headeractive
+	gray {}
+    } -outlinewidth 1 -open {
+	s headerpressed
+	n {}
+    }
+
+    set S [$T style create header5 -orient horizontal]
+    $T style elements $S {header.rect1 header.text header.sort}
+    $T style layout $S header.rect1 -detach yes -iexpand xy
+    $T style layout $S header.text -expand news -padx 6 -pady 2 -squeeze x
+    $T style layout $S header.sort -expand nws -padx {0 6} \
+	-visible {no {!sortdown !sortup}}
+
+    #
+    # Create a style for our custom headers,
+    # a gradient-filled rectangle with centered text.
+    #
+
+    $T gradient create G_orange1 -orient vertical -steps 4 \
+	-stops {{0 #fde8d1} {0.3 #fde8d1} {0.3 #ffce69} {0.6 #ffce69} {1 #fff3c3}}
+    $T gradient create G_orange2 -orient vertical -steps 4 \
+	-stops {{0 #fffef6} {0.3 #fffef6} {0.3 #ffef9a} {0.6 #ffef9a} {1 #fffce8}}
+
+    $T element create orange.outline rect -outline #ffb700 -outlinewidth 1 \
+	-rx 1 -open {
+	    s headerpressed
+	    n {}
+	}
+    $T element create orange.box rect -fill {
+	G_orange1 headeractive
+	G_orange1 sortup
+	G_orange1 sortdown
+	G_orange2 {}
+    }
+
+    set S [$T style create header6 -orient horizontal]
+    $T style elements $S {orange.outline orange.box header.text header.sort}
+    $T style layout $S orange.outline -union orange.box -ipadx 2 -ipady 2
+    $T style layout $S orange.box -detach yes -iexpand xy
+    $T style layout $S header.text -expand news -padx 6 -pady 4 -squeeze x
+    $T style layout $S header.sort -expand nws -padx {0 6} \
+	-visible {no {!sortdown !sortup}}
+
 
     #
     # Configure 3 rows of column headers
     #
+
+    set S header2
 
     $T header configure first -ownerdrawn yes -tags header1
     set H header1
@@ -141,6 +199,70 @@ if 0 {
     }
 
     #
+    #
+    #
+
+    scan [$T column bbox {first lock none}] "%d %d %d %d" left top right bottom
+    scan [$T column bbox {last lock none}] "%d %d %d %d" left2 top2 right2 bottom2
+    set width [expr {$right2 - $left}]
+
+    $T state define current
+
+    $T element create theme.rect rect -fill {{light blue} current white {}} \
+	-outline gray50 -outlinewidth 2 -open s
+    $T element create theme.text text -lines 0 -width $width
+    $T element create theme.button window
+    set S [$T style create theme -orient vertical]
+    $T style elements $S {theme.rect theme.text theme.button}
+    $T style layout $S theme.rect -detach yes -iexpand xy
+    $T style layout $S theme.text -padx 4 -pady 3
+    $T style layout $S theme.button -expand we -pady {3 6}
+
+    set I [$T item create -parent root -tags {style config}]
+    $T item style set $I C1 $S
+    $T item span $I all [$T column count {lock none}]
+    $T item text $I C1 "Use no style, just the built-in header background, sort arrow and text.\nstyle=none, -ownerdrawn=no"
+    button $T.button$I -text "Configure headers" -command [list DemoHeaders::ChangeHeaderStyle "" no]
+    $T item element configure $I C1 theme.button -window $T.button$I
+
+    set I [$T item create -parent root -tags {styleheader1 config}]
+    $T item style set $I C1 $S
+    $T item span $I all [$T column count {lock none}]
+    $T item text $I C1 "Use the 'header1' style, consisting of a border element for the background and an image for the sort arrow.\nstyle=header1, -ownerdrawn=yes"
+    button $T.button$I -text "Configure headers" -command [list DemoHeaders::ChangeHeaderStyle header1 yes black]
+    $T item element configure $I C1 theme.button -window $T.button$I
+
+    set I [$T item create -parent root -tags {styleheader2 config}]
+    $T item style set $I C1 $S
+    $T item span $I all [$T column count {lock none}]
+    $T item text $I C1 "Use the 'header2' style, consisting of a rounded rectangle element for the background and an image for the sort arrow.\nstyle=header2, -ownerdrawn=yes"
+    button $T.button$I -text "Configure headers" -command [list DemoHeaders::ChangeHeaderStyle header2 yes blue]
+    $T item element configure $I C1 theme.button -window $T.button$I
+
+    set I [$T item create -parent root -tags {styleheader4 config}]
+    $T item style set $I C1 $S
+    $T item span $I all [$T column count {lock none}]
+    $T item text $I C1 "Use the 'header4' style, consisting only of an image element serving as a checkbutton.  The style is drawn overtop the built-in parts of the header.\nstyle=header4, -ownerdrawn=no"
+    button $T.button$I -text "Configure headers" -command [list DemoHeaders::ChangeHeaderStyle header4 no]
+    $T item element configure $I C1 theme.button -window $T.button$I
+
+    set I [$T item create -parent root -tags {styleheader5 config}]
+    $T item style set $I C1 $S
+    $T item span $I all [$T column count {lock none}]
+    $T item text $I C1 "Use the 'header5' style, consisting .\nstyle=header5, -ownerdrawn=yes"
+    button $T.button$I -text "Configure headers" -command [list DemoHeaders::ChangeHeaderStyle header5 yes gray50]
+    $T item element configure $I C1 theme.button -window $T.button$I
+
+    set I [$T item create -parent root -tags {styleheader6 config}]
+    $T item style set $I C1 $S
+    $T item span $I all [$T column count {lock none}]
+    $T item text $I C1 "Use the 'header6' style, consisting .\nstyle=header6, -ownerdrawn=yes"
+    button $T.button$I -text "Configure headers" -command [list DemoHeaders::ChangeHeaderStyle header6 yes orange]
+    $T item element configure $I C1 theme.button -window $T.button$I
+
+    $T item state set styleheader2 current
+
+    #
     # Create 100 regular non-locked items
     #
 
@@ -154,7 +276,7 @@ if 0 {
 
     $T column configure !tail -itemstyle $S
     $T item create -count 100 -parent root
-
+if 0 {
     #
     # Create an interface to change the style used by the custom headers
     #
@@ -163,23 +285,23 @@ if 0 {
     set f [frame $T.fHeaderStyle -borderwidth 2 -relief raised -width 150]
     pack [$::radiobuttonCmd $f.native -text "No Style" \
 	-variable ::DemoHeaders::HeaderStyle -value "" \
-	-command [list DemoHeaders::ChangeHeaderStyle no]] -side top -anchor w -pady 3
+	-command [list DemoHeaders::ChangeHeaderStyle "" no]] -side top -anchor w -pady 3
     pack [$::radiobuttonCmd $f.style1 -text header1 \
 	-variable ::DemoHeaders::HeaderStyle -value header1 \
-	-command [list DemoHeaders::ChangeHeaderStyle yes black]] -side top -anchor w -pady 3
+	-command [list DemoHeaders::ChangeHeaderStyle header1 yes black]] -side top -anchor w -pady 3
     pack [$::radiobuttonCmd $f.style2 -text header2 \
 	-variable ::DemoHeaders::HeaderStyle -value header2 \
-	-command [list DemoHeaders::ChangeHeaderStyle yes blue]] -side top -anchor w -pady 3
+	-command [list DemoHeaders::ChangeHeaderStyle header2 yes blue]] -side top -anchor w -pady 3
 if 0 {
     pack [$::radiobuttonCmd $f.style3 -text header3 \
 	-variable ::DemoHeaders::HeaderStyle -value header3 \
-	-command [list DemoHeaders::ChangeHeaderStyle no]] -side top -anchor w -pady 3
+	-command [list DemoHeaders::ChangeHeaderStyle header3 no]] -side top -anchor w -pady 3
 }
     pack [$::radiobuttonCmd $f.style5 -text header4 \
 	-variable ::DemoHeaders::HeaderStyle -value header4 \
-	-command [list DemoHeaders::ChangeHeaderStyle no]] -side top -anchor w -pady 3
+	-command [list DemoHeaders::ChangeHeaderStyle header4 no]] -side top -anchor w -pady 3
     place $f -relx 0.5 -rely 0.3 -anchor n
-
+}
     #
     # Set binding scripts to handle the <Header> dynamic event
     #
@@ -212,6 +334,11 @@ if 0 {
 	DemoHeaders::ColumnDragReceive %H %C %b
     }
 
+    bindtags $T [list $T DemoHeaders TreeCtrl [winfo toplevel $T] all]
+    bind DemoHeaders <ButtonPress-1> {
+	DemoHeaders::ButtonPress1 %x %y
+    }
+
     return
 }
 
@@ -236,13 +363,14 @@ proc DemoHeaders::InitSortImages {color} {
 
 # Called when the user clicks one of the radiobuttons to select one of the
 # styles created by this demo.
-proc DemoHeaders::ChangeHeaderStyle {ownerDrawn {sortColor ""}} {
+proc DemoHeaders::ChangeHeaderStyle {style ownerDrawn {sortColor ""}} {
     variable HeaderStyle
     variable Sort
     set T [DemoList]
     if {$sortColor ne ""} {
 	InitSortImages $sortColor
     }
+    set HeaderStyle $style
     set S $HeaderStyle
     foreach H [$T header id all] {
 	$T header style set $H all $S
@@ -261,6 +389,8 @@ proc DemoHeaders::ChangeHeaderStyle {ownerDrawn {sortColor ""}} {
     if {$Sort(header) ne ""} {
 	ShowSortArrow $Sort(header) $Sort(column)
     }
+    $T item state set {state current} !current
+    $T item state set style$style current
     return
 }
 
@@ -394,6 +524,8 @@ proc DemoHeaders::ColumnDragReceive {H C b} {
     set text1 [$T header text header1]
     set text2 [$T header text header2]
 
+    set columnLeft [$T column id "first lock none"]
+
     foreach C $columns {
 	$T column move $C $b
     }
@@ -413,6 +545,35 @@ proc DemoHeaders::ColumnDragReceive {H C b} {
 	}
     }
 
+    if {[$T column compare $columnLeft != "first lock none"]} {
+	foreach I [$T item id "tag config"] {
+	    TransferItemStyle $T $I $columnLeft "first lock none"
+	}
+    }
+
     return
 }
 
+proc DemoHeaders::TransferItemStyle {T I Cfrom Cto} {
+puts "$Cfrom [$T column id $Cto]"
+    set S [$T item style set $I $Cfrom]
+    $T item style set $I $Cto $S
+    foreach E [$T item style elements $I $Cfrom] {
+	foreach info [$T item element configure $I $Cfrom $E] {
+	    lassign $info option x y z value
+	    $T item element configure $I $Cto $E $option $value
+	}
+    }
+    $T item style set $I $Cfrom ""
+    return
+}
+
+proc DemoHeaders::ButtonPress1 {x y} {
+    set T [DemoList]
+    $T identify $x $y -array id
+    if {$id(where) eq "header" && $id(elem) eq "header.check"} {
+	$T header state forcolumn $id(header) $id(column) ~CHECK
+	return -code break
+    }
+    return
+}
