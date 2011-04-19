@@ -5018,6 +5018,27 @@ DynamicOption_Free1(
 }
 
 int
+Tree_InitOptions(
+    TreeCtrl *tree,
+    int domain,
+    void *recordPtr,
+    Tk_OptionTable optionTable
+    )
+{
+    int result;
+
+    if (tree->configStateDomain != -1)
+	panic("Tree_InitOptions configStateDomain != -1");
+
+    tree->configStateDomain = domain;
+
+    result = Tk_InitOptions(tree->interp, recordPtr, optionTable, tree->tkwin);
+
+    tree->configStateDomain = -1;
+    return result;
+}
+
+int
 Tree_SetOptions(
     TreeCtrl *tree,
     int domain,

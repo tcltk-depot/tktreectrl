@@ -34,7 +34,7 @@ proc DemoHeaders {} {
 
     DemoHeaders::InitSortImages blue
     $T element create header.sort image -statedomain header \
-	-image {::DemoHeaders::arrow-down sortdown ::DemoHeaders::arrow-up sortup}
+	-image {::DemoHeaders::arrow-down down ::DemoHeaders::arrow-up up}
 
     #
     # Create a style for our custom headers,
@@ -52,7 +52,7 @@ proc DemoHeaders {} {
     $T style layout $S header.border -detach yes -indent no -iexpand xy
     $T style layout $S header.text -expand wens -padx 6 -pady 2 ; # $T style layout $S header.text -center x -expand ns -padx 2 -pady 2
     $T style layout $S header.sort -expand nws -padx {0 6} \
-	-visible {no {!sortdown !sortup}}
+	-visible {no {!down !up}}
 
     #
     # Create a style for our custom headers,
@@ -63,8 +63,8 @@ proc DemoHeaders {} {
 	-rx 9 -fill {
 	    #cee8f0 active
 	    #87c6da pressed
-	    #87c6da sortup
-	    #87c6da sortdown
+	    #87c6da up
+	    #87c6da down
 	    {light blue} {}
 	}
 
@@ -73,7 +73,7 @@ proc DemoHeaders {} {
     $T style layout $S header.rrect -detach yes -iexpand xy -padx {1 0} -pady 1
     $T style layout $S header.text -expand wens -padx 6 -pady 4 ; # $T style layout $S header.text -center x -expand ns -padx 2 -pady 4
     $T style layout $S header.sort -expand nws -padx {0 6} \
-	-visible {no {!sortdown !sortup}}
+	-visible {no {!down !up}}
 
 if 0 {
     #
@@ -129,7 +129,7 @@ if 0 {
     $T style layout $S header.rect1 -detach yes -iexpand xy
     $T style layout $S header.text -expand news -padx 6 -pady 2 -squeeze x
     $T style layout $S header.sort -expand nws -padx {0 6} \
-	-visible {no {!sortdown !sortup}}
+	-visible {no {!down !up}}
 
     #
     # Create a style for our custom headers,
@@ -150,8 +150,8 @@ if 0 {
     $T element create orange.box rect -statedomain header \
 	-fill {
 	    G_orange1 active
-	    G_orange1 sortup
-	    G_orange1 sortdown
+	    G_orange1 up
+	    G_orange1 down
 	    G_orange2 {}
 	}
 
@@ -161,7 +161,7 @@ if 0 {
     $T style layout $S orange.box -detach yes -iexpand xy
     $T style layout $S header.text -expand news -padx 6 -pady 4 -squeeze x
     $T style layout $S header.sort -expand nws -padx {0 6} \
-	-visible {no {!sortdown !sortup}}
+	-visible {no {!down !up}}
 
 
     #

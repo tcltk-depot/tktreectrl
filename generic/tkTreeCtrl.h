@@ -738,9 +738,10 @@ MODULE_SCOPE int TreeItem_Deleted(TreeCtrl *tree, TreeItem item);
 #define STATE_HEADER_BG		0x0001
 #define STATE_HEADER_FOCUS	0x0002
 #define STATE_HEADER_ACTIVE	0x0004
-#define STATE_HEADER_PRESSED	0x0008
-#define STATE_HEADER_SORT_UP	0x0010
-#define STATE_HEADER_SORT_DOWN	0x0020
+#define STATE_HEADER_NORMAL	0x0008
+#define STATE_HEADER_PRESSED	0x0010
+#define STATE_HEADER_SORT_UP	0x0020
+#define STATE_HEADER_SORT_DOWN	0x0040
 MODULE_SCOPE int TreeItem_GetState(TreeCtrl *tree, TreeItem item_);
 MODULE_SCOPE int TreeItemColumn_GetState(TreeCtrl *tree, TreeItemColumn itemColumn);
 

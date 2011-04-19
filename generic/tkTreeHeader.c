@@ -451,8 +451,8 @@ Column_Configure(
 
     for (error = 0; error <= 1; error++) {
 	if (error == 0) {
-	    if (Tk_SetOptions(tree->interp, (char *) column,
-			tree->headerColumnOptionTable, objc, objv, tree->tkwin,
+	    if (Tree_SetOptions(tree, STATE_DOMAIN_HEADER, column,
+			tree->headerColumnOptionTable, objc, objv,
 			&savedOptions, &mask) != TCL_OK) {
 		mask = 0;
 		continue;
@@ -592,14 +592,17 @@ Column_Configure(
     }
 
     /* Keep the STATE_HEADER_XXX flags in sync. */
+    /* FIXME: don't call TreeItemColumn_ChangeState twice here */
     if (state != column->state) {
 	int stateOff = 0, stateOn = 0;
 	switch (state) {
 	    case COLUMN_STATE_ACTIVE: stateOff = STATE_HEADER_ACTIVE; break;
+	    case COLUMN_STATE_NORMAL: stateOff = STATE_HEADER_NORMAL; break;
 	    case COLUMN_STATE_PRESSED: stateOff = STATE_HEADER_PRESSED; break;
 	}
 	switch (column->state) {
 	    case COLUMN_STATE_ACTIVE: stateOn = STATE_HEADER_ACTIVE; break;
+	    case COLUMN_STATE_NORMAL: stateOn = STATE_HEADER_NORMAL; break;
 	    case COLUMN_STATE_PRESSED: stateOn = STATE_HEADER_PRESSED; break;
 	}
 	TreeItemColumn_ChangeState(tree, header->item, column->itemColumn,
@@ -766,6 +769,37 @@ TreeHeader_ConsumeColumnOptionInfo(
 	tree->headerColumnOptionTable, objPtr,  tree->tkwin);
 }
 
+#if 1
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Column_MakeState --
+ *
+ *	Return a bit mask suitable for passing to the PerState_xxx
+ *	functions.
+ *
+ * Results:
+ *	State flags for the column's current state.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+Column_MakeState(
+    TreeHeader header,
+    TreeHeaderColumn column	/* Column record. */
+    )
+{
+    return TreeItem_GetState(header->tree, header->item) |
+	TreeItemColumn_GetState(header->tree, column->itemColumn);
+}
+
+#else
+
 /*
  *----------------------------------------------------------------------
  *
@@ -890,6 +924,8 @@ Column_MakeState(
     return state;
 }
 
+#endif /* 0 */
+
 /*
  *----------------------------------------------------------------------
  *
@@ -981,12 +1017,13 @@ Column_UpdateTextLayout(
 static void
 Column_GetArrowSize(
     TreeCtrl *tree,		/* Widget info. */
+    TreeHeader header,
     HeaderColumn *column,	/* Column info. */
     int *widthPtr,		/* Returned width. */
     int *heightPtr		/* Returned height. */
     )
 {
-    int state = Column_MakeState(column);
+    int state = Column_MakeState(header, column);
     int arrowWidth = -1, arrowHeight;
     Tk_Image image;
     Pixmap bitmap;
@@ -1077,6 +1114,7 @@ struct LayoutPart
 static void
 Column_DoLayout(
     TreeCtrl *tree,		/* Widget info. */
+    TreeHeader header,
     HeaderColumn *column,	/* Column info. */
     struct Layout *layout	/* Returned layout info. The width and
 				 * height fields must be initialized. */
@@ -1121,7 +1159,7 @@ Column_DoLayout(
     else
 #endif
     if (column->arrow != COLUMN_ARROW_NONE) {
-	Column_GetArrowSize(tree, column, &partArrow.width, &partArrow.height);
+	Column_GetArrowSize(tree, header, column, &partArrow.width, &partArrow.height);
 	partArrow.padX[PAD_TOP_LEFT] = column->arrowPadX[PAD_TOP_LEFT];
 	partArrow.padX[PAD_BOTTOM_RIGHT] = column->arrowPadX[PAD_BOTTOM_RIGHT];
 	partArrow.padY[PAD_TOP_LEFT] = column->arrowPadY[PAD_TOP_LEFT];
@@ -1438,7 +1476,7 @@ TreeHeaderColumn_NeededWidth(
     else
 #endif
     if (column->arrow != COLUMN_ARROW_NONE)
-	Column_GetArrowSize(tree, column, &arrowWidth, &arrowHeight);
+	Column_GetArrowSize(tree, header, column, &arrowWidth, &arrowHeight);
     if ((column->arrow != COLUMN_ARROW_NONE) && (arrowSide == SIDE_LEFT)) {
 	widthList[n] = arrowWidth;
 	padList[n] = arrowPadX[PAD_TOP_LEFT];
@@ -1552,7 +1590,7 @@ TreeHeaderColumn_NeededHeight(
     column->neededHeight = 0;
     if (column->arrow != COLUMN_ARROW_NONE) {
 	int arrowWidth, arrowHeight;
-	Column_GetArrowSize(tree, column, &arrowWidth, &arrowHeight);
+	Column_GetArrowSize(tree, header, column, &arrowWidth, &arrowHeight);
 	arrowHeight += column->arrowPadY[PAD_TOP_LEFT]
 	    + column->arrowPadY[PAD_BOTTOM_RIGHT];
 	column->neededHeight = MAX(column->neededHeight, arrowHeight);
@@ -1571,7 +1609,7 @@ TreeHeaderColumn_NeededHeight(
 	struct Layout layout;
 	layout.width = (fixedWidth >= 0) ? fixedWidth : TreeHeaderColumn_NeededWidth(header, column);
 	layout.height = -1;
-	Column_DoLayout(tree, column, &layout);
+	Column_DoLayout(tree, header, column, &layout);
 	if (column->textLayout != NULL) {
 	    int height;
 	    TextLayout_Size(column->textLayout, NULL, &height);
@@ -1710,7 +1748,7 @@ Column_DrawArrow(
     Tk_Image image = NULL;
     Pixmap bitmap;
     Tk_3DBorder border;
-    int state = Column_MakeState(column);
+    int state = Column_MakeState(header, column);
     int arrowPadTop = column->arrowPadY[PAD_TOP_LEFT];
     int arrowPadY = arrowPadTop + column->arrowPadY[PAD_BOTTOM_RIGHT];
     int arrowTop = y + (height - (layout.arrowHeight + arrowPadY)) / 2
@@ -1845,10 +1883,10 @@ Column_Draw(
 
     layout.width = width - indent;
     layout.height = height;
-    Column_DoLayout(tree, column, &layout);
+    Column_DoLayout(tree, header, column, &layout);
 
     border = PerStateBorder_ForState(tree, &column->border,
-	Column_MakeState(column), NULL);
+	Column_MakeState(header, column), NULL);
     if (border == NULL)
 	border = tree->border;
 
@@ -1901,7 +1939,7 @@ Column_Draw(
 	TreeRectangle trClip;
 
 	tc = PerStateColor_ForState(tree, &column->textColor,
-	    Column_MakeState(column), NULL);
+	    Column_MakeState(header, column), NULL);
 	if (tc == NULL || tc->color == NULL) {
 	    if (tree->useTheme && TreeTheme_GetColumnTextColor(tree, column->state, &textColor)
 		    != TCL_OK) {
@@ -2585,8 +2623,8 @@ TreeHeaderColumn_CreateWithItemColumn(
 
     column = (TreeHeaderColumn) ckalloc(sizeof(HeaderColumn));
     memset(column, '\0', sizeof(HeaderColumn));
-    if (Tk_InitOptions(tree->interp, (char *) column,
-	    tree->headerColumnOptionTable, tree->tkwin) != TCL_OK) {
+    if (Tree_InitOptions(tree, STATE_DOMAIN_HEADER, column,
+	    tree->headerColumnOptionTable) != TCL_OK) {
 	WFREE(column, HeaderColumn);
 	return NULL;
     }
@@ -4175,10 +4213,10 @@ TreeHeader_Init(
 	Tcl_DStringFree(&dString);
     }
 
-    PerStateCO_Init(columnSpecs, "-arrowbitmap", &pstBitmap, ColumnStateFromObj);
-    PerStateCO_Init(columnSpecs, "-arrowimage", &pstImage, ColumnStateFromObj);
-    PerStateCO_Init(columnSpecs, "-background", &pstBorder, ColumnStateFromObj);
-    PerStateCO_Init(columnSpecs, "-textcolor", &pstColor, ColumnStateFromObj);
+    PerStateCO_Init(columnSpecs, "-arrowbitmap", &pstBitmap, TreeStateFromObj);
+    PerStateCO_Init(columnSpecs, "-arrowimage", &pstImage, TreeStateFromObj);
+    PerStateCO_Init(columnSpecs, "-background", &pstBorder, TreeStateFromObj);
+    PerStateCO_Init(columnSpecs, "-textcolor", &pstColor, TreeStateFromObj);
 
     tree->headerOptionTable = Tk_CreateOptionTable(tree->interp, headerSpecs);
     tree->headerColumnOptionTable = Tk_CreateOptionTable(tree->interp, columnSpecs);

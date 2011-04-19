@@ -433,13 +433,14 @@ TreeObjCmd(
 
     domainPtr = &tree->stateDomain[STATE_DOMAIN_HEADER];
     domainPtr->name = "header";
-    domainPtr->stateNames[0]	= "bg";
+    domainPtr->stateNames[0]	= "background";
     domainPtr->stateNames[1]	= "focus";
     domainPtr->stateNames[2]	= "active";
-    domainPtr->stateNames[3]	= "pressed";
-    domainPtr->stateNames[4]	= "sortup";
-    domainPtr->stateNames[5]	= "sortdown";
-    domainPtr->staticCount = 6;
+    domainPtr->stateNames[3]	= "normal";
+    domainPtr->stateNames[4]	= "pressed";
+    domainPtr->stateNames[5]	= "up";
+    domainPtr->stateNames[6]	= "down";
+    domainPtr->staticCount = 7;
 
     tree->configStateDomain = -1;
 
