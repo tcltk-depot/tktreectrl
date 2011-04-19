@@ -545,7 +545,6 @@ proc DemoHeaders::ColumnDragReceive {H C b} {
 }
 
 proc DemoHeaders::TransferItemStyle {T I Cfrom Cto} {
-puts "$Cfrom [$T column id $Cto]"
     set S [$T item style set $I $Cfrom]
     $T item style set $I $Cto $S
     foreach E [$T item style elements $I $Cfrom] {

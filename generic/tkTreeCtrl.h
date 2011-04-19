@@ -901,6 +901,8 @@ MODULE_SCOPE int TreeStyle_ElementConfigure(TreeCtrl *tree, TreeItem item, TreeI
 MODULE_SCOPE void TreeStyle_ListElements(TreeCtrl *tree, TreeStyle style_);
 MODULE_SCOPE int TreeStyle_GetButtonY(TreeCtrl *tree, TreeStyle style_);
 MODULE_SCOPE TreeStyle TreeStyle_GetMaster(TreeCtrl *tree, TreeStyle style_);
+MODULE_SCOPE CONST char *TreeStyle_GetName(TreeCtrl *tree, TreeStyle style_);
+MODULE_SCOPE int TreeStyle_GetStateDomain(TreeCtrl *tree, TreeStyle style_);
 MODULE_SCOPE TreeElement TreeStyle_Identify(StyleDrawArgs *drawArgs, int x, int y);
 MODULE_SCOPE void TreeStyle_Identify2(StyleDrawArgs *drawArgs,
 	int x1, int y1, int x2, int y2, Tcl_Obj *listObj);
@@ -1449,6 +1451,8 @@ MODULE_SCOPE int BooleanFlagCO_Init(Tk_OptionSpec *optionTable, CONST char *opti
     int theFlag);
 MODULE_SCOPE int ItemButtonCO_Init(Tk_OptionSpec *optionTable, CONST char *optionName,
     int flag1, int flag2);
+MODULE_SCOPE void TreeStyleCO_Init(Tk_OptionSpec *optionTable, CONST char *optionName,
+    int domain);
 
 MODULE_SCOPE int Tree_GetIntForIndex(TreeCtrl *tree, Tcl_Obj *objPtr, int *indexPtr,
     int *endRelativePtr);

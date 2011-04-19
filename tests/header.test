@@ -137,6 +137,9 @@ test header-2.22 {header bbox: tree does show headers} -setup {
     .t configure -showheader 1
 } -body {
     .t header bbox 0 column0
+} -cleanup {
+    .t style delete s
+    .t element delete e
 } -result {2 2 484 6}
 
 test header-2.23 {header bbox: tail column not allowed} -body {
@@ -148,12 +151,16 @@ test header-2.30 {header bbox: no style} -body {
 } -returnCodes error -result {header 0 column 0 has no style}
 
 test header-2.31 {header bbox: unknown element} -setup {
+    .t style create s -statedomain header
+    .t element create e rect -statedomain header -width 482 -height 20
+    .t style elements s e
     .t header style set first column0 s
 } -body {
     .t header bbox first column0 foo
 } -returnCodes error -result {element "foo" doesn't exist}
 
 test header-2.32 {header bbox: element} -body {
+    .t column configure column0 -width ""
     .t header bbox first column0 e
 } -cleanup {
     .t header style set first column0 ""
@@ -649,7 +656,7 @@ test header-20.4 {unknown header config options are retrieved from the underlyin
 test header-21.1 {column create doesn't mess up header-columns} -setup {
     .t header delete all
     .t column delete all
-    .t style create stail
+    .t style create stail -statedomain header
     .t header style set first all stail
 } -body {
     .t header style set first
@@ -657,7 +664,7 @@ test header-21.1 {column create doesn't mess up header-columns} -setup {
 
 test header-21.2 {column create doesn't mess up header-columns} -setup {
     .t column create -tags column0
-    .t style create s0
+    .t style create s0 -statedomain header
     .t header style set first column0 s0
 } -body {
     .t header style set first
@@ -665,7 +672,7 @@ test header-21.2 {column create doesn't mess up header-columns} -setup {
 
 test header-21.3 {column create doesn't mess up header-columns} -setup {
     .t column create -tags columnL -lock left
-    .t style create sL
+    .t style create sL -statedomain header
     .t header style set first columnL sL
 } -body {
     .t header style set first
@@ -673,7 +680,7 @@ test header-21.3 {column create doesn't mess up header-columns} -setup {
 
 test header-21.4 {column create doesn't mess up header-columns} -setup {
     .t column create -tags columnR -lock right
-    .t style create sR
+    .t style create sR -statedomain header
     .t header style set first columnR sR
 } -body {
     .t header style set first

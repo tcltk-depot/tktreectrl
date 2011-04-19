@@ -5296,6 +5296,7 @@ StyleCO_Set(
     int flags
     )
 {
+    int domain = PTR2INT(clientData), domainS;
     TreeCtrl *tree = (TreeCtrl *) ((TkWindow *) tkwin)->instanceData;
     int objEmpty;
     TreeStyle *internalPtr, new;
@@ -5313,6 +5314,14 @@ StyleCO_Set(
     } else {
 	if (TreeStyle_FromObj(tree, *valuePtr, &new) != TCL_OK)
 	    return TCL_ERROR;
+	domainS = TreeStyle_GetStateDomain(tree, new);
+	if (domainS != domain) {
+	    FormatResult(interp,
+		"expected state domain \"%s\" but got \"%s\"",
+		tree->stateDomain[domain].name,
+		tree->stateDomain[domainS].name);
+	    return TCL_ERROR;
+	}
     }
 
     if (internalPtr != NULL) {
@@ -5358,6 +5367,45 @@ Tk_ObjCustomOption TreeCtrlCO_style =
     NULL,
     (ClientData) NULL
 };
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeStyleCO_Init --
+ *
+ *	Initializes a Tk_OptionSpec.clientData for a custom option.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TreeStyleCO_Init(
+    Tk_OptionSpec *optionTable,
+    CONST char *optionName,
+    int domain
+    )
+{
+    Tk_OptionSpec *specPtr;
+    Tk_ObjCustomOption *co;
+
+    specPtr = Tree_FindOptionSpec(optionTable, optionName);
+    if (specPtr->type != TK_OPTION_CUSTOM)
+	panic("TreeStyleCO_Init: %s is not TK_OPTION_CUSTOM", optionName);
+    if (specPtr->clientData != NULL)
+	return;
+
+    co = (Tk_ObjCustomOption *) ckalloc(sizeof(Tk_ObjCustomOption));
+    *co = TreeCtrlCO_style;
+    co->clientData = INT2PTR(domain);
+
+    specPtr->clientData = co;
+}
 
 /*
  *----------------------------------------------------------------------

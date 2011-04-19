@@ -5307,6 +5307,70 @@ Item_Configure(
 /*
  *----------------------------------------------------------------------
  *
+ * NoStyleMsg --
+ *
+ *	Utility to set the interpreter result with a message indicating
+ *	a Column has no assigned style.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Interpreter result is changed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+NoStyleMsg(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeItem item,		/* Item record. */
+    int columnIndex		/* 0-based index of the column that
+				 * has no style. */
+    )
+{
+    FormatResult(tree->interp,
+	    "%s %s%d column %s%d has no style",
+	    item->header ? "header" : "item",
+	    tree->itemPrefix, item->id,
+	    tree->columnPrefix,
+	    TreeColumn_GetID(Tree_FindColumn(tree, columnIndex)));
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * StateDomainErrMsg --
+ *
+ *	Utility to set the interpreter result with a message indicating
+ *	a Column has no assigned style.
+ *
+ * Results:
+ *	Interpreter result is changed.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+StateDomainErrMsg(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeItem item,		/* Item record. */
+    TreeStyle style		/* Style token. */
+    )
+{
+    FormatResult(tree->interp,
+	    "state domain conflict between %s \"%s%d\" and style \"%s\"",
+	    item->header ? "header" : "item",
+	    tree->itemPrefix, item->id,
+	    TreeStyle_GetName(tree, style));
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TreeItemCmd_Bbox --
  *
  *	This procedure is invoked to process the [item bbox] widget
@@ -5375,8 +5439,23 @@ TreeItemCmd_Bbox(
 
 	/* Single element in a column. */
 	} else {
+	    Column *column;
+	    TreeElement elem;
+
 	    objc -= 5;
 	    objv += 5;
+
+	    /* Validate the style + element here.  If a span has zero size
+	     * it won't be done. */
+	    column = Item_FindColumn(tree, item, TreeColumn_Index(treeColumn));
+	    if (column == NULL || column->style == NULL) {
+		NoStyleMsg(tree, item, TreeColumn_Index(treeColumn));
+		return TCL_ERROR;
+	    }
+	    if (TreeElement_FromObj(tree, objv[0], &elem) != TCL_OK)
+		return TCL_ERROR;
+	    if (TreeStyle_FindElement(tree, column->style, elem, NULL) != TCL_OK)
+		return TCL_ERROR;
 	}
 
 	count = TreeItem_GetRects(tree, item, treeColumn, objc, objv, &rect);
@@ -5677,39 +5756,6 @@ ItemCreateCmd(
 	Tcl_SetObjResult(interp, listObj);
 
     return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * NoStyleMsg --
- *
- *	Utility to set the interpreter result with a message indicating
- *	a Column has no assigned style.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Interpreter result is changed.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-NoStyleMsg(
-    TreeCtrl *tree,		/* Widget info. */
-    TreeItem item,		/* Item record. */
-    int columnIndex		/* 0-based index of the column that
-				 * has no style. */
-    )
-{
-    FormatResult(tree->interp,
-	    "%s %s%d column %s%d has no style",
-	    item->header ? "header" : "item",
-	    tree->itemPrefix, item->id,
-	    tree->columnPrefix,
-	    TreeColumn_GetID(Tree_FindColumn(tree, columnIndex)));
 }
 
 /*
@@ -6092,14 +6138,17 @@ TreeItemCmd_Style(
     )
 {
     Tcl_Interp *interp = tree->interp;
-    static CONST char *commandNames[] = { "elements", "map", "set", (char *) NULL };
-    enum { COMMAND_ELEMENTS, COMMAND_MAP, COMMAND_SET };
+    int domain = doHeaders ? STATE_DOMAIN_HEADER : STATE_DOMAIN_ITEM;
     int index;
     TreeItemList itemList;
     TreeItem item;
     int flags = IFO_NOT_NULL;
     int result = TCL_OK;
     int tailFlag = doHeaders ? 0 : CFO_NOT_TAIL;
+    static CONST char *commandNames[] = {
+	"elements", "map", "set", (char *) NULL
+    };
+    enum { COMMAND_ELEMENTS, COMMAND_MAP, COMMAND_SET };
 
     if (objc < 5) {
 	Tcl_WrongNumArgs(interp, 3, objv,
@@ -6180,6 +6229,11 @@ TreeItemCmd_Style(
 		break;
 	    }
 	    if (TreeStyle_FromObj(tree, objv[6], &style) != TCL_OK) {
+		result = TCL_ERROR;
+		goto doneMAP;
+	    }
+	    if (TreeStyle_GetStateDomain(tree, style) != domain) {
+		StateDomainErrMsg(tree, item, style);
 		result = TCL_ERROR;
 		goto doneMAP;
 	    }
@@ -6290,6 +6344,11 @@ doneMAP:
 		} else {
 		    if (TreeStyle_FromObj(tree, objv[i + 1], &cs[count].style)
 			    != TCL_OK) {
+			result = TCL_ERROR;
+			goto doneSET;
+		    }
+		    if (TreeStyle_GetStateDomain(tree, cs[count].style) != domain) {
+			StateDomainErrMsg(tree, item, cs[count].style);
 			result = TCL_ERROR;
 			goto doneSET;
 		    }

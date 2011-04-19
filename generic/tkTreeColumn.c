@@ -443,7 +443,7 @@ Tk_ObjCustomOption TreeCtrlCO_column =
     ColumnCO_Get,
     ColumnCO_Restore,
     NULL,
-    (ClientData) (CFO_NOT_NULL)
+    (ClientData) INT2PTR(CFO_NOT_NULL)
 };
 
 /*
@@ -459,7 +459,7 @@ Tk_ObjCustomOption TreeCtrlCO_column_NOT_TAIL =
     ColumnCO_Get,
     ColumnCO_Restore,
     NULL,
-    (ClientData) (CFO_NOT_NULL | CFO_NOT_TAIL)
+    (ClientData) INT2PTR(CFO_NOT_NULL | CFO_NOT_TAIL)
 };
 
 static Tk_OptionSpec dragSpecs[] = {
@@ -4233,6 +4233,7 @@ TreeColumn_InitInterp(
     )
 {
     StringTableCO_Init(columnSpecs, "-itemjustify", justifyStrings);
+    TreeStyleCO_Init(columnSpecs, "-itemstyle", STATE_DOMAIN_ITEM);
 
     return TCL_OK;
 }

@@ -1324,6 +1324,13 @@ TreeConfigure(
 				ckfree((char *) tree->defaultStyle.styles);
 				break;
 			    }
+			    if (TreeStyle_GetStateDomain(tree, style) != STATE_DOMAIN_ITEM) {
+				FormatResult(interp,
+				    "expected state domain \"item\" but got \"%s\"",
+				    tree->stateDomain[TreeStyle_GetStateDomain(tree, style)].name);
+				ckfree((char *) tree->defaultStyle.styles);
+				break;
+			    }
 			}
 			tree->defaultStyle.styles[i] = style;
 		    }

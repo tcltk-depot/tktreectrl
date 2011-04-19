@@ -4271,6 +4271,60 @@ TreeStyle_GetMaster(
 /*
  *----------------------------------------------------------------------
  *
+ * TreeStyle_GetName --
+ *
+ *	Return the name of a style.
+ *
+ * Results:
+ *	String name.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+CONST char *
+TreeStyle_GetName(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeStyle style_		/* Master or instance style token. */
+    )
+{
+    MStyle *style = (MStyle *) style_;
+    MStyle *master = (style->master != NULL) ? style->master : style;
+    return master->name;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeStyle_GetStateDomain --
+ *
+ *	Return the state domain for a style.
+ *
+ * Results:
+ *	STATE_DOMAIN_XXX index.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TreeStyle_GetStateDomain(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeStyle style_		/* Master or instance style token. */
+    )
+{
+    MStyle *style = (MStyle *) style_;
+    MStyle *master = (style->master != NULL) ? style->master : style;
+    return master->stateDomain;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Style_GetImageOrText --
  *
  *	Return the value of a configuration option for an element.
@@ -6316,6 +6370,13 @@ TreeStyleCmd(
 		    elemList = (TreeElement *) ckalloc(sizeof(TreeElement_) * listObjc);
 		for (i = 0; i < listObjc; i++) {
 		    if (Element_FromObj(tree, listObjv[i], &elem) != TCL_OK) {
+			ckfree((char *) elemList);
+			return TCL_ERROR;
+		    }
+		    if (elem->stateDomain != style->stateDomain) {
+			FormatResult(interp,
+			    "state domain conflict between style \"%s\" and element \"%s\"",
+			    style->name, elem->name);
 			ckfree((char *) elemList);
 			return TCL_ERROR;
 		    }
