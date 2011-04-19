@@ -467,7 +467,7 @@ static Tk_OptionSpec dragSpecs[] = {
      "0", -1, Tk_Offset(TreeCtrl, columnDrag.enable),
      0, (ClientData) NULL, 0},
     {TK_OPTION_INT, "-imagealpha", (char *) NULL, (char *) NULL,
-     "128", -1, Tk_Offset(TreeCtrl, columnDrag.alpha),
+     "200", -1, Tk_Offset(TreeCtrl, columnDrag.alpha),
      0, (ClientData) NULL, 0},
     {TK_OPTION_COLOR, "-imagecolor", (char *) NULL, (char *) NULL,
      "gray75", -1, Tk_Offset(TreeCtrl, columnDrag.color),
