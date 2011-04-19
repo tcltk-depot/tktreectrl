@@ -3330,6 +3330,7 @@ Element_CreateAndConfig(
     STATIC_ALLOC(objV, Tcl_Obj *, objc);
 
     /* Filter out -statedomain and its value. */
+    /* FIXME: there is no way to query this. */
     for (i = 0; i < objc; i += 2) {
 	int length;
 	CONST char *s = Tcl_GetStringFromObj(objv[i], &length);
@@ -3342,6 +3343,11 @@ Element_CreateAndConfig(
 	    s = Tcl_GetStringFromObj(objv[i + 1], &length);
 	    if (strncmp(s, "header", length) == 0)
 		domain = STATE_DOMAIN_HEADER;
+	    else if (strncmp(s, "item", length) != 0) {
+		FormatResult(tree->interp, "unknown state domain \"%s\"", s);
+		STATIC_FREE(objV, Tcl_Obj *, objc);
+		return NULL;
+	    }
 	} else {
 	    objV[objC++] = objv[i];
 	    if (i + 1 < objc)
@@ -5503,6 +5509,7 @@ Style_CreateAndConfig(
     STATIC_ALLOC(objV, Tcl_Obj *, objc);
 
     /* Filter out -statedomain and its value. */
+    /* FIXME: there is no way to query this. */
     for (i = 0; i < objc; i += 2) {
 	int length;
 	CONST char *s = Tcl_GetStringFromObj(objv[i], &length);
@@ -5515,6 +5522,11 @@ Style_CreateAndConfig(
 	    s = Tcl_GetStringFromObj(objv[i + 1], &length);
 	    if (strncmp(s, "header", length) == 0)
 		domain = STATE_DOMAIN_HEADER;
+	    else if (strncmp(s, "item", length) != 0) {
+		FormatResult(tree->interp, "unknown state domain \"%s\"", s);
+		STATIC_FREE(objV, Tcl_Obj *, objc);
+		return NULL;
+	    }
 	} else {
 	    objV[objC++] = objv[i];
 	    if (i + 1 < objc)
