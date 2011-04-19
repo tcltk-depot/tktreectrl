@@ -1,4 +1,4 @@
-/* 
+/*
  * tkTreeElem.c --
  *
  *	This module implements elements for treectrl widgets.
@@ -676,7 +676,7 @@ static int WorldChangedProcBitmap(TreeElementArgs *args)
 
     if ((flagS | flagM) & (
 #ifdef DEPRECATED
-	    BITMAP_CONF_DRAW | 
+	    BITMAP_CONF_DRAW |
 #endif
 	    BITMAP_CONF_FG | BITMAP_CONF_BG))
 	mask |= CS_DISPLAY;
@@ -2666,7 +2666,7 @@ static void TextUpdateStringRep(TreeElementArgs *args)
     if (varNameObj != NULL) {
 	Tcl_Obj *valueObj = Tcl_ObjGetVar2(tree->interp, varNameObj, NULL,
 		TCL_GLOBAL_ONLY);
-	
+
 	if (valueObj == NULL) {
 	    /* not possible I think */
 	} else {
@@ -2688,15 +2688,15 @@ static void TextUpdateStringRep(TreeElementArgs *args)
 
     dataObj = etd ? etd->dataObj : NULL;
     if ((dataObj == NULL) && (etdM != NULL))
-	dataObj = etdM->dataObj; 
+	dataObj = etdM->dataObj;
 
     dataType = etd ? etd->dataType : TDT_NULL;
     if ((dataType == TDT_NULL) && (etdM != NULL))
-	dataType = etdM->dataType; 
+	dataType = etdM->dataType;
 
     formatObj = etd ? etd->formatObj : NULL;
     if ((formatObj == NULL) && (etdM != NULL))
-	formatObj = etdM->formatObj; 
+	formatObj = etdM->formatObj;
 
     /* Only create a string rep if elemX (not masterX) has dataObj,
        dataType or formatObj. */
@@ -3224,7 +3224,7 @@ static void DisplayProcText(TreeElementArgs *args)
     int bytesThatFit, pixelsForText;
     char *ellipsis = "...";
     TkRegion clipRgn = NULL;
-    ElementTextLayout2 *etl2; 
+    ElementTextLayout2 *etl2;
 #ifdef TEXT_STYLE
     ElementTextStyle *ets, *etsM = NULL;
     int underline = TEXT_UNDERLINE_EMPTYVAL;
@@ -3386,7 +3386,7 @@ static void DisplayProcText(TreeElementArgs *args)
 	    CONST char *fstBytePtr = Tcl_UtfAtIndex(buf, underline);
 	    CONST char *sndBytePtr = Tcl_UtfNext(fstBytePtr);
 	    Tk_UnderlineChars(tree->display, args->display.drawable, gc,
-		    tkfont, buf, x, y + fm.ascent, 
+		    tkfont, buf, x, y + fm.ascent,
 		    (int) (fstBytePtr - buf), (int) (sndBytePtr - buf));
 	}
 #endif
@@ -3400,7 +3400,7 @@ static void DisplayProcText(TreeElementArgs *args)
 	    CONST char *fstBytePtr = Tcl_UtfAtIndex(text, underline);
 	    CONST char *sndBytePtr = Tcl_UtfNext(fstBytePtr);
 	    Tk_UnderlineChars(tree->display, args->display.drawable, gc,
-		    tkfont, text, x, y + fm.ascent, 
+		    tkfont, text, x, y + fm.ascent,
 		    (int) (fstBytePtr - text), (int) (sndBytePtr - text));
 	}
 #endif
@@ -3509,7 +3509,7 @@ static void HeightProcText(TreeElementArgs *args)
     ElementTextLayout2 *etl2;
 
     etl2 = TextRedoLayoutIfNeeded("HeightProcText", args, args->height.fixedWidth);
-   
+
     if (etl2 != NULL && etl2->layout != NULL) {
 	TextLayout_Size(etl2->layout, NULL, &height);
     } else {
@@ -4135,7 +4135,7 @@ static void DisplayProcWindow(TreeElementArgs *args)
 	    || (x >= maxX) || (y >= maxY)) {
 hideIt:
 	if (tree->tkwin == Tk_Parent(elemX->tkwin)) {
-	    Tk_UnmapWindow(elemX->tkwin); 
+	    Tk_UnmapWindow(elemX->tkwin);
 	} else {
 	    Tk_UnmaintainGeometry(elemX->tkwin, tree->tkwin);
 	}
@@ -4324,7 +4324,7 @@ static void OnScreenProcWindow(TreeElementArgs *args)
 
     if (!args->screen.visible && (elemX->tkwin != NULL)) {
 	if (tree->tkwin == Tk_Parent(elemX->tkwin)) {
-	    Tk_UnmapWindow(elemX->tkwin); 
+	    Tk_UnmapWindow(elemX->tkwin);
 	} else {
 	    Tk_UnmaintainGeometry(elemX->tkwin, tree->tkwin);
 	}
@@ -4554,7 +4554,7 @@ int TreeElement_Init(Tcl_Interp *interp)
     PerStateCO_Init(treeElemTypeRect.optionSpecs, "-outline",
 	&pstColor, TreeStateFromObj);
 
-    /* 
+    /*
      * text
      */
     /* 3 options in the same structure. */

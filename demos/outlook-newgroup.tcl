@@ -451,7 +451,7 @@ proc DemoOutlookNewgroup_FixItemStyles {T} {
 
     set columns1 [$T column id "visible tag clip||arrow||watch !tail"]
     set columns2 [$T column id "visible tag !(clip||arrow||watch) !tail"]
-   
+
     foreach C [$T column id "visible !tail"] {
 
 	# The clip/arrow/watch columns only get a style when they are

@@ -1,4 +1,4 @@
-/* 
+/*
  * tkTreeMarquee.c --
  *
  *	This module implements the selection rectangle for treectrl widgets.

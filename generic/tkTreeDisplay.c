@@ -1,4 +1,4 @@
-/* 
+/*
  * tkTreeDisplay.c --
  *
  *	This module implements treectrl widget's main display code.
@@ -5153,7 +5153,7 @@ TreeRect_Intersect(
     if (r2->x >= r1->x + r1->width) return 0;
     if (r1->y >= r2->y + r2->height) return 0;
     if (r2->y >= r1->y + r1->height) return 0;
-    
+
     result.x = MAX(r1->x, r2->x);
     result.width = MIN(r1->x + r1->width, r2->x + r2->width) - result.x;
     result.y = MAX(r1->y, r2->y);
@@ -8936,7 +8936,7 @@ TreeDisplay_FreeColumnDInfo(
     TreeColumnDInfo dColumn = TreeColumn_GetDInfo(column);
 
     if (dColumn != NULL)
-	ckfree((char *) dColumn);    
+	ckfree((char *) dColumn);
 }
 
 /*
@@ -8969,7 +8969,7 @@ Tree_ShouldDisplayLockedColumns(
     Tree_UpdateItemIndex(tree); /* update tree->itemWrapCount */
     if (tree->itemWrapCount > 0)
 	return 0;
-    
+
     return 1;
 }
 
@@ -9117,7 +9117,7 @@ Tree_InvalidateRegion(
     if (!rect.width || !rect.height)
 	return;
 
-    if (Tree_AreaBbox(tree, TREE_AREA_HEADER, &rect) && 
+    if (Tree_AreaBbox(tree, TREE_AREA_HEADER, &rect) &&
 	    TkRectInRegion(region, TreeRect_Left(rect), TreeRect_Top(rect),
 		TreeRect_Width(rect), TreeRect_Height(rect))
 		!= RectangleOut) {

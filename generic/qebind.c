@@ -1,4 +1,4 @@
-/* 
+/*
  * qebind.c --
  *
  *	This module implements quasi-events.
@@ -108,7 +108,7 @@ typedef struct ObjectTableKey {
 	int detail; /* Misc. other information, or 0 for none */
 	ClientData object; /* Object info */
 } ObjectTableKey;
- 
+
 typedef struct Detail {
 	Tk_Uid name; /* Name of detail */
 	int code; /* Detail code */
@@ -1186,7 +1186,7 @@ static void BindEvent(BindingTable *bindPtr, QE_Event *eventPtr, int wantDetail,
 	/* Nothing to do. No need to call Tcl_DStringFree(&scripts) */
 	if (Tcl_DStringLength(&scripts) == 0)
 		return;
- 
+
 	/*
 	 * As in Tk bindings, we expect that bindings may be invoked
 	 * in the middle of Tcl commands. So we preserve the current

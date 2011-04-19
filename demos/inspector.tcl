@@ -102,7 +102,7 @@ grid [label $f.label -text "Header columns" -bg {light blue}] -row 0 -column 0 -
     $T style layout $S imgCheck -expand news
 
     ###
-    
+
     pack $w.splitterH -expand yes -fill both
 
     set Priv(win) $w
@@ -111,7 +111,7 @@ grid [label $f.label -text "Header columns" -bg {light blue}] -row 0 -column 0 -
     set Priv(tree3) $w.splitterV.f2.t
     set Priv(label2) $w.splitterV.f1.label
     set Priv(label3) $w.splitterV.f2.label
-    
+
     return
 }
 

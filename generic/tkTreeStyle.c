@@ -1,4 +1,4 @@
-/* 
+/*
  * tkTreeStyle.c --
  *
  *	This module implements styles for treectrl widgets.

@@ -1,4 +1,4 @@
-/* 
+/*
  * tkTreeTheme.c --
  *
  *	This module implements visual themes.

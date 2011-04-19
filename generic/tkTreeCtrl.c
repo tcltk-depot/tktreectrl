@@ -1,4 +1,4 @@
-/* 
+/*
  * tkTreeCtrl.c --
  *
  *	This module implements treectrl widgets for the Tk toolkit.
@@ -67,7 +67,7 @@ static CONST char *orientStringTable[] = {
 
 static Tk_OptionSpec optionSpecs[] = {
     {TK_OPTION_BORDER, "-background", "background", "Background",
-     "white", -1, Tk_Offset(TreeCtrl, border), 0, 
+     "white", -1, Tk_Offset(TreeCtrl, border), 0,
      (ClientData) "white", TREE_CONF_REDISPLAY},
     {TK_OPTION_STRING, "-backgroundimage", "backgroundImage", "BackgroundImage",
       (char *) NULL, -1, Tk_Offset(TreeCtrl, backgroundImageString),
@@ -171,7 +171,7 @@ static Tk_OptionSpec optionSpecs[] = {
      "200", Tk_Offset(TreeCtrl, heightObj), Tk_Offset(TreeCtrl, height),
      0, (ClientData) NULL, TREE_CONF_RELAYOUT},
     {TK_OPTION_COLOR, "-highlightbackground", "highlightBackground",
-     "HighlightBackground", DEF_LISTBOX_HIGHLIGHT_BG, -1, 
+     "HighlightBackground", DEF_LISTBOX_HIGHLIGHT_BG, -1,
      Tk_Offset(TreeCtrl, highlightBgColorPtr),
      0, (ClientData) NULL, TREE_CONF_REDISPLAY},
     {TK_OPTION_COLOR, "-highlightcolor", "highlightColor", "HighlightColor",
@@ -400,7 +400,7 @@ TreeObjCmd(
 	return TCL_ERROR;
     }
 
-    tkwin = Tk_CreateWindowFromPath(interp, Tk_MainWindow(interp), 
+    tkwin = Tk_CreateWindowFromPath(interp, Tk_MainWindow(interp),
 	    Tcl_GetStringFromObj(objv[1], NULL), (char *) NULL);
     if (tkwin == NULL) {
 	return TCL_ERROR;
@@ -1834,7 +1834,7 @@ TreeDestroy(
 
     Tcl_DeleteHashTable(&tree->selection);
 
-    /* Must be done after all gradient users are freed */ 
+    /* Must be done after all gradient users are freed */
     TreeGradient_Free(tree);
 
 #ifdef DEPRECATED
@@ -3757,7 +3757,7 @@ TreeDebugCmd(
  *--------------------------------------------------------------
  */
 
-void 
+void
 Tree_PreserveItems(
     TreeCtrl *tree
     )
@@ -4399,7 +4399,7 @@ LoupeCmd(
  *
  *	This procedure is called when the system theme changes on platforms
  *	that support theming. The worldChangedProc of all treectrl widgets
- *	is called to relayout and redisplay the widgets. 
+ *	is called to relayout and redisplay the widgets.
  *
  *	Taken from tkFont.c.
  *
@@ -4438,7 +4438,7 @@ RecomputeWidgets(
  *
  *	This procedure is called when the system theme changes on platforms
  *	that support theming. The worldChangedProc of all treectrl widgets
- *	is called to relayout and redisplay the widgets. 
+ *	is called to relayout and redisplay the widgets.
  *
  * Results:
  *	None.

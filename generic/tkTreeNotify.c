@@ -1,4 +1,4 @@
-/* 
+/*
  * tkTreeNotify.c --
  *
  *	This module implements "qebind.c" events for treectrl widgets.

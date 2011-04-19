@@ -339,7 +339,7 @@ proc BigListNewWindow {T I} {
 	    set f $w
 	    set w [lindex [winfo children $f] 0]
 	}
-	
+
 	if {$BigList(noise)} { dbwin "reuse window $w" }
 
     # No unused windows exist. Create a new one.

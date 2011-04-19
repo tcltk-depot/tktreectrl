@@ -1,4 +1,4 @@
-/* 
+/*
  * tkTreeElem.h --
  *
  *	This module is the header for elements in treectrl widgets.

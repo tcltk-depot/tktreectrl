@@ -42,7 +42,7 @@ proc DemoColumnLock {} {
     $T style elements label1 {label1.bg label1.text}
     $T style layout label1 label1.bg -detach yes -iexpand xy
     $T style layout label1 label1.text -expand wns -padx 2
-    
+
     for {set i 1} {$i <= 10} {incr i} {
 	set I [$T item create -tags R$i -parent root]
 	$T item style set $I C0 label1
@@ -56,7 +56,7 @@ proc DemoColumnLock {} {
     $T style elements label2 {label2.bd label2.text}
     $T style layout label2 label2.bd -detach yes -iexpand xy
     $T style layout label2 label2.text -expand news -padx 2 -pady 2
-    
+
     for {set i 11} {$i <= 20} {incr i} {
 	set I [$T item create -tags R$i -parent root]
 	$T item style set $I C0 label2
@@ -69,7 +69,7 @@ proc DemoColumnLock {} {
     $T style elements label3 {label3.div label3.text}
     $T style layout label3 label3.div -detach yes -expand n -iexpand x
     $T style layout label3 label3.text -expand ws -padx 2 -pady 2
-    
+
     for {set i 21} {$i <= 30} {incr i} {
 	set I [$T item create -tags R$i -parent root]
 	$T item style set $I C0 label3
@@ -84,7 +84,7 @@ proc DemoColumnLock {} {
     $T style layout label4 label4.rect -detach yes -iexpand xy
     $T style layout label4 label4.text -expand we -padx 2 -pady 2
     $T style layout label4 label4.w -iexpand x -padx 2 -pady {0 2}
-    
+
     for {set i 31} {$i <= 40} {incr i} {
 	set I [$T item create -tags R$i -parent root]
 	$T item style set $I C0 label4

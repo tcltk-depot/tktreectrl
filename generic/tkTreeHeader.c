@@ -2197,7 +2197,7 @@ TreeHeaderColumn_Draw(
     int x = drawArgs->x, y = drawArgs->y,
 	width = drawArgs->width, height = drawArgs->height;
     int isDragColumn = 0, isHiddenTail;
-    
+
     if (header->columnDrag.draw == TRUE && tree->columnDrag.column != NULL) {
 	column1min = tree->columnDrag.column;
 	column1max = GetFollowingColumn(column1min, tree->columnDrag.span, NULL);

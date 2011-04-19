@@ -1,4 +1,4 @@
-/* 
+/*
  * tkTreeDrag.c --
  *
  *	This module implements outline dragging for treectrl widgets.
@@ -947,7 +947,7 @@ TreeDragImageCmd(
 		    objc -= 5;
 		    objv += 5;
 		}
-		 
+
 		count = TreeItem_GetRects(tree, item, treeColumn, objc, objv,
 			rects);
 		if (count == -1) {

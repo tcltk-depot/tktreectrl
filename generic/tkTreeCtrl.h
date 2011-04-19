@@ -1,4 +1,4 @@
-/* 
+/*
  * tkTreeCtrl.h --
  *
  *	This module is the header for treectrl widgets for the Tk toolkit.
@@ -985,7 +985,7 @@ MODULE_SCOPE TreeColumn TreeColumnForEach_Next(ColumnForEach *iter);
     for (column = TreeColumnForEach_Start(columns, column2s, iter); \
 	 column != NULL; \
 	 column = TreeColumnForEach_Next(iter))
-    
+
 MODULE_SCOPE Tcl_Obj *TreeColumn_ToObj(TreeCtrl *tree, TreeColumn column_);
 MODULE_SCOPE int TreeColumnCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]);
 MODULE_SCOPE int TreeColumn_GetID(TreeColumn column_);
@@ -1321,7 +1321,7 @@ MODULE_SCOPE int Tree_GetFlagsFromString(TreeCtrl *tree, const char *string,
     int length, const char *typeStr, const CharFlag flags[], int *flagsPtr);
 MODULE_SCOPE int Tree_GetFlagsFromObj(TreeCtrl *tree, Tcl_Obj *obj,
     const char *typeStr, const CharFlag flags[], int *flagsPtr);
-    
+
 #ifdef ALLOC_HAX
 MODULE_SCOPE ClientData TreeAlloc_Init(void);
 MODULE_SCOPE void TreeAlloc_Finalize(ClientData data);
@@ -1410,7 +1410,7 @@ MODULE_SCOPE int TagExpr_Eval(TagExpr *expr, TagInfo *tags);
 MODULE_SCOPE void TagExpr_Free(TagExpr *expr);
 
 MODULE_SCOPE Tk_OptionSpec *Tree_FindOptionSpec(Tk_OptionSpec *optionTable, CONST char *optionName);
-    
+
 MODULE_SCOPE Tk_ObjCustomOption *PerStateCO_Alloc(CONST char *optionName,
     PerStateType *typePtr, StateFromObjProc proc);
 MODULE_SCOPE int PerStateCO_Init(Tk_OptionSpec *optionTable, CONST char *optionName,
@@ -1494,7 +1494,7 @@ typedef struct GradientCoord GradientCoord;
  * Records for gradient fills.
  * We need a separate GradientStopArray to simplify option parsing.
  */
- 
+
 typedef struct GradientStop {
     double offset;
     XColor *color;

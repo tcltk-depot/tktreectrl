@@ -1,4 +1,4 @@
-/* 
+/*
  * tkMacOSXTree.c --
  *
  *	Platform-specific parts of TkTreeCtrl for Mac OSX (Cocoa API).
@@ -1071,7 +1071,7 @@ TreeTheme_DrawHeaderArrow(
     int up,			/* TRUE if up arrow, FALSE otherwise. */
     int x, int y,		/* Bounds of arrow.  Width and */
     int width, int height	/* height are the same as that returned */
-				/* by TreeTheme_GetArrowSize(). */ 
+				/* by TreeTheme_GetArrowSize(). */
     )
 {
     return TCL_ERROR;
@@ -1602,7 +1602,7 @@ TreeTheme_SetOptionDefault(
 #endif
 }
 
-int 
+int
 TreeThemeCmd(
     TreeCtrl *tree,		/* Widget info. */
     int objc,			/* Number of arguments. */
@@ -1669,7 +1669,7 @@ TreeMacOSX_GetContext(
 	CGContextSaveGState(dc->context);
 	CGContextConcatCTM(dc->context, t);
     }
-    
+
     return dc->context;
 }
 
@@ -1715,7 +1715,7 @@ TreeMacOSX_GetContext(
 	    CGContextConcatCTM(dc->context, t);
 	}
     }
-    
+
     return dc->context;
 }
 
@@ -1812,20 +1812,20 @@ ShadeEvaluate(
     opacity2 = data->opacity[iStop2];
     offset1 = data->offset[iStop1];
     offset2 = data->offset[iStop2];
-    /* Interpolate between the two stops. 
-     * "If two gradient stops have the same offset value, 
-     * then the latter gradient stop controls the color value at the 
+    /* Interpolate between the two stops.
+     * "If two gradient stops have the same offset value,
+     * then the latter gradient stop controls the color value at the
      * overlap point."
      */
     if (fabs(offset2 - offset1) < 1e-6) {
         *out++ = data->red[iStop2];
         *out++ = data->green[iStop2];
-        *out++ = data->blue[iStop2]; 
+        *out++ = data->blue[iStop2];
         *out++ = opacity2;
     } else {
     	int range, increment;
     	float factor = (par - offset1)/(offset2 - offset1);
-   
+
 	range = (data->red[iStop2] - data->red[iStop1]);
 	increment = (int)(range * factor);
 	*out++ = CLAMP(data->red[iStop1] + increment,0,USHRT_MAX)/((float)USHRT_MAX);
@@ -1866,7 +1866,7 @@ ShadeEvaluate(
 
     /* For a repeating pattern, clamp *in to 0-1 */
     par = par - floor(par);
-    
+
     /* Find the two stops for this point. Tricky! */
     while ((i < nstops) && (data->offset[i] < par)) {
         i++;
@@ -1884,15 +1884,15 @@ ShadeEvaluate(
     opacity2 = data->opacity[iStop2];
     offset1 = data->offset[iStop1];
     offset2 = data->offset[iStop2];
-    /* Interpolate between the two stops. 
-     * "If two gradient stops have the same offset value, 
-     * then the latter gradient stop controls the color value at the 
+    /* Interpolate between the two stops.
+     * "If two gradient stops have the same offset value,
+     * then the latter gradient stop controls the color value at the
      * overlap point."
      */
     if (fabs(offset2 - offset1) < 1e-6) {
         *out++ = data->red[iStop2];
         *out++ = data->green[iStop2];
-        *out++ = data->blue[iStop2]; 
+        *out++ = data->blue[iStop2];
         *out++ = opacity2;
     } else {
         f1 = (offset2 - par)/(offset2 - offset1);
@@ -1935,24 +1935,24 @@ ShadeEvaluate(
         stop1 = *(stopPtrPtr - 1);
         stop2 = *stopPtrPtr;
     }
-    /* Interpolate between the two stops. 
-     * "If two gradient stops have the same offset value, 
-     * then the latter gradient stop controls the color value at the 
+    /* Interpolate between the two stops.
+     * "If two gradient stops have the same offset value,
+     * then the latter gradient stop controls the color value at the
      * overlap point."
      */
     if (fabs(stop2->offset - stop1->offset) < 1e-6) {
         *out++ = RedFloatFromXColorPtr(stop2->color);
         *out++ = GreenFloatFromXColorPtr(stop2->color);
-        *out++ = BlueFloatFromXColorPtr(stop2->color); 
+        *out++ = BlueFloatFromXColorPtr(stop2->color);
         *out++ = stop2->opacity;
     } else {
         f1 = (stop2->offset - par)/(stop2->offset - stop1->offset);
         f2 = (par - stop1->offset)/(stop2->offset - stop1->offset);
-        *out++ = f1 * RedFloatFromXColorPtr(stop1->color) + 
+        *out++ = f1 * RedFloatFromXColorPtr(stop1->color) +
                 f2 * RedFloatFromXColorPtr(stop2->color);
-        *out++ = f1 * GreenFloatFromXColorPtr(stop1->color) + 
+        *out++ = f1 * GreenFloatFromXColorPtr(stop1->color) +
                 f2 * GreenFloatFromXColorPtr(stop2->color);
-        *out++ = f1 * BlueFloatFromXColorPtr(stop1->color) + 
+        *out++ = f1 * BlueFloatFromXColorPtr(stop1->color) +
                 f2 * BlueFloatFromXColorPtr(stop2->color);
         *out++ = f1 * stop1->opacity + f2 * stop2->opacity;
     }
@@ -2043,7 +2043,7 @@ MakeLinearGradientShading(
 	end.x = start.x + dx * input_value_range[1];
 	start.x += dx * input_value_range[0];
     }
-    
+
     callbacks.version = 0;
     callbacks.evaluate = ShadeEvaluate;
     callbacks.releaseInfo = ShadeRelease;
@@ -2241,7 +2241,7 @@ AddArcToPath(
 	CGPathAddArc(p, NULL, x, y, radius, radians(startAngle), radians(endAngle), 0);
     }
 }
-    
+
 static CGMutablePathRef
 MakeRoundRectPath_Fill(
     TreeRectangle tr,		/* Where to draw. */
@@ -2696,7 +2696,7 @@ TreeGradient_DrawRoundRect(
     shading = MakeLinearGradientShading(context, gradient, trBrush, tr, &ms);
     if (shading) {
 	CGMutablePathRef p;
-    
+
 	CGContextBeginPath(context);
 
 	p = MakeRoundRectPath_OutlineFilled(tr, outlineWidth, rx, ry, open);

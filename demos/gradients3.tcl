@@ -106,7 +106,7 @@ proc DemoGradients3 {} {
     $T item text $I C0 "Eyecandy"
 
     #####
-    
+
     set height 30
     set steps [expr {($height - 5)/2}]
     $T gradient create G_mouseover       -steps $steps -stops {{0.0 white} {1.0 #ebf3fd}} -orient vertical

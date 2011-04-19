@@ -396,7 +396,7 @@ proc StyleEditor::SelectProperty {select deselect} {
     set style [Info selectedStyle]
     set element [Info selectedElement]
 
-    if {[llength $deselect] && ($element ne "")} { 
+    if {[llength $deselect] && ($element ne "")} {
 	set I [lindex $deselect 0]
 	if {[$T item tag expr $I !header]} {
 	    set option [$T item text $I property]
@@ -858,7 +858,7 @@ if 0 {
     $T item style set $I 0 $style
 
     set scale 2
-    
+
     set dx 10
     set dy 10
 

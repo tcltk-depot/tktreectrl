@@ -1,4 +1,4 @@
-/* 
+/*
  * qebind.h --
  *
  *	This module is the header for quasi-events.

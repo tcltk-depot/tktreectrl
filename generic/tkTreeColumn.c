@@ -1,4 +1,4 @@
-/* 
+/*
  * tkTreeColumn.c --
  *
  *	This module implements treectrl widget's columns.
