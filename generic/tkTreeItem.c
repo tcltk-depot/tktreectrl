@@ -637,11 +637,16 @@ Item_Alloc(
     if (Tk_InitOptions(tree->interp, (char *) item,
 		tree->itemOptionTable, tree->tkwin) != TCL_OK)
 	panic("Tk_InitOptions() failed in Item_Alloc()");
-    item->state =
-	STATE_ITEM_OPEN |
-	STATE_ITEM_ENABLED;
-    if (tree->gotFocus)
-	item->state |= STATE_ITEM_FOCUS;
+    if (isHeader) {
+	if (tree->gotFocus)
+	    item->state |= STATE_HEADER_FOCUS;
+    } else {
+	item->state =
+	    STATE_ITEM_OPEN |
+	    STATE_ITEM_ENABLED;
+	if (tree->gotFocus)
+	    item->state |= STATE_ITEM_FOCUS;
+    }
     item->indexVis = -1;
     /* In the typical case all spans are 1. */
     item->flags |= ITEM_FLAG_SPANS_SIMPLE;
@@ -759,7 +764,7 @@ TreeItemColumn_GetState(
 /*
  *----------------------------------------------------------------------
  *
- * Column_ChangeState --
+ * TreeItemColumn_ChangeState --
  *
  *	Toggles zero or more STATE_xxx flags for a Column. If the
  *	Column has a style assigned, its state may be changed.
@@ -774,16 +779,17 @@ TreeItemColumn_GetState(
  *----------------------------------------------------------------------
  */
 
-static int
-Column_ChangeState(
+int
+TreeItemColumn_ChangeState(
     TreeCtrl *tree,		/* Widget info. */
     TreeItem item,		/* Item containing the column. */
-    Column *column,		/* Column to modify the state of. */
+    TreeItemColumn column_,	/* Column to modify the state of. */
     TreeColumn treeColumn,	/* Tree column. */
     int stateOff,		/* STATE_xxx flags to turn off. */
     int stateOn			/* STATE_xxx flags to turn on. */
     )
 {
+    Column *column = (Column *) column_;
     int cstate, state;
     int sMask, iMask = 0;
 
@@ -5753,7 +5759,7 @@ TreeItemCmd_Element(
     int flags = IFO_NOT_NULL;
     int result = TCL_OK;
     int tailFlag = doHeaders ? 0 : CFO_NOT_TAIL; /* styles allowed in tail? */
-    int domain = /*doHeaders ? STATE_DOMAIN_HEADER : */STATE_DOMAIN_ITEM;
+    int domain = doHeaders ? STATE_DOMAIN_HEADER : STATE_DOMAIN_ITEM;
 
     if (objc < 7) {
 	Tcl_WrongNumArgs(interp, 3, objv,
@@ -7739,18 +7745,20 @@ TreeItemCmd_State(
     )
 {
     Tcl_Interp *interp = tree->interp;
-    TreeStateDomain *domainPtr = &tree->stateDomain[STATE_DOMAIN_ITEM];
+    int domain = doHeaders ? STATE_DOMAIN_HEADER : STATE_DOMAIN_ITEM;
+    TreeStateDomain *domainPtr = &tree->stateDomain[domain];
     static CONST char *commandNames[] = {
-	"forcolumn", "get", "set", (char *) NULL
+	"define", "forcolumn", "get", "linkage", "names", "set", "undefine",
+	(char *) NULL
     };
     enum {
-	COMMAND_FORCOLUMN, COMMAND_GET, COMMAND_SET
+	COMMAND_DEFINE, COMMAND_FORCOLUMN, COMMAND_GET, COMMAND_LINKAGE,
+	COMMAND_NAMES, COMMAND_SET, COMMAND_UNDEFINE
     };
     int index;
     TreeItem item;
-    int domain = /*doHeaders ? STATE_DOMAIN_HEADER : */STATE_DOMAIN_ITEM;
 
-    if (objc < 5) {
+    if (objc < 4) {
 	Tcl_WrongNumArgs(interp, 3, objv,
 	    doHeaders ?
 		"command header ?arg ...?" :
@@ -7763,6 +7771,40 @@ TreeItemCmd_State(
 	return TCL_ERROR;
 
     switch (index) {
+	/* T item state define stateName */
+	case COMMAND_DEFINE: {
+	    char *string;
+	    int i, length, slot = -1;
+
+	    if (objc != 5) {
+		Tcl_WrongNumArgs(interp, 4, objv, "stateName");
+		return TCL_ERROR;
+	    }
+	    string = Tcl_GetStringFromObj(objv[4], &length);
+	    if (!length || (*string == '~') || (*string == '!')) {
+		FormatResult(interp, "invalid state name \"%s\"", string);
+		return TCL_ERROR;
+	    }
+	    for (i = 0; i < 32; i++) {
+		if (domainPtr->stateNames[i] == NULL) {
+		    if (slot == -1)
+			slot = i;
+		    continue;
+		}
+		if (strcmp(domainPtr->stateNames[i], string) == 0) {
+		    FormatResult(interp, "state \"%s\" already defined in domain \"%s\"", string, domainPtr->name);
+		    return TCL_ERROR;
+		}
+	    }
+	    if (slot == -1) {
+		FormatResult(interp, "cannot define any more states in domain \"%s\"", domainPtr->name);
+		return TCL_ERROR;
+	    }
+	    domainPtr->stateNames[slot] = ckalloc(length + 1);
+	    strcpy(domainPtr->stateNames[slot], string);
+	    break;
+	}
+
 	/* T item state forcolumn I C ?stateList? */
 	case COMMAND_FORCOLUMN: {
 	    TreeItemList itemList;
@@ -7837,8 +7879,9 @@ TreeItemCmd_State(
 		    stateOff = states[STATE_OP_OFF];
 		    stateOn |= ~column->cstate & states[STATE_OP_TOGGLE];
 		    stateOff |= column->cstate & states[STATE_OP_TOGGLE];
-		    Column_ChangeState(tree, item, column, treeColumn,
-			    stateOff, stateOn);
+		    TreeItemColumn_ChangeState(tree, item,
+			(TreeItemColumn) column, treeColumn,
+			stateOff, stateOn);
 		}
 	    }
 doneFORC:
@@ -7852,7 +7895,7 @@ doneFORC:
 	    Tcl_Obj *listObj;
 	    int i, states[3];
 
-	    if (objc > 6) {
+	    if (objc < 5 || objc > 6) {
 		Tcl_WrongNumArgs(interp, 4, objv,
 		    doHeaders ? "header ?state?" : "item ?state?");
 		return TCL_ERROR;
@@ -7884,6 +7927,41 @@ doneFORC:
 		    Tcl_ListObjAppendElement(interp, listObj,
 			    Tcl_NewStringObj(domainPtr->stateNames[i], -1));
 		}
+	    }
+	    Tcl_SetObjResult(interp, listObj);
+	    break;
+	}
+
+	/* T item state linkage state */
+	case COMMAND_LINKAGE: {
+	    int index;
+
+	    if (objc != 5) {
+		Tcl_WrongNumArgs(interp, 3, objv, "state");
+		return TCL_ERROR;
+	    }
+	    if (Tree_StateFromObj(tree, domain, objv[4], NULL, &index,
+		    SFO_NOT_OFF | SFO_NOT_TOGGLE) != TCL_OK)
+		return TCL_ERROR;
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		(index < domainPtr->staticCount) ? "static" : "dynamic", -1));
+	    break;
+	}
+
+	/* T item state names */
+	case COMMAND_NAMES: {
+	    Tcl_Obj *listObj;
+	    int i;
+
+	    if (objc != 4) {
+		Tcl_WrongNumArgs(interp, 4, objv, (char *) NULL);
+		return TCL_ERROR;
+	    }
+	    listObj = Tcl_NewListObj(0, NULL);
+	    for (i = domainPtr->staticCount; i < 32; i++) {
+		if (domainPtr->stateNames[i] != NULL)
+		    Tcl_ListObjAppendElement(interp, listObj,
+			    Tcl_NewStringObj(domainPtr->stateNames[i], -1));
 	    }
 	    Tcl_SetObjResult(interp, listObj);
 	    break;
@@ -7937,6 +8015,25 @@ doneSET:
 	    TreeItemList_Free(&itemList);
 	    TreeItemList_Free(&item2List);
 	    return result;
+	}
+
+	/* T item state undefine ?state ...? */
+	case COMMAND_UNDEFINE: {
+	    int i, index;
+
+	    for (i = 4; i < objc; i++) {
+		if (Tree_StateFromObj(tree, domain, objv[i], NULL, &index,
+			SFO_NOT_STATIC | SFO_NOT_OFF | SFO_NOT_TOGGLE) != TCL_OK)
+		    return TCL_ERROR;
+		Tree_UndefineState(tree, domain, 1L << index);
+		PerStateInfo_Undefine(tree, &pstBitmap, &tree->buttonBitmap,
+			domain, 1L << index);
+		PerStateInfo_Undefine(tree, &pstImage, &tree->buttonImage,
+			domain, 1L << index);
+		ckfree(domainPtr->stateNames[index]);
+		domainPtr->stateNames[index] = NULL;
+	    }
+	    break;
 	}
     }
 

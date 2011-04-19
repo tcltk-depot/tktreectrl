@@ -8536,9 +8536,9 @@ Tree_FocusChanged(
     tree->gotFocus = gotFocus;
 
     if (gotFocus)
-	stateOff = 0, stateOn = STATE_ITEM_FOCUS;
+	stateOff = 0, stateOn = STATE_HEADER_FOCUS;
     else
-	stateOff = STATE_ITEM_FOCUS, stateOn = 0;
+	stateOff = STATE_HEADER_FOCUS, stateOn = 0;
 
     /* Slow. Change state of every header */
     item = tree->headerItems;
@@ -8546,6 +8546,11 @@ Tree_FocusChanged(
 	TreeItem_ChangeState(tree, item, stateOff, stateOn);
 	item = TreeItem_GetNextSibling(tree, item);
     }
+
+    if (gotFocus)
+	stateOff = 0, stateOn = STATE_ITEM_FOCUS;
+    else
+	stateOff = STATE_ITEM_FOCUS, stateOn = 0;
 
     /* Slow. Change state of every item */
     hPtr = Tcl_FirstHashEntry(&tree->itemHash, &search);
@@ -8593,8 +8598,21 @@ Tree_Activate(
     )
 {
     TreeDInfo dInfo = tree->dInfo;
+    int stateOff, stateOn;
+    TreeItem item;
 
     tree->isActive = isActive;
+
+    /* Change the state of every header. */
+    if (isActive)
+	stateOff = STATE_HEADER_BG, stateOn = 0;
+    else
+	stateOff = 0, stateOn = STATE_HEADER_BG;
+    item = tree->headerItems;
+    while (item != NULL) {
+	TreeItem_ChangeState(tree, item, stateOff, stateOn);
+	item = TreeItem_GetNextSibling(tree, item);
+    }
 
     /* TODO: Like Tree_FocusChanged, change state of every item. */
     /* Would need a new item state STATE_ACTIVEWINDOW or something. */

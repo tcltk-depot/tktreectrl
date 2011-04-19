@@ -32,13 +32,8 @@ proc DemoHeaders {} {
     # headers.
     #
 
-    $T state define headeractive
-    $T state define headerpressed
-    $T state define sortdown
-    $T state define sortup
-
     DemoHeaders::InitSortImages blue
-    $T element create header.sort image \
+    $T element create header.sort image -statedomain header \
 	-image {::DemoHeaders::arrow-down sortdown ::DemoHeaders::arrow-up sortup}
 
     #
@@ -46,13 +41,13 @@ proc DemoHeaders {} {
     # a raised border with centered text.
     #
 
-    $T element create header.border border \
+    $T element create header.border border -statedomain header \
 	-background $::SystemButtonFace \
-	-relief {sunken headerpressed raised {}} -thickness 2 -filled yes
-    $T element create header.text text \
+	-relief {sunken pressed raised {}} -thickness 2 -filled yes
+    $T element create header.text text -statedomain header \
 	-lines 1
 
-    set S [$T style create header1 -orient horizontal]
+    set S [$T style create header1 -orient horizontal -statedomain header]
     $T style elements $S {header.border header.text header.sort}
     $T style layout $S header.border -detach yes -indent no -iexpand xy
     $T style layout $S header.text -expand wens -padx 6 -pady 2 ; # $T style layout $S header.text -center x -expand ns -padx 2 -pady 2
@@ -64,16 +59,16 @@ proc DemoHeaders {} {
     # a light-blue rounded rectangle with centered text.
     #
 
-    $T element create header.rrect rect \
+    $T element create header.rrect rect -statedomain header \
 	-rx 9 -fill {
-	    #cee8f0 headeractive
-	    #87c6da headerpressed
+	    #cee8f0 active
+	    #87c6da pressed
 	    #87c6da sortup
 	    #87c6da sortdown
 	    {light blue} {}
 	}
 
-    set S [$T style create header2 -orient horizontal]
+    set S [$T style create header2 -orient horizontal -statedomain header]
     $T style elements $S {header.rrect header.text header.sort}
     $T style layout $S header.rrect -detach yes -iexpand xy -padx {1 0} -pady 1
     $T style layout $S header.text -expand wens -padx 6 -pady 4 ; # $T style layout $S header.text -center x -expand ns -padx 2 -pady 4
@@ -88,7 +83,7 @@ if 0 {
 
     $T element create header.header header -thickness 1
 
-    set S [$T style create header3 -orient horizontal]
+    set S [$T style create header3 -orient horizontal -statedomain header]
     $T style elements $S {header.header header.text}
     $T style layout $S header.header -union header.text -iexpand news
     $T style layout $S header.text -expand wens -padx 6 -pady 2 -squeeze x ; # $T style layout $S header.text -expand ns -center x -padx 6 -pady 2 -squeeze x
@@ -101,9 +96,10 @@ if 0 {
 
     InitPics *checked
 
-    $T state define CHECK
-    $T element create header.check image -image {checked CHECK unchecked {}}
-    set S [$T style create header4]
+    $T header state define CHECK
+    $T element create header.check image  -statedomain header \
+	-image {checked CHECK unchecked {}}
+    set S [$T style create header4 -statedomain header]
     $T style elements $S header.check
     $T style layout $S header.check -expand nes -padx 6
 
@@ -115,19 +111,20 @@ if 0 {
     $T gradient create Gnormal -orient vertical -stops {{0.0 gray95} {0.3 gray95} {1.0 gray80}} -steps 6
     $T gradient create Gactive -orient vertical -stops {{0.0 #edf7fa} {0.3 #edf7fa} {1.0 {light blue}}} -steps 6
     $T gradient create Gpressed -orient vertical -stops {{0.0 gray90} {0.3 gray90} {1.0 gray75}} -steps 6
-    $T element create header.rect1 rect -fill {
-	Gactive headeractive
-	Gpressed headerpressed
+    $T element create header.rect1 rect  -statedomain header \
+    -fill {
+	Gactive active
+	Gpressed pressed
 	Gnormal {}
     } -outline {
-	{sky blue} headeractive
+	{sky blue} active
 	gray {}
     } -outlinewidth 1 -open {
-	s headerpressed
+	s pressed
 	n {}
     }
 
-    set S [$T style create header5 -orient horizontal]
+    set S [$T style create header5 -orient horizontal -statedomain header]
     $T style elements $S {header.rect1 header.text header.sort}
     $T style layout $S header.rect1 -detach yes -iexpand xy
     $T style layout $S header.text -expand news -padx 6 -pady 2 -squeeze x
@@ -144,19 +141,21 @@ if 0 {
     $T gradient create G_orange2 -orient vertical -steps 4 \
 	-stops {{0 #fffef6} {0.3 #fffef6} {0.3 #ffef9a} {0.6 #ffef9a} {1 #fffce8}}
 
-    $T element create orange.outline rect -outline #ffb700 -outlinewidth 1 \
+    $T element create orange.outline rect -statedomain header \
+	-outline #ffb700 -outlinewidth 1 \
 	-rx 1 -open {
-	    s headerpressed
+	    s pressed
 	    n {}
 	}
-    $T element create orange.box rect -fill {
-	G_orange1 headeractive
-	G_orange1 sortup
-	G_orange1 sortdown
-	G_orange2 {}
-    }
+    $T element create orange.box rect -statedomain header \
+	-fill {
+	    G_orange1 active
+	    G_orange1 sortup
+	    G_orange1 sortdown
+	    G_orange2 {}
+	}
 
-    set S [$T style create header6 -orient horizontal]
+    set S [$T style create header6 -orient horizontal -statedomain header]
     $T style elements $S {orange.outline orange.box header.text header.sort}
     $T style layout $S orange.outline -union orange.box -ipadx 2 -ipady 2
     $T style layout $S orange.box -detach yes -iexpand xy
@@ -208,9 +207,11 @@ if 0 {
 
     $T state define current
 
-    $T element create theme.rect rect -fill {{light blue} current white {}} \
+    $T element create theme.rect rect \
+	-fill {{light blue} current white {}} \
 	-outline gray50 -outlinewidth 2 -open s
-    $T element create theme.text text -lines 0 -width $width
+    $T element create theme.text text \
+	-lines 0 -width $width
     $T element create theme.button window
     set S [$T style create theme -orient vertical]
     $T style elements $S {theme.rect theme.text theme.button}
@@ -266,8 +267,10 @@ if 0 {
     # Create 100 regular non-locked items
     #
 
-    $T element create item.sel rect -fill {gray {selected !focus} blue selected}
-    $T element create item.text text -text "Item" -fill {white selected}
+    $T element create item.sel rect \
+	-fill {gray {selected !focus} blue selected}
+    $T element create item.text text \
+	-text "Item" -fill {white selected}
 
     set S [$T style create item]
     $T style elements $S {item.sel item.text}
@@ -394,19 +397,10 @@ proc DemoHeaders::ChangeHeaderStyle {style ownerDrawn {sortColor ""}} {
     return
 }
 
-# If state=active, the dynamic item state 'headeractive' is set in the given
-# item-column.
-# If state=pressed, the dynamic item state 'headerpressed' is set in the given
-# item-column.
 # If the style in the given item-column contains a 'header' element, then
 # that element's -state option is configured to the given state.
 proc DemoHeaders::HeaderState {H C state} {
     set T [DemoList]
-#    if {![$T item tag expr $I header3]} return
-    $T header state forcolumn $H $C {!headeractive !headerpressed}
-    if {$state ne "normal"} {
-	$T header state forcolumn $H $C header$state
-    }
     set S [$T header style set $H $C]
     if {$S eq ""} return
     foreach E [$T style elements $S] {
@@ -441,15 +435,13 @@ proc DemoHeaders::HeaderInvoke {H C} {
     return
 }
 
-# Sets one of the dynamic item states 'sortup' or 'sortdown' in the given
-# item-column.
-# If the style in the given item-column contains a 'header' element, then
+# Sets the -arrow option of a column header to 'up' or 'down'.
+# If the style in the given column header contains a 'header' element, then
 # that element's -arrow option is configured to 'up' or 'down'.
 proc DemoHeaders::ShowSortArrow {H C} {
     variable Sort
     set T [DemoList]
     $T header configure $H $C -arrow $Sort(direction,$C)
-    $T header state forcolumn $H $C [list !sortdown !sortup sort$Sort(direction,$C)]
     set S [$T header style set $H $C]
     if {$S eq ""} return
     foreach E [$T style elements $S] {
@@ -460,15 +452,13 @@ proc DemoHeaders::ShowSortArrow {H C} {
     return
 }
 
-# Clears both of the dynamic item states 'sortup' and 'sortdown' in the given
-# item-column.
-# If the style in the given item-column contains a 'header' element, then
+# Sets the -arrow option of a column header to 'none'.
+# If the style in the given column header contains a 'header' element, then
 # that element's -arrow option is configured to 'none'.
 proc DemoHeaders::HideSortArrow {H C} {
     variable Sort
     set T [DemoList]
     $T header configure $H $C -arrow none
-    $T header state forcolumn $H $C [list !sortdown !sortup]
     set S [$T header style set $H $C]
     if {$S eq ""} return
     foreach E [$T style elements $S] {

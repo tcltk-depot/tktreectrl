@@ -1775,7 +1775,8 @@ proc DemoClear {} {
     $T notify unbind $T
 
     # Clear all run-time states
-    eval $T state undefine [$T state names]
+    eval $T header state undefine [$T header state names]
+    eval $T item state undefine [$T item state names]
 
     # Clear the styles-in-item list
     .f3.t item delete all

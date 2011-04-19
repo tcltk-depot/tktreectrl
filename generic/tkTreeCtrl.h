@@ -255,6 +255,7 @@ struct TreeCtrlColumnDrag
 typedef struct TreeStateDomain TreeStateDomain;
 struct TreeStateDomain
 {
+    CONST char *name;		/* Human-readable name of this domain. */
     char *stateNames[32];	/* Sparse array of state names. */
     int staticCount;		/* Number of static states. */
 };
@@ -600,6 +601,8 @@ MODULE_SCOPE int TreeArea_FromObj(TreeCtrl *tree, Tcl_Obj *objPtr,
 MODULE_SCOPE int Tree_StateFromObj(TreeCtrl *tree, int domain, Tcl_Obj *obj, int states[3], int *indexPtr, int flags);
 MODULE_SCOPE int Tree_StateFromListObj(TreeCtrl *tree, int domain, Tcl_Obj *obj, int states[3], int flags);
 
+MODULE_SCOPE int Tree_StateCmd(TreeCtrl *tree, int domain, int objc, Tcl_Obj *CONST objv[]);
+
 #define Tree_BorderLeft(tree) \
     tree->inset.left
 #define Tree_BorderTop(tree) \
@@ -731,7 +734,13 @@ MODULE_SCOPE int TreeItem_Deleted(TreeCtrl *tree, TreeItem item);
 #define STATE_ITEM_ENABLED	0x0004
 #define STATE_ITEM_ACTIVE	0x0008
 #define STATE_ITEM_FOCUS	0x0010
-#define STATE_ITEM_USER		6 /* first user bit */
+
+#define STATE_HEADER_BG		0x0001
+#define STATE_HEADER_FOCUS	0x0002
+#define STATE_HEADER_ACTIVE	0x0004
+#define STATE_HEADER_PRESSED	0x0008
+#define STATE_HEADER_SORT_UP	0x0010
+#define STATE_HEADER_SORT_DOWN	0x0020
 MODULE_SCOPE int TreeItem_GetState(TreeCtrl *tree, TreeItem item_);
 MODULE_SCOPE int TreeItemColumn_GetState(TreeCtrl *tree, TreeItemColumn itemColumn);
 

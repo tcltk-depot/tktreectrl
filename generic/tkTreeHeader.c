@@ -444,6 +444,7 @@ Column_Configure(
     int mask, maskFree = 0;
     XGCValues gcValues;
     unsigned long gcMask;
+    int state = column->state, arrow = column->arrow;
 
     /* Init these to prevent compiler warnings */
     saved.image = NULL;
@@ -588,6 +589,34 @@ Column_Configure(
 	if (column->dragImage != NULL) {
 	    column->imageEpoch = tree->columnDrag.imageEpoch - 1;
 	}
+    }
+
+    /* Keep the STATE_HEADER_XXX flags in sync. */
+    if (state != column->state) {
+	int stateOff = 0, stateOn = 0;
+	switch (state) {
+	    case COLUMN_STATE_ACTIVE: stateOff = STATE_HEADER_ACTIVE; break;
+	    case COLUMN_STATE_PRESSED: stateOff = STATE_HEADER_PRESSED; break;
+	}
+	switch (column->state) {
+	    case COLUMN_STATE_ACTIVE: stateOn = STATE_HEADER_ACTIVE; break;
+	    case COLUMN_STATE_PRESSED: stateOn = STATE_HEADER_PRESSED; break;
+	}
+	TreeItemColumn_ChangeState(tree, header->item, column->itemColumn,
+	    treeColumn, stateOff, stateOn);
+    }
+    if (arrow != column->arrow) {
+	int stateOff = 0, stateOn = 0;
+	switch (arrow) {
+	    case COLUMN_ARROW_UP: stateOff = STATE_HEADER_SORT_UP; break;
+	    case COLUMN_ARROW_DOWN: stateOff = STATE_HEADER_SORT_DOWN; break;
+	}
+	switch (column->arrow) {
+	    case COLUMN_ARROW_UP: stateOn = STATE_HEADER_SORT_UP; break;
+	    case COLUMN_ARROW_DOWN: stateOn = STATE_HEADER_SORT_DOWN; break;
+	}
+	TreeItemColumn_ChangeState(tree, header->item, column->itemColumn,
+	    treeColumn, stateOff, stateOn);
     }
 
     return TCL_OK;

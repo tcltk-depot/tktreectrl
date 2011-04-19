@@ -3324,6 +3324,31 @@ Element_CreateAndConfig(
     TreeElement elem;
     TreeElementArgs args;
 
+    Tcl_Obj *staticObjV[STATIC_SIZE], **objV = staticObjV;
+    int i, objC = 0, domain = STATE_DOMAIN_ITEM;
+
+    STATIC_ALLOC(objV, Tcl_Obj *, objc);
+
+    /* Filter out -statedomain and its value. */
+    for (i = 0; i < objc; i += 2) {
+	int length;
+	CONST char *s = Tcl_GetStringFromObj(objv[i], &length);
+	if (strncmp(s, "-statedomain", length) == 0) {
+	    if (i + 1 == objc) {
+		FormatResult(tree->interp, "value for \"%s\" missing", s);
+		STATIC_FREE(objV, Tcl_Obj *, objc);
+		return NULL;
+	    }
+	    s = Tcl_GetStringFromObj(objv[i + 1], &length);
+	    if (strncmp(s, "header", length) == 0)
+		domain = STATE_DOMAIN_HEADER;
+	} else {
+	    objV[objC++] = objv[i];
+	    if (i + 1 < objc)
+		objV[objC++] = objv[i + 1];
+	}
+    }
+
     if (masterElem != NULL) {
 	type = masterElem->typePtr;
 	name = masterElem->name;
@@ -3339,12 +3364,14 @@ Element_CreateAndConfig(
     elem->name = Tk_GetUid(name);
     elem->typePtr = type;
     elem->master = masterElem;
+    elem->stateDomain = domain;
 
     args.tree = tree;
     args.elem = elem;
     args.create.item = item;
     args.create.column = column;
     if ((*type->createProc)(&args) != TCL_OK) {
+	STATIC_FREE(objV, Tcl_Obj *, objc);
 #ifdef ALLOC_HAX
 	TreeAlloc_Free(tree->allocData, type->name, (char *) elem, type->size);
 #else
@@ -3354,7 +3381,8 @@ Element_CreateAndConfig(
     }
 
     if (Tk_InitOptions(tree->interp, (char *) elem,
-	type->optionTable, tree->tkwin) != TCL_OK) {
+	    type->optionTable, tree->tkwin) != TCL_OK) {
+	STATIC_FREE(objV, Tcl_Obj *, objc);
 #ifdef ALLOC_HAX
 	TreeAlloc_Free(tree->allocData, type->name, (char *) elem, type->size);
 #else
@@ -3362,13 +3390,14 @@ Element_CreateAndConfig(
 #endif
 	return NULL;
     }
-    args.config.objc = objc;
-    args.config.objv = objv;
+    args.config.objc = objC;
+    args.config.objv = objV;
     args.config.flagSelf = 0;
     args.config.item = item;
     args.config.column = column;
     if ((*type->configProc)(&args) != TCL_OK) {
 	(*type->deleteProc)(&args);
+	STATIC_FREE(objV, Tcl_Obj *, objc);
 	Tk_FreeConfigOptions((char *) elem,
 	    type->optionTable,
 	    tree->tkwin);
@@ -3386,6 +3415,7 @@ Element_CreateAndConfig(
     args.change.flagMaster = 0;
     (*type->changeProc)(&args);
 
+    STATIC_FREE(objV, Tcl_Obj *, objc);
     return elem;
 }
 
@@ -5412,6 +5442,31 @@ Style_CreateAndConfig(
     )
 {
     MStyle *style;
+    int i, objC = 0;
+    Tcl_Obj *staticObjV[STATIC_SIZE], **objV = staticObjV;
+    int domain = STATE_DOMAIN_ITEM;
+
+    STATIC_ALLOC(objV, Tcl_Obj *, objc);
+
+    /* Filter out -statedomain and its value. */
+    for (i = 0; i < objc; i += 2) {
+	int length;
+	CONST char *s = Tcl_GetStringFromObj(objv[i], &length);
+	if (strncmp(s, "-statedomain", length) == 0) {
+	    if (i + 1 == objc) {
+		FormatResult(tree->interp, "value for \"%s\" missing", s);
+		STATIC_FREE(objV, Tcl_Obj *, objc);
+		return NULL;
+	    }
+	    s = Tcl_GetStringFromObj(objv[i + 1], &length);
+	    if (strncmp(s, "header", length) == 0)
+		domain = STATE_DOMAIN_HEADER;
+	} else {
+	    objV[objC++] = objv[i];
+	    if (i + 1 < objc)
+		objV[objC++] = objv[i + 1];
+	}
+    }
 
 #ifdef ALLOC_HAX
     style = (MStyle *) TreeAlloc_Alloc(tree->allocData, MStyleUid,
@@ -5421,9 +5476,11 @@ Style_CreateAndConfig(
 #endif
     memset(style, '\0', sizeof(MStyle));
     style->name = Tk_GetUid(name);
+    style->stateDomain = domain;
 
     if (Tk_InitOptions(tree->interp, (char *) style,
-	tree->styleOptionTable, tree->tkwin) != TCL_OK) {
+	    tree->styleOptionTable, tree->tkwin) != TCL_OK) {
+	STATIC_FREE(objV, Tcl_Obj *, objc);
 #ifdef ALLOC_HAX
 	TreeAlloc_Free(tree->allocData, MStyleUid, (char *) style, sizeof(MStyle));
 #else
@@ -5433,8 +5490,9 @@ Style_CreateAndConfig(
     }
 
     if (Tk_SetOptions(tree->interp, (char *) style,
-	tree->styleOptionTable, objc, objv, tree->tkwin,
-	NULL, NULL) != TCL_OK) {
+	    tree->styleOptionTable, objC, objV, tree->tkwin,
+	    NULL, NULL) != TCL_OK) {
+	STATIC_FREE(objV, Tcl_Obj *, objc);
 	Tk_FreeConfigOptions((char *) style, tree->styleOptionTable, tree->tkwin);
 #ifdef ALLOC_HAX
 	TreeAlloc_Free(tree->allocData, MStyleUid, (char *) style, sizeof(MStyle));
@@ -5444,6 +5502,7 @@ Style_CreateAndConfig(
 	return NULL;
     }
 
+    STATIC_FREE(objV, Tcl_Obj *, objc);
     return style;
 }
 

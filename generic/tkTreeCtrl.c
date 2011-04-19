@@ -352,7 +352,6 @@ static void TreeWorldChanged(ClientData instanceData);
 static void TreeComputeGeometry(TreeCtrl *tree);
 static int TreeIdentifyCmd(TreeCtrl *tree, int objc, Tcl_Obj *CONST objv[]);
 static int TreeSeeCmd(TreeCtrl *tree, int objc, Tcl_Obj *CONST objv[]);
-static int TreeStateCmd(TreeCtrl *tree, int domain, int objc, Tcl_Obj *CONST objv[]);
 static int TreeSelectionCmd(Tcl_Interp *interp, TreeCtrl *tree, int objc,
     Tcl_Obj *CONST objv[]);
 static int TreeDebugCmd(ClientData clientData, Tcl_Interp *interp, int objc,
@@ -424,12 +423,24 @@ TreeObjCmd(
     tree->updateIndex	= 1;
 
     domainPtr = &tree->stateDomain[STATE_DOMAIN_ITEM];
+    domainPtr->name = "item";
     domainPtr->stateNames[0]	= "open";
     domainPtr->stateNames[1]	= "selected";
     domainPtr->stateNames[2]	= "enabled";
     domainPtr->stateNames[3]	= "active";
     domainPtr->stateNames[4]	= "focus";
     domainPtr->staticCount = 5;
+
+    domainPtr = &tree->stateDomain[STATE_DOMAIN_HEADER];
+    domainPtr->name = "header";
+    domainPtr->stateNames[0]	= "bg";
+    domainPtr->stateNames[1]	= "focus";
+    domainPtr->stateNames[2]	= "active";
+    domainPtr->stateNames[3]	= "pressed";
+    domainPtr->stateNames[4]	= "sortup";
+    domainPtr->stateNames[5]	= "sortdown";
+    domainPtr->staticCount = 6;
+
     tree->configStateDomain = -1;
 
     Tcl_InitHashTable(&tree->selection, TCL_ONE_WORD_KEYS);
@@ -1114,7 +1125,7 @@ static int TreeWidgetCmd(
 	}
 
 	case COMMAND_STATE: {
-	    result = TreeStateCmd(tree, STATE_DOMAIN_ITEM, objc, objv);
+	    result = Tree_StateCmd(tree, STATE_DOMAIN_ITEM, objc, objv);
 	    break;
 	}
 
@@ -1788,9 +1799,15 @@ TreeDestroy(
     QE_DeleteBindingTable(tree->bindingTable);
 
     domainPtr = &tree->stateDomain[STATE_DOMAIN_ITEM];
-    for (i = domainPtr->staticCount; i < 32; i++)
+    for (i = domainPtr->staticCount; i < 32; i++) {
 	if (domainPtr->stateNames[i] != NULL)
 	    ckfree(domainPtr->stateNames[i]);
+    }
+    domainPtr = &tree->stateDomain[STATE_DOMAIN_HEADER];
+    for (i = domainPtr->staticCount; i < 32; i++) {
+	if (domainPtr->stateNames[i] != NULL)
+	    ckfree(domainPtr->stateNames[i]);
+    }
 
     Tk_FreeConfigOptions((char *) tree, tree->debug.optionTable,
 	    tree->tkwin);
@@ -2867,8 +2884,8 @@ Tree_StateFromListObj(
  *--------------------------------------------------------------
  */
 
-static int
-TreeStateCmd(
+int
+Tree_StateCmd(
     TreeCtrl *tree,		/* Widget info. */
     int domain,			/* STATE_DOMAIN_XXX index. */
     int objc,			/* Number of arguments. */
