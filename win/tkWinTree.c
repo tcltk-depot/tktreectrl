@@ -2001,7 +2001,7 @@ TreeTheme_DrawButton(
 				/* TreeTheme_GetButtonSize(). */
     )
 {
-    int open = state & STATE_OPEN;
+    int open = state & STATE_ITEM_OPEN;
     int active = state & (BUTTON_STATE_ACTIVE|BUTTON_STATE_PRESSED); /* windows theme has no "pressed" state */
     HTHEME hTheme;
     HDC hDC;

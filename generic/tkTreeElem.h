@@ -106,6 +106,7 @@ struct TreeElement_
     Tk_Uid name;		/* "elem2", "eText" etc */
     TreeElementType *typePtr;
     TreeElement master;		/* NULL if this is master */
+    int stateDomain;		/* STATE_DOMAIN_XXX index. */
     DynamicOption *options;	/* Dynamically-allocated options. */
     /* type-specific data here */
 };
@@ -156,21 +157,21 @@ struct TreeCtrlStubs
     void (*Tree_ElementIterateChanged)(TreeIterate iter_, int mask);
     void (*PerStateInfo_Free)(TreeCtrl *tree, PerStateType *typePtr,
 		PerStateInfo *pInfo);
-    int (*PerStateInfo_FromObj)(TreeCtrl *tree, StateFromObjProc proc,
+    int (*PerStateInfo_FromObj)(TreeCtrl *tree, int domain, StateFromObjProc proc,
 		PerStateType *typePtr, PerStateInfo *pInfo);
     PerStateData *(*PerStateInfo_ForState)(TreeCtrl *tree,
 		PerStateType *typePtr, PerStateInfo *pInfo, int state, int *match);
     Tcl_Obj *(*PerStateInfo_ObjForState)(TreeCtrl *tree,
 		PerStateType *typePtr, PerStateInfo *pInfo, int state, int *match);
     int (*PerStateInfo_Undefine)(TreeCtrl *tree, PerStateType *typePtr,
-		PerStateInfo *pInfo, int state);
+		PerStateInfo *pInfo, int domain, int state);
     PerStateType *pstBoolean;
     int (*PerStateBoolean_ForState)(TreeCtrl *tree, PerStateInfo *pInfo,
 		int state, int *match);
     void (*PSTSave)(PerStateInfo *pInfo, PerStateInfo *pSave);
     void (*PSTRestore)(TreeCtrl *tree, PerStateType *typePtr,
 		PerStateInfo *pInfo, PerStateInfo *pSave);
-    int (*TreeStateFromObj)(TreeCtrl *tree, Tcl_Obj *obj, int *stateOff,
+    int (*TreeStateFromObj)(TreeCtrl *tree, int domain, Tcl_Obj *obj, int *stateOff,
 		int *stateOn);
     int (*BooleanCO_Init)(Tk_OptionSpec *optionTable, CONST char *optionName);
     int (*StringTableCO_Init)(Tk_OptionSpec *optionTable,

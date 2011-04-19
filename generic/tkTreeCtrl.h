@@ -252,6 +252,13 @@ struct TreeCtrlColumnDrag
     int imageEpoch;
 };
 
+typedef struct TreeStateDomain TreeStateDomain;
+struct TreeStateDomain
+{
+    char *stateNames[32];	/* Sparse array of state names. */
+    int staticCount;		/* Number of static states. */
+};
+
 struct TreeCtrl
 {
     /* Standard stuff */
@@ -480,7 +487,10 @@ struct TreeCtrl
 	int onScreen;
     } columnProxy;
 
-    char *stateNames[32];	/* Names of static and dynamic item states */
+#define STATE_DOMAIN_ITEM 0
+#define STATE_DOMAIN_HEADER 1
+    TreeStateDomain stateDomain[2];
+    int configStateDomain;
 
     int scanX;			/* [scan mark] and [scan dragto] */
     int scanY;
@@ -587,8 +597,8 @@ MODULE_SCOPE int TreeArea_FromObj(TreeCtrl *tree, Tcl_Obj *objPtr,
 #define SFO_NOT_OFF	0x0001
 #define SFO_NOT_TOGGLE	0x0002
 #define SFO_NOT_STATIC	0x0004
-MODULE_SCOPE int Tree_StateFromObj(TreeCtrl *tree, Tcl_Obj *obj, int states[3], int *indexPtr, int flags);
-MODULE_SCOPE int Tree_StateFromListObj(TreeCtrl *tree, Tcl_Obj *obj, int states[3], int flags);
+MODULE_SCOPE int Tree_StateFromObj(TreeCtrl *tree, int domain, Tcl_Obj *obj, int states[3], int *indexPtr, int flags);
+MODULE_SCOPE int Tree_StateFromListObj(TreeCtrl *tree, int domain, Tcl_Obj *obj, int states[3], int flags);
 
 #define Tree_BorderLeft(tree) \
     tree->inset.left
@@ -716,12 +726,12 @@ MODULE_SCOPE void TreeItem_OpenClose(TreeCtrl *tree, TreeItem item, int mode);
 MODULE_SCOPE void TreeItem_Delete(TreeCtrl *tree, TreeItem item);
 MODULE_SCOPE int TreeItem_Deleted(TreeCtrl *tree, TreeItem item);
 
-#define STATE_OPEN	0x0001
-#define STATE_SELECTED	0x0002
-#define STATE_ENABLED	0x0004
-#define STATE_ACTIVE	0x0008
-#define STATE_FOCUS	0x0010
-#define STATE_USER	6		/* first user bit */
+#define STATE_ITEM_OPEN		0x0001
+#define STATE_ITEM_SELECTED	0x0002
+#define STATE_ITEM_ENABLED	0x0004
+#define STATE_ITEM_ACTIVE	0x0008
+#define STATE_ITEM_FOCUS	0x0010
+#define STATE_ITEM_USER		6 /* first user bit */
 MODULE_SCOPE int TreeItem_GetState(TreeCtrl *tree, TreeItem item_);
 MODULE_SCOPE int TreeItemColumn_GetState(TreeCtrl *tree, TreeItemColumn itemColumn);
 
@@ -836,7 +846,7 @@ MODULE_SCOPE void TreeItem_MoveColumn(TreeCtrl *tree, TreeItem item_, int column
 
 /* tkTreeElem.c */
 MODULE_SCOPE int TreeElement_Init(Tcl_Interp *interp);
-MODULE_SCOPE int TreeStateFromObj(TreeCtrl *tree, Tcl_Obj *obj, int *stateOff, int *stateOn);
+MODULE_SCOPE int TreeStateFromObj(TreeCtrl *tree, int domain, Tcl_Obj *obj, int *stateOff, int *stateOn);
 MODULE_SCOPE int StringTableCO_Init(Tk_OptionSpec *optionTable, CONST char *optionName, CONST char **tablePtr);
 
 struct StyleDrawArgs
@@ -899,7 +909,7 @@ MODULE_SCOPE int TreeStyle_GetElemRects(StyleDrawArgs *drawArgs, int objc, Tcl_O
 MODULE_SCOPE int TreeElementCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]);
 MODULE_SCOPE int TreeStyleCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]);
 MODULE_SCOPE int TreeStyle_ChangeState(TreeCtrl *tree, TreeStyle style_, int state1, int state2);
-MODULE_SCOPE void Tree_UndefineState(TreeCtrl *tree, int state);
+MODULE_SCOPE void Tree_UndefineState(TreeCtrl *tree, int domain, int state);
 MODULE_SCOPE int TreeStyle_NumElements(TreeCtrl *tree, TreeStyle style_);
 MODULE_SCOPE void TreeStyle_UpdateWindowPositions(StyleDrawArgs *drawArgs);
 MODULE_SCOPE void TreeStyle_OnScreen(TreeCtrl *tree, TreeStyle style_, int onScreen);
@@ -1252,15 +1262,15 @@ MODULE_SCOPE PerStateType pstRelief;
 
 MODULE_SCOPE void PerStateInfo_Free(TreeCtrl *tree, PerStateType *typePtr,
     PerStateInfo *pInfo);
-typedef int (*StateFromObjProc)(TreeCtrl *tree, Tcl_Obj *obj, int *stateOff, int *stateOn);
-MODULE_SCOPE int PerStateInfo_FromObj(TreeCtrl *tree, StateFromObjProc proc,
+typedef int (*StateFromObjProc)(TreeCtrl *tree, int domain, Tcl_Obj *obj, int *stateOff, int *stateOn);
+MODULE_SCOPE int PerStateInfo_FromObj(TreeCtrl *tree, int domain, StateFromObjProc proc,
     PerStateType *typePtr, PerStateInfo *pInfo);
 MODULE_SCOPE PerStateData *PerStateInfo_ForState(TreeCtrl *tree,
     PerStateType *typePtr, PerStateInfo *pInfo, int state, int *match);
 MODULE_SCOPE Tcl_Obj *PerStateInfo_ObjForState(TreeCtrl *tree, PerStateType *typePtr,
     PerStateInfo *pInfo, int state, int *match);
 MODULE_SCOPE int PerStateInfo_Undefine(TreeCtrl *tree, PerStateType *typePtr,
-    PerStateInfo *pInfo, int state);
+    PerStateInfo *pInfo, int domain, int state);
 
 MODULE_SCOPE GC Tree_GetGC(TreeCtrl *tree, unsigned long mask, XGCValues *gcValues);
 MODULE_SCOPE void Tree_FreeAllGC(TreeCtrl *tree);
@@ -1418,6 +1428,12 @@ MODULE_SCOPE void DynamicOption_Free1(TreeCtrl *tree, DynamicOption **firstPtr,
 MODULE_SCOPE int DynamicCO_Init(Tk_OptionSpec *optionTable, CONST char *optionName,
     int id, int size, int objOffset, int internalOffset,
     Tk_ObjCustomOption *custom, DynamicOptionInitProc *init);
+
+/*****/
+
+MODULE_SCOPE int Tree_SetOptions(TreeCtrl *tree, int domain, void *recordPtr,
+    Tk_OptionTable optionTable, int objc, Tcl_Obj *CONST objv[],
+    Tk_SavedOptions *savePtr, int *maskPtr);
 
 MODULE_SCOPE int BooleanFlagCO_Init(Tk_OptionSpec *optionTable, CONST char *optionName,
     int theFlag);

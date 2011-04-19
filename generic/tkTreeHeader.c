@@ -758,6 +758,7 @@ TreeHeader_ConsumeColumnOptionInfo(
 static int
 ColumnStateFromObj(
     TreeCtrl *tree,		/* Widget info. */
+    int domain,			/* STATE_DOMAIN_XXX index. */
     Tcl_Obj *obj,		/* String object to parse. */
     int *stateOff,		/* OR'd with state bit if "!state" is
 				 * specified. Caller must initialize. */

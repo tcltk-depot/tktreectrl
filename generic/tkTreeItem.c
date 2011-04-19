@@ -528,7 +528,7 @@ Item_UpdateIndex(TreeCtrl *tree,
     item->index = (*index)++;
     item->indexVis = -1;
     if (parent != NULL) {
-	parentOpen = (parent->state & STATE_OPEN) != 0;
+	parentOpen = (parent->state & STATE_ITEM_OPEN) != 0;
 	parentVis = parent->indexVis != -1;
 	if (IS_ROOT(parent) && !tree->showRoot) {
 	    parentOpen = TRUE;
@@ -638,10 +638,10 @@ Item_Alloc(
 		tree->itemOptionTable, tree->tkwin) != TCL_OK)
 	panic("Tk_InitOptions() failed in Item_Alloc()");
     item->state =
-	STATE_OPEN |
-	STATE_ENABLED;
+	STATE_ITEM_OPEN |
+	STATE_ITEM_ENABLED;
     if (tree->gotFocus)
-	item->state |= STATE_FOCUS;
+	item->state |= STATE_ITEM_FOCUS;
     item->indexVis = -1;
     /* In the typical case all spans are 1. */
     item->flags |= ITEM_FLAG_SPANS_SIMPLE;
@@ -677,7 +677,7 @@ Item_AllocRoot(
 
     item = Item_Alloc(tree, FALSE);
     item->depth = -1;
-    item->state |= STATE_ACTIVE;
+    item->state |= STATE_ITEM_ACTIVE;
     return item;
 }
 
@@ -919,13 +919,13 @@ TreeItem_ChangeState(
 	if (ptr1 == NULL) {
 	    if (tree->useTheme &&
 		TreeTheme_GetButtonSize(tree, Tk_WindowId(tree->tkwin),
-		(item->state & STATE_OPEN) != 0, &w1, &h1) == TCL_OK) {
-		ptr1 = (item->state & STATE_OPEN) ? &themeOpen : &themeClosed;
+		(item->state & STATE_ITEM_OPEN) != 0, &w1, &h1) == TCL_OK) {
+		ptr1 = (item->state & STATE_ITEM_OPEN) ? &themeOpen : &themeClosed;
 	    }
 	}
 	if (ptr1 == NULL) {
 	    w1 = h1 = tree->buttonSize;
-	    ptr1 = (item->state & STATE_OPEN) ? &butOpen : &butClosed;
+	    ptr1 = (item->state & STATE_ITEM_OPEN) ? &butOpen : &butClosed;
 	}
 
 	/* image > bitmap > theme > draw */
@@ -944,13 +944,13 @@ TreeItem_ChangeState(
 	if (ptr2 == NULL) {
 	    if (tree->useTheme &&
 		TreeTheme_GetButtonSize(tree, Tk_WindowId(tree->tkwin),
-		(state & STATE_OPEN) != 0, &w2, &h2) == TCL_OK) {
-		ptr2 = (state & STATE_OPEN) ? &themeOpen : &themeClosed;
+		(state & STATE_ITEM_OPEN) != 0, &w2, &h2) == TCL_OK) {
+		ptr2 = (state & STATE_ITEM_OPEN) ? &themeOpen : &themeClosed;
 	    }
 	}
 	if (ptr2 == NULL) {
 	    w2 = h2 = tree->buttonSize;
-	    ptr2 = (state & STATE_OPEN) ? &butOpen : &butClosed;
+	    ptr2 = (state & STATE_ITEM_OPEN) ? &butOpen : &butClosed;
 	}
 
 	if ((w1 != w2) || (h1 != h2)) {
@@ -1264,7 +1264,7 @@ TreeItem_GetEnabled(
     TreeItem item		/* Item token. */
     )
 {
-    return (item->state & STATE_ENABLED) != 0;
+    return (item->state & STATE_ITEM_ENABLED) != 0;
 }
 
 /*
@@ -1289,7 +1289,7 @@ TreeItem_GetSelected(
     TreeItem item		/* Item token. */
     )
 {
-    return (item->state & STATE_SELECTED) != 0;
+    return (item->state & STATE_ITEM_SELECTED) != 0;
 }
 
 /*
@@ -1858,7 +1858,7 @@ Qualifiers_Scan(
 		break;
 	    }
 	    case QUAL_STATE: {
-		if (Tree_StateFromListObj(tree, objv[j + 1], q->states,
+		if (Tree_StateFromListObj(tree, STATE_DOMAIN_ITEM, objv[j + 1], q->states,
 			SFO_NOT_TOGGLE) != TCL_OK)
 		    goto errorExit;
 		break;
@@ -2807,7 +2807,7 @@ TreeItemForEach_Next(
  *
  * Item_ToggleOpen --
  *
- *	Inverts the STATE_OPEN flag of an Item.
+ *	Inverts the STATE_ITEM_OPEN flag of an Item.
  *
  * Results:
  *	Items may be displayed/undisplayed.
@@ -2822,8 +2822,8 @@ static void
 Item_ToggleOpen(
     TreeCtrl *tree,		/* Widget info. */
     TreeItem item,		/* Item record. */
-    int stateOff,		/* STATE_OPEN or 0 */
-    int stateOn			/* STATE_OPEN or 0 */
+    int stateOff,		/* STATE_ITEM_OPEN or 0 */
+    int stateOn			/* STATE_ITEM_OPEN or 0 */
     )
 {
     int mask;
@@ -2861,7 +2861,7 @@ Item_ToggleOpen(
  *
  * TreeItem_OpenClose --
  *
- *	Inverts the STATE_OPEN flag of an Item.
+ *	Inverts the STATE_ITEM_OPEN flag of an Item.
  *
  * Results:
  *	Items may be displayed/undisplayed.
@@ -2889,14 +2889,14 @@ TreeItem_OpenClose(
     if (IS_DELETED(item)) return;
 
     if (mode == -1) {
-	if (item->state & STATE_OPEN)
-	    stateOff = STATE_OPEN;
+	if (item->state & STATE_ITEM_OPEN)
+	    stateOff = STATE_ITEM_OPEN;
 	else
-	    stateOn = STATE_OPEN;
-    } else if (!mode && (item->state & STATE_OPEN))
-	stateOff = STATE_OPEN;
-    else if (mode && !(item->state & STATE_OPEN))
-	stateOn = STATE_OPEN;
+	    stateOn = STATE_ITEM_OPEN;
+    } else if (!mode && (item->state & STATE_ITEM_OPEN))
+	stateOff = STATE_ITEM_OPEN;
+    else if (mode && !(item->state & STATE_ITEM_OPEN))
+	stateOn = STATE_ITEM_OPEN;
 
     if (stateOff != stateOn) {
 	TreeNotify_OpenClose(tree, item, stateOn, TRUE);
@@ -2962,7 +2962,7 @@ TreeItem_Delete(
     TreeItem_FreeResources(tree, item);
     if (tree->activeItem == item) {
 	tree->activeItem = tree->root;
-	TreeItem_ChangeState(tree, tree->activeItem, 0, STATE_ACTIVE);
+	TreeItem_ChangeState(tree, tree->activeItem, 0, STATE_ITEM_ACTIVE);
     }
     if (tree->anchorItem == item)
 	tree->anchorItem = tree->root;
@@ -4875,7 +4875,7 @@ TreeItem_DrawButton(
 	    buttonState |= BUTTON_STATE_PRESSED;
 
 	if (TreeTheme_GetButtonSize(tree, td.drawable,
-		(buttonState & STATE_OPEN) != 0, &bw, &bh) == TCL_OK) {
+		(buttonState & STATE_ITEM_OPEN) != 0, &bw, &bh) == TCL_OK) {
 	    if (buttonY < 0)
 		buttonY = (height - bh) / 2;
 	    if (TreeTheme_DrawButton(tree, td, item, buttonState,
@@ -4927,7 +4927,7 @@ TreeItem_DrawButton(
 	    tree->buttonSize - tree->buttonThickness * 4,
 	    tree->buttonThickness);
 
-    if (!(item->state & STATE_OPEN)) {
+    if (!(item->state & STATE_ITEM_OPEN)) {
 	/* Finish '+' */
 	XFillRectangle(tree->display, td.drawable, tree->buttonGC,
 		lineLeft,
@@ -5091,10 +5091,10 @@ TreeItem_ReallyVisible(
 	    return 0;
 	if (!tree->showRoot)
 	    return 1;
-	if (!(parent->state & STATE_OPEN))
+	if (!(parent->state & STATE_ITEM_OPEN))
 	    return 0;
     }
-    if (!IS_VISIBLE(parent) || !(parent->state & STATE_OPEN))
+    if (!IS_VISIBLE(parent) || !(parent->state & STATE_ITEM_OPEN))
 	return 0;
     return TreeItem_ReallyVisible(tree, parent);
 }
@@ -5223,8 +5223,8 @@ Item_Configure(
 
     for (error = 0; error <= 1; error++) {
 	if (error == 0) {
-	    if (Tk_SetOptions(tree->interp, (char *) item, tree->itemOptionTable,
-			objc, objv, tree->tkwin, &savedOptions, &mask) != TCL_OK) {
+	    if (Tree_SetOptions(tree, STATE_DOMAIN_ITEM, item, tree->itemOptionTable,
+			objc, objv, &savedOptions, &mask) != TCL_OK) {
 		mask = 0;
 		continue;
 	    }
@@ -5567,10 +5567,10 @@ ItemCreateCmd(
 	item = Item_Alloc(tree, FALSE);
 	item->flags &= ~(ITEM_FLAG_BUTTON | ITEM_FLAG_BUTTON_AUTO);
 	item->flags |= button;
-	if (enabled) item->state |= STATE_ENABLED;
-	else item->state &= ~STATE_ENABLED;
-	if (open) item->state |= STATE_OPEN;
-	else item->state &= ~STATE_OPEN;
+	if (enabled) item->state |= STATE_ITEM_ENABLED;
+	else item->state &= ~STATE_ITEM_ENABLED;
+	if (open) item->state |= STATE_ITEM_OPEN;
+	else item->state &= ~STATE_ITEM_OPEN;
 	if (visible) item->flags |= ITEM_FLAG_VISIBLE;
 	else item->flags &= ~ITEM_FLAG_VISIBLE;
 	if (wrap) item->flags |= ITEM_FLAG_WRAP;
@@ -5753,6 +5753,7 @@ TreeItemCmd_Element(
     int flags = IFO_NOT_NULL;
     int result = TCL_OK;
     int tailFlag = doHeaders ? 0 : CFO_NOT_TAIL; /* styles allowed in tail? */
+    int domain = /*doHeaders ? STATE_DOMAIN_HEADER : */STATE_DOMAIN_ITEM;
 
     if (objc < 7) {
 	Tcl_WrongNumArgs(interp, 3, objv,
@@ -5813,7 +5814,7 @@ TreeItemCmd_Element(
 	    if (objc == 9) {
 		int states[3];
 
-		if (Tree_StateFromListObj(tree, objv[8], states,
+		if (Tree_StateFromListObj(tree, domain, objv[8], states,
 			    SFO_NOT_OFF | SFO_NOT_TOGGLE) != TCL_OK) {
 		    result = TCL_ERROR;
 		    break;
@@ -7738,6 +7739,7 @@ TreeItemCmd_State(
     )
 {
     Tcl_Interp *interp = tree->interp;
+    TreeStateDomain *domainPtr = &tree->stateDomain[STATE_DOMAIN_ITEM];
     static CONST char *commandNames[] = {
 	"forcolumn", "get", "set", (char *) NULL
     };
@@ -7746,6 +7748,7 @@ TreeItemCmd_State(
     };
     int index;
     TreeItem item;
+    int domain = /*doHeaders ? STATE_DOMAIN_HEADER : */STATE_DOMAIN_ITEM;
 
     if (objc < 5) {
 	Tcl_WrongNumArgs(interp, 3, objv,
@@ -7805,11 +7808,11 @@ TreeItemCmd_State(
 		    goto doneFORC;
 		listObj = Tcl_NewListObj(0, NULL);
 		for (i = 0; i < 32; i++) {
-		    if (tree->stateNames[i] == NULL)
+		    if (domainPtr->stateNames[i] == NULL)
 			continue;
 		    if (column->cstate & (1L << i)) {
 			Tcl_ListObjAppendElement(interp, listObj,
-				Tcl_NewStringObj(tree->stateNames[i], -1));
+				Tcl_NewStringObj(domainPtr->stateNames[i], -1));
 		    }
 		}
 		Tcl_SetObjResult(interp, listObj);
@@ -7820,7 +7823,7 @@ TreeItemCmd_State(
 		result = TCL_ERROR;
 		goto doneFORC;
 	    }
-	    if (Tree_StateFromListObj(tree, objv[6], states, SFO_NOT_STATIC) != TCL_OK) {
+	    if (Tree_StateFromListObj(tree, domain, objv[6], states, SFO_NOT_STATIC) != TCL_OK) {
 		result = TCL_ERROR;
 		goto doneFORC;
 	    }
@@ -7866,7 +7869,7 @@ doneFORC:
 	    }
 	    if (objc == 6) {
 		states[STATE_OP_ON] = 0;
-		if (Tree_StateFromObj(tree, objv[5], states, NULL,
+		if (Tree_StateFromObj(tree, domain, objv[5], states, NULL,
 			    SFO_NOT_OFF | SFO_NOT_TOGGLE) != TCL_OK)
 		    return TCL_ERROR;
 		Tcl_SetObjResult(interp,
@@ -7875,11 +7878,11 @@ doneFORC:
 	    }
 	    listObj = Tcl_NewListObj(0, NULL);
 	    for (i = 0; i < 32; i++) {
-		if (tree->stateNames[i] == NULL)
+		if (domainPtr->stateNames[i] == NULL)
 		    continue;
 		if (item->state & (1L << i)) {
 		    Tcl_ListObjAppendElement(interp, listObj,
-			    Tcl_NewStringObj(tree->stateNames[i], -1));
+			    Tcl_NewStringObj(domainPtr->stateNames[i], -1));
 		}
 	    }
 	    Tcl_SetObjResult(interp, listObj);
@@ -7914,7 +7917,7 @@ doneFORC:
 		    goto doneSET;
 		}
 	    }
-	    if (Tree_StateFromListObj(tree, objv[objc - 1], states,
+	    if (Tree_StateFromListObj(tree, domain, objv[objc - 1], states,
 			SFO_NOT_STATIC) != TCL_OK) {
 		result =  TCL_ERROR;
 		goto doneSET;
@@ -8619,7 +8622,7 @@ reqSameRoot:
 		    TreeItem_OpenClose(tree, item, mode);
 		    break;
 		}
-		open = (item->state & STATE_OPEN) != 0;
+		open = (item->state & STATE_ITEM_OPEN) != 0;
 		if (mode == -1 || open != mode) {
 		    (void) TreeTheme_AnimateButtonStart(tree, item);
 		}
@@ -8949,13 +8952,13 @@ reqSameRoot:
 		    goto errorExit;
 		}
 		Tcl_SetObjResult(interp,
-			Tcl_NewBooleanObj(item->state & STATE_ENABLED));
+			Tcl_NewBooleanObj(item->state & STATE_ITEM_ENABLED));
 		break;
 	    }
 	    if (Tcl_GetBooleanFromObj(interp, objv[4], &enabled) != TCL_OK)
 		goto errorExit;
-	    stateOff = enabled ? 0 : STATE_ENABLED;
-	    stateOn = enabled ? STATE_ENABLED : 0;
+	    stateOff = enabled ? 0 : STATE_ITEM_ENABLED;
+	    stateOn = enabled ? STATE_ITEM_ENABLED : 0;
 	    TreeItemList_Init(tree, &newD, tree->selectCount);
 	    ITEM_FOR_EACH(item, &itemList, NULL, &iter) {
 		if (enabled != TreeItem_GetEnabled(tree, item)) {
@@ -9011,7 +9014,7 @@ reqSameRoot:
 	    break;
 	}
 	case COMMAND_ISOPEN: {
-	    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(item->state & STATE_OPEN));
+	    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(item->state & STATE_ITEM_OPEN));
 	    break;
 	}
 	case COMMAND_LASTCHILD: {

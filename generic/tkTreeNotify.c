@@ -531,7 +531,7 @@ void
 TreeNotify_OpenClose(
     TreeCtrl *tree,		/* Widget info. */
     TreeItem item,		/* Item token. */
-    int state,			/* STATE_OPEN or 0 */
+    int state,			/* STATE_ITEM_OPEN or 0 */
     int before			/* TRUE for <xxx-before> event, FALSE for
 				 * <xxx-after> event. */
     )
@@ -545,7 +545,7 @@ TreeNotify_OpenClose(
     data.tree = tree;
     data.id = TreeItem_GetID(tree, item);
 
-    if (state & STATE_OPEN) {
+    if (state & STATE_ITEM_OPEN) {
 	event.type = EVENT_EXPAND;
 	event.detail = before ? DETAIL_EXPAND_BEFORE : DETAIL_EXPAND_AFTER;
     } else {

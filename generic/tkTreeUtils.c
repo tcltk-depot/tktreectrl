@@ -1460,6 +1460,7 @@ PerStateInfo_Free(
 int
 PerStateInfo_FromObj(
     TreeCtrl *tree,		/* Widget info. */
+    int domain,			/* STATE_DOMAIN_XXX index. */
     StateFromObjProc proc,	/* Procedure used to turn a Tcl_Obj into
 				 * a state bit-flag. */
     PerStateType *typePtr,	/* Type-specific functions and values. */
@@ -1531,7 +1532,7 @@ PerStateInfo_FromObj(
 	}
 	pData->stateOff = pData->stateOn = 0; /* all states */
 	for (j = 0; j < objc2; j++) {
-	    if (proc(tree, objv2[j], &pData->stateOff, &pData->stateOn) != TCL_OK) {
+	    if (proc(tree, domain, objv2[j], &pData->stateOff, &pData->stateOn) != TCL_OK) {
 		goto freeIt;
 	    }
 	}
@@ -1720,6 +1721,7 @@ PerStateInfo_Undefine(
     TreeCtrl *tree,		/* Widget info. */
     PerStateType *typePtr,	/* Type-specific functions and values. */
     PerStateInfo *pInfo,	/* Per-state info to modify. */
+    int domain,			/* STATE_DOMAIN_XXX index. */
     int state			/* State bit-flag that was undefined. */
     )
 {
@@ -1753,7 +1755,7 @@ PerStateInfo_Undefine(
 	    for (j = 0; j < numStates; ) {
 		Tcl_ListObjIndex(tree->interp, listObj, j, &stateObj);
 		stateOff = stateOn = 0;
-		TreeStateFromObj(tree, stateObj, &stateOff, &stateOn);
+		TreeStateFromObj(tree, domain, stateObj, &stateOff, &stateOn); /* FIXME: why this proc? */
 		if ((stateOff | stateOn) & state) {
 		    Tcl_ListObjReplace(tree->interp, listObj, j, 1, 0, NULL);
 		    numStates--;
@@ -4289,7 +4291,7 @@ PerStateCO_Set(
 	new.data = NULL;
 	new.count = 0;
 /*	Tcl_IncrRefCount((*value));*/
-	if (PerStateInfo_FromObj(tree, cd->proc, cd->typePtr, &new) != TCL_OK) {
+	if (PerStateInfo_FromObj(tree, tree->configStateDomain, cd->proc, cd->typePtr, &new) != TCL_OK) {
 /*	    Tcl_DecrRefCount((*value));*/
 	    return TCL_ERROR;
 	}
@@ -5013,6 +5015,32 @@ DynamicOption_Free1(
 	prev = opt;
 	opt = opt->next;
     }
+}
+
+int
+Tree_SetOptions(
+    TreeCtrl *tree,
+    int domain,
+    void *recordPtr,
+    Tk_OptionTable optionTable,
+    int objc,
+    Tcl_Obj *CONST objv[],
+    Tk_SavedOptions *savePtr,
+    int *maskPtr
+    )
+{
+    int result;
+
+    if (tree->configStateDomain != -1)
+	panic("Tree_SetOptions configStateDomain != -1");
+
+    tree->configStateDomain = domain;
+
+    result = Tk_SetOptions(tree->interp, recordPtr, optionTable, objc, objv,
+	tree->tkwin, savePtr, maskPtr);
+
+    tree->configStateDomain = -1;
+    return result;
 }
 
 /*

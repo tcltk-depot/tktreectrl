@@ -515,12 +515,12 @@ int StringTableCO_Init(Tk_OptionSpec *optionTable, CONST char *optionName, CONST
 
 /*****/
 
-int TreeStateFromObj(TreeCtrl *tree, Tcl_Obj *obj, int *stateOff, int *stateOn)
+int TreeStateFromObj(TreeCtrl *tree, int domain, Tcl_Obj *obj, int *stateOff, int *stateOn)
 {
     int states[3];
 
     states[STATE_OP_ON] = states[STATE_OP_OFF] = states[STATE_OP_TOGGLE] = 0;
-    if (Tree_StateFromObj(tree, obj, states, NULL, SFO_NOT_TOGGLE) != TCL_OK)
+    if (Tree_StateFromObj(tree, domain, obj, states, NULL, SFO_NOT_TOGGLE) != TCL_OK)
 	return TCL_ERROR;
 
     (*stateOn) |= states[STATE_OP_ON];
@@ -695,9 +695,9 @@ static int ConfigProcBitmap(TreeElementArgs *args)
 
     for (error = 0; error <= 1; error++) {
 	if (error == 0) {
-	    if (Tk_SetOptions(tree->interp, (char *) elemX,
+	    if (Tree_SetOptions(tree, elem->stateDomain, elemX,
 			elem->typePtr->optionTable,
-			args->config.objc, args->config.objv, tree->tkwin,
+			args->config.objc, args->config.objv,
 			&savedOptions, &args->config.flagSelf) != TCL_OK) {
 		args->config.flagSelf = 0;
 		continue;
@@ -848,15 +848,16 @@ static int StateProcBitmap(TreeElementArgs *args)
 static int UndefProcBitmap(TreeElementArgs *args)
 {
     TreeCtrl *tree = args->tree;
-    ElementBitmap *elemX = (ElementBitmap *) args->elem;
+    TreeElement elem = args->elem;
+    ElementBitmap *elemX = (ElementBitmap *) elem;
     int modified = 0;
 
 #ifdef DEPRECATED
-    modified |= PerStateInfo_Undefine(tree, &pstBoolean, &elemX->draw, args->state);
+    modified |= PerStateInfo_Undefine(tree, &pstBoolean, &elemX->draw, elem->stateDomain, args->state);
 #endif
-    modified |= PerStateInfo_Undefine(tree, &pstColor, &elemX->fg, args->state);
-    modified |= PerStateInfo_Undefine(tree, &pstColor, &elemX->bg, args->state);
-    modified |= PerStateInfo_Undefine(tree, &pstBitmap, &elemX->bitmap, args->state);
+    modified |= PerStateInfo_Undefine(tree, &pstColor, &elemX->fg, elem->stateDomain, args->state);
+    modified |= PerStateInfo_Undefine(tree, &pstColor, &elemX->bg, elem->stateDomain, args->state);
+    modified |= PerStateInfo_Undefine(tree, &pstBitmap, &elemX->bitmap, elem->stateDomain, args->state);
     return modified;
 }
 
@@ -1029,9 +1030,9 @@ static int ConfigProcBorder(TreeElementArgs *args)
 
     for (error = 0; error <= 1; error++) {
 	if (error == 0) {
-	    if (Tk_SetOptions(tree->interp, (char *) elemX,
+	    if (Tree_SetOptions(tree, elem->stateDomain, elemX,
 			elem->typePtr->optionTable,
-			args->config.objc, args->config.objv, tree->tkwin,
+			args->config.objc, args->config.objv,
 			&savedOptions, &args->config.flagSelf) != TCL_OK) {
 		args->config.flagSelf = 0;
 		continue;
@@ -1209,14 +1210,15 @@ static int StateProcBorder(TreeElementArgs *args)
 static int UndefProcBorder(TreeElementArgs *args)
 {
     TreeCtrl *tree = args->tree;
-    ElementBorder *elemX = (ElementBorder *) args->elem;
+    TreeElement elem = args->elem;
+    ElementBorder *elemX = (ElementBorder *) elem;
     int modified = 0;
 
 #ifdef DEPRECATED
-    modified |= PerStateInfo_Undefine(tree, &pstBoolean, &elemX->draw, args->state);
+    modified |= PerStateInfo_Undefine(tree, &pstBoolean, &elemX->draw, elem->stateDomain, args->state);
 #endif
-    modified |= PerStateInfo_Undefine(tree, &pstBorder, &elemX->border, args->state);
-    modified |= PerStateInfo_Undefine(tree, &pstRelief, &elemX->relief, args->state);
+    modified |= PerStateInfo_Undefine(tree, &pstBorder, &elemX->border, elem->stateDomain, args->state);
+    modified |= PerStateInfo_Undefine(tree, &pstRelief, &elemX->relief, elem->stateDomain, args->state);
     return modified;
 }
 
@@ -1699,9 +1701,9 @@ static int ConfigProcImage(TreeElementArgs *args)
 
     for (error = 0; error <= 1; error++) {
 	if (error == 0) {
-	    if (Tk_SetOptions(tree->interp, (char *) elemX,
+	    if (Tree_SetOptions(tree, elem->stateDomain, elemX,
 			elem->typePtr->optionTable,
-			args->config.objc, args->config.objv, tree->tkwin,
+			args->config.objc, args->config.objv,
 			&savedOptions, &args->config.flagSelf) != TCL_OK) {
 		args->config.flagSelf = 0;
 		continue;
@@ -1876,9 +1878,9 @@ static int UndefProcImage(TreeElementArgs *args)
 
 #ifdef DEPRECATED
     if ((psi = DynamicOption_FindData(elem->options, 1002)) != NULL)
-	modified |= PerStateInfo_Undefine(tree, &pstBoolean, psi, args->state);
+	modified |= PerStateInfo_Undefine(tree, &pstBoolean, psi, elem->stateDomain, args->state);
 #endif
-    modified |= PerStateInfo_Undefine(tree, &pstImage, &elemX->image, args->state);
+    modified |= PerStateInfo_Undefine(tree, &pstImage, &elemX->image, elem->stateDomain, args->state);
     return modified;
 }
 
@@ -2059,9 +2061,9 @@ static int ConfigProcRect(TreeElementArgs *args)
 
     for (error = 0; error <= 1; error++) {
 	if (error == 0) {
-	    if (Tk_SetOptions(tree->interp, (char *) elemX,
+	    if (Tree_SetOptions(tree, elem->stateDomain, elemX,
 			elem->typePtr->optionTable,
-			args->config.objc, args->config.objv, tree->tkwin,
+			args->config.objc, args->config.objv,
 			&savedOptions, &args->config.flagSelf) != TCL_OK) {
 		args->config.flagSelf = 0;
 		continue;
@@ -2192,7 +2194,7 @@ static void DisplayProcRect(TreeElementArgs *args)
 		trBrush, tr, outlineWidth, rx, ry, open);
 	}
 	/* FIXME: its not round! */
-	if (showFocus && (state & STATE_FOCUS) && (state & STATE_ACTIVE)) {
+	if (showFocus && (state & STATE_ITEM_FOCUS) && (state & STATE_ITEM_ACTIVE)) {
 	    Tree_DrawActiveOutline(tree, args->display.drawable,
 		    args->display.x, args->display.y,
 		    args->display.width, args->display.height,
@@ -2218,7 +2220,7 @@ static void DisplayProcRect(TreeElementArgs *args)
 	    outlineWidth, open);
     }
 
-    if (showFocus && (state & STATE_FOCUS) && (state & STATE_ACTIVE)) {
+    if (showFocus && (state & STATE_ITEM_FOCUS) && (state & STATE_ITEM_ACTIVE)) {
 	Tree_DrawActiveOutline(tree, args->display.drawable,
 		args->display.x, args->display.y,
 		args->display.width, args->display.height,
@@ -2291,11 +2293,11 @@ static int StateProcRect(TreeElementArgs *args)
 	showFocus = masterX->showFocus;
 
     s1 = showFocus &&
-	(args->states.state1 & STATE_FOCUS) &&
-	(args->states.state1 & STATE_ACTIVE);
+	(args->states.state1 & STATE_ITEM_FOCUS) &&
+	(args->states.state1 & STATE_ITEM_ACTIVE);
     s2 = showFocus &&
-	(args->states.state2 & STATE_FOCUS) &&
-	(args->states.state2 & STATE_ACTIVE);
+	(args->states.state2 & STATE_ITEM_FOCUS) &&
+	(args->states.state2 & STATE_ITEM_ACTIVE);
     if (s1 != s2)
 	return CS_DISPLAY;
 
@@ -2321,15 +2323,16 @@ static int StateProcRect(TreeElementArgs *args)
 static int UndefProcRect(TreeElementArgs *args)
 {
     TreeCtrl *tree = args->tree;
-    ElementRect *elemX = (ElementRect *) args->elem;
+    TreeElement elem = args->elem;
+    ElementRect *elemX = (ElementRect *) elem;
     int modified = 0;
 
 #ifdef DEPRECATED
-    modified |= PerStateInfo_Undefine(tree, &pstBoolean, &elemX->draw, args->state);
+    modified |= PerStateInfo_Undefine(tree, &pstBoolean, &elemX->draw, elem->stateDomain, args->state);
 #endif
-    modified |= PerStateInfo_Undefine(tree, &pstColor, &elemX->fill, args->state);
-    modified |= PerStateInfo_Undefine(tree, &pstFlags, &elemX->open, args->state);
-    modified |= PerStateInfo_Undefine(tree, &pstColor, &elemX->outline, args->state);
+    modified |= PerStateInfo_Undefine(tree, &pstColor, &elemX->fill, elem->stateDomain, args->state);
+    modified |= PerStateInfo_Undefine(tree, &pstFlags, &elemX->open, elem->stateDomain, args->state);
+    modified |= PerStateInfo_Undefine(tree, &pstColor, &elemX->outline, elem->stateDomain, args->state);
     return modified;
 }
 
@@ -3065,9 +3068,9 @@ static int ConfigProcText(TreeElementArgs *args)
 
     for (error = 0; error <= 1; error++) {
 	if (error == 0) {
-	    if (Tk_SetOptions(interp, (char *) elemX,
+	    if (Tree_SetOptions(tree, elem->stateDomain, elemX,
 			elem->typePtr->optionTable,
-			args->config.objc, args->config.objv, tree->tkwin,
+			args->config.objc, args->config.objv,
 			&savedOptions, &args->config.flagSelf) != TCL_OK) {
 		args->config.flagSelf = 0;
 		continue;
@@ -3652,16 +3655,17 @@ static int StateProcText(TreeElementArgs *args)
 static int UndefProcText(TreeElementArgs *args)
 {
     TreeCtrl *tree = args->tree;
-/*    ElementText *elemX = (ElementText *) args->elem;*/
+    TreeElement elem = args->elem;
+/*    ElementText *elemX = (ElementText *) elem;*/
     int modified = 0;
     PerStateInfo *psi;
 
     if ((psi = DynamicOption_FindData(args->elem->options, DOID_TEXT_DRAW)) != NULL)
-	modified |= PerStateInfo_Undefine(tree, &pstBoolean, psi, args->state);
+	modified |= PerStateInfo_Undefine(tree, &pstBoolean, psi, elem->stateDomain, args->state);
     if ((psi = DynamicOption_FindData(args->elem->options, DOID_TEXT_FILL)) != NULL)
-	modified |= PerStateInfo_Undefine(tree, &pstColor, psi, args->state);
+	modified |= PerStateInfo_Undefine(tree, &pstColor, psi, elem->stateDomain, args->state);
     if ((psi = DynamicOption_FindData(args->elem->options, DOID_TEXT_FONT)) != NULL)
-	modified |= PerStateInfo_Undefine(tree, &pstFont, psi, args->state);
+	modified |= PerStateInfo_Undefine(tree, &pstFont, psi, elem->stateDomain, args->state);
 
     return modified;
 }
@@ -3941,9 +3945,9 @@ static int ConfigProcWindow(TreeElementArgs *args)
 
     for (error = 0; error <= 1; error++) {
 	if (error == 0) {
-	    if (Tk_SetOptions(tree->interp, (char *) elemX,
+	    if (Tree_SetOptions(tree, elem->stateDomain, elemX,
 			elem->typePtr->optionTable,
-			args->config.objc, args->config.objv, tree->tkwin,
+			args->config.objc, args->config.objv,
 			&savedOptions, &args->config.flagSelf) != TCL_OK) {
 		args->config.flagSelf = 0;
 		continue;
@@ -4279,7 +4283,7 @@ static int UndefProcWindow(TreeElementArgs *args)
     int modified = 0;
 
 #ifdef DEPRECATED
-    modified |= PerStateInfo_Undefine(tree, &pstBoolean, &elemX->draw, args->state);
+    modified |= PerStateInfo_Undefine(tree, &pstBoolean, &elemX->draw, elem->stateDomain, args->state);
 #endif
     return modified;
 }

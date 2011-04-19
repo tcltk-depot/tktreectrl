@@ -352,7 +352,7 @@ static void TreeWorldChanged(ClientData instanceData);
 static void TreeComputeGeometry(TreeCtrl *tree);
 static int TreeIdentifyCmd(TreeCtrl *tree, int objc, Tcl_Obj *CONST objv[]);
 static int TreeSeeCmd(TreeCtrl *tree, int objc, Tcl_Obj *CONST objv[]);
-static int TreeStateCmd(TreeCtrl *tree, int objc, Tcl_Obj *CONST objv[]);
+static int TreeStateCmd(TreeCtrl *tree, int domain, int objc, Tcl_Obj *CONST objv[]);
 static int TreeSelectionCmd(Tcl_Interp *interp, TreeCtrl *tree, int objc,
     Tcl_Obj *CONST objv[]);
 static int TreeDebugCmd(ClientData clientData, Tcl_Interp *interp, int objc,
@@ -394,6 +394,7 @@ TreeObjCmd(
     TreeCtrl *tree;
     Tk_Window tkwin;
     Tk_OptionTable optionTable;
+    TreeStateDomain *domainPtr;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "pathName ?options?");
@@ -422,11 +423,14 @@ TreeObjCmd(
     tree->prevHeight	= Tk_Height(tkwin);
     tree->updateIndex	= 1;
 
-    tree->stateNames[0]	= "open";
-    tree->stateNames[1]	= "selected";
-    tree->stateNames[2]	= "enabled";
-    tree->stateNames[3]	= "active";
-    tree->stateNames[4]	= "focus";
+    domainPtr = &tree->stateDomain[STATE_DOMAIN_ITEM];
+    domainPtr->stateNames[0]	= "open";
+    domainPtr->stateNames[1]	= "selected";
+    domainPtr->stateNames[2]	= "enabled";
+    domainPtr->stateNames[3]	= "active";
+    domainPtr->stateNames[4]	= "focus";
+    domainPtr->staticCount = 5;
+    tree->configStateDomain = -1;
 
     Tcl_InitHashTable(&tree->selection, TCL_ONE_WORD_KEYS);
 
@@ -662,9 +666,9 @@ static int TreeWidgetCmd(
 		TreeRectangle tr;
 
 		active = tree->activeItem;
-		TreeItem_ChangeState(tree, active, STATE_ACTIVE, 0);
+		TreeItem_ChangeState(tree, active, STATE_ITEM_ACTIVE, 0);
 		tree->activeItem = item;
-		TreeItem_ChangeState(tree, tree->activeItem, 0, STATE_ACTIVE);
+		TreeItem_ChangeState(tree, tree->activeItem, 0, STATE_ITEM_ACTIVE);
 
 		/* FIXME: is it onscreen? */
 		/* FIXME: what if only lock columns displayed? */
@@ -1110,7 +1114,7 @@ static int TreeWidgetCmd(
 	}
 
 	case COMMAND_STATE: {
-	    result = TreeStateCmd(tree, objc, objv);
+	    result = TreeStateCmd(tree, STATE_DOMAIN_ITEM, objc, objv);
 	    break;
 	}
 
@@ -1196,8 +1200,9 @@ TreeConfigure(
 
     for (error = 0; error <= 1; error++) {
 	if (error == 0) {
-	    if (Tk_SetOptions(interp, (char *) tree, tree->optionTable, objc,
-		    objv, tree->tkwin, &savedOptions, &mask) != TCL_OK) {
+	    if (Tree_SetOptions(tree, STATE_DOMAIN_ITEM, tree,
+		    tree->optionTable, objc, objv, &savedOptions,
+		    &mask) != TCL_OK) {
 		mask = 0;
 		continue;
 	    }
@@ -1735,6 +1740,7 @@ TreeDestroy(
     TreeItem item;
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
+    TreeStateDomain *domainPtr;
     int i, count;
 
     hPtr = Tcl_FirstHashEntry(&tree->itemHash, &search);
@@ -1781,9 +1787,10 @@ TreeDestroy(
 
     QE_DeleteBindingTable(tree->bindingTable);
 
-    for (i = STATE_USER - 1; i < 32; i++)
-	if (tree->stateNames[i] != NULL)
-	    ckfree(tree->stateNames[i]);
+    domainPtr = &tree->stateDomain[STATE_DOMAIN_ITEM];
+    for (i = domainPtr->staticCount; i < 32; i++)
+	if (domainPtr->stateNames[i] != NULL)
+	    ckfree(domainPtr->stateNames[i]);
 
     Tk_FreeConfigOptions((char *) tree, tree->debug.optionTable,
 	    tree->tkwin);
@@ -2722,6 +2729,7 @@ TreeSeeCmd(
 int
 Tree_StateFromObj(
     TreeCtrl *tree,		/* Widget info. */
+    int domain,			/* STATE_DOMAIN_XXX index. */
     Tcl_Obj *obj,		/* String rep of the state. */
     int states[3],		/* Initialized state flags, indexed by the
 				 * STATE_OP_xxx contants. A single flag
@@ -2732,6 +2740,7 @@ Tree_StateFromObj(
     )
 {
     Tcl_Interp *interp = tree->interp;
+    TreeStateDomain *domainPtr = &tree->stateDomain[domain];
     int i, op = STATE_OP_ON, op2, op3, length, state = 0;
     char ch0, *string;
 
@@ -2757,14 +2766,14 @@ Tree_StateFromObj(
 	ch0 = string[0];
     }
     for (i = 0; i < 32; i++) {
-	if (tree->stateNames[i] == NULL)
+	if (domainPtr->stateNames[i] == NULL)
 	    continue;
-	if ((ch0 == tree->stateNames[i][0]) &&
-		(strcmp(string, tree->stateNames[i]) == 0)) {
-	    if ((i < STATE_USER - 1) && (flags & SFO_NOT_STATIC)) {
+	if ((ch0 == domainPtr->stateNames[i][0]) &&
+		(strcmp(string, domainPtr->stateNames[i]) == 0)) {
+	    if ((i < domainPtr->staticCount) && (flags & SFO_NOT_STATIC)) {
 		FormatResult(interp,
 			"can't specify state \"%s\" for this command",
-			tree->stateNames[i]);
+			domainPtr->stateNames[i]);
 		return TCL_ERROR;
 	    }
 	    state = 1L << i;
@@ -2817,6 +2826,7 @@ unknown:
 int
 Tree_StateFromListObj(
     TreeCtrl *tree,		/* Widget info. */
+    int domain,			/* STATE_DOMAIN_XXX index. */
     Tcl_Obj *obj,		/* List of states. */
     int states[3],		/* Uninitialized state flags, indexed by the
 				 * STATE_OP_xxx contants. A single flag
@@ -2832,7 +2842,8 @@ Tree_StateFromListObj(
     if (Tcl_ListObjGetElements(interp, obj, &listObjc, &listObjv) != TCL_OK)
 	return TCL_ERROR;
     for (i = 0; i < listObjc; i++) {
-	if (Tree_StateFromObj(tree, listObjv[i], states, NULL, flags) != TCL_OK)
+	if (Tree_StateFromObj(tree, domain, listObjv[i], states, NULL, flags)
+		!= TCL_OK)
 	    return TCL_ERROR;
     }
     return TCL_OK;
@@ -2859,11 +2870,13 @@ Tree_StateFromListObj(
 static int
 TreeStateCmd(
     TreeCtrl *tree,		/* Widget info. */
+    int domain,			/* STATE_DOMAIN_XXX index. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *CONST objv[]	/* Argument values. */
     )
 {
     Tcl_Interp *interp = tree->interp;
+    TreeStateDomain *domainPtr = &tree->stateDomain[domain];
     static CONST char *commandName[] = {
 	"define", "linkage", "names",  "undefine", (char *) NULL
     };
@@ -2897,12 +2910,12 @@ TreeStateCmd(
 		return TCL_ERROR;
 	    }
 	    for (i = 0; i < 32; i++) {
-		if (tree->stateNames[i] == NULL) {
+		if (domainPtr->stateNames[i] == NULL) {
 		    if (slot == -1)
 			slot = i;
 		    continue;
 		}
-		if (strcmp(tree->stateNames[i], string) == 0) {
+		if (strcmp(domainPtr->stateNames[i], string) == 0) {
 		    FormatResult(interp, "state \"%s\" already defined", string);
 		    return TCL_ERROR;
 		}
@@ -2911,8 +2924,8 @@ TreeStateCmd(
 		FormatResult(interp, "cannot define any more states");
 		return TCL_ERROR;
 	    }
-	    tree->stateNames[slot] = ckalloc(length + 1);
-	    strcpy(tree->stateNames[slot], string);
+	    domainPtr->stateNames[slot] = ckalloc(length + 1);
+	    strcpy(domainPtr->stateNames[slot], string);
 	    break;
 	}
 
@@ -2923,11 +2936,11 @@ TreeStateCmd(
 		Tcl_WrongNumArgs(interp, 3, objv, "state");
 		return TCL_ERROR;
 	    }
-	    if (Tree_StateFromObj(tree, objv[3], NULL, &index,
+	    if (Tree_StateFromObj(tree, domain, objv[3], NULL, &index,
 		    SFO_NOT_OFF | SFO_NOT_TOGGLE) != TCL_OK)
 		return TCL_ERROR;
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		(index < STATE_USER - 1) ? "static" : "dynamic", -1));
+		(index < domainPtr->staticCount) ? "static" : "dynamic", -1));
 	    break;
 	}
 
@@ -2940,10 +2953,10 @@ TreeStateCmd(
 		return TCL_ERROR;
 	    }
 	    listObj = Tcl_NewListObj(0, NULL);
-	    for (i = STATE_USER - 1; i < 32; i++) {
-		if (tree->stateNames[i] != NULL)
+	    for (i = domainPtr->staticCount; i < 32; i++) {
+		if (domainPtr->stateNames[i] != NULL)
 		    Tcl_ListObjAppendElement(interp, listObj,
-			    Tcl_NewStringObj(tree->stateNames[i], -1));
+			    Tcl_NewStringObj(domainPtr->stateNames[i], -1));
 	    }
 	    Tcl_SetObjResult(interp, listObj);
 	    break;
@@ -2953,16 +2966,16 @@ TreeStateCmd(
 	    int i, index;
 
 	    for (i = 3; i < objc; i++) {
-		if (Tree_StateFromObj(tree, objv[i], NULL, &index,
+		if (Tree_StateFromObj(tree, domain, objv[i], NULL, &index,
 			SFO_NOT_STATIC | SFO_NOT_OFF | SFO_NOT_TOGGLE) != TCL_OK)
 		    return TCL_ERROR;
-		Tree_UndefineState(tree, 1L << index);
+		Tree_UndefineState(tree, domain, 1L << index);
 		PerStateInfo_Undefine(tree, &pstBitmap, &tree->buttonBitmap,
-			1L << index);
+			domain, 1L << index);
 		PerStateInfo_Undefine(tree, &pstImage, &tree->buttonImage,
-			1L << index);
-		ckfree(tree->stateNames[index]);
-		tree->stateNames[index] = NULL;
+			domain, 1L << index);
+		ckfree(domainPtr->stateNames[index]);
+		domainPtr->stateNames[index] = NULL;
 	    }
 	    break;
 	}
@@ -2977,7 +2990,7 @@ TreeStateCmd(
  * Tree_AddToSelection --
  *
  *	Add an item to the hash table of selected items. Turn on the
- *	STATE_SELECTED state for the item.
+ *	STATE_ITEM_SELECTED state for the item.
  *
  * Results:
  *	None.
@@ -3008,7 +3021,7 @@ Tree_AddToSelection(
     if (!TreeItem_GetEnabled(tree, item))
 	panic("Tree_AddToSelection: item %d not enabled",
 		TreeItem_GetID(tree, item));
-    TreeItem_ChangeState(tree, item, 0, STATE_SELECTED);
+    TreeItem_ChangeState(tree, item, 0, STATE_ITEM_SELECTED);
     hPtr = Tcl_CreateHashEntry(&tree->selection, (char *) item, &isNew);
     if (!isNew)
 	panic("Tree_AddToSelection: item %d already in selection hash table",
@@ -3022,7 +3035,7 @@ Tree_AddToSelection(
  * Tree_RemoveFromSelection --
  *
  *	Remove an item from the hash table of selected items. Turn off the
- *	STATE_SELECTED state for the item.
+ *	STATE_ITEM_SELECTED state for the item.
  *
  * Results:
  *	None.
@@ -3044,7 +3057,7 @@ Tree_RemoveFromSelection(
     if (!TreeItem_GetSelected(tree, item))
 	panic("Tree_RemoveFromSelection: item %d isn't selected",
 		TreeItem_GetID(tree, item));
-    TreeItem_ChangeState(tree, item, STATE_SELECTED, 0);
+    TreeItem_ChangeState(tree, item, STATE_ITEM_SELECTED, 0);
     hPtr = Tcl_FindHashEntry(&tree->selection, (char *) item);
     if (hPtr == NULL)
 	panic("Tree_RemoveFromSelection: item %d not found in selection hash table",

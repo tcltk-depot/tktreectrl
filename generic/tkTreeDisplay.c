@@ -8506,7 +8506,7 @@ Tree_RelayoutWindow(
  * Tree_FocusChanged --
  *
  *	This procedure handles the widget gaining or losing the input
- *	focus. The state of every item has STATE_FOCUS toggled on or
+ *	focus. The state of every item has STATE_ITEM_FOCUS toggled on or
  *	off.
  *
  * Results:
@@ -8536,9 +8536,9 @@ Tree_FocusChanged(
     tree->gotFocus = gotFocus;
 
     if (gotFocus)
-	stateOff = 0, stateOn = STATE_FOCUS;
+	stateOff = 0, stateOn = STATE_ITEM_FOCUS;
     else
-	stateOff = STATE_FOCUS, stateOn = 0;
+	stateOff = STATE_ITEM_FOCUS, stateOn = 0;
 
     /* Slow. Change state of every header */
     item = tree->headerItems;

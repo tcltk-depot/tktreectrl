@@ -42,6 +42,7 @@ struct MStyle
     int vertical;		/* -orient */
     int buttonY;		/* -buttony */
     Tcl_Obj *buttonYObj;	/* -buttony */
+    int stateDomain;		/* STATE_DOMAIN_XXX index. */
 };
 
 /*
@@ -5359,7 +5360,7 @@ TreeElementCmd(
 	    if (Element_FromObj(tree, objv[3], &elem) != TCL_OK)
 		return TCL_ERROR;
 
-	    if (Tree_StateFromListObj(tree, objv[5], states,
+	    if (Tree_StateFromListObj(tree, elem->stateDomain, objv[5], states,
 		    SFO_NOT_OFF | SFO_NOT_TOGGLE) != TCL_OK)
 		return TCL_ERROR;
 
@@ -6055,8 +6056,8 @@ StyleLayoutCmd(
 		}
 		psi->obj = objv[i + 1];
 		Tcl_IncrRefCount(psi->obj);
-		if (PerStateInfo_FromObj(tree, TreeStateFromObj, &pstBoolean,
-			psi) != TCL_OK) {
+		if (PerStateInfo_FromObj(tree, style->stateDomain,
+			TreeStateFromObj, &pstBoolean, psi) != TCL_OK) {
 		    goto badConfig;
 		}
 		break;
@@ -6417,7 +6418,7 @@ Tree_ButtonHeight(
 
     if (tree->useTheme &&
 	TreeTheme_GetButtonSize(tree, Tk_WindowId(tree->tkwin),
-	    (state & STATE_OPEN) != 0, &w, &h) == TCL_OK)
+	    (state & STATE_ITEM_OPEN) != 0, &w, &h) == TCL_OK)
 	return h;
 
     return tree->buttonSize;
@@ -7005,6 +7006,7 @@ TreeStyle_ChangeState(
 void
 Tree_UndefineState(
     TreeCtrl *tree,		/* Widget info. */
+    int domain,			/* STATE_DOMAIN_XXX index. */
     int state			/* STATE_xxx flag. */
     )
 {
@@ -7024,8 +7026,8 @@ Tree_UndefineState(
 	MStyle *masterStyle = (MStyle *) Tcl_GetHashValue(hPtr);
 	for (i = 0; i < masterStyle->numElements; i++) {
 	    MElementLink *eLink1 = &masterStyle->elements[i];
-	    PerStateInfo_Undefine(tree, &pstBoolean, &eLink1->draw, state);
-	    PerStateInfo_Undefine(tree, &pstBoolean, &eLink1->visible, state);
+	    PerStateInfo_Undefine(tree, &pstBoolean, &eLink1->draw, masterStyle->stateDomain, state);
+	    PerStateInfo_Undefine(tree, &pstBoolean, &eLink1->visible, masterStyle->stateDomain, state);
 	}
 	hPtr = Tcl_NextHashEntry(&search);
     }
