@@ -1770,6 +1770,8 @@ TreeDestroy(
     }
     Tcl_DeleteHashTable(&tree->itemHash);
 
+    TreeHeader_Free(tree);
+
     Tcl_DeleteHashTable(&tree->itemSpansHash);
 
     count = TreeItemList_Count(&tree->preserveItemList);
@@ -1785,7 +1787,6 @@ TreeDestroy(
     TreeMarquee_Free(tree->marquee);
     TreeDInfo_Free(tree);
     TreeTheme_Free(tree);
-    TreeHeader_Free(tree);
 
     if (tree->copyGC != None)
 	Tk_FreeGC(tree->display, tree->copyGC);

@@ -5017,6 +5017,25 @@ DynamicOption_Free1(
     }
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tree_InitOptions --
+ * Tree_SetOptions --
+ *
+ *	These procedures are just wrappers around Tk_InitOptions and
+ *	Tk_SetOptions.  They set tree->configStateDomain so that any
+ *	per-state options know which state domain to use.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	Whatever the wrapped function does.
+ *
+ *----------------------------------------------------------------------
+ */
+
 int
 Tree_InitOptions(
     TreeCtrl *tree,

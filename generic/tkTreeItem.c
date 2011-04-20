@@ -808,7 +808,7 @@ TreeItemColumn_ChangeState(
 	sMask = TreeStyle_ChangeState(tree, column->style,
 		item->state | column->cstate, state);
 	if (sMask) {
-	    if (sMask & CS_LAYOUT)
+	    if ((sMask & CS_LAYOUT) && (item->header == NULL))
 		TreeColumns_InvalidateWidthOfItems(tree, treeColumn);
 	    iMask |= sMask;
 	}
@@ -817,7 +817,8 @@ TreeItemColumn_ChangeState(
 	    TreeItem_InvalidateHeight(tree, item);
 	    TreeItemColumn_InvalidateSize(tree, (TreeItemColumn) column);
 	    Tree_FreeItemDInfo(tree, item, NULL);
-	    Tree_DInfoChanged(tree, DINFO_REDO_RANGES);
+	    if (item->header == NULL)
+		Tree_DInfoChanged(tree, DINFO_REDO_RANGES);
 	} else if (iMask & CS_DISPLAY) {
 	    Tree_InvalidateItemDInfo(tree, treeColumn, item, NULL);
 	}

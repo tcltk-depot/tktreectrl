@@ -574,15 +574,25 @@ Column_Configure(
 
     /* Redraw everything */
     if (mask & (COLU_CONF_TWIDTH | COLU_CONF_NWIDTH | COLU_CONF_NHEIGHT)) {
-	TreeColumns_InvalidateWidthOfItems(tree, treeColumn); /* invalidate width of items */
-/*	tree->widthOfColumns = -1;
-	tree->widthOfColumnsLeft = tree->widthOfColumnsRight = -1;*/
+#if 0
+	TreeColumns_InvalidateWidthOfItems(tree, treeColumn);
+#else
+	tree->widthOfColumns = -1;
+	tree->widthOfColumnsLeft = tree->widthOfColumnsRight = -1;
+#endif
+	if (!header->ownerDrawn)
+	    Tree_InvalidateItemDInfo(tree, treeColumn, header->item, NULL);
 	Tree_DInfoChanged(tree, DINFO_CHECK_COLUMN_WIDTH | DINFO_DRAW_HEADER);
     }
 
     /* Redraw header only */
     else if (mask & COLU_CONF_DISPLAY) {
+#if 1
+	if (!header->ownerDrawn)
+	    Tree_InvalidateItemDInfo(tree, treeColumn, header->item, NULL);
+#else
 	Tree_DInfoChanged(tree, DINFO_DRAW_HEADER);
+#endif
     }
 
     if (mask & COLU_CONF_DISPLAY) {
@@ -2311,17 +2321,10 @@ SetImageForColumn(
 
     if (TreeItemColumn_GetStyle(tree, column->itemColumn) != NULL) {
 	StyleDrawArgs drawArgs;
-	int area;
+	int area = TREE_AREA_HEADER_NONE;
 	switch (TreeColumn_Lock(treeColumn)) {
-	    case COLUMN_LOCK_LEFT:
-		area = TREE_AREA_HEADER_LEFT;
-		break;
-	    case COLUMN_LOCK_NONE:
-		area = TREE_AREA_HEADER_NONE;
-		break;
-	    case COLUMN_LOCK_RIGHT:
-		area = TREE_AREA_HEADER_RIGHT;
-		break;
+	    case COLUMN_LOCK_LEFT: area = TREE_AREA_HEADER_LEFT; break;
+	    case COLUMN_LOCK_RIGHT: area = TREE_AREA_HEADER_RIGHT; break;
 	}
 	if (!Tree_AreaBbox(tree, area, &drawArgs.bounds)) {
 	    TreeRect_SetXYWH(drawArgs.bounds, 0, 0, 0, 0);
@@ -4009,7 +4012,13 @@ TreeHeaderCmd(
 		    FreeDragImages(tree);
 		}
 
-		Tree_DInfoChanged(tree, DINFO_DRAW_HEADER);
+		for (item = tree->headerItems;
+			item != NULL;
+			item = TreeItem_GetNextSibling(tree, item)) {
+		    header = TreeItem_GetHeader(tree, item);
+		    if (header->columnDrag.draw)
+			Tree_InvalidateItemDInfo(tree, NULL, item, NULL);
+		}
 		break;
 	    }
 	    if (objc < 6)
@@ -4039,8 +4048,9 @@ TreeHeaderCmd(
 		    return TCL_ERROR;
 		}
 		Tk_FreeSavedOptions(&savedOptions);
+		Tree_InvalidateItemDInfo(tree, NULL, item, NULL);
 	    }
-	    Tree_DInfoChanged(tree, DINFO_DRAW_HEADER);
+/*	    Tree_DInfoChanged(tree, DINFO_DRAW_HEADER);*/
 	    TreeItemList_Free(&items);
 	    break;
 	}

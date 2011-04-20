@@ -753,7 +753,8 @@ MODULE_SCOPE int TreeItemColumn_GetState(TreeCtrl *tree, TreeItemColumn itemColu
 #define CS_DISPLAY 0x01
 #define CS_LAYOUT 0x02
 MODULE_SCOPE int TreeItem_ChangeState(TreeCtrl *tree, TreeItem item_, int stateOff, int stateOn);
-
+MODULE_SCOPE int TreeItemColumn_ChangeState(TreeCtrl *tree, TreeItem item,
+    TreeItemColumn column_, TreeColumn treeColumn, int stateOff, int stateOn);
 MODULE_SCOPE void TreeItem_UndefineState(TreeCtrl *tree, TreeItem item_, int state);
 
 MODULE_SCOPE int TreeItem_HasButton(TreeCtrl *tree, TreeItem item_);
@@ -1443,6 +1444,8 @@ MODULE_SCOPE int DynamicCO_Init(Tk_OptionSpec *optionTable, CONST char *optionNa
 
 /*****/
 
+MODULE_SCOPE int Tree_InitOptions(TreeCtrl *tree, int domain, void *recordPtr,
+    Tk_OptionTable optionTable);
 MODULE_SCOPE int Tree_SetOptions(TreeCtrl *tree, int domain, void *recordPtr,
     Tk_OptionTable optionTable, int objc, Tcl_Obj *CONST objv[],
     Tk_SavedOptions *savePtr, int *maskPtr);

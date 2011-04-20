@@ -136,6 +136,7 @@ struct TreeDInfo_
 				 * a scroll increment.*/
     int headerHeight;		/* Last seen TreeCtrl.headerHeight */
     DItem *dItem;		/* Head of list for each displayed item */
+    DItem *dItemHeader;		/* Head of list for each displayed header */
     DItem *dItemLast;		/* Temp for UpdateDInfo() */
     DItem *dItemFree;		/* List of unused DItems */
     Range *rangeFirst;		/* Head of Ranges */
@@ -2747,7 +2748,7 @@ DItem_Free(
  * FreeDItems --
  *
  *	Add a list of DItems to the pool of unused DItems,
- *	optionally removing the DItems from the DInfo.dItem list.
+ *	optionally removing the DItems from a linked list.
  *
  * Results:
  *	None.
@@ -2761,20 +2762,18 @@ DItem_Free(
 static void
 FreeDItems(
     TreeCtrl *tree,		/* Widget info. */
+    DItem **headPtr,		/* Head of list to unlink from, or NULL. */
     DItem *first,		/* First DItem to free. */
-    DItem *last,		/* DItem after the last one to free. */
-    int unlink			/* TRUE if the DItems should be removed
-				 * from the DInfo.dItem list. */
+    DItem *last			/* DItem after the last one to free. */
     )
 {
-    TreeDInfo dInfo = tree->dInfo;
     DItem *prev;
 
-    if (unlink) {
-	if (dInfo->dItem == first)
-	    dInfo->dItem = last;
+    if (headPtr != NULL) {
+	if ((*headPtr) == first)
+	    (*headPtr) = last;
 	else {
-	    for (prev = dInfo->dItem;
+	    for (prev = (*headPtr);
 		 prev->next != first;
 		 prev = prev->next) {
 		/* nothing */
@@ -4065,6 +4064,98 @@ DItemAllDirty(
 	    !(dItem->right.flags & DITEM_ALL_DIRTY))
 	return 0;
     return 1;
+}
+
+/*
+ *--------------------------------------------------------------
+ *
+ * ScrollHeaders --
+ *
+ *	Scrolls the header area horizontally if needed.
+ *
+ * Results:
+ *	Pixels are copied in the TreeCtrl window or in the
+ *	offscreen pixmap (if double-buffering is used).
+ *
+ * Side effects:
+ *	None.
+ *
+ *--------------------------------------------------------------
+ */
+
+static void
+ScrollHeaders(
+    TreeCtrl *tree		/* Widget info. */
+    )
+{
+    TreeDInfo dInfo = tree->dInfo;
+    TreeRectangle bounds;
+    DItem *dItem;
+    TkRegion damageRgn;
+    int minX, minY, maxX, maxY;
+    int width, offset;
+    int x;
+    int dirtyMin, dirtyMax;
+
+    if (dInfo->xOrigin == tree->xOrigin)
+	return;
+
+    if (!Tree_AreaBbox(tree, TREE_AREA_HEADER_NONE, &bounds))
+	return;
+    TreeRect_XYXY(bounds, &minX, &minY, &maxX, &maxY);
+
+    offset = dInfo->xOrigin - tree->xOrigin;
+
+    /* Update oldX */
+    for (dItem = dInfo->dItemHeader;
+	    dItem != NULL;
+	    dItem = dItem->next) {
+	dItem->oldX = dItem->area.x;
+    }
+
+    /* Simplify if a whole screen was scrolled. */
+    if (abs(offset) >= maxX - minX) {
+	for (dItem = dInfo->dItemHeader;
+		dItem != NULL;
+		dItem = dItem->next) {
+	    dItem->area.flags |= DITEM_DIRTY | DITEM_ALL_DIRTY;
+	    dItem->left.flags |= DITEM_DIRTY | DITEM_ALL_DIRTY;
+	    dItem->right.flags |= DITEM_DIRTY | DITEM_ALL_DIRTY;
+	}
+	return;
+    }
+
+    width = maxX - minX - abs(offset);
+
+    /* Move pixels right */
+    if (offset > 0) {
+	x = minX;
+	dirtyMin = minX;
+	dirtyMax = maxX - width;
+
+    /* Move pixels left */
+    } else {
+	x = maxX - width;
+	dirtyMin = minX + width;
+	dirtyMax = maxX;
+    }
+
+    if (tree->doubleBuffer == DOUBLEBUFFER_WINDOW) {
+	XCopyArea(tree->display, dInfo->pixmapW.drawable,
+		dInfo->pixmapW.drawable,
+		tree->copyGC,
+		x, minY, width, maxY - minY,
+		x + offset, minY);
+    } else {
+	damageRgn = Tree_GetRegion(tree);
+	if (Tree_ScrollWindow(tree, dInfo->scrollGC,
+		    x, minY, width, maxY - minY, offset, 0, damageRgn)) {
+	    DisplayDelay(tree);
+	    Tree_InvalidateRegion(tree, damageRgn);
+	}
+	Tree_FreeRegion(tree, damageRgn);
+    }
+    Tree_InvalidateArea(tree, dirtyMin, minY, dirtyMax, maxY);
 }
 
 /*
@@ -6464,33 +6555,38 @@ DisplayDItem(
 /*
  *--------------------------------------------------------------
  *
- * MakeDItemsForHeaderItems --
+ * UpdateDItemsForHeaders --
  *
- *	Creates a linked list of DItems for the header TreeItems.
+ *	Allocates or updates a DItem for every on-screen header.
+ *	If a header already has a DItem (because it was previously
+ *	displayed), then the DItem may be marked dirty if there were
+ *	changes to the header's on-screen size or position.
  *
  * Results:
- *	Head of a list of DItems, or NULL if there are no visible
- *	locked items.
+ *	None.
  *
  * Side effects:
- *	None.
+ *	Memory may be allocated.
  *
  *--------------------------------------------------------------
  */
 
-static DItem *
-MakeDItemsForHeaderItems(
+static void
+UpdateDItemsForHeaders(
     TreeCtrl *tree,		/* Widget info. */
+    DItem *dItemHead,		/* Linked list of used DItems. */
     TreeItem item		/* First header item. */
     )
 {
-    DItem *dItem, *head = NULL, *last = NULL;
+    TreeDInfo dInfo = tree->dInfo;
+    DItem *dItem, *last = NULL;
     RItem fakeRItem;
     TreeRectangle itemBbox, boundsL, bounds, boundsR, tr;
-    int emptyL, empty, emptyR;
+    int emptyL, empty, emptyR, i;
+    DItemArea *areas[3], *area;
 
     if (item == NULL)
-	return NULL;
+	return;
 
     emptyL = !Tree_AreaBbox(tree, TREE_AREA_HEADER_LEFT, &boundsL);
     empty  = !Tree_AreaBbox(tree, TREE_AREA_HEADER_NONE, &bounds);
@@ -6500,16 +6596,26 @@ MakeDItemsForHeaderItems(
     bounds.x  = W2Cx(bounds.x),  bounds.y  = W2Cy(bounds.y);
     boundsR.x = W2Cx(boundsR.x), boundsR.y = W2Cy(boundsR.y);
 
+    dInfo->dItemHeader = NULL;
+
     while (item != NULL) {
 	if (TreeItem_Height(tree, item) > 0) {
-	    dItem = NULL;
-	    fakeRItem.item = item;
+	    dItem = (DItem *) TreeItem_GetDInfo(tree, item);
+
+	    /* Re-use a previously allocated DItem */
+	    if (dItem != NULL) {
+		dItemHead = DItem_Unlink(dItemHead, dItem);
+
+	    /* Make a new DItem */
+	    } else {
+		fakeRItem.item = item;
+		dItem = DItem_Alloc(tree, &fakeRItem);
+		area = &dItem->area;
+	    }
+
 	    if (!emptyL &&
 		    Tree_ItemBbox(tree, item, COLUMN_LOCK_LEFT, &itemBbox) != -1 &&
 		    TreeRect_Intersect(&tr, &boundsL, &itemBbox)) {
-		if (dItem == NULL) {
-		    dItem = DItem_Alloc(tree, &fakeRItem);
-		}
 		dItem->left.x = C2Wx(itemBbox.x);
 		dItem->left.width = itemBbox.width;
 		dItem->y = C2Wy(itemBbox.y);
@@ -6518,9 +6624,6 @@ MakeDItemsForHeaderItems(
 	    if (!empty &&
 		    Tree_ItemBbox(tree, item, COLUMN_LOCK_NONE, &itemBbox) != -1 &&
 		    TreeRect_Intersect(&tr, &bounds, &itemBbox)) {
-		if (dItem == NULL) {
-		    dItem = DItem_Alloc(tree, &fakeRItem);
-		}
 		dItem->area.x = C2Wx(itemBbox.x);
 		dItem->area.width = itemBbox.width;
 		dItem->y = C2Wy(itemBbox.y);
@@ -6529,26 +6632,57 @@ MakeDItemsForHeaderItems(
 	    if (!emptyR &&
 		    Tree_ItemBbox(tree, item, COLUMN_LOCK_RIGHT, &itemBbox) != -1 &&
 		    TreeRect_Intersect(&tr, &boundsR, &itemBbox)) {
-		if (dItem == NULL) {
-		    dItem = DItem_Alloc(tree, &fakeRItem);
-		}
 		dItem->right.x = C2Wx(itemBbox.x);
 		dItem->right.width = itemBbox.width;
 		dItem->y = C2Wy(itemBbox.y);
 		dItem->height = itemBbox.height;
 	    }
-	    if (dItem != NULL) {
-		dItem->spans = TreeItem_GetSpans(tree, item);
-		if (head == NULL)
-		    head = dItem;
-		else
-		    last->next = dItem;
-		last = dItem;
+
+	    dItem->spans = TreeItem_GetSpans(tree, item);
+
+	    areas[0] = empty ? NULL : &dItem->area;
+	    areas[1] = emptyL ? NULL : &dItem->left;
+	    areas[2] = emptyR ? NULL : &dItem->right;
+
+	    for (i = 0; i < 3; i++) {
+		area = areas[i];
+		if (area == NULL)
+		    continue;
+
+		/* This item is already marked for total redraw */
+		if (area->flags & DITEM_ALL_DIRTY)
+		    ; /* nothing */
+
+		/* All display info is marked as invalid */
+		else if (dInfo->flags & DINFO_INVALIDATE)
+		    area->flags |= DITEM_DIRTY | DITEM_ALL_DIRTY;
+
+		else if ((i == 0) &&
+			(dItem->flags & DITEM_INVALIDATE_ON_SCROLL_X)
+			&& (area->x != dItem->oldX))
+		    area->flags |= DITEM_DIRTY | DITEM_ALL_DIRTY;
+#if 0
+		else if ((dItem->flags & DITEM_INVALIDATE_ON_SCROLL_Y)
+			&& (dItem->y != dItem->oldY))
+		    area->flags |= DITEM_DIRTY | DITEM_ALL_DIRTY;
+#endif
 	    }
+
+	    /* Linked list of DItems */
+	    if (dInfo->dItemHeader == NULL)
+		dInfo->dItemHeader = dItem;
+	    else
+		last->next = dItem;
+	    last = dItem;
 	}
 	item = TreeItem_GetNextSibling(tree, item);
     }
-    return head;
+
+    if (last != NULL)
+	last->next = NULL;
+
+    while (dItemHead != NULL)
+	dItemHead = DItem_Free(tree, dItemHead);
 }
 
 static void
@@ -6992,7 +7126,6 @@ Tree_Display(
 #endif
     TreeRectangle wsBox;
     int requests;
-DItem *dItemHeader = NULL;
 
     if (tree->debug.enable && tree->debug.display && 0)
 	dbwin("Tree_Display %s\n", Tk_PathName(tkwin));
@@ -7115,6 +7248,7 @@ displayRetry:
     if (TreeDisplay_WasThereTrouble(tree, requests)) {
 	goto displayRetry;
     }
+UpdateDItemsForHeaders(tree, dInfo->dItemHeader, tree->headerItems);
     if (dInfo->flags & DINFO_OUT_OF_DATE) {
 	Tree_UpdateDInfo(tree);
 	dInfo->flags &= ~DINFO_OUT_OF_DATE;
@@ -7127,10 +7261,6 @@ displayRetry:
 	}
 	dInfo->flags &= ~DINFO_INVALIDATE;
     }
-
-if (dItemHeader != NULL)
-    FreeDItems(tree, dItemHeader, NULL, 0);
-dItemHeader = MakeDItemsForHeaderItems(tree, tree->headerItems);
 
     /*
      * When an item goes from visible to hidden, "window" elements in the
@@ -7146,7 +7276,7 @@ dItemHeader = MakeDItemsForHeaderItems(tree, tree->headerItems);
     /* Also track visibility of header items, but don't generate an
      * <ItemVisibility> event.  Just make sure that window elements
      * in any displayed styles in the headers know when they go offscreen. */
-    switch (TrackItemVisibility(tree, dItemHeader, TRUE)) {
+    switch (TrackItemVisibility(tree, dInfo->dItemHeader, TRUE)) {
 	case DISPLAY_RETRY: goto displayRetry; break;
 	case DISPLAY_EXIT: goto displayExit; break;
     }
@@ -7200,20 +7330,13 @@ dItemHeader = MakeDItemsForHeaderItems(tree, tree->headerItems);
     }
 #endif
     /* FIXME: only redraw header items if needed. */
-    if ((dInfo->flags & DINFO_DRAW_HEADER) && (dItemHeader != NULL)) {
+    if ((dInfo->flags & DINFO_DRAW_HEADER) && (dInfo->dItemHeader != NULL)) {
 	TreeDrawable tpixmap = tdrawable;
-#if 0
-	/* Erase whitespace to left and right. */
-	if (Tree_AreaBbox(tree, TREE_AREA_HEADER_NONE, &tr)) {
-	    Tree_FillRectangle(tree, tdrawable, NULL,
-		Tk_3DBorderGC(tree->tkwin, tree->border, TK_3D_FLAT_GC), tr);
-	    if (tree->doubleBuffer == DOUBLEBUFFER_WINDOW) {
-		DblBufWinDirty(tree, TreeRect_Left(tr), TreeRect_Top(tr),
-		    TreeRect_Right(tr), TreeRect_Bottom(tr));
-	    }
-	}
-#endif
-	for (dItem = dItemHeader;
+
+	/* Scroll the headers if needed. */
+	ScrollHeaders(tree);
+
+	for (dItem = dInfo->dItemHeader;
 	    dItem != NULL;
 	    dItem = dItem->next) {
 
@@ -7304,7 +7427,7 @@ dItemHeader = MakeDItemsForHeaderItems(tree, tree->headerItems);
     if (tree->doubleBuffer == DOUBLEBUFFER_WINDOW) {
 	if ((dInfo->xOrigin != tree->xOrigin) ||
 		(dInfo->yOrigin != tree->yOrigin)) {
-	    DblBufWinDirty(tree, Tree_BorderLeft(tree), Tree_ContentTop(tree),
+	    DblBufWinDirty(tree, Tree_BorderLeft(tree), Tree_HeaderTop(tree),
 		Tree_BorderRight(tree), Tree_ContentBottom(tree));
 	}
     }
@@ -7674,8 +7797,6 @@ dItemHeader = MakeDItemsForHeaderItems(tree, tree->headerItems);
     }
 
 displayExit:
-if (dItemHeader != NULL)
-    FreeDItems(tree, dItemHeader, NULL, 0);
 #if CACHE_BG_IMG
     if (dInfo->pixmapBgImg.drawable != None) {
 	Tk_FreePixmap(tree->display, dInfo->pixmapBgImg.drawable);
@@ -8460,8 +8581,10 @@ Tree_RelayoutWindow(
 {
     TreeDInfo dInfo = tree->dInfo;
 
-    FreeDItems(tree, dInfo->dItem, NULL, 0);
+    FreeDItems(tree, NULL, dInfo->dItem, NULL);
     dInfo->dItem = NULL;
+    FreeDItems(tree, NULL, dInfo->dItemHeader, NULL);
+    dInfo->dItemHeader = NULL;
     dInfo->flags |=
 	DINFO_REDO_RANGES |
 	DINFO_OUT_OF_DATE |
@@ -8652,7 +8775,7 @@ Tree_FreeItemDInfo(
     )
 {
     TreeDInfo dInfo = tree->dInfo;
-    DItem *dItem;
+    DItem *dItem, **dItemHeadPtr = &dInfo->dItem;
     TreeItem item = item1;
     int changed = 0;
 
@@ -8660,12 +8783,15 @@ Tree_FreeItemDInfo(
 	if (TreeItem_GetHeader(tree, item) != NULL) {
 	    tree->headerHeight = -1;
 	    dInfo->flags |= DINFO_DRAW_HEADER;
+	    dItemHeadPtr = &dInfo->dItemHeader;
+#if 0
 	    Tree_EventuallyRedraw(tree);
 	    return; /* should only be a range of header items */
+#endif
 	}
 	dItem = (DItem *) TreeItem_GetDInfo(tree, item);
 	if (dItem != NULL) {
-	    FreeDItems(tree, dItem, dItem->next, 1);
+	    FreeDItems(tree, dItemHeadPtr, dItem, dItem->next);
 	    changed = 1;
 	}
 	if (item == item2 || item2 == NULL)
@@ -8674,7 +8800,8 @@ Tree_FreeItemDInfo(
     }
     changed = 1;
     if (changed) {
-	dInfo->flags |= DINFO_OUT_OF_DATE;
+	if (TreeItem_GetHeader(tree, item1) == NULL)
+	    dInfo->flags |= DINFO_OUT_OF_DATE;
 	Tree_EventuallyRedraw(tree);
     }
 }
@@ -8714,8 +8841,10 @@ Tree_InvalidateItemDInfo(
 
     if (item != NULL && TreeItem_GetHeader(tree, item) != NULL) {
 	dInfo->flags |= DINFO_DRAW_HEADER;
+#if 0
 	Tree_EventuallyRedraw(tree);
 	return; /* should only be a range of header items */
+#endif
     }
 
     if (dInfo->flags & (DINFO_INVALIDATE | DINFO_REDO_COLUMN_WIDTH))
@@ -8754,7 +8883,8 @@ Tree_InvalidateItemDInfo(
 	    columnIndex = TreeColumn_Index(column);
 	    left = dColumn->offset;
 
-	    if (TreeColumn_Lock(column) == COLUMN_LOCK_NONE)
+	    if ((TreeItem_GetHeader(tree, item) == NULL) &&
+		    (TreeColumn_Lock(column) == COLUMN_LOCK_NONE))
 		left -= tree->canvasPadX[PAD_TOP_LEFT]; /* canvas -> item coords */
 
 	    /* If only one column is visible, the width may be
@@ -9034,8 +9164,43 @@ Tree_InvalidateArea(
     if (x1 >= x2 || y1 >= y2)
 	return;
 
-    if ((y2 > Tree_HeaderTop(tree)) && (y1 < Tree_HeaderBottom(tree)))
+    if ((y2 > Tree_HeaderTop(tree)) && (y1 < Tree_HeaderBottom(tree))) {
+	TreeRectangle boundsL, bounds, boundsR;
+	int emptyL, empty, emptyR;
+
 	dInfo->flags |= DINFO_DRAW_HEADER;
+
+	emptyL = !Tree_AreaBbox(tree, TREE_AREA_HEADER_LEFT, &boundsL);
+	empty  = !Tree_AreaBbox(tree, TREE_AREA_HEADER_NONE, &bounds);
+	emptyR = !Tree_AreaBbox(tree, TREE_AREA_HEADER_RIGHT, &boundsR);
+
+	dItem = dInfo->dItemHeader;
+	while (dItem != NULL) {
+	    if ((!empty && (dItem->area.flags & DITEM_DRAWN)) &&
+		    !(dItem->area.flags & DITEM_ALL_DIRTY) &&
+		    (x2 > dItem->area.x) && (x1 < dItem->area.x + dItem->area.width) &&
+		    (y2 > dItem->y) && (y1 < dItem->y + dItem->height)) {
+		InvalidateDItemX(dItem, &dItem->area, dItem->area.x, x1, x2 - x1);
+		InvalidateDItemY(dItem, &dItem->area, dItem->y, y1, y2 - y1);
+		dItem->area.flags |= DITEM_DIRTY;
+	    }
+	    if (!emptyL && !(dItem->left.flags & DITEM_ALL_DIRTY) &&
+		    (x2 > TreeRect_Left(boundsL)) && (x1 < TreeRect_Right(boundsL)) &&
+		    (y2 > dItem->y) && (y1 < dItem->y + dItem->height)) {
+		InvalidateDItemX(dItem, &dItem->left, dItem->left.x, x1, x2 - x1);
+		InvalidateDItemY(dItem, &dItem->left, dItem->y, y1, y2 - y1);
+		dItem->left.flags |= DITEM_DIRTY;
+	    }
+	    if (!emptyR && !(dItem->right.flags & DITEM_ALL_DIRTY) &&
+		    (x2 > TreeRect_Left(boundsR)) && (x1 < TreeRect_Right(boundsR)) &&
+		    (y2 > dItem->y) && (y1 < dItem->y + dItem->height)) {
+		InvalidateDItemX(dItem, &dItem->right, dItem->right.x, x1, x2 - x1);
+		InvalidateDItemY(dItem, &dItem->right, dItem->y, y1, y2 - y1);
+		dItem->right.flags |= DITEM_DIRTY;
+	    }
+	    dItem = dItem->next;
+	}
+    }
 
     dItem = dInfo->dItem;
     while (dItem != NULL) {
@@ -9117,6 +9282,8 @@ Tree_InvalidateRegion(
     if (!rect.width || !rect.height)
 	return;
 
+    /* FIXME: Should do for headers what I do for items, but this code isn't
+     * even called with DOUBLEBUFFER_WINDOW. */
     if (Tree_AreaBbox(tree, TREE_AREA_HEADER, &rect) &&
 	    TkRectInRegion(region, TreeRect_Left(rect), TreeRect_Top(rect),
 		TreeRect_Width(rect), TreeRect_Height(rect))
@@ -9470,6 +9637,11 @@ TreeDInfo_Free(
 	DItem *next = dInfo->dItem->next;
 	WFREE(dInfo->dItem, DItem);
 	dInfo->dItem = next;
+    }
+    while (dInfo->dItemHeader != NULL) {
+	DItem *next = dInfo->dItemHeader->next;
+	WFREE(dInfo->dItem, DItem);
+	dInfo->dItemHeader = next;
     }
     while (dInfo->dItemFree != NULL) {
 	DItem *next = dInfo->dItemFree->next;
