@@ -64,8 +64,8 @@ TreeCtrlStubs *stubs;
 	stubs->PerStateInfo_ForState(t,ty,in,st,ma)
 #define PerStateInfo_ObjForState(t,ty,in,st,ma) \
 	stubs->PerStateInfo_ObjForState(t,ty,in,st,ma)
-#define PerStateInfo_Undefine(t,ty,in,st) \
-	stubs->PerStateInfo_Undefine(t,ty,in,st)
+#define PerStateInfo_Undefine(t,ty,in,dom,st) \
+	stubs->PerStateInfo_Undefine(t,ty,in,dom,st)
 #undef pstBoolean
 #define pstBoolean \
 	(*stubs->TreeCtrl_pstBoolean)
@@ -303,7 +303,7 @@ static void LoadIconIfNeeded(TreeElementArgs *args)
 	/* MSDN says SHGFI_OPENICON returns the image list containing the
 	 * small open icon. In practice the large open icon gets returned
 	 * for SHGFI_LARGEICON, so we support it. */
-	if (/*(size == SIZE_SMALL) && */(args->state & STATE_OPEN))
+	if (/*(size == SIZE_SMALL) && */(args->state & STATE_ITEM_OPEN))
 	    uFlags |= SHGFI_OPENICON;
 
 	CoInitialize(NULL);
@@ -380,7 +380,7 @@ static void LoadIconIfNeeded(TreeElementArgs *args)
 	/* MSDN says SHGFI_OPENICON returns the image list containing the
 	 * small open icon. In practice the large open icon gets returned
 	 * for SHGFI_LARGEICON. */
-	if (/*(size == SIZE_SMALL) && */(args->state & STATE_OPEN))
+	if (/*(size == SIZE_SMALL) && */(args->state & STATE_ITEM_OPEN))
 	    uFlags |= SHGFI_OPENICON;
 
 	CoInitialize(NULL);
@@ -537,8 +537,8 @@ static void DisplayProcShellIcon(TreeElementArgs *args)
 	    break;
 	case -1:
 	case USE_SEL_AUTO:
-	    hIcon = (state & STATE_SELECTED) ? elemX->hIconSel : elemX->hIcon;
-	    if (state & STATE_SELECTED)
+	    hIcon = (state & STATE_ITEM_SELECTED) ? elemX->hIconSel : elemX->hIcon;
+	    if (state & STATE_ITEM_SELECTED)
 		fStyle |= ILD_SELECTED;
 	    break;
 	case USE_SEL_NEVER:
@@ -629,16 +629,16 @@ static int StateProcShellIcon(TreeElementArgs *args)
     if (draw1 == -1)
 	draw1 = 1;
 #endif
-    open1 = (args->states.state1 & STATE_OPEN) != 0;
-    sel1 = (args->states.state1 & STATE_SELECTED) != 0;
+    open1 = (args->states.state1 & STATE_ITEM_OPEN) != 0;
+    sel1 = (args->states.state1 & STATE_ITEM_SELECTED) != 0;
 
 #ifdef DEPRECATED
     BOOLEAN_FOR_STATE(draw2, draw, args->states.state2)
     if (draw2 == -1)
 	draw2 = 1;
 #endif
-    open2 = (args->states.state2 & STATE_OPEN) != 0;
-    sel2 = (args->states.state2 & STATE_SELECTED) != 0;
+    open2 = (args->states.state2 & STATE_ITEM_OPEN) != 0;
+    sel2 = (args->states.state2 & STATE_ITEM_SELECTED) != 0;
 
     if (elemX->path == NULL)
 	open1 = open2 = sel1 = sel2 = 0;
@@ -661,11 +661,12 @@ static int StateProcShellIcon(TreeElementArgs *args)
 static int UndefProcShellIcon(TreeElementArgs *args)
 {
     TreeCtrl *tree = args->tree;
-    ElementShellIcon *elemX = (ElementShellIcon *) args->elem;
+    TreeElement elem = args->elem;
+    ElementShellIcon *elemX = (ElementShellIcon *) elem;
     int modified = 0;
 
 #ifdef DEPRECATED
-    modified |= PerStateInfo_Undefine(tree, &pstBoolean, &elemX->draw, args->state);
+    modified |= PerStateInfo_Undefine(tree, &pstBoolean, &elemX->draw, elem->stateDomain, args->state);
 #endif
     return modified;
 }
