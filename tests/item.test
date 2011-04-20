@@ -637,7 +637,7 @@ test item-16.26 {item state set: invalid range} -body {
 
 test item-16.40 {item state forcolumn: missing arg} -body {
     .t item state forcolumn
-} -returnCodes error -result {wrong # args: should be ".t item state command item ?arg ...?"}
+} -returnCodes error -result {wrong # args: should be ".t item state forcolumn item column ?stateList?"}
 
 test item-16.41 {item state forcolumn: missing arg} -body {
     .t item state forcolumn 8
