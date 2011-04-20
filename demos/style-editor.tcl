@@ -754,15 +754,22 @@ proc StyleEditor::StyleToCanvas {{scroll 0}} {
     set T $canvas.t
 
     $T configure -itemheight 0
+    $T item configure root -height 0
+    $T header configure first -height 0
     $T column configure 0 -width {}
-    eval $T state undefine [$T state names]
+
+    # Get the state domain, either "item" or "header".
+    # It is used as the command name as well as the -statedomain value.
+    set domain [$Tdemo style cget $style -statedomain]
+
+    eval $T $domain state undefine [$T $domain state names]
     eval $T style delete [$T style names]
     eval $T element delete [$T element names]
     eval $T gradient delete [$T gradient names]
 
     # Copy states
-    foreach state [$Tdemo state names] {
-	$T state define $state
+    foreach state [$Tdemo $domain state names] {
+	$T $domain state define $state
     }
 
     # Copy gradients (name only)
@@ -772,7 +779,8 @@ proc StyleEditor::StyleToCanvas {{scroll 0}} {
 
     # Copy elements
     foreach E [$Tdemo style elements $style] {
-	$T element create $E [$Tdemo element type $E]
+	$T element create $E [$Tdemo element type $E] \
+	    -statedomain $domain
 	foreach list [$Tdemo element configure $E] {
 	    lassign $list name x y default current
 	    $T element configure $E $name $current
@@ -780,27 +788,21 @@ proc StyleEditor::StyleToCanvas {{scroll 0}} {
     }
 
     # Copy style
-    $T style create $style -orient [$Tdemo style cget $style -orient]
+    $T style create $style -orient [$Tdemo style cget $style -orient] \
+	-statedomain $domain
     $T style elements $style [$Tdemo style elements $style]
     foreach E [$T style elements $style] {
 	eval $T style layout $style $E [$Tdemo style layout $style $E]
 	#$T style layout $style $E -visible {}
     }
 
-    # Find a selected item using the style to copy element config info from
-    set match ""
-    foreach I [$Tdemo selection get] {
-	foreach S [$Tdemo item style set $I] C [$Tdemo column list] {
-	    if {$S eq $style} {
-		set match $I
-		break
-	    }
-	}
-	if {$match ne ""} break
+    if {$domain eq "header"} {
+	set match ""
     }
-    # No selected item uses the current style, look for an unselected item
-    if {$match eq ""} {
-	foreach I [$Tdemo item range first last] {
+    if {$domain eq "item"} {
+	# Find a selected item using the style to copy element config info from
+	set match ""
+	foreach I [$Tdemo selection get] {
 	    foreach S [$Tdemo item style set $I] C [$Tdemo column list] {
 		if {$S eq $style} {
 		    set match $I
@@ -808,6 +810,18 @@ proc StyleEditor::StyleToCanvas {{scroll 0}} {
 		}
 	    }
 	    if {$match ne ""} break
+	}
+	# No selected item uses the current style, look for an unselected item
+	if {$match eq ""} {
+	    foreach I [$Tdemo item range first last] {
+		foreach S [$Tdemo item style set $I] C [$Tdemo column list] {
+		    if {$S eq $style} {
+			set match $I
+			break
+		    }
+		}
+		if {$match ne ""} break
+	    }
 	}
     }
     if {$match ne ""} {
@@ -854,22 +868,37 @@ if 0 {
 	$T configure $name $current
     }
 }
-    set I root
-    $T item style set $I 0 $style
+    if {$domain eq "header"} {
+	set I first
+	$T header style set $I 0 $style
+    }
+    if {$domain eq "item"} {
+	set I root
+	$T item style set $I 0 $style
+    }
+
+    # Hack some minimum layout size > 0
+    foreach E [$T style elements $style] {
+	if {[scan [$T $domain bbox $I 0 $E] "%d %d %d %d" x1 y1 x2 y2] == 4} {
+	    if {$y2 - $y1 == 0 && $x2 - $x1 == 0} {
+		$T style layout $style $E -minwidth 10 -minheight 10
+	    }
+	}
+    }
 
     set scale 2
 
     set dx 10
     set dy 10
 
-    scan [$T item bbox $I 0] "%d %d %d %d" x1 y1 x2 y2
+    scan [$T $domain bbox $I 0] "%d %d %d %d" x1 y1 x2 y2
     $canvas create rectangle \
 	[expr {$dx + $x1 * $scale}] [expr {$dy + $y1 * $scale}] \
 	[expr {$dx + $x2 * $scale}] [expr {$dy + $y2 * $scale}] \
 	-outline gray90
 
     foreach E [$T style elements $style] {
-	if {[scan [$T item bbox $I 0 $E] "%d %d %d %d" x1 y1 x2 y2] == 4} {
+	if {[scan [$T $domain bbox $I 0 $E] "%d %d %d %d" x1 y1 x2 y2] == 4} {
 	    $canvas create rectangle \
 		[expr {$dx + $x1 * $scale}] [expr {$dy + $y1 * $scale}] \
 		[expr {$dx + $x2 * $scale}] [expr {$dy + $y2 * $scale}] \
@@ -877,15 +906,18 @@ if 0 {
 	}
     }
 
-    scan [$T item bbox $I 0] "%d %d %d %d" x1 y1 x2 y2
+    scan [$T $domain bbox $I 0] "%d %d %d %d" x1 y1 x2 y2
     incr dy [expr {($y2 - $y1) * $scale + 20}]
 
     # Now give the style 1.5 times its needed space to test expansion
-    scan [$T item bbox $I 0] "%d %d %d %d" x1 y1 x2 y2
+    scan [$T $domain bbox $I 0] "%d %d %d %d" x1 y1 x2 y2
     $T column configure 0 -width [expr {($x2 - $x1) * [Info scaleX]}]
+if 1 {
+    $T $domain configure $I -height [expr {($y2 - $y1) * [Info scaleY]}]
+} else {
     $T configure -itemheight [expr {($y2 - $y1) * [Info scaleY]}]
-
-    scan [$T item bbox $I 0] "%d %d %d %d" x1 y1 x2 y2
+}
+    scan [$T $domain bbox $I 0] "%d %d %d %d" x1 y1 x2 y2
 
     $canvas create rectangle \
 	[expr {$dx + $x1 * $scale}] [expr {$dy + $y1 * $scale}] \
@@ -893,7 +925,7 @@ if 0 {
 	-outline gray90
 
     foreach E [$T style elements $style] {
-	if {[scan [$T item bbox $I 0 $E] "%d %d %d %d" x1 y1 x2 y2] == 4} {
+	if {[scan [$T $domain bbox $I 0 $E] "%d %d %d %d" x1 y1 x2 y2] == 4} {
 	    $canvas create rectangle \
 		[expr {$dx + $x1 * $scale}] [expr {$dy + $y1 * $scale}] \
 		[expr {$dx + $x2 * $scale}] [expr {$dy + $y2 * $scale}] \
