@@ -108,20 +108,29 @@ if 0 {
     # a gradient-filled rectangle with centered text.
     #
 
-    $T gradient create Gnormal -orient vertical -stops {{0.0 gray95} {0.3 gray95} {1.0 gray80}} -steps 6
-    $T gradient create Gactive -orient vertical -stops {{0.0 #edf7fa} {0.3 #edf7fa} {1.0 {light blue}}} -steps 6
-    $T gradient create Gpressed -orient vertical -stops {{0.0 gray90} {0.3 gray90} {1.0 gray75}} -steps 6
+    $T gradient create Gnormal -orient vertical -stops {{0.0 white} {0.5 gray87} {1.0 white}} -steps 6
+    $T gradient create Gactive -orient vertical -stops {{0.0 white} {0.5 gray90} {1.0 white}} -steps 6
+    $T gradient create Gpressed -orient vertical -stops {{0.0 white} {0.5 gray82} {1.0 white}} -steps 6
+    $T gradient create Gsorted -orient vertical -stops {{0.0 white} {0.5 {sky blue}} {1.0 white}} -steps 6
+    $T gradient create Gactive_sorted -orient vertical -stops {{0.0 white} {0.5 {light blue}} {1.0 white}} -steps 6
+    $T gradient create Gpressed_sorted -orient vertical -stops {{0.0 white} {0.5 {sky blue}} {1.0 white}} -steps 6
     $T element create header.rect1 rect  -statedomain header \
     -fill {
+	Gactive_sorted {active up}
+	Gpressed_sorted {pressed up}
+	Gactive_sorted {active down}
+	Gpressed_sorted {pressed down}
+	Gsorted up
+	Gsorted down
 	Gactive active
 	Gpressed pressed
 	Gnormal {}
     } -outline {
-	{sky blue} active
+	{sky blue} up
+	{sky blue} down
 	gray {}
     } -outlinewidth 1 -open {
-	s pressed
-	n {}
+	nw {}
     }
 
     set S [$T style create header5 -orient horizontal -statedomain header]
@@ -144,8 +153,8 @@ if 0 {
     $T element create orange.outline rect -statedomain header \
 	-outline #ffb700 -outlinewidth 1 \
 	-rx 1 -open {
-	    s pressed
-	    n {}
+	    se pressed
+	    nw {}
 	}
     $T element create orange.box rect -statedomain header \
 	-fill {
@@ -251,7 +260,7 @@ if 0 {
     $T item style set $I C1 $S
     $T item span $I all [$T column count {lock none}]
     $T item text $I C1 "Use the 'header5' style, consisting .\nstyle=header5, -ownerdrawn=yes"
-    button $T.button$I -text "Configure headers" -command [list DemoHeaders::ChangeHeaderStyle header5 yes gray50]
+    button $T.button$I -text "Configure headers" -command [list DemoHeaders::ChangeHeaderStyle header5 yes #0080FF]
     $T item element configure $I C1 theme.button -window $T.button$I
 
     set I [$T item create -parent root -tags {styleheader6 config}]
