@@ -5320,6 +5320,17 @@ TreeElementCmd(
 	    }
 	    if (Element_FromObj(tree, objv[3], &elem) != TCL_OK)
 		return TCL_ERROR;
+	    /* Hack -- allow [cget -statedomain] but not [configure] */
+	    {
+		int length;
+		CONST char *s = Tcl_GetStringFromObj(objv[4], &length);
+		/* FIXME: Check for minimum # unique chars. */
+		if (strncmp(s, "-statedomain", length) == 0 && length >= 6) {
+		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			tree->stateDomain[elem->stateDomain].name, -1));
+		    break;
+		}
+	    }
 	    resultObjPtr = Tk_GetOptionValue(interp, (char *) elem,
 		elem->typePtr->optionTable, objv[4], tree->tkwin);
 	    if (resultObjPtr == NULL)
@@ -6279,6 +6290,17 @@ TreeStyleCmd(
 	    if (TreeStyle_FromObj(tree, objv[3], &_style) != TCL_OK)
 		return TCL_ERROR;
 	    style = (MStyle *) _style;
+	    /* Hack -- allow [cget -statedomain] but not [configure] */
+	    {
+		int length;
+		CONST char *s = Tcl_GetStringFromObj(objv[4], &length);
+		/* FIXME: Check for minimum # unique chars. */
+		if (strncmp(s, "-statedomain", length) == 0 && length >= 7) {
+		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			tree->stateDomain[style->stateDomain].name, -1));
+		    break;
+		}
+	    }
 	    resultObjPtr = Tk_GetOptionValue(interp, (char *) style,
 		tree->styleOptionTable, objv[4], tree->tkwin);
 	    if (resultObjPtr == NULL)
