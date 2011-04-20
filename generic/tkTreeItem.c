@@ -157,6 +157,7 @@ Column_Alloc(
 	if (column->headerColumn == NULL)
 	    panic("TreeHeaderColumn_CreateWithItemColumn failed");
 #endif
+	column->cstate = STATE_HEADER_NORMAL;
     }
 
     return column;
@@ -539,7 +540,6 @@ Item_UpdateIndex(TreeCtrl *tree,
 	    if (IS_WRAP(item))
 		tree->itemWrapCount++;
 	}
-	
     }
     child = item->firstChild;
     while (child != NULL) {
@@ -9970,7 +9970,12 @@ SpanWalkProc_GetRects(
 	data->rects[0].y = drawArgs->y;
 	data->rects[0].width = drawArgs->width - drawArgs->indent;
 	data->rects[0].height = drawArgs->height;
-if (item->header != NULL) { data->rects[0].x = drawArgs->x; data->rects[0].width = drawArgs->width; }
+#if 1
+	if (item->header != NULL) {
+	    data->rects[0].x = drawArgs->x;
+	    data->rects[0].width = drawArgs->width;
+	}
+#endif
 	data->result = 1; /* # of rects */
 	return 1; /* stop */
     }
