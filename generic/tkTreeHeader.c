@@ -980,7 +980,7 @@ Column_UpdateTextLayout(
 #ifdef MAC_OSX_TK
     /* The height of the header is fixed on Aqua. There is only room for
      * a single line of text. */
-    if (column->header->tree->useTheme)
+    if (tree->useTheme)
 	maxLines = 1;
 #endif
 

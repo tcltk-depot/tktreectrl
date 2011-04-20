@@ -1105,7 +1105,7 @@ TreeTheme_DrawButton(
 				/* TreeTheme_GetButtonSize(). */
     )
 {
-    int open = (state & STATE_OPEN) != 0;
+    int open = (state & STATE_ITEM_OPEN) != 0;
     int pressed = (state & BUTTON_STATE_PRESSED) != 0;
     MacDrawable *macDraw = (MacDrawable *) td.drawable;
     CGRect bounds;
