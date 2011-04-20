@@ -1164,10 +1164,10 @@ The following forms of the command are supported:
 
 [call [arg pathName] [cmd {header bbox}] [arg headerDesc] [opt [arg column]] \
      [opt [arg element]]]
-See [cmd {item bbox}].
+See the [cmd {item bbox}] command.
 
 [call [arg pathName] [cmd {header compare}] [arg headerDesc1] [arg op] [arg headerDesc2]]
-See [cmd {item compare}].
+See the [cmd {item compare}] command.
 
 [call [arg pathName] [cmd {header configure}] [arg headerDesc] [opt [arg {arg ...}]]]
 There are two forms of this command distinguished by whether or not a
@@ -1347,7 +1347,10 @@ case the command applies to a header-row.
 [call [arg pathName] [cmd {header dragconfigure}] \
      [opt [arg option]] [opt [arg value]] [opt [arg {option value ...}]]]
 
+This command queries and sets header-drag-and-drop options for the widget, not
+for individual header-rows.
 The following configuration options are supported:
+
 [list_begin options]
 [opt_def [option -enable] [arg boolean]]
 Controls whether the user is allowed to rearrange columns by drag-and-drop.
@@ -1392,6 +1395,11 @@ will be displaced as a group by the dragged column(s)
 
 [call [arg pathName] [cmd {header dragconfigure}] [arg header] \
      [opt [arg option]] [opt [arg value]] [opt [arg {option value ...}]]]
+
+This command queries and sets header-drag-and-drop options for header-rows,
+not for the widget as a whole.
+The following configuration options are supported:
+
 [list_begin options]
 
 [opt_def [option -draw] [arg boolean]]
@@ -1400,14 +1408,15 @@ The default is true.
 
 [opt_def [option -enable] [arg boolean]]
 Controls whether clicking and dragging in this header-row initiates drag-and-drop.
-The default is true.
+The default is true.  If the [option -enable] option for the [emph widget] is false
+(see above) then this option has no effect.
 
 [list_end]
 
 [list_end]
 
 [call [arg pathName] [cmd {header element}] [opt [arg {arg ...}]]]
-See [cmd {item element}].
+See the [cmd {item element}] command.
 
 [call [arg pathName] [cmd {header id}] [arg headerDesc]]
 This command resolves the [sectref {HEADER DESCRIPTION} {header description}]
@@ -1420,19 +1429,20 @@ The behavior of this command depends on whether or not a column header was assig
 a style containing an image element.  If a column header has no style or no style
 with an image element then this command operates on the same -image option as
 [cmd {header configure}].  Otherwise this command operates on the -image option
-of the first image element in a column header's style.  See [cmd {item image}].
+of the first image element in a column header's style.  See the [cmd {item image}]
+command.
 
 [call [arg pathName] [cmd {header span}] [arg headerDesc] [opt [arg column]] \
      [opt [arg numColumns]] [opt [arg {column numColumns ...}]]]
-See [cmd {item span}].
+See the [cmd {item span}] command.
 
 [call [arg pathName] [cmd {header state}] [arg command] [arg headerDesc] \
      [opt [arg {arg ...}]]]
-See [cmd {item state}].
+See the [cmd {item state}] command.
 
 [call [arg pathName] [cmd {header style}] [arg command] [arg headerDesc] \
      [opt [arg {arg ...}]]]
-See [cmd {item style}].
+See the [cmd {item style}] command.
 
 [call [arg pathName] [cmd {header text}] [arg headerDesc] [opt [arg column]] \
      [opt [arg text]] [opt [arg {column text ...}]]]
@@ -1444,7 +1454,7 @@ of the first text element in a column header's style.  See [cmd {item text}].
 
 [call [arg pathName] [cmd {header tag}] [arg command] [arg headerDesc] \
      [opt [arg {arg ...}]]]
-See [cmd {item tag}].
+See the [cmd {item tag}] command.
 
 [list_end]
 

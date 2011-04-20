@@ -2176,10 +2176,10 @@ The following forms of the command are supported:
 .RS
 .TP
 \fIpathName\fR \fBheader bbox\fR \fIheaderDesc\fR ?\fIcolumn\fR? ?\fIelement\fR?
-See \fBitem bbox\fR.
+See the \fBitem bbox\fR command.
 .TP
 \fIpathName\fR \fBheader compare\fR \fIheaderDesc1\fR \fIop\fR \fIheaderDesc2\fR
-See \fBitem compare\fR.
+See the \fBitem compare\fR command.
 .TP
 \fIpathName\fR \fBheader configure\fR \fIheaderDesc\fR ?\fIarg ...\fR?
 There are two forms of this command distinguished by whether or not a
@@ -2386,6 +2386,8 @@ case the command applies to a header-row.
 .RS
 .TP
 \fIpathName\fR \fBheader dragconfigure\fR ?\fIoption\fR? ?\fIvalue\fR? ?\fIoption value ...\fR?
+This command queries and sets header-drag-and-drop options for the widget, not
+for individual header-rows.
 The following configuration options are supported:
 .RS
 .TP
@@ -2430,6 +2432,9 @@ will be displaced as a group by the dragged column(s)
 .RE
 .TP
 \fIpathName\fR \fBheader dragconfigure\fR \fIheader\fR ?\fIoption\fR? ?\fIvalue\fR? ?\fIoption value ...\fR?
+This command queries and sets header-drag-and-drop options for header-rows,
+not for the widget as a whole.
+The following configuration options are supported:
 .RS
 .TP
 \fB\fB-draw\fR\fR \fIboolean\fR
@@ -2438,12 +2443,13 @@ The default is true.
 .TP
 \fB\fB-enable\fR\fR \fIboolean\fR
 Controls whether clicking and dragging in this header-row initiates drag-and-drop.
-The default is true.
+The default is true.  If the \fB-enable\fR option for the \fIwidget\fR is false
+(see above) then this option has no effect.
 .RE
 .RE
 .TP
 \fIpathName\fR \fBheader element\fR ?\fIarg ...\fR?
-See \fBitem element\fR.
+See the \fBitem element\fR command.
 .TP
 \fIpathName\fR \fBheader id\fR \fIheaderDesc\fR
 This command resolves the \fBheader description\fR
@@ -2455,16 +2461,17 @@ The behavior of this command depends on whether or not a column header was assig
 a style containing an image element.  If a column header has no style or no style
 with an image element then this command operates on the same -image option as
 \fBheader configure\fR.  Otherwise this command operates on the -image option
-of the first image element in a column header's style.  See \fBitem image\fR.
+of the first image element in a column header's style.  See the \fBitem image\fR
+command.
 .TP
 \fIpathName\fR \fBheader span\fR \fIheaderDesc\fR ?\fIcolumn\fR? ?\fInumColumns\fR? ?\fIcolumn numColumns ...\fR?
-See \fBitem span\fR.
+See the \fBitem span\fR command.
 .TP
 \fIpathName\fR \fBheader state\fR \fIcommand\fR \fIheaderDesc\fR ?\fIarg ...\fR?
-See \fBitem state\fR.
+See the \fBitem state\fR command.
 .TP
 \fIpathName\fR \fBheader style\fR \fIcommand\fR \fIheaderDesc\fR ?\fIarg ...\fR?
-See \fBitem style\fR.
+See the \fBitem style\fR command.
 .TP
 \fIpathName\fR \fBheader text\fR \fIheaderDesc\fR ?\fIcolumn\fR? ?\fItext\fR? ?\fIcolumn text ...\fR?
 The behavior of this command depends on whether or not a column header was assigned
@@ -2474,7 +2481,7 @@ with a text element then this command operates on the same -text option as
 of the first text element in a column header's style.  See \fBitem text\fR.
 .TP
 \fIpathName\fR \fBheader tag\fR \fIcommand\fR \fIheaderDesc\fR ?\fIarg ...\fR?
-See \fBitem tag\fR.
+See the \fBitem tag\fR command.
 .RE
 .TP
 \fIpathName\fR \fBidentify\fR \fIx\fR \fIy\fR

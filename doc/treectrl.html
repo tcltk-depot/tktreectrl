@@ -1491,9 +1491,9 @@ that follows the <b class="cmd">header</b> argument.
 The following forms of the command are supported:</p>
 <dl class="definitions">
 <dt><a name="63"><i class="arg">pathName</i> <b class="cmd">header bbox</b> <i class="arg">headerDesc</i> <span class="opt">?<i class="arg">column</i>?</span> <span class="opt">?<i class="arg">element</i>?</span></a></dt>
-<dd><p>See <b class="cmd">item bbox</b>.</p></dd>
+<dd><p>See the <b class="cmd">item bbox</b> command.</p></dd>
 <dt><a name="64"><i class="arg">pathName</i> <b class="cmd">header compare</b> <i class="arg">headerDesc1</i> <i class="arg">op</i> <i class="arg">headerDesc2</i></a></dt>
-<dd><p>See <b class="cmd">item compare</b>.</p></dd>
+<dd><p>See the <b class="cmd">item compare</b> command.</p></dd>
 <dt><a name="65"><i class="arg">pathName</i> <b class="cmd">header configure</b> <i class="arg">headerDesc</i> <span class="opt">?<i class="arg">arg ...</i>?</span></a></dt>
 <dd><p>There are two forms of this command distinguished by whether or not a
 <span class="sectref"><a href="#section10">column description</a></span> appears after the
@@ -1681,7 +1681,9 @@ does not being with a '-' it is assumed to be a header description, in which
 case the command applies to a header-row.</p>
 <dl class="definitions">
 <dt><a name="75"><i class="arg">pathName</i> <b class="cmd">header dragconfigure</b> <span class="opt">?<i class="arg">option</i>?</span> <span class="opt">?<i class="arg">value</i>?</span> <span class="opt">?<i class="arg">option value ...</i>?</span></a></dt>
-<dd><p>The following configuration options are supported:</p>
+<dd><p>This command queries and sets header-drag-and-drop options for the widget, not
+for individual header-rows.
+The following configuration options are supported:</p>
 <dl class="options">
 <dt><b class="option"><b class="option">-enable</b></b> <i class="arg">boolean</i></dt>
 <dd><p>Controls whether the user is allowed to rearrange columns by drag-and-drop.
@@ -1714,17 +1716,21 @@ or <b class="const">right</b> edge of the column specified by <b class="option">
 will be displaced as a group by the dragged column(s)</p></dd>
 </dl></dd>
 <dt><a name="76"><i class="arg">pathName</i> <b class="cmd">header dragconfigure</b> <i class="arg">header</i> <span class="opt">?<i class="arg">option</i>?</span> <span class="opt">?<i class="arg">value</i>?</span> <span class="opt">?<i class="arg">option value ...</i>?</span></a></dt>
-<dd><dl class="options">
+<dd><p>This command queries and sets header-drag-and-drop options for header-rows,
+not for the widget as a whole.
+The following configuration options are supported:</p>
+<dl class="options">
 <dt><b class="option"><b class="option">-draw</b></b> <i class="arg">boolean</i></dt>
 <dd><p>Controls whether a header-row displays any feedback during header drag-and-drop.
 The default is true.</p></dd>
 <dt><b class="option"><b class="option">-enable</b></b> <i class="arg">boolean</i></dt>
 <dd><p>Controls whether clicking and dragging in this header-row initiates drag-and-drop.
-The default is true.</p></dd>
+The default is true.  If the <b class="option">-enable</b> option for the <em>widget</em> is false
+(see above) then this option has no effect.</p></dd>
 </dl></dd>
 </dl></dd>
 <dt><a name="77"><i class="arg">pathName</i> <b class="cmd">header element</b> <span class="opt">?<i class="arg">arg ...</i>?</span></a></dt>
-<dd><p>See <b class="cmd">item element</b>.</p></dd>
+<dd><p>See the <b class="cmd">item element</b> command.</p></dd>
 <dt><a name="78"><i class="arg">pathName</i> <b class="cmd">header id</b> <i class="arg">headerDesc</i></a></dt>
 <dd><p>This command resolves the <span class="sectref"><a href="#section8">header description</a></span>
 <i class="arg">headerDesc</i> into a list of unique header-row identifiers. If <i class="arg">headerDesc</i>
@@ -1734,13 +1740,14 @@ doesn't refer to any existing header-rows, then this command returns an empty li
 a style containing an image element.  If a column header has no style or no style
 with an image element then this command operates on the same -image option as
 <b class="cmd">header configure</b>.  Otherwise this command operates on the -image option
-of the first image element in a column header's style.  See <b class="cmd">item image</b>.</p></dd>
+of the first image element in a column header's style.  See the <b class="cmd">item image</b>
+command.</p></dd>
 <dt><a name="80"><i class="arg">pathName</i> <b class="cmd">header span</b> <i class="arg">headerDesc</i> <span class="opt">?<i class="arg">column</i>?</span> <span class="opt">?<i class="arg">numColumns</i>?</span> <span class="opt">?<i class="arg">column numColumns ...</i>?</span></a></dt>
-<dd><p>See <b class="cmd">item span</b>.</p></dd>
+<dd><p>See the <b class="cmd">item span</b> command.</p></dd>
 <dt><a name="81"><i class="arg">pathName</i> <b class="cmd">header state</b> <i class="arg">command</i> <i class="arg">headerDesc</i> <span class="opt">?<i class="arg">arg ...</i>?</span></a></dt>
-<dd><p>See <b class="cmd">item state</b>.</p></dd>
+<dd><p>See the <b class="cmd">item state</b> command.</p></dd>
 <dt><a name="82"><i class="arg">pathName</i> <b class="cmd">header style</b> <i class="arg">command</i> <i class="arg">headerDesc</i> <span class="opt">?<i class="arg">arg ...</i>?</span></a></dt>
-<dd><p>See <b class="cmd">item style</b>.</p></dd>
+<dd><p>See the <b class="cmd">item style</b> command.</p></dd>
 <dt><a name="83"><i class="arg">pathName</i> <b class="cmd">header text</b> <i class="arg">headerDesc</i> <span class="opt">?<i class="arg">column</i>?</span> <span class="opt">?<i class="arg">text</i>?</span> <span class="opt">?<i class="arg">column text ...</i>?</span></a></dt>
 <dd><p>The behavior of this command depends on whether or not a column header was assigned
 a style containing a text element.  If a column header has no style or no style
@@ -1748,7 +1755,7 @@ with a text element then this command operates on the same -text option as
 <b class="cmd">header configure</b>.  Otherwise this command operates on the -text option
 of the first text element in a column header's style.  See <b class="cmd">item text</b>.</p></dd>
 <dt><a name="84"><i class="arg">pathName</i> <b class="cmd">header tag</b> <i class="arg">command</i> <i class="arg">headerDesc</i> <span class="opt">?<i class="arg">arg ...</i>?</span></a></dt>
-<dd><p>See <b class="cmd">item tag</b>.</p></dd>
+<dd><p>See the <b class="cmd">item tag</b> command.</p></dd>
 </dl></dd>
 <dt><a name="85"><i class="arg">pathName</i> <b class="cmd">identify</b> <i class="arg">x</i> <i class="arg">y</i></a></dt>
 <dd><p>Returns a list describing what
