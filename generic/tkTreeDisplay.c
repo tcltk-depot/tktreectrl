@@ -8862,7 +8862,7 @@ Tree_InvalidateItemDInfo(
 	    changed = 1;
 	} else {
 	    TreeColumnDInfo dColumn = TreeColumn_GetDInfo(column);
-	    int columnIndex, left, width, i;
+	    int columnIndex, left, width, i, extraWidth = 0;
 	    DItemArea *area = NULL;
 
 	    switch (TreeColumn_Lock(column)) {
@@ -8883,9 +8883,15 @@ Tree_InvalidateItemDInfo(
 	    columnIndex = TreeColumn_Index(column);
 	    left = dColumn->offset;
 
-	    if ((TreeItem_GetHeader(tree, item) == NULL) &&
-		    (TreeColumn_Lock(column) == COLUMN_LOCK_NONE))
-		left -= tree->canvasPadX[PAD_TOP_LEFT]; /* canvas -> item coords */
+	    if (TreeColumn_Lock(column) == COLUMN_LOCK_NONE) {
+		if (TreeItem_GetHeader(tree, item) != NULL) {
+		    if (TreeColumn_VisIndex(column) == 0) {
+			extraWidth = tree->canvasPadX[PAD_TOP_LEFT];
+			left = 0;
+		    }
+		} else
+		    left -= tree->canvasPadX[PAD_TOP_LEFT]; /* canvas -> item coords */
+	    }
 
 	    /* If only one column is visible, the width may be
 	    * different than the column width. */
@@ -8895,7 +8901,7 @@ Tree_InvalidateItemDInfo(
 
 	    /* All spans are 1. */
 	    } else if (dItem->spans == NULL) {
-		width = dColumn->width;
+		width = dColumn->width + extraWidth;
 
 	    /* If the column being redrawn is not the first in the span,
 	     * then do nothing. */
@@ -8908,7 +8914,7 @@ Tree_InvalidateItemDInfo(
 	     * up recalculating the size of items whose display info
 	     * is currently being invalidated. */
 	    } else {
-		width = 0;
+		width = 0 + extraWidth;
 		column2 = column;
 		i = columnIndex;
 		while (dItem->spans[i] == columnIndex) {
