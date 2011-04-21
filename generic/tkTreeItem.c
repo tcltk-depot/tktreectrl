@@ -4140,9 +4140,12 @@ TreeItem_SpansRedo(
 	    itemColumn = itemColumn->next;
     }
 
+    /* Add a span of 1 for the tail column if this is a header. */
     if (item->header != NULL) {
+#if 0
 	if (columnCount >= 2)
 	    item->spans[columnCount - 2] = columnCount - 2; /* prev to tail */
+#endif
 	item->spans[columnCount - 1] = columnCount - 1; /* tail column */
     }
 
