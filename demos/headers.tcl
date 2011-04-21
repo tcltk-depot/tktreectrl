@@ -510,13 +510,20 @@ proc DemoHeaders::ColumnDragBegin {H C} {
 
 proc DemoHeaders::ColumnDragReceive {H C b} {
     set T [DemoList]
+
+    # Get the range of columns in the span of the dragged header.
     set span [$T header span $H $C]
+if 1 {
+    set last [$T column id "$C span $span"]
+} else {
     set lastInSpan [expr {[$T column order $C] + $span - 1}]
-    set columns [$T column id "range $C {order $lastInSpan}"]
-    if {[$T column compare $C < $b]} {
-	set lastInSpan [expr {[$T column order $b] + $span - 1}]
-	set b [$T column id "order $lastInSpan"]
+    set last [$T column id "order $lastInSpan"]
+    set lock [$T column cget $C -lock]
+    if {$last eq "" || [$T column compare $last > "last lock $lock"]} {
+	set last [$T column id "last lock $lock"]
     }
+}
+    set columns [$T column id "range $C $last"]
 
     set span1 [$T header span header1]
     set span2 [$T header span header2]
