@@ -824,6 +824,10 @@ TreeItemColumn_ChangeState(
 	}
     }
 
+    if (item->header != NULL)
+	TreeHeaderColumn_StateChanged(item->header, column->headerColumn,
+	    treeColumn, item->state | column->cstate, item->state | cstate);
+
     column->cstate = cstate;
 
     return iMask;
@@ -887,6 +891,9 @@ TreeItem_ChangeState(
 		iMask |= sMask;
 	    }
 	}
+	if (item->header != NULL)
+	    TreeHeaderColumn_StateChanged(item->header, column->headerColumn,
+		treeColumn, item->state | column->cstate, state | column->cstate);
 	columnIndex++;
 	column = column->next;
 	treeColumn = Tree_ColumnToTheRight(treeColumn, FALSE, tailOK);
@@ -972,7 +979,8 @@ TreeItem_ChangeState(
     if (iMask & CS_LAYOUT) {
 	TreeItem_InvalidateHeight(tree, item);
 	Tree_FreeItemDInfo(tree, item, NULL);
-	Tree_DInfoChanged(tree, DINFO_REDO_RANGES);
+	if (item->header == NULL)
+	    Tree_DInfoChanged(tree, DINFO_REDO_RANGES);
     }
 
     item->state = state;
@@ -2938,7 +2946,7 @@ TreeItem_Delete(
     TreeItem item		/* Item token. */
     )
 {
-    if (TreeItem_ReallyVisible(tree, item))
+    if (TreeItem_ReallyVisible(tree, item) && (item->header == NULL))
 	TreeColumns_InvalidateWidthOfItems(tree, NULL);
 
     while (item->numChildren > 0)

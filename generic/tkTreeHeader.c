@@ -106,7 +106,7 @@ static CONST char *stateST[] = { "normal", "active", "pressed", (char *) NULL };
 #define COLU_CONF_IMAGE		0x0001
 #define COLU_CONF_NWIDTH	0x0002	/* neededWidth */
 #define COLU_CONF_NHEIGHT	0x0004	/* neededHeight */
-#define COLU_CONF_TWIDTH	0x0008	/* totalWidth */
+#define COLU_CONF_STATE		0x0008	/* -arrow and -state */
 #define COLU_CONF_DISPLAY	0x0040
 #define COLU_CONF_JUSTIFY	0x0080
 #define COLU_CONF_TEXT		0x0200
@@ -115,7 +115,7 @@ static CONST char *stateST[] = { "normal", "active", "pressed", (char *) NULL };
 static Tk_OptionSpec columnSpecs[] = {
     {TK_OPTION_STRING_TABLE, "-arrow", (char *) NULL, (char *) NULL,
      "none", -1, Tk_Offset(HeaderColumn, arrow),
-     0, (ClientData) arrowST, COLU_CONF_NWIDTH | COLU_CONF_NHEIGHT | COLU_CONF_DISPLAY},
+     0, (ClientData) arrowST, COLU_CONF_STATE},
     {TK_OPTION_CUSTOM, "-arrowbitmap", (char *) NULL, (char *) NULL,
      (char *) NULL,
      Tk_Offset(HeaderColumn, arrowBitmap.obj), Tk_Offset(HeaderColumn, arrowBitmap),
@@ -150,7 +150,7 @@ static Tk_OptionSpec columnSpecs[] = {
      COLU_CONF_BITMAP | COLU_CONF_NWIDTH | COLU_CONF_NHEIGHT | COLU_CONF_DISPLAY},
     {TK_OPTION_PIXELS, "-borderwidth", (char *) NULL, (char *) NULL,
      "2", Tk_Offset(HeaderColumn, borderWidthObj), Tk_Offset(HeaderColumn, borderWidth),
-     0, (ClientData) NULL, COLU_CONF_TWIDTH | COLU_CONF_NWIDTH | COLU_CONF_NHEIGHT | COLU_CONF_DISPLAY},
+     0, (ClientData) NULL, COLU_CONF_NWIDTH | COLU_CONF_NHEIGHT | COLU_CONF_DISPLAY},
     {TK_OPTION_BOOLEAN, "-button", (char *) NULL, (char *) NULL,
      "1", -1, Tk_Offset(HeaderColumn, button),
      0, (ClientData) NULL, 0},
@@ -175,7 +175,7 @@ static Tk_OptionSpec columnSpecs[] = {
      0, (ClientData) NULL, COLU_CONF_DISPLAY | COLU_CONF_JUSTIFY},
     {TK_OPTION_STRING_TABLE, "-state", (char *) NULL, (char *) NULL,
      "normal", -1, Tk_Offset(HeaderColumn, state), 0, (ClientData) stateST,
-     COLU_CONF_NWIDTH | COLU_CONF_NHEIGHT | COLU_CONF_DISPLAY},
+     COLU_CONF_STATE},
     {TK_OPTION_STRING, "-text", (char *) NULL, (char *) NULL,
      (char *) NULL, Tk_Offset(HeaderColumn, textObj), Tk_Offset(HeaderColumn, text),
      TK_OPTION_NULL_OK, (ClientData) NULL,
@@ -400,9 +400,8 @@ ImageChangedProc(
     column->neededWidth = -1;
     column->neededHeight = -1;
     tree->headerHeight = -1;
-    tree->widthOfColumns = -1;
-    tree->widthOfColumnsLeft = tree->widthOfColumnsRight = -1;
-    Tree_DInfoChanged(tree, DINFO_CHECK_COLUMN_WIDTH | DINFO_DRAW_HEADER);
+    TreeColumns_InvalidateWidth(tree);
+    Tree_DInfoChanged(tree, DINFO_DRAW_HEADER);
 }
 #endif
 
@@ -560,7 +559,7 @@ Column_Configure(
 	}
     }
 
-    if (mask & (COLU_CONF_NWIDTH | COLU_CONF_TWIDTH))
+    if (mask & (COLU_CONF_NWIDTH))
 	mask |= COLU_CONF_NHEIGHT;
     if (mask & (COLU_CONF_JUSTIFY | COLU_CONF_TEXT))
 	column->textLayoutInvalid = TRUE;
@@ -572,31 +571,17 @@ Column_Configure(
 	tree->headerHeight = -1;
     }
 
-    /* Redraw everything */
-    if (mask & (COLU_CONF_TWIDTH | COLU_CONF_NWIDTH | COLU_CONF_NHEIGHT)) {
-	/* FIXME: if the layout changed, then FreeItemDInfo and invalidate
-	 * widthOfColumns.  Otherwise only InvalidateItemDInfo.
-	 * Currently changing -state ends up in this code block, but
-	 * usually that doesn't invalidate the size of anything. */
-#if 0
-	TreeColumns_InvalidateWidthOfItems(tree, treeColumn);
-#else
-	tree->widthOfColumns = -1;
-	tree->widthOfColumnsLeft = tree->widthOfColumnsRight = -1;
-#endif
-	if (!header->ownerDrawn)
-	    Tree_InvalidateItemDInfo(tree, treeColumn, header->item, NULL);
-	Tree_DInfoChanged(tree, DINFO_CHECK_COLUMN_WIDTH | DINFO_DRAW_HEADER);
+    /* The size changed. */
+    if (mask & (COLU_CONF_NWIDTH | COLU_CONF_NHEIGHT)) {
+	TreeColumns_InvalidateWidth(tree);
+	Tree_FreeItemDInfo(tree, header->item, NULL);
+	Tree_DInfoChanged(tree, DINFO_DRAW_HEADER);
     }
 
-    /* Redraw header only */
+    /* The appearance (but not the size) changed. */
     else if (mask & COLU_CONF_DISPLAY) {
-#if 1
 	if (!header->ownerDrawn)
 	    Tree_InvalidateItemDInfo(tree, treeColumn, header->item, NULL);
-#else
-	Tree_DInfoChanged(tree, DINFO_DRAW_HEADER);
-#endif
     }
 
     if (mask & COLU_CONF_DISPLAY) {
@@ -2032,6 +2017,131 @@ Column_Draw(
 	Tk_Draw3DRectangle(tree->tkwin, td.drawable, border,
 		x, y, width, height, column->borderWidth, relief);
     }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeHeaderColumn_StateChanged --
+ *
+ *	Called when the state of an item or item-column changes.
+ *	Determines if the state change should relayout and/or
+ *	redisplay this header.  This has nothing to do with any
+ *	style assigned to the item-column, only the native stuff.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TreeHeaderColumn_StateChanged(
+    TreeHeader header,
+    TreeHeaderColumn column,
+    TreeColumn treeColumn,
+    int state1,
+    int state2
+    )
+{
+    TreeCtrl *tree = header->tree;
+    int arrow1, arrow2;
+    Tk_Image image1, image2;
+    Pixmap bitmap1, bitmap2;
+    int w1, h1, w2, h2;
+    void *ptr1 = NULL, *ptr2 = NULL;
+    int stateStates, arrowStates;
+    int mask = 0;
+
+    if (header->ownerDrawn)
+	return mask;
+
+    /* If -arrow or -state changed, redraw but don't change size. */
+    stateStates = STATE_HEADER_ACTIVE | STATE_HEADER_NORMAL | STATE_HEADER_PRESSED;
+    arrowStates = STATE_HEADER_SORT_UP | STATE_HEADER_SORT_DOWN;
+    if ((state1 & (stateStates | arrowStates))
+	    != (state2 & (stateStates | arrowStates)))
+	mask |= CS_DISPLAY;
+
+    arrow1 = (state1 & arrowStates) != 0;
+    arrow2 = (state2 & arrowStates) != 0;
+
+    /* If -arrow went to/from "none", change size. */
+    if (arrow1 != arrow2)
+	mask |= CS_LAYOUT;
+
+    if (mask & CS_LAYOUT)
+	goto update;
+
+    /* The only per-state options native headers have are -arrowbitmap and
+     * -arrowimage. */
+    if (column->arrowImage.count == 0 && column->arrowBitmap.count == 0)
+	goto update;
+
+    if (arrow1) {
+	/* image > bitmap */
+	image1 = PerStateImage_ForState(tree, &column->arrowImage, state1, NULL);
+	if (image1 != NULL) {
+	    Tk_SizeOfImage(image1, &w1, &h1);
+	    ptr1 = image1;
+	}
+	if (ptr1 == NULL) {
+	    bitmap1 = PerStateBitmap_ForState(tree, &tree->buttonBitmap, state1, NULL);
+	    if (bitmap1 != None) {
+		Tk_SizeOfBitmap(tree->display, bitmap1, &w1, &h1);
+		ptr1 = (void *) bitmap1;
+	    }
+	}
+    }
+    if (ptr1 == NULL)
+	w1 = h1 = 0;
+
+    if (arrow2) {
+	/* image > bitmap */
+	image2 = PerStateImage_ForState(tree, &column->arrowImage, state2, NULL);
+	if (image2 != NULL) {
+	    Tk_SizeOfImage(image2, &w2, &h2);
+	    ptr2 = image2;
+	}
+	if (ptr2 == NULL) {
+	    bitmap2 = PerStateBitmap_ForState(tree, &tree->buttonBitmap, state2, NULL);
+	    if (bitmap2 != None) {
+		Tk_SizeOfBitmap(tree->display, bitmap2, &w2, &h2);
+		ptr2 = (void *) bitmap2;
+	    }
+	}
+    }
+    if (ptr2 == NULL)
+	w2 = h2 = 0;
+
+    if ((w1 != w2) || (h1 != h2)) {
+	mask |= CS_LAYOUT | CS_DISPLAY;
+    } else if (ptr1 != ptr2) {
+	mask |= CS_DISPLAY;
+    }
+
+update:
+    if (mask & CS_LAYOUT) {
+	column->neededWidth = column->neededHeight = -1;
+	TreeColumns_InvalidateWidth(tree);
+	Tree_FreeItemDInfo(tree, header->item, NULL); /* sets headerHeight=-1 */
+	TreeItem_InvalidateHeight(tree, header->item);
+	TreeItemColumn_InvalidateSize(tree, (TreeItemColumn) column->itemColumn);
+	Tree_DInfoChanged(tree, DINFO_DRAW_HEADER);
+    } else if (mask & CS_DISPLAY) {
+	Tree_InvalidateItemDInfo(tree, treeColumn, header->item, NULL);
+    }
+
+    if (mask & CS_DISPLAY) {
+	if (column->dragImage != NULL) {
+	    column->imageEpoch = tree->columnDrag.imageEpoch - 1;
+	}
+    }
+
+    return mask;
 }
 
 static TreeColumn
