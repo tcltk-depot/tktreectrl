@@ -574,6 +574,10 @@ Column_Configure(
 
     /* Redraw everything */
     if (mask & (COLU_CONF_TWIDTH | COLU_CONF_NWIDTH | COLU_CONF_NHEIGHT)) {
+	/* FIXME: if the layout changed, then FreeItemDInfo and invalidate
+	 * widthOfColumns.  Otherwise only InvalidateItemDInfo.
+	 * Currently changing -state ends up in this code block, but
+	 * usually that doesn't invalidate the size of anything. */
 #if 0
 	TreeColumns_InvalidateWidthOfItems(tree, treeColumn);
 #else
@@ -2056,7 +2060,7 @@ GetFollowingColumn(
  * TreeHeaderColumn_DragBounds --
  *
  *	Calculates the apparent bounds of a column header during
- *	column drag-and-drop.
+ *	column header drag-and-drop.
  *
  * Results:
  *	None.
@@ -2106,6 +2110,11 @@ TreeHeaderColumn_DragBounds(
     index3 = TreeColumn_Index(tree->columnDrag.indColumn);
     if (index3 >= index1min && index3 <= index1max)
 	return 0;
+
+    /* FIXME: If -indicatorspan==2 but the actual header span==4 I should
+     * calculate the new apparent size of -indicatorcolumn's header.
+     * In that case the 2 extra column headers need to be drawn, but they
+     * don't get considered by TreeItem_WalkSpans. */
 
     column2min = tree->columnDrag.indColumn;
     column2max = GetFollowingColumn(column2min, tree->columnDrag.indSpan, column1min);
@@ -2590,7 +2599,13 @@ Header_Configure(
     if ((oldVisible != TreeItem_ReallyVisible(tree, header->item)) ||
 	    (ownerDrawn != header->ownerDrawn)) {
 	tree->headerHeight = -1;
+#if 1
+	Tree_FreeItemDInfo(tree, header->item, NULL);
+	tree->widthOfColumns = -1;
+	tree->widthOfColumnsLeft = tree->widthOfColumnsRight = -1;
+#else
 	TreeColumns_InvalidateWidthOfItems(tree, NULL);
+#endif
 	Tree_DInfoChanged(tree, DINFO_DRAW_HEADER);
     }
 
