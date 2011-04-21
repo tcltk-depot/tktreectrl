@@ -803,6 +803,7 @@ Qualifiers_Free(
  * -- returning a single column --
  * next QUALIFIERS
  * prev QUALIFIERS
+ * span N QUALIFIERS
  *
  * QUALIFIERS:
  * state stateList
@@ -855,18 +856,18 @@ TreeColumnList_FromObj(
     };
 
     static CONST char *modifiers[] = {
-	"next", "prev", (char *) NULL
+	"next", "prev", "span", (char *) NULL
     };
     enum modEnum {
-	TMOD_NEXT, TMOD_PREV
+	TMOD_NEXT, TMOD_PREV, TMOD_SPAN
     };
     /* Number of arguments used by modifiers[]. */
     static int modArgs[] = {
-	1, 1
+	1, 1, 2
     };
     /* Boolean: can modifiers[] be followed by 1 or more qualifiers. */
     static int modQual[] = {
-	1, 1
+	1, 1, 1
     };
 
     TreeColumnList_Init(tree, columns, 0);
@@ -1199,6 +1200,22 @@ gotFirstPart:
 		    column = column->prev;
 		while (!Qualifies(&q, column))
 		    column = column->prev;
+		break;
+	    }
+	    case TMOD_SPAN: {
+		int span, lock;
+		TreeColumn match = NULL;
+
+		if (Tcl_GetIntFromObj(NULL, objv[listIndex + 1], &span) != TCL_OK)
+		    goto errorExit;
+		lock = column->lock;
+		while (span-- > 0 && column != NULL && column->lock == lock) {
+		    if (!Qualifies(&q, column))
+			break;
+		    match = column;
+		    column = column->next;
+		}
+		column = match;
 		break;
 	    }
 	}
