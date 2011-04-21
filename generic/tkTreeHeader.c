@@ -2599,13 +2599,8 @@ Header_Configure(
     if ((oldVisible != TreeItem_ReallyVisible(tree, header->item)) ||
 	    (ownerDrawn != header->ownerDrawn)) {
 	tree->headerHeight = -1;
-#if 1
 	Tree_FreeItemDInfo(tree, header->item, NULL);
-	tree->widthOfColumns = -1;
-	tree->widthOfColumnsLeft = tree->widthOfColumnsRight = -1;
-#else
-	TreeColumns_InvalidateWidthOfItems(tree, NULL);
-#endif
+	TreeColumns_InvalidateWidth(tree);
 	Tree_DInfoChanged(tree, DINFO_DRAW_HEADER);
     }
 

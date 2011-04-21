@@ -1794,9 +1794,7 @@ renumber:
     if (move->visible) {
 	/* Must update column widths because of expansion. */
 	/* Also update columnTreeLeft. */
-	tree->widthOfColumns = -1;
-	tree->widthOfColumnsLeft = tree->widthOfColumnsRight = -1;
-	Tree_DInfoChanged(tree, DINFO_CHECK_COLUMN_WIDTH);
+	TreeColumns_InvalidateWidth(tree);
     }
 }
 
@@ -2061,9 +2059,8 @@ Column_Config(
 
     /* Redraw everything */
     if (mask & COLU_CONF_TWIDTH) {
-	tree->widthOfColumns = -1;
-	tree->widthOfColumnsLeft = tree->widthOfColumnsRight = -1;
-	Tree_DInfoChanged(tree, DINFO_CHECK_COLUMN_WIDTH | DINFO_DRAW_HEADER);
+	TreeColumns_InvalidateWidth(tree);
+	Tree_DInfoChanged(tree, DINFO_DRAW_HEADER);
     }
 
     /* Redraw header only */
@@ -2130,7 +2127,9 @@ Column_Alloc(
 	return NULL;
     }
 #endif
-    tree->headerHeight = tree->widthOfColumns = -1;
+    tree->headerHeight = -1;
+    /* Don't call TreeColumns_InvalidateWidth(tree) */
+    tree->widthOfColumns = -1;
     tree->widthOfColumnsLeft = tree->widthOfColumnsRight = -1;
     column->id = tree->nextColumnId++;
     tree->columnCount++;
@@ -3700,8 +3699,33 @@ TreeColumns_InvalidateWidthOfItems(
     } else {
 	column->widthOfItems = -1;
     }
+    TreeColumns_InvalidateWidth(tree);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeColumns_InvalidateWidth --
+ *
+ *	Marks the width of columns as out-of-date.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Idle task may be scheduled.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TreeColumns_InvalidateWidth(
+    TreeCtrl *tree		/* Widget info. */
+    )
+{
     tree->widthOfColumns = -1;
-    tree->widthOfColumnsLeft = tree->widthOfColumnsRight = -1;
+    tree->widthOfColumnsLeft = -1;
+    tree->widthOfColumnsRight = -1;
     Tree_DInfoChanged(tree, DINFO_CHECK_COLUMN_WIDTH);
 }
 

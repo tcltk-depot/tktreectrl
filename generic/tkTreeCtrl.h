@@ -1024,6 +1024,7 @@ MODULE_SCOPE void TreeColumn_InvalidateWidth(TreeColumn column_);
 MODULE_SCOPE void TreeColumn_Init(TreeCtrl *tree);
 MODULE_SCOPE void Tree_FreeColumns(TreeCtrl *tree);
 MODULE_SCOPE void TreeColumns_InvalidateWidthOfItems(TreeCtrl *tree, TreeColumn column);
+MODULE_SCOPE void TreeColumns_InvalidateWidth(TreeCtrl *tree);
 MODULE_SCOPE int TreeColumn_Bbox(TreeColumn column, int *x, int *y, int *w, int *h);
 MODULE_SCOPE int TreeColumn_Lock(TreeColumn column_);
 MODULE_SCOPE int Tree_WidthOfColumns(TreeCtrl *tree);
