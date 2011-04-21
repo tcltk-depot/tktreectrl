@@ -221,13 +221,33 @@ if 0 {
 	-outline gray50 -outlinewidth 2 -open s
     $T element create theme.text text \
 	-lines 0 -width $width
-    $T element create theme.button window
+    $T element create theme.button window -clip yes
     set S [$T style create theme -orient vertical]
     $T style elements $S {theme.rect theme.text theme.button}
     $T style layout $S theme.rect -detach yes -iexpand xy
     $T style layout $S theme.text -padx 4 -pady 3
     $T style layout $S theme.button -expand we -pady {3 6}
 
+if 1 {
+    DemoHeaders::NewButtonItem "" \
+	"Use no style, just the built-in header background, sort arrow and text.\nstyle=none, -ownerdrawn=no" \
+	no
+    DemoHeaders::NewButtonItem header1 \
+	"Use the 'header1' style, consisting of a border element for the background and an image for the sort arrow.\nstyle=header1, -ownerdrawn=yes" \
+	yes black
+    DemoHeaders::NewButtonItem header2 \
+	"Use the 'header2' style, consisting of a rounded rectangle element for the background and an image for the sort arrow.\nstyle=header2, -ownerdrawn=yes" \
+	yes blue
+    DemoHeaders::NewButtonItem header4 \
+	"Use the 'header4' style, consisting only of an image element serving as a checkbutton.  The style is drawn overtop the built-in parts of the header.\nstyle=header4, -ownerdrawn=no" \
+	no
+    DemoHeaders::NewButtonItem header5 \
+	"Use the 'header5' style, consisting .\nstyle=header5, -ownerdrawn=yes" \
+	yes #0080FF
+    DemoHeaders::NewButtonItem header6 \
+	"Use the 'header6' style, consisting .\nstyle=header6, -ownerdrawn=yes" \
+	yes orange
+} else {
     set I [$T item create -parent root -tags {style config}]
     $T item style set $I C1 $S
     $T item span $I all [$T column count {lock none}]
@@ -269,7 +289,7 @@ if 0 {
     $T item text $I C1 "Use the 'header6' style, consisting .\nstyle=header6, -ownerdrawn=yes"
     button $T.button$I -text "Configure headers" -command [list DemoHeaders::ChangeHeaderStyle header6 yes orange]
     $T item element configure $I C1 theme.button -window $T.button$I
-
+}
     $T item state set styleheader2 current
 
     #
@@ -351,6 +371,19 @@ if 0 {
 	DemoHeaders::ButtonPress1 %x %y
     }
 
+    return
+}
+
+proc DemoHeaders::NewButtonItem {S text args} {
+    set T [DemoList]
+    set I [$T item create -parent root -tags [list style$S config]]
+    $T item style set $I C1 theme
+    $T item span $I all [$T column count {lock none}]
+    $T item text $I C1 $text
+    frame $T.frame$I -borderwidth 0
+    button $T.frame$I.button -text "Configure headers" \
+	-command [eval list [list DemoHeaders::ChangeHeaderStyle $S] $args]
+    $T item element configure $I C1 theme.button -window $T.frame$I
     return
 }
 
