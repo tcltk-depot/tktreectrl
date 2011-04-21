@@ -4041,8 +4041,10 @@ TreeHeaderCmd(
 		    continue;
 
 		if (TreeItem_ReallyVisible(tree, item)) {
-		    tree->headerHeight = -1;
-		    TreeColumns_InvalidateWidthOfItems(tree, NULL);
+		    TreeColumns_InvalidateWidth(tree);
+		    /* TreeItem_Delete will call TreeItem_FreeResources which
+		     * will call Tree_FreeItemDInfo will will set tree->headerHeight=-1
+		     * and set DINFO_DRAW_HEADER. */
 		}
 
 		/* FIXME: ITEM_FLAG_DELETED */
