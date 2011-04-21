@@ -298,6 +298,43 @@ proc ::TreeCtrl::ColumnDragFindBefore {w x y dragColumn indColumn_ indSide_} {
 	return 0
     }
     set indColumn $id(column)
+    if {[$w column compare $indColumn == $dragColumn]} {
+	return 0
+    }
+
+    # The given $x is either the left edge or the right edge of the column
+    # header that is being dragged depending on which direction the user
+    # is dragging the column.
+    # When dragging to the left, the indicator column is chosen to be the
+    # leftmost column whose mid-way point is greater than the left edge of the
+    # dragged header.
+    # When dragging to the right, the indicator column is chosen to be the
+    # rightmost column whose mid-way point is less than the right edge of the
+    # dragged header.
+    if {[$w column compare $indColumn != "tail"]} {
+	variable Priv
+	scan [$w header bbox $Priv(header) $indColumn] "%d %d %d %d" x1 y1 x2 y2
+	# Hack - ignore canvaspadx
+	if {[$w column compare $indColumn == "first visible lock none"]} {
+	    incr x1 [lindex [$w cget -canvaspadx] 0]
+	}
+	if {[$w column compare $dragColumn < $indColumn]} {
+	    if {$x < $x1 + ($x2 - $x1) / 2} {
+		set indColumn [$w column id "$indColumn prev visible"]
+		set indColumn [GetSpanStartColumn $w $Priv(header) $indColumn]
+	    }
+	} else {
+	    if {$x > $x1 + ($x2 - $x1) / 2} {
+		# Find the column at the start of the next visible span
+		set starts [GetSpanStarts $w $Priv(header)]
+		for {set i [$w column order $indColumn]} {true} {incr i} {
+		    if {[$w column compare [lindex $starts $i] > $indColumn]} break
+		}
+		set indColumn [lindex $starts $i]
+	    }
+	}
+    }
+
     set before $indColumn
     set prev [$w column id "$dragColumn prev visible"]
     set next [$w column id "$dragColumn next visible"]
@@ -897,8 +934,20 @@ proc ::TreeCtrl::Motion1 {w x y} {
 		$w header dragconfigure -imagecolumn "" -indicatorcolumn ""
 	    }
 	    if {$inside} {
-		$w header dragconfigure -imageoffset [expr {$x - $Priv(columnDrag,x)}]
-		if {[ColumnDragFindBefore $w $x $Priv(columnDrag,y) $Priv(column) indColumn indSide]} {
+		set offset [expr {$x - $Priv(columnDrag,x)}]
+		$w header dragconfigure -imageoffset $offset
+
+		# When dragging to the left, use the left edge of the dragged
+		# header to choose the -indicatorcolumn.  When dragging to the
+		# right, use the right edge.
+		scan [$w header bbox $Priv(header) $Priv(column)] "%d %d %d %d" x1 y1 x2 y2
+		if {$offset > 0} {
+		    set xEdge [expr {$offset + $x2}]
+		} else {
+		    set xEdge [expr {$offset + $x1}]
+		}
+
+		if {[ColumnDragFindBefore $w $xEdge $Priv(columnDrag,y) $Priv(column) indColumn indSide]} {
 		    set prevIndColumn [$w header dragcget -indicatorcolumn]
 		    $w header dragconfigure \
 			-indicatorcolumn $indColumn \
@@ -1051,36 +1100,26 @@ proc ::TreeCtrl::Release1 {w x y} {
 	    $w header dragconfigure -imagecolumn "" -indicatorcolumn ""
 	    if {$visible && ($column ne "")} {
 		set side [$w header dragcget -indicatorside]
-if 1 {
+		# If dragging to the right, drop after the last column in the
+		# span of the indicator column.
 		if {[$w column order $Priv(column)] < [$w column order $column]} {
-		    set column [$w column id "$column next visible"]
-		}
-} else {
-		if {$side eq "right"} {
-		    set column [$w column id "$column next visible"]
-		}
+		    set span [$w header dragcget -indicatorspan]
+		    set column [$w column id "$column span $span next"]
+if 0 {
+		    # span could be > last column in this -lock group
+		    set span [$w header dragcget -indicatorspan]
+		    set lastInSpan [expr {[$w column order $column] + $span - 1}]
+		    set column [$w column id "order $lastInSpan next"]
 }
+		}
 		set lock [$w column cget $Priv(column) -lock]
 		if {$column eq "" || [$w column compare $column > "last lock $lock next"]} {
 		    set column [$w column id "last lock $lock next"]
 		}
 		TryEvent $w ColumnDrag receive [list H $Priv(header) C $Priv(column) b $column]
 	    }
-if 1 {
 	    CursorCheck $w $x $y
 	    MotionInHeader $w $x $y
-} else {
-	    $w identify $x $y -array id
-	    if {$id(where) eq "header"} {
-		set header $id(header)
-		set column $id(column)
-		if {($column ne "") && [$w column compare $column != "tail"]} {
-		    if {[$w header cget $header $column -button]} {
-			SetHeaderState $w $header $column active
-		    }
-		}
-	    }
-}
 	    TryEvent $w ColumnDrag end [list H $Priv(header) C $Priv(column)]
 	}
 	normal {
@@ -1376,12 +1415,23 @@ proc ::TreeCtrl::AutoScanCancel {w} {
 proc ::TreeCtrl::ColumnDragScrollCheck {w x y} {
     variable Priv
 
+    # When dragging to the left, use the left edge of the dragged
+    # header to choose the -indicatorcolumn.  When dragging to the
+    # right, use the right edge.
+    scan [$w header bbox $Priv(header) $Priv(column)] "%d %d %d %d" x1 y1 x2 y2
+    set offset [$w header dragcget -imageoffset]
+    if {$offset > 0} {
+	set xEdge [expr {$offset + $x2}]
+    } else {
+	set xEdge [expr {$offset + $x1}]
+    }
+
     scan [$w bbox header.none] "%d %d %d %d" x1 y1 x2 y2
 
     if {($x < $x1) || ($x >= $x2)} {
 	if {![info exists Priv(autoscan,afterId,$w)]} {
 	    set bbox1 [$w column bbox $Priv(column)]
-	    if {$x >= $x2} {
+	    if {$xEdge >= $x2} {
 		$w xview scroll 1 units
 	    } else {
 		$w xview scroll -1 units
@@ -1391,7 +1441,7 @@ proc ::TreeCtrl::ColumnDragScrollCheck {w x y} {
 		incr Priv(columnDrag,x) [expr {[lindex $bbox2 0] - [lindex $bbox1 0]}]
 		$w header dragconfigure -imageoffset [expr {$x - $Priv(columnDrag,x)}]
 
-		if {[ColumnDragFindBefore $w $x $Priv(columnDrag,y) $Priv(column) indColumn indSide]} {
+		if {[ColumnDragFindBefore $w $xEdge $Priv(columnDrag,y) $Priv(column) indColumn indSide]} {
 		    $w header dragconfigure -indicatorcolumn $indColumn \
 			-indicatorside $indSide
 		} else {
