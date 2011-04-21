@@ -6657,6 +6657,10 @@ UpdateDItemsForHeaders(
 		else if (dInfo->flags & DINFO_INVALIDATE)
 		    area->flags |= DITEM_DIRTY | DITEM_ALL_DIRTY;
 
+		/* Y-coord can change if another header's -visible option changes. */
+		else if (dItem->y != dItem->oldY)
+		    area->flags |= DITEM_DIRTY | DITEM_ALL_DIRTY;
+
 		else if ((i == 0) &&
 			(dItem->flags & DITEM_INVALIDATE_ON_SCROLL_X)
 			&& (area->x != dItem->oldX))
