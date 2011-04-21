@@ -3329,6 +3329,9 @@ doneDELETE:
 
 	/* T column dragcget option */
 	case COMMAND_DRAGCGET: {
+#if 1
+	    return TreeHeaderCmd(clientData, interp, objc, objv);
+#else
 	    Tcl_Obj *resultObjPtr;
 
 	    if (objc != 4) {
@@ -3341,10 +3344,14 @@ doneDELETE:
 		return TCL_ERROR;
 	    Tcl_SetObjResult(interp, resultObjPtr);
 	    break;
+#endif
 	}
 
 	/* T column dragconfigure ?option? ?value? ?option value ...? */
 	case COMMAND_DRAGCONF: {
+#if 1
+	    return TreeHeaderCmd(clientData, interp, objc, objv);
+#else
 	    Tcl_Obj *resultObjPtr;
 	    Tk_SavedOptions savedOptions;
 	    int mask, result;
@@ -3379,6 +3386,7 @@ doneDELETE:
 
 	    Tree_DInfoChanged(tree, DINFO_DRAW_HEADER);
 	    break;
+#endif
 	}
 
 	case COMMAND_COUNT: {
