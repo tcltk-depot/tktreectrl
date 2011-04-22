@@ -3109,8 +3109,9 @@ TrackOnScreenColumnsForItem(
 	count = GetOnScreenColumnsForItem(tree, dItem, &columns);
 
     if (tree->debug.enable && tree->debug.span)
-	DStringAppendf(&dString, "onscreen columns for item %d:",
-		TreeItem_GetID(tree, item));
+	DStringAppendf(&dString, "onscreen columns for %s %d:",
+	    TreeItem_GetHeader(tree, item) ? "header" : "item",
+	    TreeItem_GetID(tree, item));
 
     /* value is NULL if the item just came onscreen. */
     value = (TreeColumn *) Tcl_GetHashValue(hPtr);
@@ -3127,8 +3128,12 @@ TrackOnScreenColumnsForItem(
 		break;
 	}
 	if (value[j] == NULL) {
-	    if (tree->debug.enable && tree->debug.span)
-		DStringAppendf(&dString, " +%d", TreeColumn_GetID(column));
+	    if (tree->debug.enable && tree->debug.span) {
+		if (column == tree->columnTail)
+		    DStringAppendf(&dString, " +tail");
+		else
+		    DStringAppendf(&dString, " +%d", TreeColumn_GetID(column));
+	    }
 	    n++;
 	}
     }
@@ -3148,8 +3153,12 @@ TrackOnScreenColumnsForItem(
 		if (style != NULL)
 		    TreeStyle_OnScreen(tree, style, FALSE);
 	    }
-	    if (tree->debug.enable && tree->debug.span)
-		DStringAppendf(&dString, " -%d", TreeColumn_GetID(column));
+	    if (tree->debug.enable && tree->debug.span) {
+		if (column == tree->columnTail)
+		    DStringAppendf(&dString, " -tail");
+		else
+		    DStringAppendf(&dString, " -%d", TreeColumn_GetID(column));
+	    }
 	    n++;
 	}
     }
