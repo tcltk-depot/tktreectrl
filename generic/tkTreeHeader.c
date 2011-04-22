@@ -2185,7 +2185,11 @@ int
 TreeHeaderColumn_DragBounds(
     TreeHeader header,		/* Header token. */
     TreeHeaderColumn column,	/* Column token. */
-    StyleDrawArgs *drawArgs	/* May be changed by this procedure. */
+    StyleDrawArgs *drawArgs,	/* May be changed by this procedure. */
+    int dragPosition		/* TRUE to calculate the bounds of the
+				 * dragged columns considering -imageoffset,
+				 * FALSE to calculate the area the dragged
+				 * columns will be dropped. */
     )
 {
     TreeCtrl *tree = header->tree;
@@ -2201,9 +2205,6 @@ TreeHeaderColumn_DragBounds(
     if (tree->columnDrag.column == NULL)
 	return 0;
 
-    if (tree->columnDrag.indColumn == NULL)
-	return 0;
-
     if (!header->columnDrag.draw)
 	return 0;
 
@@ -2214,6 +2215,16 @@ TreeHeaderColumn_DragBounds(
     index3 = TreeColumn_Index(drawArgs->column);
 
     isDragColumn = index3 >= index1min && index3 <= index1max;
+
+    if (isDragColumn && dragPosition) {
+	drawArgs->x += drawArgs->indent + tree->columnDrag.offset;
+	drawArgs->width -= drawArgs->indent;
+	drawArgs->indent = 0;
+	return 1;
+    }
+
+    if (tree->columnDrag.indColumn == NULL)
+	return 0;
 
     /* The library scripts shouldn't pass an indicator column that is
      * one of the columns being dragged. */

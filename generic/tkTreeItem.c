@@ -4531,7 +4531,8 @@ SpanWalkProc_Draw(
 	StyleDrawArgs drawArgsCopy = *drawArgs;
 
 	(void) TreeHeaderColumn_DragBounds(item->header,
-	    itemColumn ? itemColumn->headerColumn : NULL, &drawArgsCopy);
+	    itemColumn ? itemColumn->headerColumn : NULL, &drawArgsCopy,
+	    FALSE);
 
 	/* Draw nothing if the entire span is out-of-bounds. */
 	if ((drawArgsCopy.x >= data->maxX) ||
@@ -5006,6 +5007,40 @@ SpanWalkProc_UpdateWindowPositions(
 {
     StyleDrawArgs drawArgsCopy;
     int requests;
+
+    if (item->header != NULL && drawArgs->style != NULL) {
+	StyleDrawArgs drawArgsCopy = *drawArgs;
+	TreeItemColumn itemColumn = spanPtr->itemColumn;
+
+	(void) TreeHeaderColumn_DragBounds(item->header,
+	    itemColumn ? itemColumn->headerColumn : NULL, &drawArgsCopy,
+	    TRUE);
+
+	/* Draw nothing if the entire span is out-of-bounds. */
+	if ((drawArgsCopy.x >= TreeRect_Right(drawArgs->bounds)) ||
+		(drawArgsCopy.x + drawArgsCopy.width <= TreeRect_Left(drawArgs->bounds)))
+	    return 0;
+
+	TreeDisplay_GetReadyForTrouble(tree, &requests);
+	TreeStyle_UpdateWindowPositions(&drawArgsCopy);
+	if (TreeDisplay_WasThereTrouble(tree, requests))
+	    return 1;
+
+	/* Don't stop drawing if there are columns still to the right that
+	 * are drag or indicator columns. */
+	if (tree->columnDrag.column != NULL && tree->columnDrag.indColumn != NULL) {
+	    int index1min = TreeColumn_Index(tree->columnDrag.column);
+	    int index1max = index1min + MAX(tree->columnDrag.span, 1);
+	    int index2min = TreeColumn_Index(tree->columnDrag.indColumn);
+	    int index2max = index2min + MAX(tree->columnDrag.indSpan, 1);
+	    TreeColumn treeColumn = spanPtr->treeColumn;
+	    int index3 = TreeColumn_Index(treeColumn);
+	    if (index3 < MAX(index1max, index2max))
+		return 0;
+	}
+
+	return drawArgs->x + drawArgs->width >= TreeRect_Right(drawArgs->bounds);
+    }
 
     if ((drawArgs->x >= TreeRect_Right(drawArgs->bounds)) ||
 	    (drawArgs->x + drawArgs->width <= TreeRect_Left(drawArgs->bounds)) ||

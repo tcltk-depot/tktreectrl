@@ -675,7 +675,7 @@ MODULE_SCOPE void TreeHeaderColumn_FreeResources(TreeCtrl *tree,
 MODULE_SCOPE int TreeHeaderColumn_StateChanged(TreeHeader header,
     TreeHeaderColumn column, TreeColumn treeColumn, int state1, int state2);
 MODULE_SCOPE int TreeHeaderColumn_DragBounds(TreeHeader header,
-    TreeHeaderColumn column, StyleDrawArgs *drawArgs);
+    TreeHeaderColumn column, StyleDrawArgs *drawArgs, int dragPosition);
 MODULE_SCOPE void TreeHeaderColumn_Draw(TreeHeader header,
     TreeHeaderColumn column, int visIndex, StyleDrawArgs *drawArgs);
 MODULE_SCOPE int TreeHeaderColumn_NeededWidth(TreeHeader header,
