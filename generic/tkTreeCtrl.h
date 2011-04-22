@@ -852,7 +852,9 @@ MODULE_SCOPE int TreeItemColumn_Index(TreeCtrl *tree, TreeItem item_, TreeItemCo
 MODULE_SCOPE void TreeItemColumn_ForgetStyle(TreeCtrl *tree, TreeItemColumn column_);
 MODULE_SCOPE int TreeItemColumn_NeededWidth(TreeCtrl *tree, TreeItem item_, TreeItemColumn column_);
 MODULE_SCOPE TreeItemColumn TreeItem_FindColumn(TreeCtrl *tree, TreeItem item, int columnIndex);
-MODULE_SCOPE int TreeItem_ColumnFromObj(TreeCtrl *tree, TreeItem item, Tcl_Obj *obj, TreeItemColumn *columnPtr, int *indexPtr);
+MODULE_SCOPE int TreeItem_ColumnFromObj(TreeCtrl *tree, TreeItem item,
+    Tcl_Obj *obj, TreeItemColumn *columnPtr, TreeColumn *treeColumnPtr,
+    int *indexPtr, int flags);
 MODULE_SCOPE void TreeItem_RemoveColumns(TreeCtrl *tree, TreeItem item_, int first, int last);
 MODULE_SCOPE void TreeItem_RemoveAllColumns(TreeCtrl *tree, TreeItem item_);
 MODULE_SCOPE void TreeItem_MoveColumn(TreeCtrl *tree, TreeItem item_, int columnIndex, int beforeIndex);
