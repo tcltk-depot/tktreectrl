@@ -371,6 +371,19 @@ test item-14.50 {item element configure: cleanup} -body {
     .t item element configure 8 0 eText -fill yellow
 } -result {}
 
+test item-14.60 {item element cget: tail not allowed} -body {
+    .t item element cget root tail eText -fill
+} -returnCodes error -result {can't specify "tail" for this command}
+
+test item-14.61 {item element configure: tail not allowed} -body {
+    .t item element configure root tail eText -fill
+} -returnCodes error -result {can't specify "tail" for this command}
+
+test item-14.62 {item element perstate: tail not allowed} -body {
+    .t item element perstate root tail eText -fill
+} -returnCodes error -result {can't specify "tail" for this command}
+
+
 test item-15.1 {item style: missing args} -body {
     .t item style
 } -returnCodes error -result {wrong # args: should be ".t item style command item ?arg ...?"}
@@ -504,6 +517,24 @@ test item-15.25 {item style set: all items, multiple columns} -body {
     .t column create
     set res
 } -result {{{} {}} {{} {}} {{} {}} {{} {}} {{} {}} {{} {}} {{} {}} {{} {}}}
+
+
+test item-15.30 {item style elements: tail not allowed} -body {
+    .t item style elements root tail
+} -returnCodes error -result {can't specify "tail" for this command}
+
+test item-15.31 {item style map: tail not allowed} -body {
+    .t item style map root tail testStyle2 {}
+} -returnCodes error -result {can't specify "tail" for this command}
+
+test item-15.32 {item style set: tail not allowed} -body {
+    .t item style set root tail
+} -returnCodes error -result {can't specify "tail" for this command}
+
+test item-15.33 {item style set: tail not allowed} -body {
+    .t item style set root tail testStyle2
+} -returnCodes error -result {can't specify "tail" for this command}
+
 
 test item-16.1 {item state: missing args} -body {
     .t item state
@@ -677,6 +708,14 @@ test item-16.47 {item state forcolumn: set list} -body {
     }
     set res
 } -result {state0 {} state0 {} state0 {} state0 {}}
+
+test item-16.50 {item state forcolumn: tail not allowed} -body {
+    .t item state forcolumn root tail
+} -returnCodes error -result {can't specify "tail" for this command}
+
+test item-16.51 {item state forcolumn: tail not allowed} -body {
+    .t item state forcolumn root tail foo
+} -returnCodes error -result {can't specify "tail" for this command}
 
 test item-17.1 {item sort: missing args} -body {
     .t item sort
@@ -1036,6 +1075,14 @@ test item-19.5 {item text: several items, set first column} -body {
 test item-19.6 {item text: several items, get first column} -body {
     .t item text {list {2 4 6 8}} first
 } -returnCodes error -result {can't specify > 1 item for this command}
+
+test item-19.10 {item text: tail not allowed} -body {
+    .t item text root tail
+} -returnCodes error -result {can't specify "tail" for this command}
+
+test item-19.11 {item text: tail not allowed} -body {
+    .t item text root tail "hello"
+} -returnCodes error -result {can't specify "tail" for this command}
 
 test item-20.1 {item tag: too few args} -body {
     .t item tag
