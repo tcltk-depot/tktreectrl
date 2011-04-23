@@ -4081,7 +4081,8 @@ Tree_WidthOfColumns(
 
     /* I can't calculate the width of the tail column here because it
      * depends on Tree_FakeCanvasWidth which calls this function. */
-    tree->columnTail->offset = tree->widthOfColumns;
+    tree->columnTail->offset = tree->canvasPadX[PAD_TOP_LEFT] +
+	tree->widthOfColumns;
     tree->columnTail->useWidth = 1; /* hack */
 
     return tree->widthOfColumns;
