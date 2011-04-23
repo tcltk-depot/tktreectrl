@@ -206,6 +206,29 @@ if 0 {
 	$T header text $H $C $text
     }
 
+
+    #
+    # Create a 4th row of column headers to test embedded windows.
+    #
+
+    $T element create header.window window -statedomain header -clip yes
+    $T element create header.divider rect -statedomain header -fill gray -height 2
+
+    set S [$T style create headerWin -orient horizontal -statedomain header]
+    $T style elements $S {header.divider header.window}
+    $T style layout $S header.divider -detach yes -expand n -iexpand x
+    $T style layout $S header.window -iexpand x -squeeze x -padx 1 -pady {0 2}
+
+    set H [$T header create -ownerdrawn yes -tags header4]
+    $T header dragconfigure $H -enable no
+    $T header style set $H all $S
+    foreach C [$T column list] {
+        set f [frame $T.frame${H}_$C -borderwidth 0]
+	set w [entry $f.entry -highlightthickness 1]
+	$w insert end $C
+	$T header element configure $H $C header.window -window $f
+    }
+
     #
     #
     #
@@ -417,7 +440,7 @@ proc DemoHeaders::ChangeHeaderStyle {style ownerDrawn {sortColor ""}} {
     }
     set HeaderStyle $style
     set S $HeaderStyle
-    foreach H [$T header id all] {
+    foreach H [$T header id !header4] {
 	$T header style set $H all $S
 	if {$S ne ""} {
 	    if {$S eq "header4"} {
