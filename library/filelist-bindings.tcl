@@ -111,8 +111,8 @@ namespace eval TreeCtrl {
 
 proc ::TreeCtrl::IsSensitive {T x y} {
     variable Priv
-    $T identify $x $y -array id
-    if {$id(where) ne "item" || $id(elem) eq ""} {
+    $T identify -array id $x $y
+    if {$id(where) ne "item" || $id(element) eq ""} {
 	return 0
     }
     if {![$T item enabled $id(item)]} {
@@ -122,7 +122,7 @@ proc ::TreeCtrl::IsSensitive {T x y} {
 	set eList [lassign $list C S]
 	if {[$T column compare $id(column) != $C]} continue
 	if {[$T item style set $id(item) $C] ne $S} continue
-	if {[lsearch -exact $eList $id(elem)] == -1} continue
+	if {[lsearch -exact $eList $id(element)] == -1} continue
 	return 1
     }
     return 0
@@ -142,8 +142,8 @@ proc ::TreeCtrl::IsSensitive {T x y} {
 
 proc ::TreeCtrl::IsSensitiveMarquee {T x y} {
     variable Priv
-    $T identify $x $y -array id
-    if {$id(where) ne "item" || $id(elem) eq ""} {
+    $T identify -array id $x $y
+    if {$id(where) ne "item" || $id(element) eq ""} {
 	return 0
     }
     if {![$T item enabled $id(item)]} {
@@ -160,7 +160,7 @@ proc ::TreeCtrl::IsSensitiveMarquee {T x y} {
 	set eList [lassign $list C S]
 	if {[$T column compare $id(column) != $C]} continue
 	if {[$T item style set $id(item) $C] ne $S} continue
-	if {[lsearch -exact $eList $id(elem)] == -1} continue
+	if {[lsearch -exact $eList $id(element)] == -1} continue
 	return 1
     }
     return 0
@@ -178,7 +178,7 @@ proc ::TreeCtrl::IsSensitiveMarquee {T x y} {
 proc ::TreeCtrl::FileListButton1 {T x y} {
     variable Priv
     focus $T
-    $T identify $x $y -array id
+    $T identify -array id $x $y
     set marquee 0
     set Priv(buttonMode) ""
     foreach e {text entry} {
@@ -247,7 +247,7 @@ proc ::TreeCtrl::FileListButton1 {T x y} {
 		set Priv(drop) ""
 		set Priv(drag,item) $item
 		set Priv(drag,C) $id(column)
-		set Priv(drag,E) $id(elem)
+		set Priv(drag,E) $id(element)
 		set Priv(buttonMode) drag
 	    }
 	}
@@ -414,7 +414,7 @@ proc ::TreeCtrl::FileListMotion {T x y} {
 
 	    # Find the element under the cursor
 	    set drop ""
-	    $T identify $x $y -array id
+	    $T identify -array id $x $y
 	    if {[IsSensitive $T $x $y]} {
 		set sensitive 1
 	    } elseif {[FileListEmulateWin7 $T] && [IsSensitiveMarquee $T $x $y]} {

@@ -554,13 +554,13 @@ proc UpdateIdentifyWindow {T x y} {
 	$wText insert end $key tagBold " $val "
     }
     $wText insert end "\narray: "
-    $T identify $x $y -array id
+    $T identify -array id $x $y
     switch -- $id(where) {
 	"header" {
-	    set keys [list where header column elem side]
+	    set keys [list where header column element side]
 	}
 	"item" {
-	    set keys [list where item column elem button line]
+	    set keys [list where item column element button line]
 	}
 	default {
 	    set keys [array names id]
@@ -1311,7 +1311,7 @@ InitPics sky feather
 proc ShowPopup {T x y X Y} {
     global Popup
     set Popup(T) $T
-    $T identify $x $y -array id
+    $T identify -array id $x $y
     if {$id(where) ne ""} {
 	if {$id(where) eq "header"} {
 	    set H $id(header)

@@ -562,8 +562,8 @@ proc DemoHeaders::TransferItemStyle {T I Cfrom Cto} {
 
 proc DemoHeaders::ButtonPress1 {x y} {
     set T [DemoList]
-    $T identify $x $y -array id
-    if {$id(where) eq "header" && $id(elem) eq "header.check"} {
+    $T identify -array id $x $y
+    if {$id(where) eq "header" && $id(element) eq "header.check"} {
 	$T header state forcolumn $id(header) $id(column) ~CHECK
 	return -code break
     }

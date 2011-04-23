@@ -2335,33 +2335,36 @@ TreeIdentifyCmd(
   "" : mouse is not in any item
 */
     if (objc < 4) {
-	Tcl_WrongNumArgs(interp, 2, objv, "x y");
+	Tcl_WrongNumArgs(interp, 2, objv, "?switches? x y");
 	return TCL_ERROR;
     }
-    if (Tk_GetPixelsFromObj(interp, tree->tkwin, objv[2], &x) != TCL_OK)
-	return TCL_ERROR;
-    if (Tk_GetPixelsFromObj(interp, tree->tkwin, objv[3], &y) != TCL_OK)
-	return TCL_ERROR;
 
-    for (i = 4; i < objc; i += 2) {
-	static CONST char *opName[] = { "-array", NULL };
-	int index;
+    if (objc > 4) {
+	for (i = 2; i < objc - 2; i += 2) {
+	    static CONST char *opName[] = { "-array", NULL };
+	    int index;
 
-	if (Tcl_GetIndexFromObj(interp, objv[i], opName, "option", 0,
-		&index) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-	if (i + 1 == objc) {
-	    FormatResult(interp, "missing value for \"%s\" option",
-		opName[index]);
-	    return TCL_ERROR;
-	}
-	switch (index) {
-	    case 0:
-		arrayName = Tcl_GetString(objv[i + 1]);
-		break;
+	    if (Tcl_GetIndexFromObj(interp, objv[i], opName, "option", 0,
+		    &index) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    if (i + 1 == objc - 2) {
+		FormatResult(interp, "missing value for \"%s\" option",
+		    opName[index]);
+		return TCL_ERROR;
+	    }
+	    switch (index) {
+		case 0:
+		    arrayName = Tcl_GetString(objv[i + 1]);
+		    break;
+	    }
 	}
     }
+
+    if (Tk_GetPixelsFromObj(interp, tree->tkwin, objv[objc - 2], &x) != TCL_OK)
+	return TCL_ERROR;
+    if (Tk_GetPixelsFromObj(interp, tree->tkwin, objv[objc - 1], &y) != TCL_OK)
+	return TCL_ERROR;
 
     id.where = "";
     id.header = NULL;
@@ -2471,7 +2474,7 @@ finish:
 		    TCL_LEAVE_ERR_MSG) == NULL) {
 		return TCL_ERROR;
 	    }
-	    if (Tcl_SetVar2Ex(interp, arrayName, "elem",
+	    if (Tcl_SetVar2Ex(interp, arrayName, "element",
 		    id.elem ? TreeElement_ToObj(id.elem) : Tcl_NewObj(),
 		    TCL_LEAVE_ERR_MSG) == NULL) {
 		return TCL_ERROR;
@@ -2502,7 +2505,7 @@ finish:
 		    TCL_LEAVE_ERR_MSG) == NULL) {
 		return TCL_ERROR;
 	    }
-	    if (Tcl_SetVar2Ex(interp, arrayName, "elem",
+	    if (Tcl_SetVar2Ex(interp, arrayName, "element",
 		    id.elem ? TreeElement_ToObj(id.elem) : Tcl_NewObj(),
 		    TCL_LEAVE_ERR_MSG) == NULL) {
 		return TCL_ERROR;

@@ -293,7 +293,7 @@ proc ::TreeCtrl::ColumnDragFindBefore {w x y dragColumn indColumn_ indSide_} {
     if {$x >= $maxX} {
 	set x [expr {$maxX - 1}]
     }
-    $w identify $x $y -array id
+    $w identify -array id $x $y
     if {$id(where) ne "header"} {
 	return 0
     }
@@ -377,7 +377,7 @@ set indSide right
 proc ::TreeCtrl::CursorAction {w x y var_} {
     upvar $var_ var
     variable Priv
-    $w identify $x $y -array id
+    $w identify -array id $x $y
 
     set var(action) ""
     if {$id(where) eq "header"} {
@@ -675,7 +675,7 @@ proc ::TreeCtrl::MotionInButtons {T args} {
     if {[llength $args]} {
 	set x [lindex $args 0]
 	set y [lindex $args 1]
-	$T identify $x $y -array id
+	$T identify -array id $x $y
 	if {$id(where) eq "item" && $id(button)} {
 	    set button $id(item)
 	}
@@ -735,7 +735,7 @@ proc ::TreeCtrl::ButtonPress1 {w x y} {
     variable Priv
     focus $w
 
-    $w identify $x $y -array id
+    $w identify -array id $x $y
     if {$id(where) eq ""} {
 	return
     }
@@ -815,7 +815,7 @@ proc ::TreeCtrl::ButtonPress1 {w x y} {
 
 proc ::TreeCtrl::DoubleButton1 {w x y} {
 
-    $w identify $x $y -array id
+    $w identify -array id $x $y
     if {$id(where) eq ""} {
 	return
     }
@@ -862,7 +862,7 @@ proc ::TreeCtrl::Motion1 {w x y} {
     if {![info exists Priv(buttonMode)]} return
     switch $Priv(buttonMode) {
 	header {
-	    $w identify $x $y -array id
+	    $w identify -array id $x $y
 	    if {$id(where) ne "header" ||
 		    $id(header) ne $Priv(header) ||
 		    $id(column) ne $Priv(column)} {
@@ -891,7 +891,7 @@ proc ::TreeCtrl::Motion1 {w x y} {
 	    }
 	}
 	buttonTracking {
-	    $w identify $x $y -array id
+	    $w identify -array id $x $y
 	    set itemTrack $Priv(buttontrack,item)
 	    set exists [expr {[$w item id $itemTrack] ne ""}]
 	    set mouseover 0
@@ -1078,7 +1078,7 @@ proc ::TreeCtrl::Release1 {w x y} {
 	    MotionInHeader $w $x $y
 	}
 	buttonTracking {
-	    $w identify $x $y -array id
+	    $w identify -array id $x $y
 	    set itemTrack $Priv(buttontrack,item)
 	    set exists [expr {[$w item id $itemTrack] ne ""}]
 	    if {$id(where) eq "item" && $id(button)} {
