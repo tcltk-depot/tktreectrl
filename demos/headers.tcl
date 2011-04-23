@@ -33,8 +33,8 @@ proc DemoHeaders::Run {} {
 	-lock right -visible no
 
     #
-    # Create custom item states to alter the appearance of the custom
-    # headers.
+    # Create an image element to use as the sort arrow for some header
+    # styles.
     #
 
     InitSortImages blue
@@ -55,7 +55,7 @@ proc DemoHeaders::Run {} {
     set S [$T style create header1 -orient horizontal -statedomain header]
     $T style elements $S {header.border header.text header.sort}
     $T style layout $S header.border -detach yes -indent no -iexpand xy
-    $T style layout $S header.text -expand wens -padx 6 -pady 2 ; # $T style layout $S header.text -center x -expand ns -padx 2 -pady 2
+    $T style layout $S header.text -center xy -padx 6 -pady 2
     $T style layout $S header.sort -expand nws -padx {0 6} \
 	-visible {no {!down !up}}
 
@@ -76,7 +76,7 @@ proc DemoHeaders::Run {} {
     set S [$T style create header2 -orient horizontal -statedomain header]
     $T style elements $S {header.rrect header.text header.sort}
     $T style layout $S header.rrect -detach yes -iexpand xy -padx {1 0} -pady 1
-    $T style layout $S header.text -expand wens -padx 6 -pady 4 ; # $T style layout $S header.text -center x -expand ns -padx 2 -pady 4
+    $T style layout $S header.text -center xy -padx 6 -pady 4
     $T style layout $S header.sort -expand nws -padx {0 6} \
 	-visible {no {!down !up}}
 
@@ -135,13 +135,13 @@ if 0 {
 	{sky blue} down
 	gray {}
     } -outlinewidth 1 -open {
-	nw {}
+	nw !pressed
     }
 
     set S [$T style create header5 -orient horizontal -statedomain header]
     $T style elements $S {header.rect1 header.text header.sort}
     $T style layout $S header.rect1 -detach yes -iexpand xy
-    $T style layout $S header.text -expand news -padx 6 -pady 2 -squeeze x
+    $T style layout $S header.text -center xy -padx 6 -pady 2 -squeeze x
     $T style layout $S header.sort -expand nws -padx {0 6} \
 	-visible {no {!down !up}}
 
@@ -158,8 +158,7 @@ if 0 {
     $T element create orange.outline rect -statedomain header \
 	-outline #ffb700 -outlinewidth 1 \
 	-rx 1 -open {
-	    se pressed
-	    nw {}
+	    nw !pressed
 	}
     $T element create orange.box rect -statedomain header \
 	-fill {
@@ -173,7 +172,7 @@ if 0 {
     $T style elements $S {orange.outline orange.box header.text header.sort}
     $T style layout $S orange.outline -union orange.box -ipadx 2 -ipady 2
     $T style layout $S orange.box -detach yes -iexpand xy
-    $T style layout $S header.text -expand news -padx 6 -pady 4 -squeeze x
+    $T style layout $S header.text -center xy -padx 6 -pady 4 -squeeze x
     $T style layout $S header.sort -expand nws -padx {0 6} \
 	-visible {no {!down !up}}
 
@@ -210,7 +209,6 @@ if 0 {
 	$T header text $H $C $text
     }
 
-
     #
     # Create a 4th row of column headers to test embedded windows.
     #
@@ -241,7 +239,7 @@ if 0 {
     scan [$T column bbox {last lock none}] "%d %d %d %d" left2 top2 right2 bottom2
     set width [expr {$right2 - $left}]
 
-    $T state define current
+    $T item state define current
 
     $T element create theme.rect rect \
 	-fill {{light blue} current white {}} \
@@ -534,7 +532,7 @@ proc DemoHeaders::ColumnDragReceive {H C b} {
     }
 
     # For each of the items displaying a button widget to change the header
-    # style transfer the style from the old left-most column to the new
+    # style, transfer the style from the old left-most column to the new
     # left-most column.
     if {[$T column compare $columnLeft != "first lock none"]} {
 	foreach I [$T item id "tag config"] {

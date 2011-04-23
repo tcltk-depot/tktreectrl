@@ -84,6 +84,8 @@ struct IStyle
 #define ELF_STICKY_S 0x8000
 #define ELF_iEXPAND_X 0x00010000 /* expand Layout.useWidth */
 #define ELF_iEXPAND_Y 0x00020000
+#define ELF_CENTER_X 0x00040000
+#define ELF_CENTER_Y 0x00080000
 
 #define ELF_eEXPAND_WE (ELF_eEXPAND_W | ELF_eEXPAND_E)
 #define ELF_eEXPAND_NS (ELF_eEXPAND_N | ELF_eEXPAND_S)
@@ -99,6 +101,8 @@ struct IStyle
 #define ELF_EXPAND_S (ELF_eEXPAND_S | ELF_iEXPAND_S)
 #define ELF_STICKY (ELF_STICKY_W | ELF_STICKY_N | ELF_STICKY_E | ELF_STICKY_S)
 
+#define IS_CENTER_X(e) (((e)->flags & ELF_CENTER_X) != 0)
+#define IS_CENTER_Y(e) (((e)->flags & ELF_CENTER_Y) != 0)
 #define IS_DETACH(e) (((e)->flags & ELF_DETACH) != 0)
 #define IS_UNION(e) ((e)->onion != NULL)
 #define DETACH_OR_UNION(e) (IS_DETACH(e) || IS_UNION(e))
@@ -212,7 +216,7 @@ struct Layout
 static int
 Style_DoExpandH(
     struct Layout *layout, 	/* Layout to be adjusted. */
-    int right			/* Limit of expansion. */
+    int extraSpace		/* Amount of extra space to add. */
     )
 {
     MElementLink *eLink1 = layout->master;
@@ -227,8 +231,7 @@ Style_DoExpandH(
     iPadX = layout->iPadX;
     uPadX = layout->uPadX;
 
-    spaceRemaining = right - (layout->x + ePadX[PAD_TOP_LEFT] +
-	layout->iWidth + MAX(ePadX[PAD_BOTTOM_RIGHT], uPadX[PAD_BOTTOM_RIGHT]));
+    spaceRemaining = extraSpace;
     if (spaceRemaining <= 0)
 	return 0;
 
@@ -346,7 +349,7 @@ Style_DoExpandH(
 static int
 Style_DoExpandV(
     struct Layout *layout,	/* Layout to be adjusted. */
-    int bottom			/* Limit of expansion. */
+    int extraSpace		/* Amount of extra space to add. */
     )
 {
     MElementLink *eLink1 = layout->master;
@@ -361,8 +364,7 @@ Style_DoExpandV(
     iPadY = layout->iPadY;
     uPadY = layout->uPadY;
 
-    spaceRemaining = bottom - (layout->y + ePadY[PAD_TOP_LEFT] +
-	layout->iHeight + MAX(ePadY[PAD_BOTTOM_RIGHT], uPadY[PAD_BOTTOM_RIGHT]));
+    spaceRemaining = extraSpace;
     if (spaceRemaining <= 0)
 	return 0;
 
@@ -1007,6 +1009,208 @@ Layout_CalcUnionLayoutV(
     Layout_ExpandUnionV(drawArgs, masterStyle, layouts, iElem);
 }
 
+static int
+Layout_ExpandElementsH(
+    StyleDrawArgs *drawArgs,
+    struct Layout layouts[],
+    int iElemMin,
+    int iElemMax,
+    int maxX
+    )
+{
+    MElementLink *eLink1;
+    int i, j, numExpand = 0, rightEdge = 0, rightEdgeU = 0;
+    int spaceRemaining, totalUsed = 0;
+
+    if (iElemMin > iElemMax)
+	return 0;
+
+    /* Each element has 5 areas that can optionally expand. */
+    for (i = iElemMin; i <= iElemMax; i++) {
+	struct Layout *layout = &layouts[i];
+
+	if (IS_HIDDEN(layout))
+	    continue;
+
+	eLink1 = layout->master;
+
+	layout->temp = 0;
+
+	if (DETACH_OR_UNION(eLink1))
+	    continue;
+
+	rightEdge = layout->x + layout->ePadX[PAD_TOP_LEFT] +
+	    layout->iWidth +
+	    layout->ePadX[PAD_BOTTOM_RIGHT];
+
+	rightEdgeU = MAX(rightEdgeU, layout->x + layout->ePadX[PAD_TOP_LEFT] +
+	    layout->iWidth +
+	    MAX(layout->ePadX[PAD_BOTTOM_RIGHT], layout->uPadX[PAD_BOTTOM_RIGHT]));
+
+	if (eLink1->flags & ELF_eEXPAND_W) layout->temp++;
+	if (eLink1->flags & ELF_iEXPAND_W) layout->temp++;
+	if (eLink1->flags & ELF_iEXPAND_X) {
+	    if ((eLink1->maxWidth < 0) ||
+		(eLink1->maxWidth > layout->useWidth))
+		layout->temp++;
+	}
+	if (eLink1->flags & ELF_iEXPAND_E) layout->temp++;
+	if (eLink1->flags & ELF_eEXPAND_E) layout->temp++;
+
+	numExpand += layout->temp;
+    }
+
+    if (numExpand == 0)
+	return 0;
+
+    spaceRemaining = maxX - rightEdge;
+    if (drawArgs->width - rightEdgeU < spaceRemaining)
+	spaceRemaining = drawArgs->width - rightEdgeU;
+
+    if (spaceRemaining <= 0)
+	return 0;
+
+    while ((spaceRemaining > 0) && (numExpand > 0)) {
+	int each = (spaceRemaining >= numExpand) ? spaceRemaining / numExpand : 1;
+
+	numExpand = 0;
+	for (i = iElemMin; i <= iElemMax; i++) {
+	    struct Layout *layout = &layouts[i];
+	    int spaceUsed;
+
+	    if (IS_HIDDEN(layout))
+		continue;
+
+	    if (!layout->temp)
+		continue;
+
+	    eLink1 = layout->master;
+
+	    spaceUsed = Style_DoExpandH(layout,
+		MIN(each * layout->temp, spaceRemaining));
+
+	    if (spaceUsed) {
+		/* Shift following elements to the right */
+		for (j = i + 1; j <= iElemMax; j++)
+		    if (!IS_HIDDEN(&layouts[j]) && !DETACH_OR_UNION(layouts[j].master))
+			layouts[j].x += spaceUsed;
+
+		totalUsed += spaceUsed;
+
+		spaceRemaining -= spaceUsed;
+		if (!spaceRemaining)
+		    break;
+
+		numExpand += layout->temp;
+	    } else
+		layout->temp = 0;
+	}
+    }
+
+    return totalUsed;
+}
+
+static int
+Layout_ExpandElementsV(
+    StyleDrawArgs *drawArgs,
+    struct Layout layouts[],
+    int iElemMin,
+    int iElemMax,
+    int maxY
+    )
+{
+    MElementLink *eLink1;
+    int i, j, numExpand = 0, bottomEdge = 0, bottomEdgeU = 0;
+    int spaceRemaining, totalUsed = 0;
+
+    if (iElemMin > iElemMax)
+	return 0;
+
+    /* Each element has 5 areas that can optionally expand. */
+    for (i = iElemMin; i <= iElemMax; i++) {
+	struct Layout *layout = &layouts[i];
+
+	if (IS_HIDDEN(layout))
+	    continue;
+
+	eLink1 = layout->master;
+
+	layout->temp = 0;
+
+	if (DETACH_OR_UNION(eLink1))
+	    continue;
+
+	bottomEdge = layout->y + layout->ePadY[PAD_TOP_LEFT] +
+	    layout->iHeight +
+	    layout->ePadY[PAD_BOTTOM_RIGHT];
+
+	bottomEdgeU = MAX(bottomEdgeU, layout->y + layout->ePadY[PAD_TOP_LEFT] +
+	    layout->iHeight +
+	    MAX(layout->ePadY[PAD_BOTTOM_RIGHT], layout->uPadY[PAD_BOTTOM_RIGHT]));
+
+	if (eLink1->flags & ELF_eEXPAND_N) layout->temp++;
+	if (eLink1->flags & ELF_iEXPAND_N) layout->temp++;
+	if (eLink1->flags & ELF_iEXPAND_Y) {
+	    if ((eLink1->maxHeight < 0) ||
+		(eLink1->maxHeight > layout->useHeight))
+		layout->temp++;
+	}
+	if (eLink1->flags & ELF_iEXPAND_S) layout->temp++;
+	if (eLink1->flags & ELF_eEXPAND_S) layout->temp++;
+
+	numExpand += layout->temp;
+    }
+
+    if (numExpand == 0)
+	return 0;
+
+    spaceRemaining = maxY - bottomEdge;
+    if (drawArgs->height - bottomEdgeU < spaceRemaining)
+	spaceRemaining = drawArgs->height - bottomEdgeU;
+
+    if (spaceRemaining <= 0)
+	return 0;
+
+    while ((spaceRemaining > 0) && (numExpand > 0)) {
+	int each = (spaceRemaining >= numExpand) ? spaceRemaining / numExpand : 1;
+
+	numExpand = 0;
+	for (i = iElemMin; i <= iElemMax; i++) {
+	    struct Layout *layout = &layouts[i];
+	    int spaceUsed;
+
+	    if (IS_HIDDEN(layout))
+		continue;
+
+	    if (!layout->temp)
+		continue;
+
+	    eLink1 = layout->master;
+
+	    spaceUsed = Style_DoExpandV(layout,
+		MIN(each * layout->temp, spaceRemaining));
+
+	    if (spaceUsed) {
+		/* Shift following elements down */
+		for (j = i + 1; j <= iElemMax; j++)
+		    if (!IS_HIDDEN(&layouts[j]) && !DETACH_OR_UNION(layouts[j].master))
+			layouts[j].y += spaceUsed;
+
+		totalUsed += spaceUsed;
+
+		spaceRemaining -= spaceUsed;
+		if (!spaceRemaining)
+		    break;
+
+		numExpand += layout->temp;
+	    } else
+		layout->temp = 0;
+	}
+    }
+
+    return totalUsed;
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1043,6 +1247,7 @@ Style_DoLayoutH(
     int numSqueezeX = 0;
     int i, j, eLinkCount = 0;
     int rightEdge = 0;
+    int iCenterMin = -1, iCenterMax = -1;
 
     eLinks1 = masterStyle->elements;
     eLinks2 = style->elements;
@@ -1110,6 +1315,12 @@ Style_DoLayoutH(
 	    continue;
 	if (eLink1->flags & ELF_SQUEEZE_X)
 	    numSqueezeX++;
+
+	if (IS_CENTER_X(eLink1)) {
+	    if (iCenterMin == -1)
+		iCenterMin = i;
+	    iCenterMax = i;
+	}
     }
 
     /*
@@ -1262,7 +1473,7 @@ Style_DoLayoutH(
 	layout->iWidth = iPadX[PAD_TOP_LEFT] + layout->useWidth + iPadX[PAD_BOTTOM_RIGHT];
 	layout->eWidth = ePadX[PAD_TOP_LEFT] + layout->iWidth + ePadX[PAD_BOTTOM_RIGHT];
 
-	right = layout->x + layout->ePadX[PAD_TOP_LEFT] +
+	right = layout->x + ePadX[PAD_TOP_LEFT] +
 	    layout->iWidth +
 	    MAX(ePadX[PAD_BOTTOM_RIGHT], uPadX[PAD_BOTTOM_RIGHT]);
 
@@ -1275,8 +1486,60 @@ Style_DoLayoutH(
 	    numExpandWE++;
     }
 
+    /* Left-to-right layout. Center some elements horizontally. */
+    if (!masterStyle->vertical && (iCenterMin != -1) /*&& (drawArgs->width > style->neededWidth + drawArgs->indent)*/) {
+	int widthCenter, spaceRemaining;
+	int x1, x2, dx;
+
+	/* Calculate the new x-coordinate of the left-most centered element
+	 * such that all the centered elements are centered in the total
+	 * width available to the style (minus indent). The calculation
+	 * ignores all padding on the left and right edges of the
+	 * centered elements when considered as a group. */
+	x1 = layouts[iCenterMax].x + layouts[iCenterMax].eWidth - layouts[iCenterMax].ePadX[PAD_BOTTOM_RIGHT];
+	x2 = layouts[iCenterMin].x + layouts[iCenterMin].ePadX[PAD_TOP_LEFT];
+	widthCenter = x1 - x2;
+	spaceRemaining = (drawArgs->width - drawArgs->indent - widthCenter);
+	x = drawArgs->indent + spaceRemaining / 2;
+
+	/* Don't push elements so far to the right that they go past the
+	 * right side of the style. */
+	dx = x - (layouts[iCenterMin].x + layouts[iCenterMin].ePadX[PAD_TOP_LEFT]);
+	if (dx > drawArgs->width - rightEdge)
+	    x -= dx - (drawArgs->width - rightEdge);
+
+	if (x > layouts[iCenterMin].x + layouts[iCenterMin].ePadX[PAD_TOP_LEFT]) {
+	    int dx = x - (layouts[iCenterMin].x + layouts[iCenterMin].ePadX[PAD_TOP_LEFT]);
+	    for (i = iCenterMin; i < eLinkCount; i++) {
+		if (!IS_HIDDEN(&layouts[i]) && !DETACH_OR_UNION(&eLinks1[i]))
+		    layouts[i].x += dx;
+	    }
+	}
+
+	/* Expand all elements to the left of the centered elements. */
+	Layout_ExpandElementsH(drawArgs, layouts, 0, iCenterMin - 1,
+	    /* Left-side union padding does separate the elements. */
+	    x - MAX(layouts[iCenterMin].ePadX[PAD_TOP_LEFT], layouts[iCenterMin].uPadX[PAD_TOP_LEFT]));
+
+	/* Expand all elements to the right of the centered elements. */
+	Layout_ExpandElementsH(drawArgs, layouts, iCenterMax + 1, eLinkCount - 1,
+	    drawArgs->width);
+
+	/* Disable justification. */
+	rightEdge = drawArgs->width;
+    }
+
     /* Left-to-right layout. Expand some elements horizontally if we have
      * more space available horizontally than is needed by the Style. */
+#if 1
+    if (!masterStyle->vertical &&
+	    (iCenterMin == -1) &&
+	    (drawArgs->width > rightEdge) &&
+	    (numExpandWE > 0)) {
+	rightEdge += Layout_ExpandElementsH(drawArgs, layouts, 0, eLinkCount - 1,
+	    drawArgs->width);
+    }
+#else
     if (!masterStyle->vertical &&
 	(drawArgs->width > rightEdge) &&
 	(numExpandWE > 0)) {
@@ -1327,8 +1590,6 @@ Style_DoLayoutH(
 		eLink1 = &eLinks1[i];
 
 		spaceUsed = Style_DoExpandH(layout,
-		    layout->x + layout->ePadX[PAD_TOP_LEFT] + layout->iWidth +
-		    MAX(layout->ePadX[PAD_BOTTOM_RIGHT], layout->uPadX[PAD_BOTTOM_RIGHT]) +
 		    MIN(each * layout->temp, spaceRemaining));
 
 		if (spaceUsed) {
@@ -1349,6 +1610,45 @@ Style_DoLayoutH(
 	    }
 	}
     }
+#endif
+
+    /* Top-to-bottom layout. Center individual elements horizontally. */
+    if (masterStyle->vertical && (iCenterMin != -1)) {
+	for (i = iCenterMin; i <= iCenterMax; i++) {
+	    struct Layout *layout = &layouts[i];
+	    int right, spaceRemaining, dx;
+
+	    if (IS_HIDDEN(layout))
+		continue;
+
+	    eLink1 = &eLinks1[i];
+
+	    if (DETACH_OR_UNION(eLink1))
+		continue;
+
+	    if (!IS_CENTER_X(eLink1))
+		continue;
+
+	    spaceRemaining = (drawArgs->width - drawArgs->indent - layout->iWidth);
+	    x = drawArgs->indent + spaceRemaining / 2;
+
+	    /* Don't push elements so far to the right that they go past the
+	    * right side of the style. */
+	    dx = x - (layout->x + layout->ePadX[PAD_TOP_LEFT]);
+
+	    right = layout->x + layout->ePadX[PAD_TOP_LEFT] +
+		layout->iWidth +
+		MAX(layout->ePadX[PAD_BOTTOM_RIGHT], layout->uPadX[PAD_BOTTOM_RIGHT]);
+
+	    if (dx > drawArgs->width - right)
+		x -= dx - (drawArgs->width - right);
+
+	    if (x > layout->x + layout->ePadX[PAD_TOP_LEFT]) {
+		dx = x - (layout->x + layout->ePadX[PAD_TOP_LEFT]);
+		layout->x += dx;
+	    }
+	}
+    }
 
     /* Top-to-bottom layout. Expand some elements horizontally */
     if (masterStyle->vertical && (numExpandWE > 0)) {
@@ -1364,12 +1664,16 @@ Style_DoLayoutH(
 	    if (DETACH_OR_UNION(eLink1))
 		continue;
 
-	    layout->temp = 0;
-	    Style_DoExpandH(layout, drawArgs->width);
+	    if (IS_CENTER_X(eLink1))
+		continue;
 
 	    right = layout->x + layout->ePadX[PAD_TOP_LEFT] +
 		layout->iWidth +
 		MAX(layout->ePadX[PAD_BOTTOM_RIGHT], layout->uPadX[PAD_BOTTOM_RIGHT]);
+
+	    layout->temp = 0;
+	    right += Style_DoExpandH(layout, drawArgs->width - right);
+
 	    rightEdge = MAX(rightEdge, right);
 	}
     }
@@ -1390,6 +1694,9 @@ Style_DoLayoutH(
 	    if (DETACH_OR_UNION(eLink1))
 		continue;
 
+	    if (masterStyle->vertical && IS_CENTER_X(eLink1))
+		continue;
+
 	    switch (drawArgs->justify) {
 		case TK_JUSTIFY_LEFT:
 		    break;
@@ -1406,6 +1713,7 @@ Style_DoLayoutH(
     /* Position and expand -detach elements */
     for (i = 0; i < eLinkCount; i++) {
 	struct Layout *layout = &layouts[i];
+	int right;
 
 	if (IS_HIDDEN(layout))
 	    continue;
@@ -1426,8 +1734,12 @@ Style_DoLayoutH(
 	layout->iWidth = iPadX[PAD_TOP_LEFT] + layout->useWidth + iPadX[PAD_BOTTOM_RIGHT];
 	layout->eWidth = ePadX[PAD_TOP_LEFT] + layout->iWidth + ePadX[PAD_BOTTOM_RIGHT];
 
+	right = layout->x + layout->ePadX[PAD_TOP_LEFT] +
+	    layout->iWidth +
+	    MAX(layout->ePadX[PAD_BOTTOM_RIGHT], layout->uPadX[PAD_BOTTOM_RIGHT]);
+
 	layout->temp = 0;
-	Style_DoExpandH(layout, drawArgs->width);
+	Style_DoExpandH(layout, drawArgs->width - right);
     }
 
     /* Position and expand -union elements. */
@@ -1501,6 +1813,7 @@ Style_DoLayoutV(
     int numSqueezeY = 0;
     int i, j, eLinkCount = 0;
     int bottomEdge = 0;
+    int iCenterMin = -1, iCenterMax = -1;
 
     eLinks1 = masterStyle->elements;
     eLinks2 = style->elements;
@@ -1517,6 +1830,12 @@ Style_DoLayoutV(
 	    continue;
 	if (eLink1->flags & ELF_SQUEEZE_Y)
 	    numSqueezeY++;
+
+	if (IS_CENTER_Y(eLink1)) {
+	    if (iCenterMin == -1)
+		iCenterMin = i;
+	    iCenterMax = i;
+	}
     }
 
     /* Top-top-bottom layout. Make the height of some elements less than they
@@ -1639,8 +1958,57 @@ Style_DoLayoutV(
 	    numExpandNS++;
     }
 
+    /* Top-to-bottom layout. Center some elements vertically. */
+    if (masterStyle->vertical && (iCenterMin != -1) /*&& (drawArgs->height > style->neededHeight)*/) {
+	int heightCenter, spaceRemaining;
+	int y1, y2, dy;
+
+	/* Calculate the new y-coordinate of the top-most centered element
+	 * such that all the centered elements are centered in the total
+	 * height available to the style. The calculation
+	 * ignores all padding on the top and bottom edges of the
+	 * centered elements when considered as a group. */
+	y1 = layouts[iCenterMax].y + layouts[iCenterMax].eHeight - layouts[iCenterMax].ePadY[PAD_BOTTOM_RIGHT];
+	y2 = layouts[iCenterMin].y + layouts[iCenterMin].ePadY[PAD_TOP_LEFT];
+	heightCenter = y1 - y2;
+	spaceRemaining = (drawArgs->height - heightCenter);
+	y = spaceRemaining / 2;
+
+	/* Don't push elements so far to the bottom that they go past the
+	 * bottom side of the style. */
+	dy = y - (layouts[iCenterMin].y + layouts[iCenterMin].ePadY[PAD_TOP_LEFT]);
+	if (dy > drawArgs->height - bottomEdge)
+	    y -= dy - (drawArgs->height - bottomEdge);
+
+	if (y > layouts[iCenterMin].y + layouts[iCenterMin].ePadY[PAD_TOP_LEFT]) {
+	    int dy = y - (layouts[iCenterMin].y + layouts[iCenterMin].ePadY[PAD_TOP_LEFT]);
+	    for (i = iCenterMin; i < eLinkCount; i++) {
+		if (!IS_HIDDEN(&layouts[i]) && !DETACH_OR_UNION(&eLinks1[i]))
+		    layouts[i].y += dy;
+	    }
+	}
+
+	/* Expand all elements above the centered elements. */
+	Layout_ExpandElementsV(drawArgs, layouts, 0, iCenterMin - 1,
+	    /* Top-side union padding does separate the elements. */
+	    y - MAX(layouts[iCenterMin].ePadY[PAD_TOP_LEFT], layouts[iCenterMin].uPadY[PAD_TOP_LEFT]));
+
+	/* Expand all elements below the centered elements. */
+	Layout_ExpandElementsV(drawArgs, layouts, iCenterMax + 1, eLinkCount - 1,
+	    drawArgs->height);
+    }
+
     /* Top-to-bottom layout. Expand some elements vertically if we have
      * more space available vertically than is needed by the Style. */
+#if 1
+    if (masterStyle->vertical &&
+	    (iCenterMin == -1) &&
+	    (drawArgs->height > bottomEdge) &&
+	    (numExpandNS > 0)) {
+	bottomEdge += Layout_ExpandElementsV(drawArgs, layouts, 0, eLinkCount - 1,
+	    drawArgs->height);
+    }
+#else
     if (masterStyle->vertical &&
 	(drawArgs->height > bottomEdge) &&
 	(numExpandNS > 0)) {
@@ -1710,11 +2078,13 @@ Style_DoLayoutV(
 	    }
 	}
     }
+#endif
 
-    /* Left-to-right layout. Expand some elements vertically */
-    if (!masterStyle->vertical && (numExpandNS > 0)) {
-	for (i = 0; i < eLinkCount; i++) {
+    /* Left-to-right layout. Center individual elements vertically. */
+    if (!masterStyle->vertical && (iCenterMin != -1)) {
+	for (i = iCenterMin; i <= iCenterMax; i++) {
 	    struct Layout *layout = &layouts[i];
+	    int bottom, spaceRemaining, dy;
 
 	    if (IS_HIDDEN(layout))
 		continue;
@@ -1724,14 +2094,60 @@ Style_DoLayoutV(
 	    if (DETACH_OR_UNION(eLink1))
 		continue;
 
+	    if (!IS_CENTER_Y(eLink1))
+		continue;
+
+	    spaceRemaining = (drawArgs->height - layout->iHeight);
+	    y = spaceRemaining / 2;
+
+	    /* Don't push elements so far to the bottom that they go past the
+	    * right side of the style. */
+	    dy = y - (layout->y + layout->ePadY[PAD_TOP_LEFT]);
+
+	    bottom = layout->y + layout->ePadY[PAD_TOP_LEFT] +
+		layout->iHeight +
+		MAX(layout->ePadY[PAD_BOTTOM_RIGHT], layout->uPadY[PAD_BOTTOM_RIGHT]);
+
+	    if (dy > drawArgs->height - bottom)
+		y -= dy - (drawArgs->height - bottom);
+
+	    if (y > layout->y + layout->ePadY[PAD_TOP_LEFT]) {
+		dy = y - (layout->y + layout->ePadY[PAD_TOP_LEFT]);
+		layout->y += dy;
+	    }
+	}
+    }
+
+    /* Left-to-right layout. Expand some elements vertically */
+    if (!masterStyle->vertical && (numExpandNS > 0)) {
+	for (i = 0; i < eLinkCount; i++) {
+	    struct Layout *layout = &layouts[i];
+	    int bottom;
+
+	    if (IS_HIDDEN(layout))
+		continue;
+
+	    eLink1 = &eLinks1[i];
+
+	    if (DETACH_OR_UNION(eLink1))
+		continue;
+
+	    if (IS_CENTER_Y(eLink1))
+		continue;
+
+	    bottom = layout->y + layout->ePadY[PAD_TOP_LEFT] +
+		layout->iHeight +
+		MAX(layout->ePadY[PAD_BOTTOM_RIGHT], layout->uPadY[PAD_BOTTOM_RIGHT]);
+
 	    layout->temp = 0;
-	    Style_DoExpandV(layout, drawArgs->height);
+	    Style_DoExpandV(layout, drawArgs->height - bottom);
 	}
     }
 
     /* Position and expand -detach elements */
     for (i = 0; i < eLinkCount; i++) {
 	struct Layout *layout = &layouts[i];
+	int bottom;
 
 	if (IS_HIDDEN(layout))
 	    continue;
@@ -1750,8 +2166,12 @@ Style_DoLayoutV(
 	layout->iHeight = iPadY[PAD_TOP_LEFT] + layout->useHeight + iPadY[PAD_BOTTOM_RIGHT];
 	layout->eHeight = ePadY[PAD_TOP_LEFT] + layout->iHeight + ePadY[PAD_BOTTOM_RIGHT];
 
+	bottom = layout->y + layout->ePadY[PAD_TOP_LEFT] +
+	    layout->iHeight +
+	    MAX(layout->ePadY[PAD_BOTTOM_RIGHT], layout->uPadY[PAD_BOTTOM_RIGHT]);
+
 	layout->temp = 0;
-	Style_DoExpandV(layout, drawArgs->height);
+	Style_DoExpandV(layout, drawArgs->height - bottom);
     }
 
     /* Now calculate layout of -union elements. */
@@ -5632,10 +6052,10 @@ TreeStyle_ListElements(
 }
 
 enum {
-    OPTION_DETACH, OPTION_DRAW, OPTION_EXPAND, OPTION_HEIGHT, OPTION_iEXPAND,
-    OPTION_INDENT, OPTION_iPADX, OPTION_iPADY, OPTION_MAXHEIGHT,
-    OPTION_MAXWIDTH, OPTION_MINHEIGHT, OPTION_MINWIDTH, OPTION_PADX,
-    OPTION_PADY, OPTION_SQUEEZE, OPTION_STICKY, OPTION_UNION,
+    OPTION_CENTER, OPTION_DETACH, OPTION_DRAW, OPTION_EXPAND, OPTION_HEIGHT,
+    OPTION_iEXPAND, OPTION_INDENT, OPTION_iPADX, OPTION_iPADY,
+    OPTION_MAXHEIGHT, OPTION_MAXWIDTH, OPTION_MINHEIGHT, OPTION_MINWIDTH,
+    OPTION_PADX, OPTION_PADY, OPTION_SQUEEZE, OPTION_STICKY, OPTION_UNION,
     OPTION_WIDTH, OPTION_VISIBLE
 };
 
@@ -5675,6 +6095,16 @@ LayoutOptionToObj(
 	    return TreeCtrl_NewPadAmountObj(eLink->iPadX);
 	case OPTION_iPADY:
 	    return TreeCtrl_NewPadAmountObj(eLink->iPadY);
+	case OPTION_CENTER: {
+	    char flags[2];
+	    int n = 0;
+
+	    if (eLink->flags & ELF_CENTER_X) flags[n++] = 'x';
+	    if (eLink->flags & ELF_CENTER_Y) flags[n++] = 'y';
+	    if (n)
+		return Tcl_NewStringObj(flags, n);
+	    break;
+	}
 	case OPTION_DETACH:
 	    return Tcl_NewStringObj(IS_DETACH(eLink) ? "yes" : "no", -1);
 	case OPTION_EXPAND: {
@@ -5831,7 +6261,7 @@ StyleLayoutCmd(
     MElementLink saved, *eLink;
     int i, index, eIndex;
     static CONST char *optionNames[] = {
-	"-detach", "-draw", "-expand", "-height", "-iexpand",
+	"-center", "-detach", "-draw", "-expand", "-height", "-iexpand",
 	"-indent", "-ipadx", "-ipady", "-maxheight", "-maxwidth", "-minheight",
 	"-minwidth", "-padx", "-pady", "-squeeze", "-sticky", "-union",
 	"-width", "-visible",
@@ -5929,6 +6359,18 @@ StyleLayoutCmd(
 		    &eLink->iPadY[PAD_TOP_LEFT],
 		    &eLink->iPadY[PAD_BOTTOM_RIGHT]) != TCL_OK)
 		    goto badConfig;
+		break;
+	    }
+	    case OPTION_CENTER: {
+		static const CharFlag charFlags[] = {
+		    { 'x', ELF_CENTER_X },
+		    { 'y', ELF_CENTER_Y },
+		    { 0, 0 }
+		};
+		if (Tree_GetFlagsFromObj(tree, objv[i + 1], "center value",
+			charFlags, &eLink->flags) != TCL_OK) {
+		    goto badConfig;
+		}
 		break;
 	    }
 	    case OPTION_DETACH: {

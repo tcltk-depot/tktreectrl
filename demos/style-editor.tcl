@@ -344,6 +344,8 @@ proc StyleEditor::SetPropertyList {} {
 	"Draw and Visible" ""
 	"" -draw
 	"" -visible
+	"Center" ""
+	"" -center
 	"Detach" ""
 	"" -detach
 	"" -indent
@@ -464,6 +466,7 @@ proc StyleEditor::SelectProperty {select deselect} {
 	    $T item element configure $I value eWindow -window [Info editor,boolean]
 	    Info -boolean [$Tdemo style layout $style $element $option]
 	}
+	-center -
 	-squeeze {
 	    $T item element configure $I value eWindow -window [Info editor,squeeze]
 	    set value [$Tdemo style layout $style $element $option]
@@ -688,7 +691,7 @@ proc StyleEditor::Sync_squeeze {} {
 	    append value $flag
 	}
     }
-    $Tdemo style layout $style $element -squeeze $value
+    $Tdemo style layout $style $element $option $value
     StyleToCanvas
     return
 }
