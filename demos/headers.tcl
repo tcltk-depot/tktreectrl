@@ -172,7 +172,6 @@ if 0 {
     $T style layout $S header.sort -expand nws -padx {0 6} \
 	-visible {no {!down !up}}
 
-
     #
     # Configure 3 rows of column headers
     #
@@ -251,7 +250,6 @@ if 0 {
     $T style layout $S theme.text -padx 4 -pady 3
     $T style layout $S theme.button -expand we -pady {3 6}
 
-if 1 {
     DemoHeaders::NewButtonItem "" \
 	"Use no style, just the built-in header background, sort arrow and text.\nstyle=none, -ownerdrawn=no" \
 	no
@@ -270,49 +268,7 @@ if 1 {
     DemoHeaders::NewButtonItem header6 \
 	"Use the 'header6' style, consisting .\nstyle=header6, -ownerdrawn=yes" \
 	yes orange
-} else {
-    set I [$T item create -parent root -tags {style config}]
-    $T item style set $I C1 $S
-    $T item span $I all [$T column count {lock none}]
-    $T item text $I C1 "Use no style, just the built-in header background, sort arrow and text.\nstyle=none, -ownerdrawn=no"
-    button $T.button$I -text "Configure headers" -command [list DemoHeaders::ChangeHeaderStyle "" no]
-    $T item element configure $I C1 theme.button -window $T.button$I
 
-    set I [$T item create -parent root -tags {styleheader1 config}]
-    $T item style set $I C1 $S
-    $T item span $I all [$T column count {lock none}]
-    $T item text $I C1 "Use the 'header1' style, consisting of a border element for the background and an image for the sort arrow.\nstyle=header1, -ownerdrawn=yes"
-    button $T.button$I -text "Configure headers" -command [list DemoHeaders::ChangeHeaderStyle header1 yes black]
-    $T item element configure $I C1 theme.button -window $T.button$I
-
-    set I [$T item create -parent root -tags {styleheader2 config}]
-    $T item style set $I C1 $S
-    $T item span $I all [$T column count {lock none}]
-    $T item text $I C1 "Use the 'header2' style, consisting of a rounded rectangle element for the background and an image for the sort arrow.\nstyle=header2, -ownerdrawn=yes"
-    button $T.button$I -text "Configure headers" -command [list DemoHeaders::ChangeHeaderStyle header2 yes blue]
-    $T item element configure $I C1 theme.button -window $T.button$I
-
-    set I [$T item create -parent root -tags {styleheader4 config}]
-    $T item style set $I C1 $S
-    $T item span $I all [$T column count {lock none}]
-    $T item text $I C1 "Use the 'header4' style, consisting only of an image element serving as a checkbutton.  The style is drawn overtop the built-in parts of the header.\nstyle=header4, -ownerdrawn=no"
-    button $T.button$I -text "Configure headers" -command [list DemoHeaders::ChangeHeaderStyle header4 no]
-    $T item element configure $I C1 theme.button -window $T.button$I
-
-    set I [$T item create -parent root -tags {styleheader5 config}]
-    $T item style set $I C1 $S
-    $T item span $I all [$T column count {lock none}]
-    $T item text $I C1 "Use the 'header5' style, consisting .\nstyle=header5, -ownerdrawn=yes"
-    button $T.button$I -text "Configure headers" -command [list DemoHeaders::ChangeHeaderStyle header5 yes #0080FF]
-    $T item element configure $I C1 theme.button -window $T.button$I
-
-    set I [$T item create -parent root -tags {styleheader6 config}]
-    $T item style set $I C1 $S
-    $T item span $I all [$T column count {lock none}]
-    $T item text $I C1 "Use the 'header6' style, consisting .\nstyle=header6, -ownerdrawn=yes"
-    button $T.button$I -text "Configure headers" -command [list DemoHeaders::ChangeHeaderStyle header6 yes orange]
-    $T item element configure $I C1 theme.button -window $T.button$I
-}
     $T item state set styleheader2 current
 
     #
@@ -331,32 +287,7 @@ if 1 {
 
     $T column configure !tail -itemstyle $S
     $T item create -count 100 -parent root
-if 0 {
-    #
-    # Create an interface to change the style used by the custom headers
-    #
 
-    set DemoHeaders::HeaderStyle header2
-    set f [frame $T.fHeaderStyle -borderwidth 2 -relief raised -width 150]
-    pack [$::radiobuttonCmd $f.native -text "No Style" \
-	-variable ::DemoHeaders::HeaderStyle -value "" \
-	-command [list DemoHeaders::ChangeHeaderStyle "" no]] -side top -anchor w -pady 3
-    pack [$::radiobuttonCmd $f.style1 -text header1 \
-	-variable ::DemoHeaders::HeaderStyle -value header1 \
-	-command [list DemoHeaders::ChangeHeaderStyle header1 yes black]] -side top -anchor w -pady 3
-    pack [$::radiobuttonCmd $f.style2 -text header2 \
-	-variable ::DemoHeaders::HeaderStyle -value header2 \
-	-command [list DemoHeaders::ChangeHeaderStyle header2 yes blue]] -side top -anchor w -pady 3
-if 0 {
-    pack [$::radiobuttonCmd $f.style3 -text header3 \
-	-variable ::DemoHeaders::HeaderStyle -value header3 \
-	-command [list DemoHeaders::ChangeHeaderStyle header3 no]] -side top -anchor w -pady 3
-}
-    pack [$::radiobuttonCmd $f.style5 -text header4 \
-	-variable ::DemoHeaders::HeaderStyle -value header4 \
-	-command [list DemoHeaders::ChangeHeaderStyle header4 no]] -side top -anchor w -pady 3
-    place $f -relx 0.5 -rely 0.3 -anchor n
-}
     #
     # Set binding scripts to handle the <Header> dynamic event
     #

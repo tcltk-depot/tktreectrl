@@ -7320,28 +7320,6 @@ UpdateDItemsForHeaders(tree, dInfo->dItemHeader, tree->headerItems);
     Tree_SetEmptyRegion(dInfo->redrawRgn);
 #endif /* REDRAW_RGN */
 
-#if 0
-    if (dInfo->flags & DINFO_DRAW_HEADER) {
-	if (Tree_AreaBbox(tree, TREE_AREA_HEADER, &tr)) {
-	    if (tree->debug.enable && tree->debug.display && tree->debug.drawColor) {
-		XFillRectangle(tree->display, Tk_WindowId(tkwin),
-			tree->debug.gcDraw,
-			TreeRect_Left(tr), TreeRect_Top(tr),
-			TreeRect_Width(tr), TreeRect_Height(tr));
-		DisplayDelay(tree);
-	    }
-	    Tree_DrawHeader(tree, tdrawable, C2Wx(0), Tree_HeaderTop(tree));
-	    if (tree->doubleBuffer == DOUBLEBUFFER_WINDOW) {
-		DblBufWinDirty(tree, TreeRect_Left(tr), TreeRect_Top(tr),
-		    TreeRect_Right(tr), TreeRect_Bottom(tr));
-	    }
-#if REDRAW_RGN == 1
-/*	    AddRectToRedrawRgn(tree, minX, minY, maxX, maxY); */
-#endif /* REDRAW_RGN */
-	}
-	dInfo->flags &= ~DINFO_DRAW_HEADER;
-    }
-#endif
     /* FIXME: only redraw header items if needed. */
     if ((dInfo->flags & DINFO_DRAW_HEADER) && (dInfo->dItemHeader != NULL)) {
 	TreeDrawable tpixmap = tdrawable;
@@ -8854,10 +8832,6 @@ Tree_InvalidateItemDInfo(
 
     if (item != NULL && TreeItem_GetHeader(tree, item) != NULL) {
 	dInfo->flags |= DINFO_DRAW_HEADER;
-#if 0
-	Tree_EventuallyRedraw(tree);
-	return; /* should only be a range of header items */
-#endif
     }
 
     if (dInfo->flags & (DINFO_INVALIDATE | DINFO_REDO_COLUMN_WIDTH))

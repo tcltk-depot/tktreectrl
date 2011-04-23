@@ -655,10 +655,6 @@ TreeHeader_ConsumeColumnCget(
     TreeHeaderColumn column;
     Tcl_Obj *resultObjPtr;
 
-#if 0
-    if (treeColumn == tree->columnTail)
-	return TCL_OK;
-#endif
 #ifdef TREECTRL_DEBUG
     if (tree->headerItems == NULL)
 	panic("the default header was deleted!");
@@ -2998,35 +2994,6 @@ TreeHeaders_NeededWidthOfColumn(
     return maxWidth;
 }
 
-#if 0
-int
-TreeHeader_NeededHeight(
-    TreeHeader header
-    )
-{
-    TreeCtrl *tree = header->tree;
-    TreeItemColumn itemColumn;
-    int maxHeight = 0;
-
-    if (!tree->showHeader || header->ownerDrawn)
-	return 0;
-
-    /* For compatibility, if there are no visible columns then don't display
-     * the lone tail column. */
-    (void) Tree_WidthOfColumns(tree);
-    if (tree->columnCountVis + tree->columnCountVisLeft + tree->columnCountVisRight == 0)
-	return 0;
-
-    for (itemColumn = TreeItem_GetFirstColumn(tree, header->item);
-	    itemColumn != NULL;
-	    itemColumn = TreeItemColumn_GetNext(tree, itemColumn)) {
-	maxHeight = MAX(maxHeight, TreeHeaderColumn_NeededHeight(header,
-	    TreeItemColumn_GetHeaderColumn(tree, itemColumn)));
-    }
-    return maxHeight;
-}
-#endif
-
 /*
  *----------------------------------------------------------------------
  *
@@ -4240,30 +4207,6 @@ TreeHeaderCmd(
 
     return TCL_OK;
 }
-
-#if 0
-void
-TreeHeaders_InvalidateNeededHeight(
-    TreeCtrl *tree,		/* Widget info. */
-    TreeColumn treeColumn	/* Column that changed width. */
-    )
-{
-    TreeItem item = tree->headerItems;
-    TreeItemColumn itemColumn;
-    TreeHeaderColumn column;
-
-    while (item != NULL) {
-	itemColumn = TreeItem_FindColumn(tree, item, TreeColumn_Index(treeColumn));
-	column = TreeItemColumn_GetHeaderColumn(tree, itemColumn);
-	if (column == NULL)
-	    panic("TreeHeaders_InvalidateNeededHeight: item-column is missing its associated header-column");
-	column->neededHeight = -1;
-	item = TreeItem_GetNextSibling(tree, item);
-    }
-    tree->headerHeight = -1;
-    /* Tree_DInfoChanged should be called by the caller */
-}
-#endif
 
 /*
  *----------------------------------------------------------------------
