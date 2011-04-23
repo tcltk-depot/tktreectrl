@@ -1212,6 +1212,9 @@ proc MakeHeaderPopup {T} {
     $m2 add radiobutton -label "Right" -variable Popup(header,justify) -value right \
 	-command {$Popup(T) header configure $Popup(header) $Popup(column) -justify right}
 
+    set m2 [menu $m1.mSpan -tearoff no]
+    $m1 add cascade -label Span -menu $m2
+
     ### Tree column
     $m add command -label "Column"
 
@@ -1311,32 +1314,49 @@ proc ShowPopup {T x y X Y} {
     $T identify $x $y -array id
     if {$id(where) ne ""} {
 	if {$id(where) eq "header"} {
-	    set Popup(header) $id(header)
-	    set Popup(column) $id(column)
-	    set Popup(arrow) [$T header cget $Popup(header) $Popup(column) -arrow]
-	    set Popup(arrow,side) [$T header cget $Popup(header) $Popup(column) -arrowside]
-	    set Popup(arrow,gravity) [$T header cget $Popup(header) $Popup(column) -arrowgravity]
-	    set Popup(button) [$T header cget $Popup(header) $Popup(column) -button]
-	    set Popup(header,justify) [$T header cget $Popup(header) $Popup(column) -justify]
-	    set Popup(header,ownerdrawn) [$T header cget $Popup(header) -ownerdrawn]
-	    set Popup(header,visible) [$T header cget $Popup(header) -visible]
-
-	    set Popup(header,drag,draw) [$T header dragcget $Popup(header) -draw]
-	    set Popup(header,drag,enable) [$T header dragcget $Popup(header) -enable]
-
+	    set H $id(header)
 	    set C $id(column)
-	    set Popup(column,expand,$C) [$T column cget $Popup(column) -expand]
-	    set Popup(column,resize,$C) [$T column cget $Popup(column) -resize]
-	    set Popup(column,squeeze,$C) [$T column cget $Popup(column) -squeeze]
-	    set Popup(column,itemjustify,$C) [$T column cget $Popup(column) -itemjustify]
+	    set Popup(header) $H
+	    set Popup(column) $C
+	    set Popup(arrow) [$T header cget $H $C -arrow]
+	    set Popup(arrow,side) [$T header cget $H $C -arrowside]
+	    set Popup(arrow,gravity) [$T header cget $H $C -arrowgravity]
+	    set Popup(button) [$T header cget $H $C -button]
+	    set Popup(header,justify) [$T header cget $H $C -justify]
+	    set Popup(header,ownerdrawn) [$T header cget $H -ownerdrawn]
+	    set Popup(header,visible) [$T header cget $H -visible]
+
+	    set Popup(header,drag,draw) [$T header dragcget $H -draw]
+	    set Popup(header,drag,enable) [$T header dragcget $H -enable]
+
+	    set Popup(column,expand,$C) [$T column cget $C -expand]
+	    set Popup(column,resize,$C) [$T column cget $C -resize]
+	    set Popup(column,squeeze,$C) [$T column cget $C -squeeze]
+	    set Popup(column,itemjustify,$C) [$T column cget $C -itemjustify]
 	    if {$Popup(column,itemjustify,$C) eq ""} { set Popup(column,itemjustify) none }
-	    set Popup(column,justify,$C) [$T column cget $Popup(column) -justify]
-	    set Popup(column,lock,$C) [$T column cget $Popup(column) -lock]
-	    set Popup(column,treecolumn,$C) [expr {[$T column id tree] eq $Popup(column)}]
+	    set Popup(column,justify,$C) [$T column cget $C -justify]
+	    set Popup(column,lock,$C) [$T column cget $C -lock]
+	    set Popup(column,treecolumn,$C) [expr {[$T column id tree] eq $C}]
 	    $T.mColumn delete "Column"
 	    destroy $T.mColumn.mColumnX
 	    set m1 [MakeColumnSubmenu $T $C $T.mColumn "X"]
 	    $T.mColumn add cascade -label "Column" -menu $m1
+
+	    set m $T.mColumn.mHeaderColumn.mSpan
+	    $m delete 0 end
+	    if {[$T column compare $C == tail]} {
+		$m add checkbutton -label 1 -variable Popup(span)
+		set Popup(span) 1
+	    } else {
+		set lock [$T column cget $C -lock]
+		set last [expr {[$T column order "last lock $lock"] - [$T column order $C] + 1}]
+		for {set i 1} {$i <= $last} {incr i} {
+		    set break [expr {!(($i - 1) % 20)}]
+		    $m add radiobutton -label $i -command "$T header span $H $C $i" \
+			-variable Popup(span) -value $i -columnbreak $break
+		}
+		set Popup(span) [$T header span $H $C]
+	    }
 
 	    tk_popup $T.mColumn $X $Y
 	    return
