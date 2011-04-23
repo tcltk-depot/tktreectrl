@@ -225,7 +225,7 @@
 <li><a href="#82"><i class="arg">pathName</i> <b class="cmd">header style</b> <i class="arg">command</i> <i class="arg">headerDesc</i> <span class="opt">?<i class="arg">arg ...</i>?</span></a></li>
 <li><a href="#83"><i class="arg">pathName</i> <b class="cmd">header text</b> <i class="arg">headerDesc</i> <span class="opt">?<i class="arg">column</i>?</span> <span class="opt">?<i class="arg">text</i>?</span> <span class="opt">?<i class="arg">column text ...</i>?</span></a></li>
 <li><a href="#84"><i class="arg">pathName</i> <b class="cmd">header tag</b> <i class="arg">command</i> <i class="arg">headerDesc</i> <span class="opt">?<i class="arg">arg ...</i>?</span></a></li>
-<li><a href="#85"><i class="arg">pathName</i> <b class="cmd">identify</b> <i class="arg">x</i> <i class="arg">y</i></a></li>
+<li><a href="#85"><i class="arg">pathName</i> <b class="cmd">identify</b> <span class="opt">?<i class="arg">-array varName</i>?</span> <i class="arg">x</i> <i class="arg">y</i></a></li>
 <li><a href="#86"><i class="arg">pathName</i> <b class="cmd">index</b> <i class="arg">itemDesc</i></a></li>
 <li><a href="#87"><i class="arg">pathName</i> <b class="cmd">item</b> <i class="arg">option</i> <span class="opt">?<i class="arg">arg ...</i>?</span></a></li>
 <li><a href="#88"><i class="arg">pathName</i> <b class="cmd">item ancestors</b> <i class="arg">itemDesc</i></a></li>
@@ -1757,32 +1757,60 @@ of the first text element in a column header's style.  See <b class="cmd">item t
 <dt><a name="84"><i class="arg">pathName</i> <b class="cmd">header tag</b> <i class="arg">command</i> <i class="arg">headerDesc</i> <span class="opt">?<i class="arg">arg ...</i>?</span></a></dt>
 <dd><p>See the <b class="cmd">item tag</b> command.</p></dd>
 </dl></dd>
-<dt><a name="85"><i class="arg">pathName</i> <b class="cmd">identify</b> <i class="arg">x</i> <i class="arg">y</i></a></dt>
-<dd><p>Returns a list describing what
+<dt><a name="85"><i class="arg">pathName</i> <b class="cmd">identify</b> <span class="opt">?<i class="arg">-array varName</i>?</span> <i class="arg">x</i> <i class="arg">y</i></a></dt>
+<dd><p>This command returns information about the what
 is displayed at the given window coordinates <i class="arg">x</i> and <i class="arg">y</i>.
-If the coordinates are outside the window, over the borders, or over any
-whitespace in the window, then the result is an empty string;
-otherwise the first word of the result is <b class="const">header</b> or <b class="const">item</b>.</p>
-<p>If the coordinates are over a column header, then
-the first word of the result is <b class="const">header</b>, followed by
-the unique id of the column (or the string <b class="const">tail</b>).
-If the x coordinate is near the left or right edge of a column, then
-a third word <b class="const">left</b> or <b class="const">right</b> is appended to the result.</p>
-<p>If the coordinates are over an item, then the first word of the result
-is <b class="const">item</b> followed by the unique id of that item.
-If the coordinates are not over the area for displaying buttons and lines,
-then <b class="const">column</b> and a unique column id are the
-3rd and 4th words of the result. If the coordinates are over an element within
-that column, then <b class="const">element</b> and an element name are the 5th and 6th
-words of the result.</p>
-<p>If the coordinates are over a button, then the first word of the result is
-<b class="const">item</b>, followed by the unique id of that item, followed by the word
-<b class="const">button</b>.</p>
-<p>If the coordinates are over a line descending from an ancestor of an item
-(but not the parent of that item), then the first word of the result is
-<b class="const">item</b>, followed by the unique id of that item, followed by the word
-<b class="const">line</b>, followed by the unique id of the item the line is coming
-from. This is used to collapse the ancestor when the line is clicked on.</p></dd>
+When the <i class="arg">-array</i> option is used to specify the name of an array variable,
+elements of the array variable are set as follows:</p>
+<ol class="enumerated">
+<li><p>If the coordinates are outside the window, over the borders, or over any
+whitespace in the window, then:</p>
+<p>$varName(where) is &quot;&quot;</p></li>
+<li><p>If the coordinates are over a column header, then:</p>
+<p>$varName(where) is <b class="const">header</b></p>
+<p>$varName(header) is the unique id of the <span class="sectref"><a href="#section7">header-row</a></span></p>
+<p>$varName(column) is the unique id of the column</p>
+<p>$varName(element) is the name of an <span class="sectref"><a href="#section13">element</a></span>, or &quot;&quot;</p>
+<p>$varName(side) is <b class="const">left</b> or <b class="const">right</b> if the coordinates are close
+to the edge of the column header, otherwise &quot;&quot;</p></li>
+<li><p>If the coordinates are over an item, then:</p>
+<p>$varName(where) is <b class="const">item</b></p>
+<p>$varName(item) is the unique id of the item</p>
+<p>$varName(column) is the unique id of the column</p>
+<p>$varName(element) is the name of an <span class="sectref"><a href="#section13">element</a></span>, or &quot;&quot;</p>
+<p>$varName(button) is a boolean indicating whether or not the coordinates are
+over the item's expand/collapse button</p>
+<p>$varName(line) is the unique id of an ancestor of the item
+(but not the parent of the item) if the coordinates
+are over a line descending from that ancestor.  If the coordinate are not
+over such a line then $varName(line) is &quot;&quot;.
+This is used to collapse the ancestor when the line is clicked on.</p></li>
+</ol>
+<p>When the <i class="arg">-array</i> option is not used, this command returns a list
+describing what is displayed at the given window coordinates.  The format
+of this list can be like one of the following:</p>
+<ol class="enumerated">
+<li><p>{}</p>
+<p>An empty list is returned if the coordinates are outside the window, over the
+borders, or over any whitespace in the window.</p></li>
+<li><p><b class="const">header</b> C <span class="opt">?<b class="const">left</b>|<b class="const">right</b>?</span></p>
+<p><b class="const">header</b> C <b class="const">elem</b> E <span class="opt">?<b class="const">left</b>|<b class="const">right</b>?</span></p>
+<p><b class="const">header</b> H <b class="const">column</b> C <span class="opt">?<b class="const">left</b>|<b class="const">right</b>?</span></p>
+<p><b class="const">header</b> H <b class="const">column</b> C <b class="const">elem</b> E <span class="opt">?<b class="const">left</b>|<b class="const">right</b>?</span></p>
+<p>Only when there is more than one <span class="sectref"><a href="#section7">header-row</a></span> is there a
+unique id of a header-row <i class="arg">H</i> followed by the keyword <b class="const">column</b>.
+This is for compatibility with older versions when there was only one row
+of column headers allowed.</p></li>
+<li><p><b class="const">item</b> I <b class="const">column</b> C</p></li>
+<li><p><b class="const">item</b> I <b class="const">column</b> C <b class="const">elem</b> E</p></li>
+<li><p><b class="const">item</b> I <b class="const">button</b></p>
+<p>This is the result when the coordinates are over the expand/collapse button
+next to an item.</p></li>
+<li><p><b class="const">item</b> I <b class="const">line</b> I2</p>
+<p>This is the result when the coordinates are over a line descending from an
+ancestor <i class="arg">I2</i> of the item <i class="arg">I</i> (but not the parent of that item). This is used to
+collapse the ancestor when the line is clicked on.</p></li>
+</ol></dd>
 <dt><a name="86"><i class="arg">pathName</i> <b class="cmd">index</b> <i class="arg">itemDesc</i></a></dt>
 <dd><p>Deprecated. Use <b class="cmd">item id</b> instead.</p></dd>
 <dt><a name="87"><i class="arg">pathName</i> <b class="cmd">item</b> <i class="arg">option</i> <span class="opt">?<i class="arg">arg ...</i>?</span></a></dt>

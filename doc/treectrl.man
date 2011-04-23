@@ -1459,39 +1459,88 @@ See the [cmd {item tag}] command.
 [list_end]
 
 
-[call [arg pathName] [cmd identify] [arg x] [arg y]]
-Returns a list describing what
+[call [arg pathName] [cmd identify] [opt [arg {-array varName}]] [arg x] [arg y]]
+This command returns information about the what
 is displayed at the given window coordinates [arg x] and [arg y].
+When the [arg -array] option is used to specify the name of an array variable,
+elements of the array variable are set as follows:
+[list_begin enum]
+[enum]
 If the coordinates are outside the window, over the borders, or over any
-whitespace in the window, then the result is an empty string;
-otherwise the first word of the result is [const header] or [const item].
+whitespace in the window, then:
 [para]
-
-If the coordinates are over a column header, then
-the first word of the result is [const header], followed by
-the unique id of the column (or the string [const tail]).
-If the x coordinate is near the left or right edge of a column, then
-a third word [const left] or [const right] is appended to the result.
+$varName(where) is ""
+[enum]
+If the coordinates are over a column header, then:
 [para]
-
-If the coordinates are over an item, then the first word of the result
-is [const item] followed by the unique id of that item.
-If the coordinates are not over the area for displaying buttons and lines,
-then [const column] and a unique column id are the
-3rd and 4th words of the result. If the coordinates are over an element within
-that column, then [const element] and an element name are the 5th and 6th
-words of the result.
+$varName(where) is [const header]
 [para]
-
-If the coordinates are over a button, then the first word of the result is
-[const item], followed by the unique id of that item, followed by the word
-[const button].
+$varName(header) is the unique id of the [sectref HEADERS header-row]
 [para]
-If the coordinates are over a line descending from an ancestor of an item
-(but not the parent of that item), then the first word of the result is
-[const item], followed by the unique id of that item, followed by the word
-[const line], followed by the unique id of the item the line is coming
-from. This is used to collapse the ancestor when the line is clicked on.
+$varName(column) is the unique id of the column
+[para]
+$varName(element) is the name of an [sectref ELEMENTS element], or ""
+[para]
+$varName(side) is [const left] or [const right] if the coordinates are close
+to the edge of the column header, otherwise ""
+[enum]
+If the coordinates are over an item, then:
+[para]
+$varName(where) is [const item]
+[para]
+$varName(item) is the unique id of the item
+[para]
+$varName(column) is the unique id of the column
+[para]
+$varName(element) is the name of an [sectref ELEMENTS element], or ""
+[para]
+$varName(button) is a boolean indicating whether or not the coordinates are
+over the item's expand/collapse button
+[para]
+$varName(line) is the unique id of an ancestor of the item
+(but not the parent of the item) if the coordinates
+are over a line descending from that ancestor.  If the coordinate are not
+over such a line then $varName(line) is "".
+This is used to collapse the ancestor when the line is clicked on.
+[list_end]
+When the [arg -array] option is not used, this command returns a list
+describing what is displayed at the given window coordinates.  The format
+of this list can be like one of the following:
+[list_begin enum]
+[enum]
+{}
+[para]
+An empty list is returned if the coordinates are outside the window, over the
+borders, or over any whitespace in the window.
+[enum]
+[const header] C [opt [const left]|[const right]]
+[para]
+[const header] C [const elem] E [opt [const left]|[const right]]
+[para]
+[const header] H [const column] C [opt [const left]|[const right]]
+[para]
+[const header] H [const column] C [const elem] E [opt [const left]|[const right]]
+[para]
+Only when there is more than one [sectref HEADERS header-row] is there a
+unique id of a header-row [arg H] followed by the keyword [const column].
+This is for compatibility with older versions when there was only one row
+of column headers allowed.
+[enum]
+[const item] I [const column] C
+[enum]
+[const item] I [const column] C [const elem] E
+[enum]
+[const item] I [const button]
+[para]
+This is the result when the coordinates are over the expand/collapse button
+next to an item.
+[enum]
+[const item] I [const line] I2
+[para]
+This is the result when the coordinates are over a line descending from an
+ancestor [arg I2] of the item [arg I] (but not the parent of that item). This is used to
+collapse the ancestor when the line is clicked on.
+[list_end]
 
 [call [arg pathName] [cmd index] [arg itemDesc]]
 Deprecated. Use [cmd {item id}] instead.

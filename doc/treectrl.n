@@ -412,7 +412,7 @@ package require \fBtreectrl  2.3.2\fR
 .sp
 \fIpathName\fR \fBheader tag\fR \fIcommand\fR \fIheaderDesc\fR ?\fIarg ...\fR?
 .sp
-\fIpathName\fR \fBidentify\fR \fIx\fR \fIy\fR
+\fIpathName\fR \fBidentify\fR ?\fI-array varName\fR? \fIx\fR \fIy\fR
 .sp
 \fIpathName\fR \fBindex\fR \fIitemDesc\fR
 .sp
@@ -2484,36 +2484,88 @@ of the first text element in a column header's style.  See \fBitem text\fR.
 See the \fBitem tag\fR command.
 .RE
 .TP
-\fIpathName\fR \fBidentify\fR \fIx\fR \fIy\fR
-Returns a list describing what
+\fIpathName\fR \fBidentify\fR ?\fI-array varName\fR? \fIx\fR \fIy\fR
+This command returns information about the what
 is displayed at the given window coordinates \fIx\fR and \fIy\fR.
+When the \fI-array\fR option is used to specify the name of an array variable,
+elements of the array variable are set as follows:
+.RS
+.IP [1]
 If the coordinates are outside the window, over the borders, or over any
-whitespace in the window, then the result is an empty string;
-otherwise the first word of the result is \fBheader\fR or \fBitem\fR.
+whitespace in the window, then:
 .sp
-If the coordinates are over a column header, then
-the first word of the result is \fBheader\fR, followed by
-the unique id of the column (or the string \fBtail\fR).
-If the x coordinate is near the left or right edge of a column, then
-a third word \fBleft\fR or \fBright\fR is appended to the result.
+$varName(where) is ""
+.IP [2]
+If the coordinates are over a column header, then:
 .sp
-If the coordinates are over an item, then the first word of the result
-is \fBitem\fR followed by the unique id of that item.
-If the coordinates are not over the area for displaying buttons and lines,
-then \fBcolumn\fR and a unique column id are the
-3rd and 4th words of the result. If the coordinates are over an element within
-that column, then \fBelement\fR and an element name are the 5th and 6th
-words of the result.
+$varName(where) is \fBheader\fR
 .sp
-If the coordinates are over a button, then the first word of the result is
-\fBitem\fR, followed by the unique id of that item, followed by the word
-\fBbutton\fR.
+$varName(header) is the unique id of the \fBheader-row\fR
 .sp
-If the coordinates are over a line descending from an ancestor of an item
-(but not the parent of that item), then the first word of the result is
-\fBitem\fR, followed by the unique id of that item, followed by the word
-\fBline\fR, followed by the unique id of the item the line is coming
-from. This is used to collapse the ancestor when the line is clicked on.
+$varName(column) is the unique id of the column
+.sp
+$varName(element) is the name of an \fBelement\fR, or ""
+.sp
+$varName(side) is \fBleft\fR or \fBright\fR if the coordinates are close
+to the edge of the column header, otherwise ""
+.IP [3]
+If the coordinates are over an item, then:
+.sp
+$varName(where) is \fBitem\fR
+.sp
+$varName(item) is the unique id of the item
+.sp
+$varName(column) is the unique id of the column
+.sp
+$varName(element) is the name of an \fBelement\fR, or ""
+.sp
+$varName(button) is a boolean indicating whether or not the coordinates are
+over the item's expand/collapse button
+.sp
+$varName(line) is the unique id of an ancestor of the item
+(but not the parent of the item) if the coordinates
+are over a line descending from that ancestor.  If the coordinate are not
+over such a line then $varName(line) is "".
+This is used to collapse the ancestor when the line is clicked on.
+.RE
+When the \fI-array\fR option is not used, this command returns a list
+describing what is displayed at the given window coordinates.  The format
+of this list can be like one of the following:
+.RS
+.IP [1]
+{}
+.sp
+An empty list is returned if the coordinates are outside the window, over the
+borders, or over any whitespace in the window.
+.IP [2]
+\fBheader\fR C ?\fBleft\fR|\fBright\fR?
+.sp
+\fBheader\fR C \fBelem\fR E ?\fBleft\fR|\fBright\fR?
+.sp
+\fBheader\fR H \fBcolumn\fR C ?\fBleft\fR|\fBright\fR?
+.sp
+\fBheader\fR H \fBcolumn\fR C \fBelem\fR E ?\fBleft\fR|\fBright\fR?
+.sp
+Only when there is more than one \fBheader-row\fR is there a
+unique id of a header-row \fIH\fR followed by the keyword \fBcolumn\fR.
+This is for compatibility with older versions when there was only one row
+of column headers allowed.
+.IP [3]
+\fBitem\fR I \fBcolumn\fR C
+.IP [4]
+\fBitem\fR I \fBcolumn\fR C \fBelem\fR E
+.IP [5]
+\fBitem\fR I \fBbutton\fR
+.sp
+This is the result when the coordinates are over the expand/collapse button
+next to an item.
+.IP [6]
+\fBitem\fR I \fBline\fR I2
+.sp
+This is the result when the coordinates are over a line descending from an
+ancestor \fII2\fR of the item \fII\fR (but not the parent of that item). This is used to
+collapse the ancestor when the line is clicked on.
+.RE
 .TP
 \fIpathName\fR \fBindex\fR \fIitemDesc\fR
 Deprecated. Use \fBitem id\fR instead.
