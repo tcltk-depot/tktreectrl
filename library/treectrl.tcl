@@ -362,6 +362,50 @@ set indSide right
     return [ColumnCanMoveHere $w $dragColumn $before]
 }
 
+proc ::TreeCtrl::ListElementWindows {T H C} {
+    set S [$T header style set $H $C]
+    if {$S eq ""} return
+    set result {}
+    foreach E [$T header style elements $H $C] {
+	if {[$T element type $E] eq "window"} {
+	    set window [$T header element cget $H $C $E -window]
+	    if {$window ne ""} {
+		lappend result $window
+	    }
+	}
+    }
+    return $result
+}
+proc ::TreeCtrl::ColumnDragRestackWindows {T} {
+    variable Priv
+    set C [$T header dragcget -imagecolumn]
+    set lock [$T column cget $C -lock]
+    set span [$T header dragcget -imagespan]
+    set dragged [$T column id [list range $C [list $C span $span]]]
+    foreach H [$T header id all] {
+	set prev ""
+	set lowest ""
+	foreach C $dragged {
+	    foreach win [ListElementWindows $T $H $C] {
+		if {$prev eq ""} {
+		    set lowest $win
+		} else {
+		    raise $win $prev
+		}
+		set prev $win
+	    }
+	}
+	if {$lowest eq ""} continue
+	foreach C [$T column id "lock $lock !tail"] {
+	    if {[lsearch -exact $dragged $C] != -1} continue
+	    foreach win [ListElementWindows $T $H $C] {
+		lower $win $lowest
+	    }
+	}
+    }
+    return
+}
+
 # ::TreeCtrl::CursorAction --
 #
 # If the given point is at the left or right edge of a resizable column
@@ -881,6 +925,7 @@ proc ::TreeCtrl::Motion1 {w x y} {
 			-imagecolumn $Priv(column) \
 			-imageoffset [expr {$x - $Priv(columnDrag,x)}] \
 			-imagespan [$w header span $Priv(header) $Priv(column)]
+		    ColumnDragRestackWindows $w
 		    set Priv(buttonMode) dragColumn
 		    TryEvent $w ColumnDrag begin [list H $Priv(header) C $Priv(column)]
 		    # Allow binding scripts to cancel the drag
@@ -913,6 +958,7 @@ proc ::TreeCtrl::Motion1 {w x y} {
 		    -imagecolumn $Priv(column) \
 		    -imageoffset [expr {$x - $Priv(columnDrag,x)}] \
 		    -imagespan [$w header span $Priv(header) $Priv(column)]
+		ColumnDragRestackWindows $w
 		set Priv(buttonMode) dragColumn
 		TryEvent $w ColumnDrag begin [list H $Priv(header) C $Priv(column)]
 		# Allow binding scripts to cancel the drag
