@@ -655,8 +655,10 @@ TreeHeader_ConsumeColumnCget(
     TreeHeaderColumn column;
     Tcl_Obj *resultObjPtr;
 
+#if 0
     if (treeColumn == tree->columnTail)
 	return TCL_OK;
+#endif
 #ifdef TREECTRL_DEBUG
     if (tree->headerItems == NULL)
 	panic("the default header was deleted!");
@@ -706,7 +708,11 @@ TreeHeader_ConsumeColumnConfig(
     TreeItemColumn itemColumn;
     TreeHeaderColumn column;
 
+#if 1
+    if (objc <= 0)
+#else
     if ((objc <= 0) || (treeColumn == tree->columnTail))
+#endif
 	return TCL_OK;
 #ifdef TREECTRL_DEBUG
     if (tree->headerItems == NULL)
@@ -3864,7 +3870,7 @@ TreeHeaderCmd_Configure(
     } else {
 	if (TreeHeaderList_FromObj(tree, objv[3], &items, 0) != TCL_OK)
 	    return TCL_ERROR;
-	if (TreeColumnList_FromObj(tree, objv[4], &columns, CFO_NOT_TAIL) != TCL_OK) {
+	if (TreeColumnList_FromObj(tree, objv[4], &columns, 0) != TCL_OK) {
 	    TreeItemList_Free(&items);
 	    return TCL_ERROR;
 	}
