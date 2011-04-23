@@ -546,6 +546,9 @@ struct TreeCtrl
     int headerCount;
     int nextHeaderId;
     Tcl_HashTable headerHash;	/* TreeItem.id -> TreeItem */
+    int tailExtend;		/* This is the distance the tail column
+				 * extends past the right edge of the
+				 * content area. */
 
     /* These two options contain "-image" and "-text".
      * They are used by the [item image] and [item text] commands.

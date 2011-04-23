@@ -4363,9 +4363,10 @@ TreeItem_WalkSpans(
 	treeColumn = spans[spanIndex].treeColumn;
 	itemColumn = spans[spanIndex].itemColumn;
 
-if (treeColumn == tree->columnTail)
-    spans[spanIndex].width = MAX(0, MAX(Tree_ContentWidth(tree), Tree_FakeCanvasWidth(tree)) - totalWidth);
-
+if (treeColumn == tree->columnTail) {
+    spans[spanIndex].width = MAX(0, MAX(Tree_ContentWidth(tree), Tree_FakeCanvasWidth(tree))
+	- totalWidth) + tree->tailExtend;
+}
 if (item->header != NULL)
     columnWidth = spans[spanIndex].width;
 else

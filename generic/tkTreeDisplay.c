@@ -2261,6 +2261,7 @@ Tree_ItemBbox(
 		if (tr->width < Tree_FakeCanvasWidth(tree)) {
 		    tr->width = Tree_FakeCanvasWidth(tree);
 		}
+		tr->width += tree->tailExtend;
 		break;
 	    case COLUMN_LOCK_RIGHT:
 		if (tree->columnCountVisRight == 0)

@@ -4314,6 +4314,8 @@ TreeHeader_Init(
     tree->headerColumnOptionTable = Tk_CreateOptionTable(tree->interp, columnSpecs);
     tree->headerDragOptionTable = Tk_CreateOptionTable(tree->interp, dragSpecs);
 
+    tree->tailExtend = 20;
+
     /* Create the default/topmost header item.  It can't be deleted. */
     tree->headerItems = TreeItem_CreateHeader(tree);
 
