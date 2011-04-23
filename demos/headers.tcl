@@ -404,7 +404,7 @@ proc DemoHeaders::NewButtonItem {S text args} {
     $T item span $I all [$T column count {lock none}]
     $T item text $I C1 $text
     frame $T.frame$I -borderwidth 0
-    button $T.frame$I.button -text "Configure headers" \
+    $::buttonCmd $T.frame$I.button -text "Configure headers" \
 	-command [eval list [list DemoHeaders::ChangeHeaderStyle $S] $args]
     $T item element configure $I C1 theme.button -window $T.frame$I
     return
