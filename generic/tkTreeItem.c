@@ -704,7 +704,7 @@ TreeItem_GetFirstColumn(
     TreeItem item		/* Item token. */
     )
 {
-    return (TreeItemColumn) item->columns;
+    return item->columns;
 }
 
 /*
@@ -810,7 +810,7 @@ TreeItemColumn_ChangeState(
 
 	if (iMask & CS_LAYOUT) {
 	    TreeItem_InvalidateHeight(tree, item);
-	    TreeItemColumn_InvalidateSize(tree, (TreeItemColumn) column);
+	    TreeItemColumn_InvalidateSize(tree, column);
 	    Tree_FreeItemDInfo(tree, item, NULL);
 	    if (item->header == NULL)
 		Tree_DInfoChanged(tree, DINFO_REDO_RANGES);
@@ -879,7 +879,7 @@ TreeItem_ChangeState(
 	    if (sMask) {
 		if (sMask & CS_LAYOUT) {
 		    TreeColumns_InvalidateWidthOfItems(tree, treeColumn);
-		    TreeItemColumn_InvalidateSize(tree, (TreeItemColumn) column);
+		    TreeItemColumn_InvalidateSize(tree, column);
 		} else if (sMask & CS_DISPLAY) {
 		    Tree_InvalidateItemDInfo(tree, treeColumn, item, NULL);
 		}
@@ -4238,7 +4238,7 @@ if (treeColumn == tree->columnTail) {
 		else
 		    spanPtr++;
 		spanPtr->treeColumn = treeColumn;
-		spanPtr->itemColumn = (TreeItemColumn) column;
+		spanPtr->itemColumn = column;
 		spanPtr->span = 0;
 		spanPtr->width = 0;
 if (spanCount == 0 && item->header != NULL && TreeColumn_Lock(treeColumn) == COLUMN_LOCK_NONE) {
@@ -5887,7 +5887,7 @@ TreeItemCmd_Element(
 		break;
 	    }
 	    result = TreeStyle_ElementCget(tree, item,
-		    (TreeItemColumn) column, column->style, objv[6], objv[7]);
+		    column, column->style, objv[6], objv[7]);
 	    break;
 	}
 
@@ -6028,7 +6028,7 @@ if (!co[index].isColumn) panic("isColumn == FALSE");
 if (co[indexElem].numArgs == -1) panic("indexElem=%d (%s) objc=%d numArgs == -1", indexElem, Tcl_GetString(objv[indexElem]), objc);
 #endif
 			    result = TreeStyle_ElementConfigure(tree, item,
-				    (TreeItemColumn) column, column->style, objv[indexElem],
+				    column, column->style, objv[indexElem],
 				    co[indexElem].numArgs, (Tcl_Obj **) objv + indexElem + 1, &eMask);
 			    if (result != TCL_OK)
 				break;
@@ -6051,7 +6051,7 @@ if (co[indexElem].numArgs == -1) panic("indexElem=%d (%s) objc=%d numArgs == -1"
 			}
 
 			if (cMask & CS_LAYOUT) {
-			    TreeItemColumn_InvalidateSize(tree, (TreeItemColumn) column);
+			    TreeItemColumn_InvalidateSize(tree, column);
 			    TreeColumns_InvalidateWidthOfItems(tree, treeColumn);
 			} else if (cMask & CS_DISPLAY) {
 			    Tree_InvalidateItemDInfo(tree, treeColumn, item, NULL);
@@ -6248,7 +6248,7 @@ TreeItemCmd_Style(
 		    } else {
 			column->style = TreeStyle_NewInstance(tree, style);
 		    }
-		    TreeItemColumn_InvalidateSize(tree, (TreeItemColumn) column);
+		    TreeItemColumn_InvalidateSize(tree, column);
 		    TreeColumns_InvalidateWidthOfItems(tree, treeColumn);
 		}
 		TreeItem_InvalidateHeight(tree, item);
@@ -6353,8 +6353,7 @@ doneMAP:
 				    TreeColumn_Index(treeColumn));
 			    if (column == NULL || column->style == NULL)
 				continue;
-			    TreeItemColumn_ForgetStyle(tree,
-				    (TreeItemColumn) column);
+			    TreeItemColumn_ForgetStyle(tree, column);
 			} else {
 			    column = Item_CreateColumn(tree, item,
 				    TreeColumn_Index(treeColumn), NULL);
@@ -6362,14 +6361,12 @@ doneMAP:
 				if (TreeStyle_GetMaster(tree, column->style)
 					== cs[i].style)
 				    continue;
-				TreeItemColumn_ForgetStyle(tree,
-					(TreeItemColumn) column);
+				TreeItemColumn_ForgetStyle(tree, column);
 			    }
 			    column->style = TreeStyle_NewInstance(tree,
 				    cs[i].style);
 			}
-			TreeItemColumn_InvalidateSize(tree,
-				(TreeItemColumn) column);
+			TreeItemColumn_InvalidateSize(tree, column);
 			TreeColumns_InvalidateWidthOfItems(tree, treeColumn);
 			changedI = TRUE;
 		    }
@@ -6554,10 +6551,10 @@ TreeItemCmd_ImageOrText(
 		    goto doneTEXT;
 		}
 		result = isImage ?
-		    TreeStyle_SetImage(tree, item,
-			(TreeItemColumn) column, column->style, co[i].obj, &elem) :
-		    TreeStyle_SetText(tree, item,
-			(TreeItemColumn) column, column->style, co[i].obj, &elem);
+		    TreeStyle_SetImage(tree, item, column, column->style,
+			co[i].obj, &elem) :
+		    TreeStyle_SetText(tree, item, column, column->style,
+			co[i].obj, &elem);
 		if (result != TCL_OK)
 		    goto doneTEXT;
 		if (elem == NULL) {
@@ -6568,7 +6565,7 @@ TreeItemCmd_ImageOrText(
 			    goto doneTEXT;
 		    }
 		} else {
-		    TreeItemColumn_InvalidateSize(tree, (TreeItemColumn) column);
+		    TreeItemColumn_InvalidateSize(tree, column);
 		    TreeColumns_InvalidateWidthOfItems(tree, treeColumn);
 		    changedI = TRUE;
 		}
@@ -7723,8 +7720,7 @@ TreeItemCmd_Span(
 		    }
 		    TreeItem_SpansInvalidate(tree, item);
 		    column->span = cs[i].span;
-		    TreeItemColumn_InvalidateSize(tree,
-			(TreeItemColumn) column);
+		    TreeItemColumn_InvalidateSize(tree, column);
 		    changedI = TRUE;
 		    TreeColumns_InvalidateWidthOfItems(tree, treeColumn);
 		}
@@ -7931,8 +7927,7 @@ TreeItemCmd_State(
 		    stateOff = states[STATE_OP_OFF];
 		    stateOn |= ~column->cstate & states[STATE_OP_TOGGLE];
 		    stateOff |= column->cstate & states[STATE_OP_TOGGLE];
-		    TreeItemColumn_ChangeState(tree, item,
-			(TreeItemColumn) column, treeColumn,
+		    TreeItemColumn_ChangeState(tree, item, column, treeColumn,
 			stateOff, stateOn);
 		}
 	    }
@@ -8894,9 +8889,9 @@ reqSameRoot:
 			result = TCL_ERROR;
 			goto doneComplex;
 		    }
-		    if (TreeStyle_ElementConfigure(tree, item,
-				(TreeItemColumn) column, column->style,
-				objv2[0], objc2 - 1, objv2 + 1, &eMask) != TCL_OK) {
+		    if (TreeStyle_ElementConfigure(tree, item, column,
+			    column->style, objv2[0], objc2 - 1, objv2 + 1,
+			    &eMask) != TCL_OK) {
 			result = TCL_ERROR;
 			goto doneComplex;
 		    }
@@ -8904,7 +8899,7 @@ reqSameRoot:
 		    iMask |= eMask;
 		}
 		if (cMask & CS_LAYOUT)
-		    TreeItemColumn_InvalidateSize(tree, (TreeItemColumn) column);
+		    TreeItemColumn_InvalidateSize(tree, column);
 	    }
 	    doneComplex:
 	    if (iMask & CS_DISPLAY)
@@ -9878,7 +9873,7 @@ TreeItem_MakeColumnExist(
     int columnIndex		/* Index of new column. */
     )
 {
-    return (TreeItemColumn) Item_CreateColumn(tree, item, columnIndex, NULL);
+    return Item_CreateColumn(tree, item, columnIndex, NULL);
 }
 
 /*
