@@ -374,10 +374,6 @@ package require \fBtreectrl  2.3.2\fR
 .sp
 \fIpathName\fR \fBheader configure\fR \fIheaderDesc\fR ?\fIarg ...\fR?
 .sp
-\fIpathName\fR \fBheader configure\fR \fIheaderDesc\fR ?\fIoption\fR? ?\fIvalue\fR? ?\fIoption value ...\fR?
-.sp
-\fIpathName\fR \fBheader configure\fR \fIheaderDesc\fR \fIcolumn\fR ?\fIoption\fR? ?\fIvalue\fR? ?\fIoption value ...\fR?
-.sp
 \fIpathName\fR \fBheader count\fR ?\fIheaderDesc\fR?
 .sp
 \fIpathName\fR \fBheader create\fR ?\fIoption value\fR?
@@ -386,15 +382,7 @@ package require \fBtreectrl  2.3.2\fR
 .sp
 \fIpathName\fR \fBheader dragcget\fR ?\fIarg ...\fR?
 .sp
-\fIpathName\fR \fBheader dragcget\fR \fIoption\fR
-.sp
-\fIpathName\fR \fBheader dragcget\fR \fIheaderDesc\fR \fIoption\fR
-.sp
 \fIpathName\fR \fBheader dragconfigure\fR ?\fIarg ...\fR?
-.sp
-\fIpathName\fR \fBheader dragconfigure\fR ?\fIoption\fR? ?\fIvalue\fR? ?\fIoption value ...\fR?
-.sp
-\fIpathName\fR \fBheader dragconfigure\fR \fIheader\fR ?\fIoption\fR? ?\fIvalue\fR? ?\fIoption value ...\fR?
 .sp
 \fIpathName\fR \fBheader element\fR ?\fIarg ...\fR?
 .sp
@@ -2353,7 +2341,7 @@ does not being with a '-' it is assumed to be a header description, in which
 case the command applies to a header-row.
 .RS
 .TP
-\fIpathName\fR \fBheader dragconfigure\fR ?\fIoption\fR? ?\fIvalue\fR? ?\fIoption value ...\fR?
+\fIpathName\fR \fBheader dragconfigure\fR  ?\fIoption\fR? ?\fIvalue\fR? ?\fIoption value ...\fR?
 This command queries and sets header-drag-and-drop options for the widget, not
 for individual header-rows.
 The following configuration options are supported:
@@ -2367,11 +2355,10 @@ dragconfigure option.
 \fB\fB-imagealpha\fR\fR \fIalpha\fR
 \fIAlpha\fR is an integer from 0 (invisible) to 255 (opaque) controlling the
 transparency of the drag image. Any value outside this range is clipped.
-The default is 128.
+The default is 200.
 .TP
 \fB\fB-imagecolor\fR\fR \fIbackground\fR
-\fIBackground\fR is the color of the drag image background rectangle.
-The default is "gray75".
+Unused.
 .TP
 \fB\fB-imagecolumn\fR\fR \fIcolumn\fR
 \fIColumn\fR specifies the column to create the drag image from.
@@ -2385,21 +2372,20 @@ starting position.
 be dragged as a group.
 .TP
 \fB\fB-indicatorcolor\fR\fR \fIcolor\fR
-\fIColor\fR is the color of the 2-pixel-thick line.  The default is "black".
+Unused.
 .TP
 \fB\fB-indicatorcolumn\fR\fR \fIcolumn\fR
 The 2-pixel-thick line will be drawn over the left or right edge of \fIcolumn\fR.
 .TP
 \fB\fB-indicatorside\fR\fR \fIside\fR
-Specifies whether the 2-pixel-thick line will be drawn over the \fBleft\fR
-or \fBright\fR edge of the column specified by \fB-indicatorcolumn\fR.
+Unused.
 .TP
 \fB\fB-indicatorspan\fR\fR \fIcount\fR
 \fICount\fR is the number of columns, starting with -indicatorcolumn, that
 will be displaced as a group by the dragged column(s)
 .RE
 .TP
-\fIpathName\fR \fBheader dragconfigure\fR \fIheader\fR ?\fIoption\fR? ?\fIvalue\fR? ?\fIoption value ...\fR?
+\fIpathName\fR \fBheader dragconfigure\fR \fIheader\fR  ?\fIoption\fR? ?\fIvalue\fR? ?\fIoption value ...\fR?
 This command queries and sets header-drag-and-drop options for header-rows,
 not for the widget as a whole.
 The following configuration options are supported:
@@ -3662,6 +3648,15 @@ The following options are supported:
 \fB\fB-detach\fR\fR \fIboolean\fR
 Specifies whether the element should be positioned by itself,
 i.e. independent from the other elements.  The default is false.
+.TP
+\fB\fB-center\fR\fR \fIflags\fR
+\fIFlags\fR is a string that contains zero or more of the characters
+\fBx\fR or \fBy\fR.
+\fBx\fR causes the element to be centered horizontally,
+\fBy\fR causes the element to be centered vertically.
+When more than one element has -center layout, all the elements between the
+first and last with -center layout in the style's list of elements are centered
+as a group.
 .TP
 \fB\fB-draw\fR\fR \fIboolean\fR
 This is a \fBper-state\fR option that determines whether
