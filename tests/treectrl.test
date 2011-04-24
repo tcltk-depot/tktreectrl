@@ -622,7 +622,7 @@ test treectrl-14.1 {rename and change some columns} -body {
 test treectrl-15.1 {identify: missing args} -body {
 	wm geometry . 400x200 ; update
     .t identify
-} -returnCodes error -result {wrong # args: should be ".t identify x y"}
+} -returnCodes error -result {wrong # args: should be ".t identify ?switches? x y"}
 
 test treectrl-15.2 {identify: negative coords} -body {
     .t configure -showheader 1 -showlines 1 -showbuttons 1 \
