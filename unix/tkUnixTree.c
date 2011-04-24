@@ -1126,7 +1126,7 @@ TreeTheme_DrawButton(
 				/* TreeTheme_GetButtonSize(). */
     )
 {
-    int open = state & STATE_OPEN;
+    int open = state & STATE_ITEM_OPEN;
     GtkWidget *widget;
     GtkStyle *style;
     GtkStateType state_type = GTK_STATE_NORMAL;
@@ -1499,7 +1499,7 @@ TreeTheme_AnimateButtonStart(
     TreeItem item		/* The item whose button should animate. */
     )
 {
-    int open = (TreeItem_GetState(tree, item) & STATE_OPEN) != 0;
+    int open = (TreeItem_GetState(tree, item) & STATE_ITEM_OPEN) != 0;
     int animate;
 
     /* gtk_treeview toggles right away, not when the animation finishes. */
