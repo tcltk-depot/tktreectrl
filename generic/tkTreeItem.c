@@ -6067,7 +6067,8 @@ if (co[indexElem].numArgs == -1) panic("indexElem=%d (%s) objc=%d numArgs == -1"
 		if (iMask & CS_LAYOUT) {
 		    TreeItem_InvalidateHeight(tree, item);
 		    Tree_FreeItemDInfo(tree, item, NULL);
-		    Tree_DInfoChanged(tree, DINFO_REDO_RANGES);
+		    if (item->header == NULL)
+			Tree_DInfoChanged(tree, DINFO_REDO_RANGES);
 		} else if (iMask & CS_DISPLAY) {
 		}
 		if (result != TCL_OK)
@@ -6204,6 +6205,7 @@ TreeItemCmd_Style(
 	    Tcl_Obj **objvM;
 	    ItemForEach iter;
 	    ColumnForEach citer;
+	    int redoRanges = !doHeaders;
 
 	    if (objc != 8) {
 		Tcl_WrongNumArgs(interp, 4, objv,
@@ -6257,7 +6259,8 @@ TreeItemCmd_Style(
 		if (result != TCL_OK)
 		    break;
 	    }
-	    Tree_DInfoChanged(tree, DINFO_REDO_RANGES);
+	    if (redoRanges)
+		Tree_DInfoChanged(tree, DINFO_REDO_RANGES);
 doneMAP:
 	    TreeColumnList_Free(&columns);
 	    break;
@@ -6378,7 +6381,7 @@ doneMAP:
 		    }
 		}
 	    }
-	    if (changed)
+	    if (changed && !doHeaders)
 		Tree_DInfoChanged(tree, DINFO_REDO_RANGES);
 doneSET:
 	    for (i = 0; i < count; i++) {
@@ -6578,7 +6581,7 @@ TreeItemCmd_ImageOrText(
 	    changed = TRUE;
 	}
     }
-    if (changed)
+    if (changed && !doHeaders)
 	Tree_DInfoChanged(tree, DINFO_REDO_RANGES);
 doneTEXT:
     for (i = 0; i < count; i++) {
@@ -7733,7 +7736,7 @@ TreeItemCmd_Span(
 	    changed = TRUE;
 	}
     }
-    if (changed)
+    if (changed && !doHeaders)
 	Tree_DInfoChanged(tree, DINFO_REDO_RANGES);
 doneSPAN:
     for (i = 0; i < count; i++) {
