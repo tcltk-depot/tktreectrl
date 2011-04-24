@@ -2055,6 +2055,9 @@ TreeHeaderColumn_StateChanged(
     Pixmap bitmap1, bitmap2;
     int w1, h1, w2, h2;
     void *ptr1 = NULL, *ptr2 = NULL;
+    TreeColor *tc;
+    XColor *color1Ptr, *color2Ptr;
+    Tk_3DBorder border1, border2;
     int stateStates, arrowStates;
     int mask = 0;
 
@@ -2073,13 +2076,31 @@ TreeHeaderColumn_StateChanged(
 
     /* If -arrow went to/from "none", change size. */
     if (arrow1 != arrow2)
-	mask |= CS_LAYOUT;
+	mask |= CS_LAYOUT | CS_DISPLAY;
 
     if (mask & CS_LAYOUT)
 	goto update;
 
-    /* The only per-state options native headers have are -arrowbitmap and
-     * -arrowimage. */
+    /* The only per-state options native headers have are -arrowbitmap,
+     * -arrowimage, -background, and -textcolor. The last 2 don't affect
+     * layout. */
+    if (!(mask & CS_DISPLAY)) {
+	tc = PerStateColor_ForState(tree, &column->textColor, state1, NULL);
+	color1Ptr = tc ? tc->color : NULL;
+	tc = PerStateColor_ForState(tree, &column->textColor, state2, NULL);
+	color2Ptr = tc ? tc->color : NULL;
+	if (color1Ptr != color2Ptr)
+	    mask |= CS_DISPLAY;
+    }
+    if (!(mask & CS_DISPLAY)) {
+	border1 = PerStateBorder_ForState(tree, &column->border, state1, NULL);
+	border2 = PerStateBorder_ForState(tree, &column->border, state2, NULL);
+	if (border1 != border2)
+	    mask |= CS_DISPLAY;
+    }
+
+    /* The only per-state options that affect layout are -arrowimage and
+     * -arrowbitmap. */
     if (column->arrowImage.count == 0 && column->arrowBitmap.count == 0)
 	goto update;
 
