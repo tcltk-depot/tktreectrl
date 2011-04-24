@@ -1572,6 +1572,11 @@ If \fIarea\fR is \fBleft\fR, then the result is the part of the window
 not including borders or headers where left-locked columns are displayed.
 If \fIarea\fR is \fBright\fR, then the result is the part of the window
 not including borders or headers where right-locked columns are displayed.
+.sp
+If \fIarea\fR is one of \fBheader.left\fR, \fBheader.none\fR or
+\fBheader.right\fR then the area of the column headers occupied by columns
+with -lock=left, -lock=none or -lock=right is returned.
+.sp
 An empty string is returned if the display area has
 no height or width, which can be true for various reasons such as the window
 is too small, or the header is not displayed, or there aren't any locked
@@ -1640,6 +1645,11 @@ modifies the given option(s) to have the given value(s) for \fIcolumnDesc\fR;
 in this case the command returns an empty string.
 .sp
 See \fBCOLUMNS\fR below for details on the options available for columns.
+.sp
+For compatibility with older versions of treectrl (which did not support more
+than one row of column headers) any of the configuration options mentioned in
+the \fBHEADERS\fR section, such as \fB-arrow\fR, \fB-text\fR, etc,
+may be passed to the top header-row through this command.
 .TP
 \fIpathName\fR \fBcolumn compare\fR \fIcolumn1\fR \fIop\fR \fIcolumn2\fR
 For both \fBcolumn descriptions\fR \fIcolumn1\fR
@@ -1675,52 +1685,10 @@ The order of \fIfirst\fR and \fIlast\fR doesn't matter, and \fIfirst\fR may
 be equal to \fIlast\fR.
 .TP
 \fIpathName\fR \fBcolumn dragcget\fR \fIoption\fR
+Deprecated. Use \fBheader dragcget\fR instead.
 .TP
 \fIpathName\fR \fBcolumn dragconfigure\fR ?\fIoption\fR? ?\fIvalue\fR? ?\fIoption value ...\fR?
-The user can move a column within a treectrl by drag-and-drop. Feedback consists
-of a semi-transparent photo image of the header of the column being dragged
-and a 2-pixel-thick vertical line to indicate where the column may be dropped.
-The drag image consists of a colored background rectangle plus the image and/or
-text displayed in the column header. The 2-pixel-thick line will be drawn
-over the left edge of the column before which the dragged column may be dropped.
-.sp
-The library scripts generate a <ColumnDrag-accept> event when the user has
-successfully drag-and-drop'd a column. You will have to bind a script to this
-event if you want to move the dragged column.
-.sp
-The following configuration options are supported:
-.RS
-.TP
-\fB\fB-enable\fR\fR \fIboolean\fR
-Controls whether the user is allowed to rearrange columns by drag-and-drop.
-The default is false.
-.TP
-\fB\fB-imagealpha\fR\fR \fIalpha\fR
-\fIAlpha\fR is an integer from 0 (invisible) to 255 (opaque) controlling the
-transparency of the drag image. Any value outside this range is clipped.
-The default is 128.
-.TP
-\fB\fB-imagecolor\fR\fR \fIbackground\fR
-\fIBackground\fR is the color of the drag image background rectangle.
-The default is "gray75".
-.TP
-\fB\fB-imagecolumn\fR\fR \fIcolumn\fR
-\fIColumn\fR specifies the column to create the drag image from.
-.TP
-\fB\fB-imageoffset\fR\fR \fIoffset\fR
-\fIOffset\fR is the horizontal screen distance the drag image is offset from its
-starting position.
-.TP
-\fB\fB-indicatorcolor\fR\fR \fIcolor\fR
-\fIColor\fR is the color of the 2-pixel-thick line.  The default is "black".
-.TP
-\fB\fB-indicatorcolumn\fR\fR \fIcolumn\fR
-The 2-pixel-thick line will be drawn over the left or right edge of \fIcolumn\fR.
-.TP
-\fB\fB-indicatorside\fR\fR \fIside\fR
-Specifies whether the 2-pixel-thick line will be drawn over the \fBleft\fR
-or \fBright\fR edge of the column specified by \fB-indicatorcolumn\fR.
-.RE
+Deprecated. Use \fBheader dragconfigure\fR instead.
 .TP
 \fIpathName\fR \fBcolumn index\fR \fIcolumnDesc\fR
 Deprecated. Use \fBcolumn id\fR instead.
@@ -1985,7 +1953,7 @@ sets the dragimage offset to the given coordinates \fIx\fR and \fIy\fR.
 .RE
 .TP
 \fIpathName\fR \fBelement\fR \fIoption\fR ?\fIelement\fR? ?\fIarg arg ...\fR?
-This command is used to manipulate elements (see \fBELEMENTS\fR below).
+This command is used to manipulate elements (see \fBELEMENTS AND STYLES\fR below).
 The exact behavior of the command depends on the \fIoption\fR argument
 that follows the \fBelement\fR argument.
 The following forms of the command are supported:
@@ -2011,7 +1979,7 @@ is specified).
 If one or more \fIoption\fR-\fIvalue\fR pairs are specified, then the command
 modifies the given option(s) to have the given value(s) in \fIelement\fR;
 in this case the command returns an empty string.
-See \fBELEMENTS\fR below for details on the options available for elements.
+See \fBELEMENTS AND STYLES\fR below for details on the options available for elements.
 .TP
 \fIpathName\fR \fBelement create\fR \fIelement\fR \fItype\fR ?\fIoption value ...\fR?
 Create a new elememt in \fIpathName\fR of type \fItype\fR
@@ -2641,7 +2609,7 @@ Each \fIlist\fR should look like this:
 
 .fi
 Every \fIoption\fR must be known by the element's type
-(see \fBELEMENTS\fR below).
+(see \fBELEMENTS AND STYLES\fR below).
 Each \fIoption\fR will be set to \fIvalue\fR for the element in this
 one column in this item.
 .TP
@@ -2811,7 +2779,7 @@ This command returns the value of the option named \fIoption\fR
 associated with \fIelement\fR inside \fIcolumn\fR of the item described by
 \fIitemDesc\fR, if it was already configured for the actual item.
 \fIOption\fR may have any of the values accepted by the type of the
-specified element (see \fBELEMENTS\fR below)
+specified element (see \fBELEMENTS AND STYLES\fR below)
 .TP
 \fIpathName\fR \fBitem element configure\fR \fIitemDesc\fR \fIcolumn\fR \fIelement\fR ?\fIoption\fR? ?\fIvalue\fR? ?\fIoption value ...\fR?
 This command modifies configuration options for an element in a column of
@@ -3931,6 +3899,10 @@ By configuring various column header options with the \fBheader configure\fR com
 By assigning a style to a column header with the \fBheader style\fR command.
 .PP
 .PP
+When one of the options below is specified as \fBper-state\fR,
+the state names are those described in \fBSTATES\fR for headers only,
+i.e. do not use item state names.
+.PP
 The following options are supported for each individual column header:
 .TP
 \fB\fB-arrow\fR\fR \fIdirection\fR
@@ -4020,6 +3992,12 @@ Must be one of \fBleft\fR (the default), \fBcenter\fR, or \fBright\fR.
 Specifies one of three states for the column header: \fBnormal\fR, \fBactive\fR,
 or \fBpressed\fR. The active state is used when the mouse is over the header.
 The pressed state is used when the mouse button is pressed in the header.
+.sp
+Changing the value of this option also affects the current set of
+\fBheader states\fR for the column header, which may
+affect both the \fBper-state\fR options mentioned
+here (such as \fB-arrowimage\fR) as well as the elements in any style that
+may be assigned to the column header.
 .TP
 \fB\fB-text\fR\fR \fItext\fR
 Specifies a text string to be displayed as the column title.
@@ -4119,12 +4097,14 @@ See \fBCOLUMN DESCRIPTION\fR below.
 .PP
 There is always one special column, the \fBtail\fR column, which fills
 all space to the right of the last ordinary column.
-This column has no number;
+This column has no unique ID;
 it can only be specified by the keyword \fBtail\fR.
 .PP
-When a column configuration option is specified as \fBper-state\fR,
-the state names are \fBnormal\fR, \fBactive\fR, \fBpressed\fR or \fBup\fR, i.e.
-do not use item state names.
+For compatibility with older versions of treectrl (which did not support more
+than one row of column headers) any of the configuration options mentioned in
+the \fBHEADERS\fR section, such as \fB-arrow\fR, \fB-text\fR, etc,
+may be passed to the top header-row through the \fBcolumn configure\fR
+command and queried with the \fBcolumn cget\fR command.
 .PP
 The following options are supported for columns:
 .TP
@@ -4147,7 +4127,8 @@ alternating background colors for items in this column.
 See also the \fB-backgroundmode\fR widget option for more on this.
 .TP
 \fB\fB-itemjustify\fR\fR \fIjustification\fR
-This option determines how the item styles in this column line up with each other.
+This option determines how the item styles in this column are aligned
+horizontally.
 Must be one of \fBleft\fR, \fBcenter\fR, or \fBright\fR. The default
 value is an empty string (for compatibility with older versions), in which
 case the column option \fB-justify\fR is used to align item styles in this
@@ -4158,10 +4139,13 @@ column.
 for newly-created items.
 .TP
 \fB\fB-justify\fR\fR \fIjustification\fR
-This option determines how the image and text in the column header are
-positioned. It also affects the position of item styles in this column unless
-the column option \fB-itemjustify\fR is specified.
+This option determines how item styles in this column are aligned horizontally
+unless overriden by the \fB-itemjustify\fR option for this column.
 Must be one of \fBleft\fR (the default), \fBcenter\fR, or \fBright\fR.
+.sp
+For compatibility with older versions of treectrl (which did not allow multiple
+rows of column headers), changing the value of this option also changes the
+\fB-justify\fR option of the column header in the top \fBheader-row\fR.
 .TP
 \fB\fB-lock\fR\fR \fIlock\fR
 This option allows a column to stick to the left or right edge of the window.
@@ -4297,14 +4281,20 @@ Use the column to the right matching \fIQUALIFIERS\fR.
 .TP
 \fBprev\fR \fIQUALIFIERS\fR
 Use the column to the left matching \fIQUALIFIERS\fR.
+.TP
+\fBspan\fR \fIN\fR \fIQUALIFIERS\fR
+Starting with (and counting) the single column specified by the column
+description so far, walk at most \fIN\fR columns rightwards, stopping if any
+of the following conditions is met:
+.RS
+.IP [1]
+A column does not match \fIQUALIFIERS\fR.
+.IP [2]
+A column's -lock option does not match the first column's -lock option.
+.RE
 .PP
 The word \fIQUALIFIERS\fR above represents a sequence of zero or more of the
 following terms that changes which column is chosen:
-.TP
-\fBstate\fR \fIstateList\fR
-\fIStateList\fR is a list of column state names.
-Only columns that have the given states set (or unset if the '!' prefix is used)
-are considered.
 .TP
 \fBtag\fR \fItagExpr\fR
 \fITagExpr\fR is a tag expression (see \fBITEM AND COLUMN TAGS\fR) against which
@@ -4322,9 +4312,39 @@ When this qualifier is given, only columns whose \fB-visible\fR option is
 FALSE are considered.
 .PP
 .SH STATES
-For every item a set of boolean states is managed. These states play an
-integral role in the appearance of each item.
+For every column header and every item a set of boolean states is managed.
+These states play an integral role in the appearance of headers and items;
+that role is described in detail in \fBPER-STATE OPTIONS\fR.
+The set of states available to headers is separate from the set of states
+available to items.
+.TP
+HEADER STATES
+The following states are predefined for every column header:
+.RS
+.TP
+\fBactive\fR
+.TP
+\fBnormal\fR
+.TP
+\fBpressed\fR
+These states mirror the value of the column header's configuration option
+\fB-state\fR.
+.TP
+\fBdown\fR
+.TP
+\fBup\fR
+These states mirror the value of the column header's configuration option
+\fB-arrow\fR.
+.TP
+\fBfocus\fR
+This state is set for every header-row if the treectrl widget currently has the
+focus. It cannot be modified by means of a widget command, but is maintained
+in reaction to the <FocusIn> and <FocusOut> events.
+.RE
+.TP
+ITEM STATES
 The following states are predefined for every item:
+.RS
 .TP
 \fBactive\fR
 At all times this state is set for exactly one item. The active item is
@@ -4340,7 +4360,7 @@ when navigating via the keyboard.
 This state can be modified by means of the widget command \fBitem enabled\fR.
 .TP
 \fBfocus\fR
-This state is set for every item,
+This state is set for every item
 if the treectrl widget currently has the focus.
 It cannot be modified by means of a widget command,
 but is maintained in reaction to the <FocusIn> and <FocusOut> events.
@@ -4359,10 +4379,11 @@ This state can be modified by means of the widget commands
 \fBselected\fR
 This state is set for every item included in the selection.
 It can be modified by means of the widget command \fBselection\fR.
-.PP
-.PP
-By means of the \fBstate define\fR widget command
+.RE
+.sp
+By means of the \fBstate define\fR widget command,
 up to 27 additional states can be defined.
+.PP
 .SH "PER-STATE OPTIONS"
 The visual appearance of an item can change depending on the state the item
 is in, such as being the active item, being included in the selection, being
@@ -4414,26 +4435,54 @@ of the focus.
 .PP
 A value followed by an empty stateList should always be last since it will be
 chosen regardless of the item's state.
-.SH ELEMENTS
-Elements are the smallest building blocks
-which are handled by a treectrl widget.
-One or more elements together can be combined to a style,
-which can be considered as a blueprint for an item.
+.SH "ELEMENTS AND STYLES"
+\fIElements\fR and \fIstyles\fR are the core visual building blocks that
+determine the appearance of items (and optionally column headers).
 An element can be of type \fBbitmap\fR, \fBborder\fR, \fBimage\fR,
-\fBrect\fR, \fBtext\fR or \fBwindow\fR.
-For each element type there is a section below describing the options
-which can modify an element of that type.
+\fBrect\fR, \fBtext\fR or \fBwindow\fR.  One or more elements can be
+assigned to a style which manages the layout of those elements.  It may be
+helpful to think of an element as a Tk widget and a style as a Tk geometry
+manager such as \fBgrid\fR, \fBpack\fR or \fBplace\fR.
+.PP
+When an element is created by the \fBelement create\fR command, that element is
+referred to as a \fImaster\fR element.  Similarly, a style that is created by
+\fBstyle create\fR is called a \fImaster\fR style.  When a master style is
+assigned to a column of an item by the \fBitem style set\fR command, a new
+instance style is allocated
+which refers back to the master style and its master elements.  In this way, a
+single master style may be shared by multiple columns of multiple items.  If a
+master element or master style is modified, those changes affect all the items
+whose instance styles and elements refer to those masters.
+.PP
+Although you probably want the font and selection-rectangle colors to be shared by all items,
+you most likely don't want the text to be the same for every column of every
+item.  The \fBitem element configure\fR command can be used to override a
+master element's configuration options for a specific column of an item.  When you call
+\fBitem element configure\fR (or \fBitem text\fR or \fBitem image\fR), a
+new instance element is allocated, if one wasn't already, and that instance
+element's options will override the master element's.
 .PP
 All of the element configuration options described below are unspecified
 by default, meaning that no value whatsoever has been given to the option.
 It may seem strange to you that a boolean option would be unspecified
 instead of simply "true" or "false". The reason for this is that when an
-element displayed by an item has no value specified for an option, the element refers
-to the master element created by the \fBelement create\fR command for a
-value for that option. This allows items which are displaying a certain
-element to be redisplayed when the master element's options change.
-The \fBitem element configure\fR command can be used to override the
-master element's configuration options for a specific item.
+instance element used by an item has no value specified for an option, that
+instance element refers to the master element for the value of that option.
+This allows items which are displaying a certain element to be redisplayed
+when the master element's options change.  The benefits of this are that you
+don't need to configure the font or text color for every item in a treectrl
+individually, saving CPU cycles and memory.
+.PP
+You may be thinking that to change the color of a selection rectangle you
+would call \fBitem element configure\fR when an item was selected, but that
+is not usually the case.  It would be wasteful to allocate a new instance
+element for a selection rectangle just because an item became selected.  The
+solution is to allow the appearance of the selection rectangle master element
+to change based on the selected state of the item.  This is described in
+\fBPER-STATE OPTIONS\fR.
+.PP
+For each element type there is a section below describing the options
+which can modify an element of that type.
 .SH "BITMAP ELEMENT"
 An element of type \fBbitmap\fR can be used to display a bitmap in an item.
 The following options are supported for bitmap elements:

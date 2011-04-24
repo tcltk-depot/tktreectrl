@@ -543,6 +543,11 @@ If [arg area] is [const left], then the result is the part of the window
 not including borders or headers where left-locked columns are displayed.
 If [arg area] is [const right], then the result is the part of the window
 not including borders or headers where right-locked columns are displayed.
+[para]
+If [arg area] is one of [const header.left], [const header.none] or
+[const header.right] then the area of the column headers occupied by columns
+with -lock=left, -lock=none or -lock=right is returned.
+[para]
 An empty string is returned if the display area has
 no height or width, which can be true for various reasons such as the window
 is too small, or the header is not displayed, or there aren't any locked
@@ -613,8 +618,12 @@ If one or more [arg option]-[arg value] pairs are specified, then the command
 modifies the given option(s) to have the given value(s) for [arg columnDesc];
 in this case the command returns an empty string.
 [para]
-
 See [sectref COLUMNS] below for details on the options available for columns.
+[para]
+For compatibility with older versions of treectrl (which did not support more
+than one row of column headers) any of the configuration options mentioned in
+the [sectref HEADERS] section, such as [option -arrow], [option -text], etc,
+may be passed to the top header-row through this command.
 
 [call [arg pathName] [cmd {column compare}] [arg column1] [arg op] [arg column2]]
 For both [sectref {COLUMN DESCRIPTION} {column descriptions}] [arg column1]
@@ -650,53 +659,11 @@ The order of [arg first] and [arg last] doesn't matter, and [arg first] may
 be equal to [arg last].
 
 [call [arg pathName] [cmd {column dragcget}] [arg option]]
+Deprecated. Use [cmd {header dragcget}] instead.
+
 [call [arg pathName] [cmd {column dragconfigure}] \
      [opt [arg option]] [opt [arg value]] [opt [arg {option value ...}]]]
-The user can move a column within a treectrl by drag-and-drop. Feedback consists
-of a semi-transparent photo image of the header of the column being dragged
-and a 2-pixel-thick vertical line to indicate where the column may be dropped.
-The drag image consists of a colored background rectangle plus the image and/or
-text displayed in the column header. The 2-pixel-thick line will be drawn
-over the left edge of the column before which the dragged column may be dropped.
-[para]
-
-The library scripts generate a <ColumnDrag-accept> event when the user has
-successfully drag-and-drop'd a column. You will have to bind a script to this
-event if you want to move the dragged column.
-[para]
-
-The following configuration options are supported:
-[list_begin options]
-[opt_def [option -enable] [arg boolean]]
-Controls whether the user is allowed to rearrange columns by drag-and-drop.
-The default is false.
-
-[opt_def [option -imagealpha] [arg alpha]]
-[arg Alpha] is an integer from 0 (invisible) to 255 (opaque) controlling the
-transparency of the drag image. Any value outside this range is clipped.
-The default is 128.
-
-[opt_def [option -imagecolor] [arg background]]
-[arg Background] is the color of the drag image background rectangle.
-The default is "gray75".
-
-[opt_def [option -imagecolumn] [arg column]]
-[arg Column] specifies the column to create the drag image from.
-
-[opt_def [option -imageoffset] [arg offset]]
-[arg Offset] is the horizontal screen distance the drag image is offset from its
-starting position.
-
-[opt_def [option -indicatorcolor] [arg color]]
-[arg Color] is the color of the 2-pixel-thick line.  The default is "black".
-
-[opt_def [option -indicatorcolumn] [arg column]]
-The 2-pixel-thick line will be drawn over the left or right edge of [arg column].
-
-[opt_def [option -indicatorside] [arg side]]
-Specifies whether the 2-pixel-thick line will be drawn over the [const left]
-or [const right] edge of the column specified by [option -indicatorcolumn].
-[list_end]
+Deprecated. Use [cmd {header dragconfigure}] instead.
 
 [call [arg pathName] [cmd {column index}] [arg columnDesc]]
 Deprecated. Use [cmd {column id}] instead.
@@ -974,7 +941,7 @@ sets the dragimage offset to the given coordinates [arg x] and [arg y].
 
 [call [arg pathName] [cmd element] [arg option] [opt [arg element]] \
      [opt [arg {arg arg ...}]]]
-This command is used to manipulate elements (see [sectref ELEMENTS] below).
+This command is used to manipulate elements (see [sectref {ELEMENTS AND STYLES}] below).
 The exact behavior of the command depends on the [arg option] argument
 that follows the [cmd element] argument.
 The following forms of the command are supported:
@@ -1001,7 +968,7 @@ is specified).
 If one or more [arg option]-[arg value] pairs are specified, then the command
 modifies the given option(s) to have the given value(s) in [arg element];
 in this case the command returns an empty string.
-See [sectref ELEMENTS] below for details on the options available for elements.
+See [sectref {ELEMENTS AND STYLES}] below for details on the options available for elements.
 
 [call [arg pathName] [cmd {element create}] [arg element] [arg type] \
      [opt [arg {option value ...}]]]
@@ -1479,7 +1446,7 @@ $varName(header) is the unique id of the [sectref HEADERS header-row]
 [para]
 $varName(column) is the unique id of the column
 [para]
-$varName(element) is the name of an [sectref ELEMENTS element], or ""
+$varName(element) is the name of an [sectref {ELEMENTS AND STYLES} element], or ""
 [para]
 $varName(side) is [const left] or [const right] if the coordinates are close
 to the edge of the column header, otherwise ""
@@ -1492,7 +1459,7 @@ $varName(item) is the unique id of the item
 [para]
 $varName(column) is the unique id of the column
 [para]
-$varName(element) is the name of an [sectref ELEMENTS element], or ""
+$varName(element) is the name of an [sectref {ELEMENTS AND STYLES} element], or ""
 [para]
 $varName(button) is a boolean indicating whether or not the coordinates are
 over the item's expand/collapse button
@@ -1615,7 +1582,7 @@ Each [arg list] should look like this:
 { {element option value ...} {element option value ...} ...}
 [example_end]
 Every [arg option] must be known by the element's type
-(see [sectref ELEMENTS] below).
+(see [sectref {ELEMENTS AND STYLES}] below).
 Each [arg option] will be set to [arg value] for the element in this
 one column in this item.
 
@@ -1788,7 +1755,7 @@ This command returns the value of the option named [arg option]
 associated with [arg element] inside [arg column] of the item described by
 [arg itemDesc], if it was already configured for the actual item.
 [arg Option] may have any of the values accepted by the type of the
-specified element (see [sectref ELEMENTS] below)
+specified element (see [sectref {ELEMENTS AND STYLES}] below)
 
 [call [arg pathName] [cmd {item element configure}] [arg itemDesc] \
      [arg column] [arg element] [opt [arg option]] [opt [arg value]] \
@@ -2953,6 +2920,10 @@ By configuring various column header options with the [cmd {header configure}] c
 By assigning a style to a column header with the [cmd {header style}] command.
 [list_end]
 [para]
+When one of the options below is specified as [sectref {PER-STATE OPTIONS} per-state],
+the state names are those described in [sectref {STATES}] for headers only,
+i.e. do not use item state names.
+[para]
 The following options are supported for each individual column header:
 [list_begin options]
 [opt_def [option -arrow] [arg direction]]
@@ -3042,6 +3013,12 @@ Must be one of [const left] (the default), [const center], or [const right].
 Specifies one of three states for the column header: [const normal], [const active],
 or [const pressed]. The active state is used when the mouse is over the header.
 The pressed state is used when the mouse button is pressed in the header.
+[para]
+Changing the value of this option also affects the current set of
+[sectref {STATES} {header states}] for the column header, which may
+affect both the [sectref {PER-STATE OPTIONS} {per-state}] options mentioned
+here (such as [option -arrowimage]) as well as the elements in any style that
+may be assigned to the column header.
 
 [opt_def [option -text] [arg text]]
 Specifies a text string to be displayed as the column title.
@@ -3146,13 +3123,15 @@ See [sectref {COLUMN DESCRIPTION}] below.
 [para]
 There is always one special column, the [const tail] column, which fills
 all space to the right of the last ordinary column.
-This column has no number;
+This column has no unique ID;
 it can only be specified by the keyword [const tail].
 
 [para]
-When a column configuration option is specified as [sectref {PER-STATE OPTIONS} per-state],
-the state names are [const normal], [const active], [const pressed] or [const up], i.e.
-do not use item state names.
+For compatibility with older versions of treectrl (which did not support more
+than one row of column headers) any of the configuration options mentioned in
+the [sectref HEADERS] section, such as [option -arrow], [option -text], etc,
+may be passed to the top header-row through the [cmd {column configure}]
+command and queried with the [cmd {column cget}] command.
 
 [para]
 The following options are supported for columns:
@@ -3177,7 +3156,8 @@ alternating background colors for items in this column.
 See also the [option -backgroundmode] widget option for more on this.
 
 [opt_def [option -itemjustify] [arg justification]]
-This option determines how the item styles in this column line up with each other.
+This option determines how the item styles in this column are aligned
+horizontally.
 Must be one of [const left], [const center], or [const right]. The default
 value is an empty string (for compatibility with older versions), in which
 case the column option [option -justify] is used to align item styles in this
@@ -3188,10 +3168,13 @@ column.
 for newly-created items.
 
 [opt_def [option -justify] [arg justification]]
-This option determines how the image and text in the column header are
-positioned. It also affects the position of item styles in this column unless
-the column option [option -itemjustify] is specified.
+This option determines how item styles in this column are aligned horizontally
+unless overriden by the [option -itemjustify] option for this column.
 Must be one of [const left] (the default), [const center], or [const right].
+[para]
+For compatibility with older versions of treectrl (which did not allow multiple
+rows of column headers), changing the value of this option also changes the
+[option -justify] option of the column header in the top [sectref HEADERS header-row].
 
 [opt_def [option -lock] [arg lock]]
 This option allows a column to stick to the left or right edge of the window.
@@ -3333,17 +3316,23 @@ Use the column to the right matching [arg QUALIFIERS].
 [def "[const prev] [arg QUALIFIERS]"]
 Use the column to the left matching [arg QUALIFIERS].
 
+[def "[const span] [arg N] [arg QUALIFIERS]"]
+Starting with (and counting) the single column specified by the column
+description so far, walk at most [arg N] columns rightwards, stopping if any
+of the following conditions is met:
+[list_begin enum]
+[enum]
+A column does not match [arg QUALIFIERS].
+[enum]
+A column's -lock option does not match the first column's -lock option.
+[list_end]
+
 [list_end]
 
 The word [arg QUALIFIERS] above represents a sequence of zero or more of the
 following terms that changes which column is chosen:
 
 [list_begin definitions]
-[def "[const state] [arg stateList]"]
-[arg StateList] is a list of column state names.
-Only columns that have the given states set (or unset if the '!' prefix is used)
-are considered.
-
 [def "[const tag] [arg tagExpr]"]
 [arg TagExpr] is a tag expression (see [sectref {ITEM AND COLUMN TAGS}]) against which
 a column's tags are tested for a match.
@@ -3361,8 +3350,35 @@ FALSE are considered.
 [list_end]
 
 [section STATES]
-For every item a set of boolean states is managed. These states play an
-integral role in the appearance of each item.
+For every column header and every item a set of boolean states is managed.
+These states play an integral role in the appearance of headers and items;
+that role is described in detail in [sectref {PER-STATE OPTIONS}].
+The set of states available to headers is separate from the set of states
+available to items.
+[list_begin definitions]
+
+[def {HEADER STATES}]
+The following states are predefined for every column header:
+
+[list_begin definitions]
+[def [const active]]
+[def [const normal]]
+[def [const pressed]]
+These states mirror the value of the column header's configuration option
+[option -state].
+
+[def [const down]]
+[def [const up]]
+These states mirror the value of the column header's configuration option
+[option -arrow].
+
+[def [const focus]]
+This state is set for every header-row if the treectrl widget currently has the
+focus. It cannot be modified by means of a widget command, but is maintained
+in reaction to the <FocusIn> and <FocusOut> events.
+[list_end]
+
+[def {ITEM STATES}]
 The following states are predefined for every item:
 
 [list_begin definitions]
@@ -3380,7 +3396,7 @@ when navigating via the keyboard.
 This state can be modified by means of the widget command [cmd {item enabled}].
 
 [def [const focus]]
-This state is set for every item,
+This state is set for every item
 if the treectrl widget currently has the focus.
 It cannot be modified by means of a widget command,
 but is maintained in reaction to the <FocusIn> and <FocusOut> events.
@@ -3402,8 +3418,9 @@ It can be modified by means of the widget command [cmd selection].
 [list_end]
 
 [para]
-By means of the [cmd {state define}] widget command
+By means of the [cmd {state define}] widget command,
 up to 27 additional states can be defined.
+[list_end]
 
 [section {PER-STATE OPTIONS}]
 
@@ -3450,27 +3467,54 @@ of the focus.
 A value followed by an empty stateList should always be last since it will be
 chosen regardless of the item's state.
 
-[section ELEMENTS]
-Elements are the smallest building blocks
-which are handled by a treectrl widget.
-One or more elements together can be combined to a style,
-which can be considered as a blueprint for an item.
+[section {ELEMENTS AND STYLES}]
+[emph Elements] and [emph styles] are the core visual building blocks that
+determine the appearance of items (and optionally column headers).
 An element can be of type [const bitmap], [const border], [const image],
-[const rect], [const text] or [const window].
-For each element type there is a section below describing the options
-which can modify an element of that type.
-
+[const rect], [const text] or [const window].  One or more elements can be
+assigned to a style which manages the layout of those elements.  It may be
+helpful to think of an element as a Tk widget and a style as a Tk geometry
+manager such as [cmd grid], [cmd pack] or [cmd place].
+[para]
+When an element is created by the [cmd {element create}] command, that element is
+referred to as a [emph master] element.  Similarly, a style that is created by
+[cmd {style create}] is called a [emph master] style.  When a master style is
+assigned to a column of an item by the [cmd {item style set}] command, a new
+instance style is allocated
+which refers back to the master style and its master elements.  In this way, a
+single master style may be shared by multiple columns of multiple items.  If a
+master element or master style is modified, those changes affect all the items
+whose instance styles and elements refer to those masters.
+[para]
+Although you probably want the font and selection-rectangle colors to be shared by all items,
+you most likely don't want the text to be the same for every column of every
+item.  The [cmd {item element configure}] command can be used to override a
+master element's configuration options for a specific column of an item.  When you call
+[cmd {item element configure}] (or [cmd {item text}] or [cmd {item image}]), a
+new instance element is allocated, if one wasn't already, and that instance
+element's options will override the master element's.
 [para]
 All of the element configuration options described below are unspecified
 by default, meaning that no value whatsoever has been given to the option.
 It may seem strange to you that a boolean option would be unspecified
 instead of simply "true" or "false". The reason for this is that when an
-element displayed by an item has no value specified for an option, the element refers
-to the master element created by the [cmd {element create}] command for a
-value for that option. This allows items which are displaying a certain
-element to be redisplayed when the master element's options change.
-The [cmd {item element configure}] command can be used to override the
-master element's configuration options for a specific item.
+instance element used by an item has no value specified for an option, that
+instance element refers to the master element for the value of that option.
+This allows items which are displaying a certain element to be redisplayed
+when the master element's options change.  The benefits of this are that you
+don't need to configure the font or text color for every item in a treectrl
+individually, saving CPU cycles and memory.
+[para]
+You may be thinking that to change the color of a selection rectangle you
+would call [cmd {item element configure}] when an item was selected, but that
+is not usually the case.  It would be wasteful to allocate a new instance
+element for a selection rectangle just because an item became selected.  The
+solution is to allow the appearance of the selection rectangle master element
+to change based on the selected state of the item.  This is described in
+[sectref {PER-STATE OPTIONS}].
+[para]
+For each element type there is a section below describing the options
+which can modify an element of that type.
 
 [section {BITMAP ELEMENT}]
 An element of type [const bitmap] can be used to display a bitmap in an item.

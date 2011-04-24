@@ -117,7 +117,7 @@
 <li class="section"><a href="#section10">COLUMN DESCRIPTION</a></li>
 <li class="section"><a href="#section11">STATES</a></li>
 <li class="section"><a href="#section12">PER-STATE OPTIONS</a></li>
-<li class="section"><a href="#section13">ELEMENTS</a></li>
+<li class="section"><a href="#section13">ELEMENTS AND STYLES</a></li>
 <li class="section"><a href="#section14">BITMAP ELEMENT</a></li>
 <li class="section"><a href="#section15">BORDER ELEMENT</a></li>
 <li class="section"><a href="#section16">IMAGE ELEMENT</a></li>
@@ -977,8 +977,11 @@ not including borders where column titles are displayed.
 If <i class="arg">area</i> is <b class="const">left</b>, then the result is the part of the window
 not including borders or headers where left-locked columns are displayed.
 If <i class="arg">area</i> is <b class="const">right</b>, then the result is the part of the window
-not including borders or headers where right-locked columns are displayed.
-An empty string is returned if the display area has
+not including borders or headers where right-locked columns are displayed.</p>
+<p>If <i class="arg">area</i> is one of <b class="const">header.left</b>, <b class="const">header.none</b> or
+<b class="const">header.right</b> then the area of the column headers occupied by columns
+with -lock=left, -lock=none or -lock=right is returned.</p>
+<p>An empty string is returned if the display area has
 no height or width, which can be true for various reasons such as the window
 is too small, or the header is not displayed, or there aren't any locked
 columns.</p></dd>
@@ -1036,7 +1039,11 @@ is specified).
 If one or more <i class="arg">option</i>-<i class="arg">value</i> pairs are specified, then the command
 modifies the given option(s) to have the given value(s) for <i class="arg">columnDesc</i>;
 in this case the command returns an empty string.</p>
-<p>See <span class="sectref"><a href="#section9">COLUMNS</a></span> below for details on the options available for columns.</p></dd>
+<p>See <span class="sectref"><a href="#section9">COLUMNS</a></span> below for details on the options available for columns.</p>
+<p>For compatibility with older versions of treectrl (which did not support more
+than one row of column headers) any of the configuration options mentioned in
+the <span class="sectref"><a href="#section7">HEADERS</a></span> section, such as <b class="option">-arrow</b>, <b class="option">-text</b>, etc,
+may be passed to the top header-row through this command.</p></dd>
 <dt><a name="12"><i class="arg">pathName</i> <b class="cmd">column compare</b> <i class="arg">column1</i> <i class="arg">op</i> <i class="arg">column2</i></a></dt>
 <dd><p>For both <span class="sectref"><a href="#section10">column descriptions</a></span> <i class="arg">column1</i>
 and <i class="arg">column2</i> the index is retrieved
@@ -1067,42 +1074,9 @@ The <b class="const">tail</b> column cannot be deleted and it is an error to spe
 The order of <i class="arg">first</i> and <i class="arg">last</i> doesn't matter, and <i class="arg">first</i> may
 be equal to <i class="arg">last</i>.</p></dd>
 <dt><a name="16"><i class="arg">pathName</i> <b class="cmd">column dragcget</b> <i class="arg">option</i></a></dt>
-<dd></dd>
+<dd><p>Deprecated. Use <b class="cmd">header dragcget</b> instead.</p></dd>
 <dt><a name="17"><i class="arg">pathName</i> <b class="cmd">column dragconfigure</b> <span class="opt">?<i class="arg">option</i>?</span> <span class="opt">?<i class="arg">value</i>?</span> <span class="opt">?<i class="arg">option value ...</i>?</span></a></dt>
-<dd><p>The user can move a column within a treectrl by drag-and-drop. Feedback consists
-of a semi-transparent photo image of the header of the column being dragged
-and a 2-pixel-thick vertical line to indicate where the column may be dropped.
-The drag image consists of a colored background rectangle plus the image and/or
-text displayed in the column header. The 2-pixel-thick line will be drawn
-over the left edge of the column before which the dragged column may be dropped.</p>
-<p>The library scripts generate a &lt;ColumnDrag-accept&gt; event when the user has
-successfully drag-and-drop'd a column. You will have to bind a script to this
-event if you want to move the dragged column.</p>
-<p>The following configuration options are supported:</p>
-<dl class="options">
-<dt><b class="option"><b class="option">-enable</b></b> <i class="arg">boolean</i></dt>
-<dd><p>Controls whether the user is allowed to rearrange columns by drag-and-drop.
-The default is false.</p></dd>
-<dt><b class="option"><b class="option">-imagealpha</b></b> <i class="arg">alpha</i></dt>
-<dd><p><i class="arg">Alpha</i> is an integer from 0 (invisible) to 255 (opaque) controlling the
-transparency of the drag image. Any value outside this range is clipped.
-The default is 128.</p></dd>
-<dt><b class="option"><b class="option">-imagecolor</b></b> <i class="arg">background</i></dt>
-<dd><p><i class="arg">Background</i> is the color of the drag image background rectangle.
-The default is &quot;gray75&quot;.</p></dd>
-<dt><b class="option"><b class="option">-imagecolumn</b></b> <i class="arg">column</i></dt>
-<dd><p><i class="arg">Column</i> specifies the column to create the drag image from.</p></dd>
-<dt><b class="option"><b class="option">-imageoffset</b></b> <i class="arg">offset</i></dt>
-<dd><p><i class="arg">Offset</i> is the horizontal screen distance the drag image is offset from its
-starting position.</p></dd>
-<dt><b class="option"><b class="option">-indicatorcolor</b></b> <i class="arg">color</i></dt>
-<dd><p><i class="arg">Color</i> is the color of the 2-pixel-thick line.  The default is &quot;black&quot;.</p></dd>
-<dt><b class="option"><b class="option">-indicatorcolumn</b></b> <i class="arg">column</i></dt>
-<dd><p>The 2-pixel-thick line will be drawn over the left or right edge of <i class="arg">column</i>.</p></dd>
-<dt><b class="option"><b class="option">-indicatorside</b></b> <i class="arg">side</i></dt>
-<dd><p>Specifies whether the 2-pixel-thick line will be drawn over the <b class="const">left</b>
-or <b class="const">right</b> edge of the column specified by <b class="option">-indicatorcolumn</b>.</p></dd>
-</dl></dd>
+<dd><p>Deprecated. Use <b class="cmd">header dragconfigure</b> instead.</p></dd>
 <dt><a name="18"><i class="arg">pathName</i> <b class="cmd">column index</b> <i class="arg">columnDesc</i></a></dt>
 <dd><p>Deprecated. Use <b class="cmd">column id</b> instead.</p></dd>
 <dt><a name="19"><i class="arg">pathName</i> <b class="cmd">column id</b> <i class="arg">columnDesc</i></a></dt>
@@ -1327,7 +1301,7 @@ If two coordinates are specified,
 sets the dragimage offset to the given coordinates <i class="arg">x</i> and <i class="arg">y</i>.</p></dd>
 </dl></dd>
 <dt><a name="46"><i class="arg">pathName</i> <b class="cmd">element</b> <i class="arg">option</i> <span class="opt">?<i class="arg">element</i>?</span> <span class="opt">?<i class="arg">arg arg ...</i>?</span></a></dt>
-<dd><p>This command is used to manipulate elements (see <span class="sectref"><a href="#section13">ELEMENTS</a></span> below).
+<dd><p>This command is used to manipulate elements (see <span class="sectref"><a href="#section13">ELEMENTS AND STYLES</a></span> below).
 The exact behavior of the command depends on the <i class="arg">option</i> argument
 that follows the <b class="cmd">element</b> argument.
 The following forms of the command are supported:</p>
@@ -1351,7 +1325,7 @@ is specified).
 If one or more <i class="arg">option</i>-<i class="arg">value</i> pairs are specified, then the command
 modifies the given option(s) to have the given value(s) in <i class="arg">element</i>;
 in this case the command returns an empty string.
-See <span class="sectref"><a href="#section13">ELEMENTS</a></span> below for details on the options available for elements.</p></dd>
+See <span class="sectref"><a href="#section13">ELEMENTS AND STYLES</a></span> below for details on the options available for elements.</p></dd>
 <dt><a name="49"><i class="arg">pathName</i> <b class="cmd">element create</b> <i class="arg">element</i> <i class="arg">type</i> <span class="opt">?<i class="arg">option value ...</i>?</span></a></dt>
 <dd><p>Create a new elememt in <i class="arg">pathName</i> of type <i class="arg">type</i>
 with name <i class="arg">element</i>.
@@ -1874,7 +1848,7 @@ Each <i class="arg">list</i> should look like this:</p>
 { {element option value ...} {element option value ...} ...}
 </pre>
 <p>Every <i class="arg">option</i> must be known by the element's type
-(see <span class="sectref"><a href="#section13">ELEMENTS</a></span> below).
+(see <span class="sectref"><a href="#section13">ELEMENTS AND STYLES</a></span> below).
 Each <i class="arg">option</i> will be set to <i class="arg">value</i> for the element in this
 one column in this item.</p></dd>
 <dt><a name="96"><i class="arg">pathName</i> <b class="cmd">item configure</b> <i class="arg">itemDesc</i> <span class="opt">?<i class="arg">option</i>?</span> <span class="opt">?<i class="arg">value</i>?</span> <span class="opt">?<i class="arg">option value ...</i>?</span></a></dt>
@@ -2012,7 +1986,7 @@ The following forms of the command are supported:</p>
 associated with <i class="arg">element</i> inside <i class="arg">column</i> of the item described by
 <i class="arg">itemDesc</i>, if it was already configured for the actual item.
 <i class="arg">Option</i> may have any of the values accepted by the type of the
-specified element (see <span class="sectref"><a href="#section13">ELEMENTS</a></span> below)</p></dd>
+specified element (see <span class="sectref"><a href="#section13">ELEMENTS AND STYLES</a></span> below)</p></dd>
 <dt><a name="105"><i class="arg">pathName</i> <b class="cmd">item element configure</b> <i class="arg">itemDesc</i> <i class="arg">column</i> <i class="arg">element</i> <span class="opt">?<i class="arg">option</i>?</span> <span class="opt">?<i class="arg">value</i>?</span> <span class="opt">?<i class="arg">option value ...</i>?</span></a></dt>
 <dd><p>This command modifies configuration options for an element in a column of
 an item.
@@ -2964,6 +2938,9 @@ customized in two different ways:</p>
 <li><p>By configuring various column header options with the <b class="cmd">header configure</b> command</p></li>
 <li><p>By assigning a style to a column header with the <b class="cmd">header style</b> command.</p></li>
 </ol>
+<p>When one of the options below is specified as <span class="sectref"><a href="#section12">per-state</a></span>,
+the state names are those described in <span class="sectref"><a href="#section11">STATES</a></span> for headers only,
+i.e. do not use item state names.</p>
 <p>The following options are supported for each individual column header:</p>
 <dl class="options">
 <dt><b class="option"><b class="option">-arrow</b></b> <i class="arg">direction</i></dt>
@@ -3036,7 +3013,12 @@ Must be one of <b class="const">left</b> (the default), <b class="const">center<
 <dt><b class="option"><b class="option">-state</b></b> <i class="arg">state</i></dt>
 <dd><p>Specifies one of three states for the column header: <b class="const">normal</b>, <b class="const">active</b>,
 or <b class="const">pressed</b>. The active state is used when the mouse is over the header.
-The pressed state is used when the mouse button is pressed in the header.</p></dd>
+The pressed state is used when the mouse button is pressed in the header.</p>
+<p>Changing the value of this option also affects the current set of
+<span class="sectref"><a href="#section11">header states</a></span> for the column header, which may
+affect both the <span class="sectref"><a href="#section12">per-state</a></span> options mentioned
+here (such as <b class="option">-arrowimage</b>) as well as the elements in any style that
+may be assigned to the column header.</p></dd>
 <dt><b class="option"><b class="option">-text</b></b> <i class="arg">text</i></dt>
 <dd><p>Specifies a text string to be displayed as the column title.</p></dd>
 <dt><b class="option"><b class="option">-textcolor</b></b> <i class="arg">color</i></dt>
@@ -3123,11 +3105,13 @@ An item can be considered as a row, which reaches over all columns.</p>
 See <span class="sectref"><a href="#section10">COLUMN DESCRIPTION</a></span> below.</p>
 <p>There is always one special column, the <b class="const">tail</b> column, which fills
 all space to the right of the last ordinary column.
-This column has no number;
+This column has no unique ID;
 it can only be specified by the keyword <b class="const">tail</b>.</p>
-<p>When a column configuration option is specified as <span class="sectref"><a href="#section12">per-state</a></span>,
-the state names are <b class="const">normal</b>, <b class="const">active</b>, <b class="const">pressed</b> or <b class="const">up</b>, i.e.
-do not use item state names.</p>
+<p>For compatibility with older versions of treectrl (which did not support more
+than one row of column headers) any of the configuration options mentioned in
+the <span class="sectref"><a href="#section7">HEADERS</a></span> section, such as <b class="option">-arrow</b>, <b class="option">-text</b>, etc,
+may be passed to the top header-row through the <b class="cmd">column configure</b>
+command and queried with the <b class="cmd">column cget</b> command.</p>
 <p>The following options are supported for columns:</p>
 <dl class="options">
 <dt><b class="option"><b class="option">-expand</b></b> <i class="arg">boolean</i></dt>
@@ -3146,7 +3130,8 @@ The default value for each option is an empty string meaning no lines are drawn.
 alternating background colors for items in this column.
 See also the <b class="option">-backgroundmode</b> widget option for more on this.</p></dd>
 <dt><b class="option"><b class="option">-itemjustify</b></b> <i class="arg">justification</i></dt>
-<dd><p>This option determines how the item styles in this column line up with each other.
+<dd><p>This option determines how the item styles in this column are aligned
+horizontally.
 Must be one of <b class="const">left</b>, <b class="const">center</b>, or <b class="const">right</b>. The default
 value is an empty string (for compatibility with older versions), in which
 case the column option <b class="option">-justify</b> is used to align item styles in this
@@ -3155,10 +3140,12 @@ column.</p></dd>
 <dd><p><i class="arg">Style</i> is the name of a style that should be set in this column
 for newly-created items.</p></dd>
 <dt><b class="option"><b class="option">-justify</b></b> <i class="arg">justification</i></dt>
-<dd><p>This option determines how the image and text in the column header are
-positioned. It also affects the position of item styles in this column unless
-the column option <b class="option">-itemjustify</b> is specified.
-Must be one of <b class="const">left</b> (the default), <b class="const">center</b>, or <b class="const">right</b>.</p></dd>
+<dd><p>This option determines how item styles in this column are aligned horizontally
+unless overriden by the <b class="option">-itemjustify</b> option for this column.
+Must be one of <b class="const">left</b> (the default), <b class="const">center</b>, or <b class="const">right</b>.</p>
+<p>For compatibility with older versions of treectrl (which did not allow multiple
+rows of column headers), changing the value of this option also changes the
+<b class="option">-justify</b> option of the column header in the top <span class="sectref"><a href="#section7">header-row</a></span>.</p></dd>
 <dt><b class="option"><b class="option">-lock</b></b> <i class="arg">lock</i></dt>
 <dd><p>This option allows a column to stick to the left or right edge of the window.
 A locked column scrolls vertically but not horizontally.
@@ -3271,14 +3258,18 @@ It may be specified in any of the following forms:</p>
 <dd><p>Use the column to the right matching <i class="arg">QUALIFIERS</i>.</p></dd>
 <dt><b class="const">prev</b> <i class="arg">QUALIFIERS</i></dt>
 <dd><p>Use the column to the left matching <i class="arg">QUALIFIERS</i>.</p></dd>
+<dt><b class="const">span</b> <i class="arg">N</i> <i class="arg">QUALIFIERS</i></dt>
+<dd><p>Starting with (and counting) the single column specified by the column
+description so far, walk at most <i class="arg">N</i> columns rightwards, stopping if any
+of the following conditions is met:</p>
+<ol class="enumerated">
+<li><p>A column does not match <i class="arg">QUALIFIERS</i>.</p></li>
+<li><p>A column's -lock option does not match the first column's -lock option.</p></li>
+</ol></dd>
 </dl>
 <p>The word <i class="arg">QUALIFIERS</i> above represents a sequence of zero or more of the
 following terms that changes which column is chosen:</p>
 <dl class="definitions">
-<dt><b class="const">state</b> <i class="arg">stateList</i></dt>
-<dd><p><i class="arg">StateList</i> is a list of column state names.
-Only columns that have the given states set (or unset if the '!' prefix is used)
-are considered.</p></dd>
 <dt><b class="const">tag</b> <i class="arg">tagExpr</i></dt>
 <dd><p><i class="arg">TagExpr</i> is a tag expression (see <span class="sectref"><a href="#section5">ITEM AND COLUMN TAGS</a></span>) against which
 a column's tags are tested for a match.</p></dd>
@@ -3293,9 +3284,34 @@ FALSE are considered.</p></dd>
 </dl>
 </div>
 <div id="section11" class="section"><h2><a name="section11">STATES</a></h2>
-<p>For every item a set of boolean states is managed. These states play an
-integral role in the appearance of each item.
-The following states are predefined for every item:</p>
+<p>For every column header and every item a set of boolean states is managed.
+These states play an integral role in the appearance of headers and items;
+that role is described in detail in <span class="sectref"><a href="#section12">PER-STATE OPTIONS</a></span>.
+The set of states available to headers is separate from the set of states
+available to items.</p>
+<dl class="definitions">
+<dt>HEADER STATES</dt>
+<dd><p>The following states are predefined for every column header:</p>
+<dl class="definitions">
+<dt><b class="const">active</b></dt>
+<dd></dd>
+<dt><b class="const">normal</b></dt>
+<dd></dd>
+<dt><b class="const">pressed</b></dt>
+<dd><p>These states mirror the value of the column header's configuration option
+<b class="option">-state</b>.</p></dd>
+<dt><b class="const">down</b></dt>
+<dd></dd>
+<dt><b class="const">up</b></dt>
+<dd><p>These states mirror the value of the column header's configuration option
+<b class="option">-arrow</b>.</p></dd>
+<dt><b class="const">focus</b></dt>
+<dd><p>This state is set for every header-row if the treectrl widget currently has the
+focus. It cannot be modified by means of a widget command, but is maintained
+in reaction to the &lt;FocusIn&gt; and &lt;FocusOut&gt; events.</p></dd>
+</dl></dd>
+<dt>ITEM STATES</dt>
+<dd><p>The following states are predefined for every item:</p>
 <dl class="definitions">
 <dt><b class="const">active</b></dt>
 <dd><p>At all times this state is set for exactly one item. The active item is
@@ -3309,7 +3325,7 @@ Disabled items cannot be selected and are ignored by the default bindings
 when navigating via the keyboard.
 This state can be modified by means of the widget command <b class="cmd">item enabled</b>.</p></dd>
 <dt><b class="const">focus</b></dt>
-<dd><p>This state is set for every item,
+<dd><p>This state is set for every item
 if the treectrl widget currently has the focus.
 It cannot be modified by means of a widget command,
 but is maintained in reaction to the &lt;FocusIn&gt; and &lt;FocusOut&gt; events.</p></dd>
@@ -3327,8 +3343,9 @@ This state can be modified by means of the widget commands
 <dd><p>This state is set for every item included in the selection.
 It can be modified by means of the widget command <b class="cmd">selection</b>.</p></dd>
 </dl>
-<p>By means of the <b class="cmd">state define</b> widget command
-up to 27 additional states can be defined.</p>
+<p>By means of the <b class="cmd">state define</b> widget command,
+up to 27 additional states can be defined.</p></dd>
+</dl>
 </div>
 <div id="section12" class="section"><h2><a name="section12">PER-STATE OPTIONS</a></h2>
 <p>The visual appearance of an item can change depending on the state the item
@@ -3372,25 +3389,49 @@ of the focus.</p>
 <p>A value followed by an empty stateList should always be last since it will be
 chosen regardless of the item's state.</p>
 </div>
-<div id="section13" class="section"><h2><a name="section13">ELEMENTS</a></h2>
-<p>Elements are the smallest building blocks
-which are handled by a treectrl widget.
-One or more elements together can be combined to a style,
-which can be considered as a blueprint for an item.
+<div id="section13" class="section"><h2><a name="section13">ELEMENTS AND STYLES</a></h2>
+<p><em>Elements</em> and <em>styles</em> are the core visual building blocks that
+determine the appearance of items (and optionally column headers).
 An element can be of type <b class="const">bitmap</b>, <b class="const">border</b>, <b class="const">image</b>,
-<b class="const">rect</b>, <b class="const">text</b> or <b class="const">window</b>.
-For each element type there is a section below describing the options
-which can modify an element of that type.</p>
+<b class="const">rect</b>, <b class="const">text</b> or <b class="const">window</b>.  One or more elements can be
+assigned to a style which manages the layout of those elements.  It may be
+helpful to think of an element as a Tk widget and a style as a Tk geometry
+manager such as <b class="cmd">grid</b>, <b class="cmd">pack</b> or <b class="cmd">place</b>.</p>
+<p>When an element is created by the <b class="cmd">element create</b> command, that element is
+referred to as a <em>master</em> element.  Similarly, a style that is created by
+<b class="cmd">style create</b> is called a <em>master</em> style.  When a master style is
+assigned to a column of an item by the <b class="cmd">item style set</b> command, a new
+instance style is allocated
+which refers back to the master style and its master elements.  In this way, a
+single master style may be shared by multiple columns of multiple items.  If a
+master element or master style is modified, those changes affect all the items
+whose instance styles and elements refer to those masters.</p>
+<p>Although you probably want the font and selection-rectangle colors to be shared by all items,
+you most likely don't want the text to be the same for every column of every
+item.  The <b class="cmd">item element configure</b> command can be used to override a
+master element's configuration options for a specific column of an item.  When you call
+<b class="cmd">item element configure</b> (or <b class="cmd">item text</b> or <b class="cmd">item image</b>), a
+new instance element is allocated, if one wasn't already, and that instance
+element's options will override the master element's.</p>
 <p>All of the element configuration options described below are unspecified
 by default, meaning that no value whatsoever has been given to the option.
 It may seem strange to you that a boolean option would be unspecified
 instead of simply &quot;true&quot; or &quot;false&quot;. The reason for this is that when an
-element displayed by an item has no value specified for an option, the element refers
-to the master element created by the <b class="cmd">element create</b> command for a
-value for that option. This allows items which are displaying a certain
-element to be redisplayed when the master element's options change.
-The <b class="cmd">item element configure</b> command can be used to override the
-master element's configuration options for a specific item.</p>
+instance element used by an item has no value specified for an option, that
+instance element refers to the master element for the value of that option.
+This allows items which are displaying a certain element to be redisplayed
+when the master element's options change.  The benefits of this are that you
+don't need to configure the font or text color for every item in a treectrl
+individually, saving CPU cycles and memory.</p>
+<p>You may be thinking that to change the color of a selection rectangle you
+would call <b class="cmd">item element configure</b> when an item was selected, but that
+is not usually the case.  It would be wasteful to allocate a new instance
+element for a selection rectangle just because an item became selected.  The
+solution is to allow the appearance of the selection rectangle master element
+to change based on the selected state of the item.  This is described in
+<span class="sectref"><a href="#section12">PER-STATE OPTIONS</a></span>.</p>
+<p>For each element type there is a section below describing the options
+which can modify an element of that type.</p>
 </div>
 <div id="section14" class="section"><h2><a name="section14">BITMAP ELEMENT</a></h2>
 <p>An element of type <b class="const">bitmap</b> can be used to display a bitmap in an item.
