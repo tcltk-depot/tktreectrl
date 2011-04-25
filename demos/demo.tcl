@@ -1506,10 +1506,10 @@ proc InitDemoList {} {
 	"Random $::RandomN Items, Button Images" DemoRandom2 random.tcl \
 	"Outlook Express (Folders)" DemoOutlookFolders outlook-folders.tcl \
 	"Outlook Express (Newsgroup)" DemoOutlookNewsgroup outlook-newgroup.tcl \
-	"Explorer (Details, WinXP)" DemoExplorerDetails explorer.tcl \
+	"Explorer (Details, Win98)" DemoExplorerDetails explorer.tcl \
 	"Explorer (Details, Win7)" DemoExplorerDetailsWin7 explorer.tcl \
 	"Explorer (List)" DemoExplorerList explorer.tcl \
-	"Explorer (Large icons, WinXP)" DemoExplorerLargeIcons explorer.tcl \
+	"Explorer (Large icons, WinX98)" DemoExplorerLargeIcons explorer.tcl \
 	"Explorer (Large icons, Win7)" DemoExplorerLargeIconsWin7 explorer.tcl \
 	"Explorer (Small icons)" DemoExplorerSmallIcons explorer.tcl \
 	"Internet Options" DemoInternetOptions www-options.tcl \
