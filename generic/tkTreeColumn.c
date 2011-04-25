@@ -2128,7 +2128,8 @@ Column_Alloc(
     }
 #endif
     tree->headerHeight = -1;
-    /* Don't call TreeColumns_InvalidateWidth(tree) */
+    /* Don't call TreeColumns_InvalidateWidth(), it will fail during
+     * Tree_InitColumns(). */
     tree->widthOfColumns = -1;
     tree->widthOfColumnsLeft = tree->widthOfColumnsRight = -1;
     column->id = tree->nextColumnId++;
