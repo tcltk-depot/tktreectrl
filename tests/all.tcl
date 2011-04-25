@@ -44,6 +44,8 @@ puts $chan "Tests began at [eval $timeCmd]"
 
 package require treectrl
 
+#tcltest::matchFiles header*
+
 # source each of the specified tests
 foreach file [lsort [::tcltest::getMatchingFiles]] {
     set tail [file tail $file]
