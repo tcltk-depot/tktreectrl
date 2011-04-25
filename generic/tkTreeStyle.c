@@ -189,6 +189,7 @@ struct Layout
 				* element's -union */
     int unionParent;	/* TRUE if this element is in one or more element's
 			 * -union */
+int margins[4];
 };
 
 #define IS_HIDDEN(L) ((L)->visible == 0)
@@ -619,6 +620,7 @@ Layout_CalcVisibility(
 
 static void
 Layout_AddUnionPadding(
+    TreeCtrl *tree,			/* Widget info. */
     MStyle *masterStyle,		/* Style being layed out. */
     struct Layout layouts[],		/* Layout info for every element. */
     int iElemParent,			/* Whose -union iElem is in. */
@@ -668,16 +670,19 @@ Layout_AddUnionPadding(
     iPadX = layout->iPadX;
     iPadY = layout->iPadY;
 
+TreeElement_GetContentMargins(tree, layout->eLink->elem, layout->margins);
+
     for (i = 0; i < 2; i++) {
-	padX[i] = MAX(totalPadX[i], ePadX[i]) + iPadX[i];
-	padY[i] = MAX(totalPadY[i], ePadY[i]) + iPadY[i];
+	padX[i] = MAX(totalPadX[i], ePadX[i]) + iPadX[i] + layout->margins[i*2];
+	padY[i] = MAX(totalPadY[i], ePadY[i]) + iPadY[i] + layout->margins[i*2+1];
     }
     for (i = 0; i < eLink->onionCount; i++) {
 	struct Layout *layout2 = &layouts[eLink->onion[i]];
 	if (IS_HIDDEN(layout2))
 	    continue;
-	Layout_AddUnionPadding(masterStyle, layouts, iElem, eLink->onion[i],
-	    padX, padY);
+	Layout_AddUnionPadding(tree, masterStyle, layouts, iElem,
+	    eLink->onion[i], padX, padY
+	    );
     }
 }
 
@@ -938,10 +943,17 @@ Layout_CalcUnionLayoutH(
     ePadX = layout->ePadX;
     iPadX = layout->iPadX;
 
+#if 1
+    layout->x = w - layout->margins[0] - iPadX[PAD_TOP_LEFT] - ePadX[PAD_TOP_LEFT];
+    layout->useWidth = layout->margins[0] + (e - w) + layout->margins[2];
+    layout->iWidth = iPadX[PAD_TOP_LEFT] + layout->useWidth + iPadX[PAD_BOTTOM_RIGHT];
+    layout->eWidth = ePadX[PAD_TOP_LEFT] + layout->iWidth + ePadX[PAD_BOTTOM_RIGHT];
+#else
     layout->x = w - iPadX[PAD_TOP_LEFT] - ePadX[PAD_TOP_LEFT];
     layout->useWidth = (e - w);
     layout->iWidth = iPadX[PAD_TOP_LEFT] + layout->useWidth + iPadX[PAD_BOTTOM_RIGHT];
     layout->eWidth = ePadX[PAD_TOP_LEFT] + layout->iWidth + ePadX[PAD_BOTTOM_RIGHT];
+#endif
 
     Layout_ExpandUnionH(drawArgs, masterStyle, layouts, iElem);
 }
@@ -1001,10 +1013,17 @@ Layout_CalcUnionLayoutV(
     ePadY = layout->ePadY;
     iPadY = layout->iPadY;
 
+#if 1
+    layout->y = n - layout->margins[1] - iPadY[PAD_TOP_LEFT] - ePadY[PAD_TOP_LEFT];
+    layout->useHeight = layout->margins[1] + (s - n) + layout->margins[3];
+    layout->iHeight = iPadY[PAD_TOP_LEFT] + layout->useHeight + iPadY[PAD_BOTTOM_RIGHT];
+    layout->eHeight = ePadY[PAD_TOP_LEFT] + layout->iHeight + ePadY[PAD_BOTTOM_RIGHT];
+#else
     layout->y = n - iPadY[PAD_TOP_LEFT] - ePadY[PAD_TOP_LEFT];
     layout->useHeight = (s - n);
     layout->iHeight = iPadY[PAD_TOP_LEFT] + layout->useHeight + iPadY[PAD_BOTTOM_RIGHT];
     layout->eHeight = ePadY[PAD_TOP_LEFT] + layout->iHeight + ePadY[PAD_BOTTOM_RIGHT];
+#endif
 
     Layout_ExpandUnionV(drawArgs, masterStyle, layouts, iElem);
 }
@@ -1237,6 +1256,7 @@ Style_DoLayoutH(
 				 * uninitialized. */
     )
 {
+    TreeCtrl *tree = drawArgs->tree;
     IStyle *style = (IStyle *) drawArgs->style;
     MStyle *masterStyle = style->master;
     MElementLink *eLinks1, *eLink1;
@@ -1304,6 +1324,7 @@ Style_DoLayoutH(
 	    layout->ePadY[j] = eLink1->ePadY[j];
 	    layout->iPadX[j] = eLink1->iPadX[j];
 	    layout->iPadY[j] = eLink1->iPadY[j];
+layout->margins[j] = layout->margins[j+2] = 0;
 
 	    /* No -union padding yet */
 	    layout->uPadX[j] = 0;
@@ -1354,16 +1375,19 @@ Style_DoLayoutH(
 	iPadX = eLink1->iPadX;
 	iPadY = eLink1->iPadY;
 
+TreeElement_GetContentMargins(tree, layout->eLink->elem, layout->margins);
+
 	for (j = 0; j < 2; j++) {
-	    padx[j] = ePadX[j] + iPadX[j];
-	    pady[j] = ePadY[j] + iPadY[j];
+	    padx[j] = ePadX[j] + iPadX[j] + layout->margins[j*2];
+	    pady[j] = ePadY[j] + iPadY[j] + layout->margins[j*2+1];
 	}
 	for (j = 0; j < eLink1->onionCount; j++) {
 	    struct Layout *layout2 = &layouts[eLink1->onion[j]];
 	    if (IS_HIDDEN(layout2))
 		continue;
-	    Layout_AddUnionPadding(masterStyle, layouts, i, eLink1->onion[j],
-		padx, pady);
+	    Layout_AddUnionPadding(tree, masterStyle, layouts, i,
+		eLink1->onion[j], padx, pady
+		);
 	}
     }
 
@@ -1451,7 +1475,8 @@ Style_DoLayoutH(
 	}
     }
 
-    /* Layout elements left-to-right */
+    /* Calculate the horizontal position and size of all non-union, non-detach
+     * elements. */
     for (i = 0; i < eLinkCount; i++) {
 	struct Layout *layout = &layouts[i];
 	int right;
@@ -2585,7 +2610,7 @@ Style_NeededSize(
 	    layout->ePadY[j] = eLink1->ePadY[j];
 	    layout->iPadX[j] = eLink1->iPadX[j];
 	    layout->iPadY[j] = eLink1->iPadY[j];
-
+layout->margins[j] = layout->margins[j+2] = 0;
 	    /* No -union padding yet */
 	    layout->uPadX[j] = 0;
 	    layout->uPadY[j] = 0;
@@ -2611,16 +2636,19 @@ Style_NeededSize(
 	iPadX = eLink1->iPadX;
 	iPadY = eLink1->iPadY;
 
+TreeElement_GetContentMargins(tree, layout->eLink->elem, layout->margins);
+
 	for (j = 0; j < 2; j++) {
-	    padx[j] = ePadX[j] + iPadX[j];
-	    pady[j] = ePadY[j] + iPadY[j];
+	    padx[j] = ePadX[j] + iPadX[j] + layout->margins[j*2];
+	    pady[j] = ePadY[j] + iPadY[j] + layout->margins[j*2+1];
 	}
 	for (j = 0; j < eLink1->onionCount; j++) {
 	    struct Layout *layout2 = &layouts[eLink1->onion[j]];
 	    if (IS_HIDDEN(layout2))
 		continue;
-	    Layout_AddUnionPadding(masterStyle, layouts, i, eLink1->onion[j],
-		padx, pady);
+	    Layout_AddUnionPadding(tree, masterStyle, layouts, i,
+		eLink1->onion[j], padx, pady
+		);
 	}
     }
 
@@ -3036,6 +3064,8 @@ TreeStyle_Draw(
     y = drawArgs->y + tree->drawableYOrigin - tree->yOrigin;
     TreeRect_SetXYWH(bounds, x, y, drawArgs->width, drawArgs->height);
     TreeRect_Intersect(&args.display.bounds, &bounds, &drawArgs->bounds);
+
+args.display.hackWidth = drawArgs->width;
 
     /* We never lay out the style at less than the minimum size */
     if (drawArgs->width < minWidth + drawArgs->indent)

@@ -329,6 +329,13 @@ if 0 {
 	DemoHeaders::ButtonPress1 %x %y
     }
 
+
+demolist header configure 1 3 -image checked -justify r
+demolist header configure 0 1 -justify l
+::TreeCtrl::CreateHeaderStyles $T 0
+::TreeCtrl::CreateHeaderStyles $T 1
+::TreeCtrl::CreateHeaderStyles $T 2
+
     return
 }
 
@@ -562,6 +569,170 @@ proc DemoHeaders::ButtonPress1 {x y} {
     if {$id(where) eq "header" && $id(element) eq "header.check"} {
 	$T header state forcolumn $id(header) $id(column) ~CHECK
 	return -code break
+    }
+    return
+}
+
+# Header options affecting layout:
+# header elem options >> -arrowside -arrowgravity -arrowpadx/y -borderwidth (vertically)
+# text elem options >> -textlines
+# The options above don't require a new style, those below do:
+# -image -bitmap -imagepadx/y -justify -textpadx/y
+
+proc ::TreeCtrl::CreateHeaderStyle {T H C} {
+    variable HeaderStyleParams
+    variable HeaderStyleId
+    incr HeaderStyleId
+    set S treectrl_header_style_$HeaderStyleId
+    set elements {}
+if 0 {
+    $T element create $S.header border -statedomain header \
+	-thickness [$T header cget $H $C -borderwidth] \
+	-background $::SystemButtonFace -relief raised -filled yes
+} else {
+    $T element create $S.header header -statedomain header \
+	-arrowside [$T header cget $H $C -arrowside] \
+	-arrowgravity [$T header cget $H $C -arrowgravity] \
+	-arrowpadx [$T header cget $H $C -arrowpadx] \
+	-arrowpady [$T header cget $H $C -arrowpady] \
+	-borderwidth [$T header cget $H $C -borderwidth]
+}
+    lappend elements $S.header
+    if {[$T header cget $H $C -image] ne ""} {
+	$T element create $S.image image -statedomain header
+	lappend elements $S.image
+    } elseif {[$T header cget $H $C -bitmap] ne ""} {
+	$T element create $S.bitmap bitmap -statedomain header
+	lappend elements $S.bitmap
+    }
+    if {[$T header cget $H $C -text] ne ""} {
+	$T element create $S.text text -statedomain header \
+	    -lines [$T header cget $H $C -textlines]
+	lappend elements $S.text
+    }
+
+    $T style create $S -statedomain header -orient horizontal
+    $T style elements $S $elements
+    if {[llength $elements] > 1} {
+	$T style layout $S $S.header \
+	    -union [lrange $elements 1 end] -iexpand news \
+	    -ipadx 0 -ipady 0
+    } else {
+	$T style layout $S $S.header \
+	    -iexpand xy
+    }
+    if {[$T header cget $H $C -image] ne ""} {
+	$T style layout $S $S.image \
+	    -padx [$T header cget $H $C -imagepadx] \
+	    -pady [$T header cget $H $C -imagepady] \
+	    -expand ns
+	set imgPadRight [$T header cget $H $C -imagepadx]
+    } elseif {[$T header cget $H $C -bitmap] ne ""} {
+	$T style layout $S $S.bitmap \
+	    -padx [$T header cget $H $C -imagepadx] \
+	    -pady [$T header cget $H $C -imagepady] \
+	    -expand ns
+	set imgPadRight [$T header cget $H $C -imagepadx]
+    } else {
+	set imgPadRight 0
+    }
+    if {[$T header cget $H $C -text] ne ""} {
+	if {[llength $imgPadRight] == 2} {
+	    set imgPadRight [lindex $imgPadRight 1]
+	}
+	set textPadX [$T header cget $H $C -textpadx]
+	if {[llength $textPadX] == 1} {
+	    lappend textPadX $textPadX
+	}
+	set textPadLeft [lindex $textPadX 0]
+	set textPadLeft [expr {$textPadLeft - $imgPadRight}]
+	if {$textPadLeft < 0} {
+	    set textPadLeft 0
+	}
+	set textPadX [lreplace $textPadX 0 0 $textPadLeft]
+	$T style layout $S $S.text \
+	    -padx $textPadX \
+	    -pady [$T header cget $H $C -textpady] \
+	    -squeeze x -expand ns
+    }
+    switch [$T header cget $H $C -justify] {
+	left {
+	}
+	center {
+	    if {[$T header cget $H $C -image] ne ""} {
+		$T style layout $S $S.image -center x
+	    } elseif {[$T header cget $H $C -bitmap] ne ""} {
+		$T style layout $S $S.bitmap -center x
+	    }
+	    if {[$T header cget $H $C -text] ne ""} {
+		$T style layout $S $S.text -center x
+	    }
+	}
+	right {
+	    if {[$T header cget $H $C -image] ne ""} {
+		$T style layout $S $S.image -expand wns
+	    } elseif {[$T header cget $H $C -bitmap] ne ""} {
+		$T style layout $S $S.bitmap -expand wns
+	    } elseif {[$T header cget $H $C -text] ne ""} {
+		$T style layout $S $S.text -expand wns
+	    }
+	}
+    }
+    set HeaderStyleParams($S,justify) [$T header cget $H $C -justify]
+    if {[$T header cget $H $C -image] ne ""} {
+	set HeaderStyleParams($S,image) 1
+	set HeaderStyleParams($S,bitmap) 0
+	set HeaderStyleParams($S,imagepadx) [$T header cget $H $C -imagepadx]
+    } elseif {[$T header cget $H $C -bitmap] ne ""} {
+	set HeaderStyleParams($S,image) 0
+	set HeaderStyleParams($S,bitmap) 1
+	set HeaderStyleParams($S,imagepadx) [$T header cget $H $C -imagepadx]
+    } else {
+	set HeaderStyleParams($S,image) 0
+	set HeaderStyleParams($S,bitmap) 0
+    }
+    if {[$T header cget $H $C -text] ne ""} {
+	set HeaderStyleParams($S,text) 1
+	set HeaderStyleParams($S,textpadx) [$T header cget $H $C -textpadx]
+    } else {
+	set HeaderStyleParams($S,text) 0
+    }
+    return $S
+}
+
+proc ::TreeCtrl::CreateHeaderStyles {T H} {
+    variable HeaderStyleParams
+    foreach C [$T column id all] {
+	set image [$T header cget $H $C -image]
+	set bitmap [$T header cget $H $C -bitmap]
+	if {$image ne ""} {
+	    set bitmap ""
+	}
+	set imagepadx  [$T header cget $H $C -imagepadx]
+	set imagepady  [$T header cget $H $C -imagepady]
+	set justify  [$T header cget $H $C -justify]
+	set text [$T header cget $H $C -text]
+	set textpadx  [$T header cget $H $C -textpadx]
+	set textpady  [$T header cget $H $C -textpady]
+	set match ""
+	foreach S [$T style names] {
+	    if {![string match treectrl_header_style* $S]} continue
+	    if {($image ne "") ^ $HeaderStyleParams($S,image)} continue
+	    if {($bitmap ne "") ^ $HeaderStyleParams($S,bitmap)} continue
+	    if {($text ne "") ^ $HeaderStyleParams($S,text)} continue
+	    if {($image ne "") && ([$T style layout $S $S.image -padx] ne $HeaderStyleParams($S,imagepadx))} continue
+	    if {($bitmap ne "") && ([$T style layout $S $S.bitmap -padx] ne $HeaderStyleParams($S,imagepadx))} continue
+	    if {($text ne "") && ([$T style layout $S $S.text -padx] ne $HeaderStyleParams($S,textpadx))} continue
+	    if {$HeaderStyleParams($S,justify) ne $justify} continue
+	    set match $S
+	    break
+	}
+	if {$match eq ""} {
+	    set match [CreateHeaderStyle $T $H $C]
+	}
+	$T header style set $H $C $match
+	$T header text $H $C [$T header cget $H $C -text]
+	$T header image $H $C [$T header cget $H $C -image]
     }
     return
 }

@@ -36,6 +36,7 @@ struct TreeElementArgs
 	int y;
 	int width;
 	int height;
+int hackWidth;
 #define STICKY_W 0x1000 /* These values must match ELF_STICKY_xxx */
 #define STICKY_N 0x2000
 #define STICKY_E 0x4000
@@ -114,6 +115,7 @@ struct TreeElement_
 MODULE_SCOPE TreeElementType treeElemTypeBitmap;
 MODULE_SCOPE TreeElementType treeElemTypeBorder;
 MODULE_SCOPE TreeElementType treeElemTypeCheckButton;
+MODULE_SCOPE TreeElementType treeElemTypeHeader;
 MODULE_SCOPE TreeElementType treeElemTypeImage;
 MODULE_SCOPE TreeElementType treeElemTypeRect;
 MODULE_SCOPE TreeElementType treeElemTypeText;
@@ -136,6 +138,8 @@ MODULE_SCOPE void Tree_ElementIterateChanged(TreeIterate iter_, int mask);
 MODULE_SCOPE void Tree_ElementChangedItself(TreeCtrl *tree, TreeItem item,
     TreeItemColumn column, TreeElement elem, int flags, int mask);
 MODULE_SCOPE int TreeCtrl_RegisterElementType(Tcl_Interp *interp, TreeElementType *newTypePtr);
+MODULE_SCOPE void TreeElement_GetContentMargins(TreeCtrl *tree,
+	TreeElement elem, int margins[4]);
 
 typedef struct TreeCtrlStubs TreeCtrlStubs;
 struct TreeCtrlStubs

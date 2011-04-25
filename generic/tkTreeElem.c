@@ -1619,6 +1619,678 @@ TreeElementType treeElemTypeCheckButton = {
 
 /*****/
 
+typedef struct ElementHeader ElementHeader;
+
+struct ElementHeader
+{
+    TreeElement_ header; /* Must be first */
+    PerStateInfo border;	/* -background */
+    PerStateInfo relief;	/* -relief */
+    int borderWidth;		/* -borderwidth */
+    Tcl_Obj *borderWidthObj;	/* -borderwidth */
+    PerStateInfo arrowBitmap;	/* -arrowbitmap */
+    PerStateInfo arrowImage;	/* -arrowimage */
+    Tcl_Obj *arrowPadXObj;	/* -arrowpadx */
+    int *arrowPadX;		/* -arrowpadx */
+    Tcl_Obj *arrowPadYObj;	/* -arrowpady */
+    int *arrowPadY;		/* -arrowpady */
+    int arrow;			/* -arrow */
+#define SIDE_LEFT 0
+#define SIDE_RIGHT 1
+    int arrowSide;		/* -arrowside */
+    int arrowGravity;		/* -arrowgravity */
+    int state;			/* -state */
+};
+
+static CONST char *headerStateST[] = { "normal", "active", "pressed", (char *) NULL };
+static CONST char *headerArrowST[] = { "none", "up", "down", (char *) NULL };
+static CONST char *headerArrowSideST[] = { "left", "right", (char *) NULL };
+
+#define HEADER_CONF_SIZE 0x0001
+#define HEADER_CONF_DISPLAY 0x0002
+
+static Tk_OptionSpec headerOptionSpecs[] = {
+    {TK_OPTION_CUSTOM, "-arrow", (char *) NULL, (char *) NULL,
+     (char *) NULL, -1, Tk_Offset(ElementHeader, arrow), TK_OPTION_NULL_OK,
+     (ClientData) NULL, HEADER_CONF_DISPLAY | HEADER_CONF_SIZE},
+    {TK_OPTION_CUSTOM, "-arrowbitmap", (char *) NULL, (char *) NULL,
+     (char *) NULL,
+     Tk_Offset(ElementHeader, arrowBitmap.obj), Tk_Offset(ElementHeader, arrowBitmap),
+     TK_OPTION_NULL_OK, (ClientData) NULL, HEADER_CONF_DISPLAY | HEADER_CONF_SIZE},
+    {TK_OPTION_CUSTOM, "-arrowgravity", (char *) NULL, (char *) NULL,
+     (char *) NULL, -1, Tk_Offset(ElementHeader, arrowGravity), TK_OPTION_NULL_OK,
+     (ClientData) NULL, HEADER_CONF_DISPLAY | HEADER_CONF_SIZE},
+    {TK_OPTION_CUSTOM, "-arrowimage", (char *) NULL, (char *) NULL,
+     (char *) NULL,
+     Tk_Offset(ElementHeader, arrowImage.obj), Tk_Offset(ElementHeader, arrowImage),
+     TK_OPTION_NULL_OK, (ClientData) NULL, HEADER_CONF_DISPLAY | HEADER_CONF_SIZE},
+    {TK_OPTION_CUSTOM, "-arrowpadx", (char *) NULL, (char *) NULL,
+     (char *) NULL, Tk_Offset(ElementHeader, arrowPadXObj), Tk_Offset(ElementHeader, arrowPadX),
+     TK_OPTION_NULL_OK, (ClientData) &TreeCtrlCO_pad, HEADER_CONF_DISPLAY | HEADER_CONF_SIZE},
+    {TK_OPTION_CUSTOM, "-arrowpady", (char *) NULL, (char *) NULL,
+     (char *) NULL, Tk_Offset(ElementHeader, arrowPadYObj), Tk_Offset(ElementHeader, arrowPadY),
+     TK_OPTION_NULL_OK, (ClientData) &TreeCtrlCO_pad, HEADER_CONF_DISPLAY | HEADER_CONF_SIZE},
+    {TK_OPTION_CUSTOM, "-arrowside", (char *) NULL, (char *) NULL,
+     (char *) NULL, -1, Tk_Offset(ElementHeader, arrowSide), TK_OPTION_NULL_OK,
+     (ClientData) NULL, HEADER_CONF_DISPLAY | HEADER_CONF_SIZE},
+    {TK_OPTION_CUSTOM, "-background", (char *) NULL, (char *) NULL,
+     (char *) NULL,
+     Tk_Offset(ElementHeader, border.obj), Tk_Offset(ElementHeader, border),
+     TK_OPTION_NULL_OK, (ClientData) NULL, HEADER_CONF_DISPLAY},
+    {TK_OPTION_PIXELS, "-borderwidth", (char *) NULL, (char *) NULL,
+     (char *) NULL, Tk_Offset(ElementHeader, borderWidthObj),
+     Tk_Offset(ElementHeader, borderWidth),
+     TK_OPTION_NULL_OK, (ClientData) NULL, HEADER_CONF_SIZE | HEADER_CONF_DISPLAY},
+    {TK_OPTION_CUSTOM, "-relief", (char *) NULL, (char *) NULL,
+     (char *) NULL,
+     Tk_Offset(ElementHeader, relief.obj), Tk_Offset(ElementHeader, relief),
+     TK_OPTION_NULL_OK, (ClientData) NULL, HEADER_CONF_DISPLAY},
+    {TK_OPTION_CUSTOM, "-state", (char *) NULL, (char *) NULL,
+     (char *) NULL, -1, Tk_Offset(ElementHeader, state), TK_OPTION_NULL_OK,
+     (ClientData) NULL, HEADER_CONF_DISPLAY},
+    {TK_OPTION_END, (char *) NULL, (char *) NULL, (char *) NULL,
+     (char *) NULL, 0, -1, 0, (ClientData) NULL, 0}
+};
+
+static void DeleteProcHeader(TreeElementArgs *args)
+{
+/*    TreeCtrl *tree = args->tree;
+    TreeElement elem = args->elem;
+    ElementHeader *elemX = (ElementHeader *) elem;*/
+}
+
+static int WorldChangedProcHeader(TreeElementArgs *args)
+{
+    int flagM = args->change.flagMaster;
+    int flagS = args->change.flagSelf;
+    int mask = 0;
+
+    if ((flagS | flagM) & HEADER_CONF_SIZE)
+	mask |= CS_DISPLAY | CS_LAYOUT;
+    else if ((flagS | flagM) & HEADER_CONF_DISPLAY)
+	mask |= CS_DISPLAY;
+
+    return mask;
+}
+
+static int ConfigProcHeader(TreeElementArgs *args)
+{
+    TreeCtrl *tree = args->tree;
+    TreeElement elem = args->elem;
+    ElementHeader *elemX = (ElementHeader *) elem;
+    Tk_SavedOptions savedOptions;
+    int error;
+    Tcl_Obj *errorResult = NULL;
+
+    for (error = 0; error <= 1; error++) {
+	if (error == 0) {
+	    if (Tk_SetOptions(tree->interp, (char *) elemX,
+			elem->typePtr->optionTable,
+			args->config.objc, args->config.objv, tree->tkwin,
+			&savedOptions, &args->config.flagSelf) != TCL_OK) {
+		args->config.flagSelf = 0;
+		continue;
+	    }
+
+	    Tk_FreeSavedOptions(&savedOptions);
+	    break;
+	} else {
+	    errorResult = Tcl_GetObjResult(tree->interp);
+	    Tcl_IncrRefCount(errorResult);
+	    Tk_RestoreSavedOptions(&savedOptions);
+
+	    Tcl_SetObjResult(tree->interp, errorResult);
+	    Tcl_DecrRefCount(errorResult);
+	    return TCL_ERROR;
+	}
+    }
+
+    return TCL_OK;
+}
+
+static int CreateProcHeader(TreeElementArgs *args)
+{
+    TreeElement elem = args->elem;
+    ElementHeader *elemX = (ElementHeader *) elem;
+
+    elemX->arrow = -1;
+    elemX->arrowGravity = -1;
+    elemX->arrowSide = -1;
+    elemX->state = -1;
+
+    return TCL_OK;
+}
+
+static int
+HeaderStateToMask(
+    ElementHeader *elemX
+    )
+{
+    ElementHeader *masterX = (ElementHeader *) elemX->header.master;
+    int elemState = 0x01, columnState = COLUMN_STATE_NORMAL;
+
+    if (elemX->state != -1)
+	columnState = elemX->state;
+    else if (masterX != NULL && masterX->state != -1)
+	columnState = masterX->state;
+
+    if (columnState == COLUMN_STATE_ACTIVE)
+	elemState = 0x02;
+    else if (columnState == COLUMN_STATE_PRESSED)
+	elemState = 0x04;
+
+    return elemState;
+}
+
+struct HeaderParams
+{
+    int state;
+    int arrow;
+    int borderWidth;
+    int margins[4]; /* content margins, not including arrow */
+};
+
+static void
+HeaderGetParams(
+    TreeCtrl *tree,
+    ElementHeader *elemX,
+    struct HeaderParams *params
+    )
+{
+    ElementHeader *masterX = (ElementHeader *) elemX->header.master;
+
+    if (elemX->state != -1)
+	params->state = elemX->state;
+    else if (masterX != NULL && masterX->state != -1)
+	params->state = masterX->state;
+    else
+	params->state = COLUMN_STATE_NORMAL;
+
+    if (elemX->arrow != -1)
+	params->arrow = elemX->arrow;
+    else if (masterX != NULL && masterX->arrow != -1)
+	params->arrow = masterX->arrow;
+    else
+	params->arrow = COLUMN_ARROW_NONE;
+
+    if (elemX->borderWidthObj)
+	params->borderWidth = elemX->borderWidth;
+    else if ((masterX != NULL) && (masterX->borderWidthObj != NULL))
+	params->borderWidth = masterX->borderWidth;
+    else
+	params->borderWidth = 2; /* Column header -borderwidth defaults to 2. */
+    if (params->borderWidth < 0)
+	params->borderWidth = 2;
+
+    if (tree->useTheme &&
+	    (TreeTheme_GetHeaderContentMargins(tree, params->state,
+	    params->arrow, params->margins) == TCL_OK)) {
+#ifdef WIN32
+	/* I'm hacking these margins since the default XP theme does not give
+	 * reasonable ContentMargins for HP_HEADERITEM */
+	int bw = MAX(params->borderWidth, 3);
+	params->margins[1] = MAX(params->margins[1], bw);
+	params->margins[3] = MAX(params->margins[3], bw);
+#endif /* WIN32 */
+    } else {
+	params->margins[0] = params->margins[2] = 0;
+	params->margins[1] = params->margins[3] = params->borderWidth;
+    }
+}
+
+struct ArrowLayout {
+    int arrow;
+    int arrowSide;
+    int x;
+    int y;
+    int width;
+    int height;
+    int padX[2];
+    int padY[2];
+};
+
+static void
+HeaderLayoutArrow(
+    TreeCtrl *tree,
+    ElementHeader *elemX,
+    struct HeaderParams *params,
+    int x, int y, int width, int height, /* bounds of whole element */
+    struct ArrowLayout *layout
+    )
+{
+    ElementHeader *masterX = (ElementHeader *) elemX->header.master;
+    int state = HeaderStateToMask(elemX);
+    int arrowSide, arrowWidth = -1, arrowHeight;
+    Tk_Image image;
+    Pixmap bitmap;
+    int defPadX[2] = {6, 6}, defPadY[2] = {0, 0}, *arrowPadX, *arrowPadY;
+    int match, match2;
+#ifdef MAC_OSX_TK
+    int margins[4];
+#endif
+
+    layout->arrow = params->arrow;
+    if (layout->arrow == COLUMN_ARROW_NONE) {
+	return;
+    }
+
+    arrowSide = elemX->arrowSide;
+    if (arrowSide == -1 && masterX != NULL)
+	arrowSide = masterX->arrowSide;
+
+    arrowPadX = elemX->arrowPadX;
+    if (arrowPadX == NULL && masterX != NULL) {
+	arrowPadX = masterX->arrowPadX;
+    }
+    if (arrowPadX == NULL) {
+	arrowPadX = defPadX;
+    }
+
+    arrowPadY = elemX->arrowPadY;
+    if (arrowPadY == NULL && masterX != NULL) {
+	arrowPadY = masterX->arrowPadY;
+    }
+    if (arrowPadY == NULL) {
+	arrowPadY = defPadY;
+    }
+
+#ifdef MAC_OSX_TK
+    if (tree->useTheme && TreeTheme_GetHeaderContentMargins(tree,
+	    params->state, params->arrow, margins) == TCL_OK) {
+	arrowSide = SIDE_RIGHT;
+	arrowWidth = margins[2];
+	arrowHeight = 1; /* bogus value */
+	defPadX[PAD_TOP_LEFT] = arrowPadX[PAD_TOP_LEFT];
+	defPadX[PAD_BOTTOM_RIGHT] = 0;
+	arrowPadX = defPadX;
+    }
+#endif
+
+    if (arrowWidth == -1) {
+	IMAGE_FOR_STATE(image, arrowImage, state);
+	if (image != NULL) {
+	    Tk_SizeOfImage(image, &arrowWidth, &arrowHeight);
+	}
+    }
+
+    if (arrowWidth == -1) {
+	BITMAP_FOR_STATE(bitmap, arrowBitmap, state);
+	if (bitmap != None) {
+	    Tk_SizeOfBitmap(tree->display, bitmap, &arrowWidth, &arrowHeight);
+	}
+    }
+
+    if ((arrowWidth == -1) && tree->useTheme &&
+	    TreeTheme_GetArrowSize(tree, Tk_WindowId(tree->tkwin),
+	    params->arrow == COLUMN_ARROW_UP, &arrowWidth, &arrowHeight) == TCL_OK) {
+    }
+
+    if (arrowWidth == -1) {
+	arrowWidth = 9; /* FIXME: -sortarrowwidth */
+	arrowHeight = arrowWidth;
+    }
+
+    if (arrowSide == SIDE_LEFT) {
+	layout->x = x + arrowPadX[PAD_TOP_LEFT];
+    } else {
+	layout->x = x + width - arrowPadX[PAD_BOTTOM_RIGHT] - arrowWidth;
+layout->x = MAX(layout->x, x + arrowPadX[PAD_TOP_LEFT]); /* hackWidth */
+    }
+    layout->width = arrowWidth;
+
+    layout->y = y + (height - (arrowHeight + arrowPadY[PAD_TOP_LEFT] +
+	arrowPadY[PAD_BOTTOM_RIGHT])) / 2 + arrowPadY[PAD_TOP_LEFT];
+    layout->height = arrowHeight;
+
+    layout->arrowSide = arrowSide;
+    layout->padX[0] = arrowPadX[0];
+    layout->padX[1] = arrowPadX[1];
+    layout->padY[0] = arrowPadY[0];
+    layout->padY[1] = arrowPadY[1];
+}
+
+static void
+HeaderDrawArrow(
+    TreeElementArgs *args,
+    struct HeaderParams *params,
+    int x, int y, int width, int height /* bounds of whole element */
+    )
+{
+    TreeCtrl *tree = args->tree;
+    TreeElement elem = args->elem;
+    ElementHeader *elemX = (ElementHeader *) elem;
+    ElementHeader *masterX = (ElementHeader *) elem->master;
+    Tk_Image image;
+    Pixmap bitmap;
+    Tk_3DBorder border;
+    int state = HeaderStateToMask(elemX);
+    int sunken = (state & 0x04) != 0;
+    struct ArrowLayout layout;
+    int match, match2;
+
+    HeaderLayoutArrow(tree, elemX, params, x, y, width, height, &layout);
+    if (layout.arrow == COLUMN_ARROW_NONE)
+	return;
+
+    IMAGE_FOR_STATE(image, arrowImage, state);
+    if (image != NULL) {
+	Tree_RedrawImage(image, 0, 0, layout.width, layout.height,
+	    args->display.td,
+	    layout.x + sunken,
+	    layout.y + sunken);
+	return;
+    }
+
+    BITMAP_FOR_STATE(bitmap, arrowBitmap, state);
+    if (bitmap != None) {
+	int bx, by;
+	bx = layout.x + sunken;
+	by = layout.y + sunken;
+	Tree_DrawBitmap(tree, bitmap, args->display.drawable, NULL, NULL,
+		0, 0,
+		(unsigned int) layout.width, (unsigned int) layout.height,
+		bx, by);
+	return;
+    }
+
+    if (tree->useTheme) {
+	if (TreeTheme_DrawHeaderArrow(tree, args->display.td, params->state,
+	    layout.arrow == COLUMN_ARROW_UP, layout.x + sunken,
+	    layout.y + sunken,
+	    layout.width, layout.height) == TCL_OK)
+	    return;
+    }
+
+    if (1) {
+	int arrowWidth = layout.width;
+	int arrowHeight = layout.height;
+	int arrowBottom = layout.y + arrowHeight;
+	XPoint points[5];
+	int color1 = 0, color2 = 0;
+	int i;
+
+	switch (layout.arrow) {
+	    case COLUMN_ARROW_UP:
+		points[0].x = layout.x;
+		points[0].y = arrowBottom - 1;
+		points[1].x = layout.x + arrowWidth / 2;
+		points[1].y = layout.y - 1;
+		color1 = TK_3D_DARK_GC;
+		points[4].x = layout.x + arrowWidth / 2;
+		points[4].y = layout.y - 1;
+		points[3].x = layout.x + arrowWidth - 1;
+		points[3].y = arrowBottom - 1;
+		points[2].x = layout.x;
+		points[2].y = arrowBottom - 1;
+		color2 = TK_3D_LIGHT_GC;
+		break;
+	    case COLUMN_ARROW_DOWN:
+		points[0].x = layout.x + arrowWidth - 1;
+		points[0].y = layout.y;
+		points[1].x = layout.x + arrowWidth / 2;
+		points[1].y = arrowBottom;
+		color1 = TK_3D_LIGHT_GC;
+		points[2].x = layout.x + arrowWidth - 1;
+		points[2].y = layout.y;
+		points[3].x = layout.x;
+		points[3].y = layout.y;
+		points[4].x = layout.x + arrowWidth / 2;
+		points[4].y = arrowBottom;
+		color2 = TK_3D_DARK_GC;
+		break;
+	}
+	for (i = 0; i < 5; i++) {
+	    points[i].x += sunken;
+	    points[i].y += sunken;
+	}
+
+	BORDER_FOR_STATE(border, border, state)
+	if (border == NULL) {
+	    Tk_Uid colorName = Tk_GetUid(DEF_BUTTON_BG_COLOR);
+	    if (state & 0x02 /*columnState == COLUMN_STATE_ACTIVE*/)
+		colorName = Tk_GetUid(DEF_BUTTON_ACTIVE_BG_COLOR);
+	    border = Tk_Get3DBorder(tree->interp, tree->tkwin,
+		colorName); /* FIXME: cache it! */
+	    if (border == NULL)
+		border = tree->border;
+	}
+	XDrawLines(tree->display, args->display.drawable,
+		Tk_3DBorderGC(tree->tkwin, border, color2),
+		points + 2, 3, CoordModeOrigin);
+	XDrawLines(tree->display, args->display.drawable,
+		Tk_3DBorderGC(tree->tkwin, border, color1),
+		points, 2, CoordModeOrigin);
+    }
+}
+
+static void DisplayProcHeader(TreeElementArgs *args)
+{
+    TreeCtrl *tree = args->tree;
+    TreeElement elem = args->elem;
+    ElementHeader *elemX = (ElementHeader *) elem;
+    ElementHeader *masterX = (ElementHeader *) elem->master;
+/*    int state = args->state;*/
+    int x = args->display.x, y = args->display.y;
+    int width = args->display.width, height = args->display.height;
+    Tk_3DBorder border, borderDefault = NULL;
+    int relief;
+    int match, match2;
+    int elemState = 0x01;
+    struct HeaderParams params;
+
+#ifdef MAC_OSX_TK
+    if (args->tree->useTheme &&
+	    TreeTheme_GetHeaderFixedHeight(args->tree, &height) == TCL_OK) {
+	/* nothing */
+    }
+#endif
+
+    AdjustForSticky(args->display.sticky,
+	args->display.width, args->display.height,
+	TRUE, TRUE,
+	&x, &y, &width, &height);
+
+    /* hackWidth is the actual width of the column.  We want the
+     * right side of the header to match the right side of the column
+     * and not be clipped when the column width is less than the needed
+     * width of the style. */
+    width = MIN(width, args->display.hackWidth);
+
+    HeaderGetParams(tree, elemX, &params);
+
+    if (tree->useTheme && TreeTheme_DrawHeaderItem(tree, args->display.td,
+	    params.state, params.arrow, 0, x, y, width, height)
+	    == TCL_OK) {
+
+#if !defined(MAC_OSX_TK)
+	/* Under Aqua, we let the Appearance Manager draw the sort arrow. */
+	HeaderDrawArrow(args, &params, x, y, width, height);
+#endif
+	return;
+    }
+
+    if (params.state == COLUMN_STATE_ACTIVE)
+	elemState = 0x02;
+    else if (params.state == COLUMN_STATE_PRESSED)
+	elemState = 0x04;
+
+    BORDER_FOR_STATE(border, border, elemState)
+    if (border == NULL) {
+	Tk_Uid colorName = Tk_GetUid(DEF_BUTTON_BG_COLOR);
+	if (params.state != COLUMN_STATE_NORMAL)
+	    colorName = Tk_GetUid(DEF_BUTTON_ACTIVE_BG_COLOR);
+	borderDefault = Tk_Get3DBorder(tree->interp, tree->tkwin,
+	    colorName); /* FIXME: cache it! */
+	if (borderDefault == NULL)
+	    return;
+	border = borderDefault;
+    }
+
+    RELIEF_FOR_STATE(relief, relief, elemState)
+    if (relief == TK_RELIEF_NULL)
+	relief = (params.state == COLUMN_STATE_PRESSED) ? TK_RELIEF_SUNKEN : TK_RELIEF_RAISED;
+
+    Tk_Fill3DRectangle(tree->tkwin, args->display.drawable, border,
+	    x, y, width, height, params.borderWidth, relief);
+
+    if (borderDefault != NULL)
+	Tk_Free3DBorder(borderDefault);
+
+    HeaderDrawArrow(args, &params, x, y, width, height);
+}
+
+static void NeededProcHeader(TreeElementArgs *args)
+{
+    TreeCtrl *tree = args->tree;
+    TreeElement elem = args->elem;
+    ElementHeader *elemX = (ElementHeader *) elem;
+/*    ElementHeader *masterX = (ElementHeader *) elem->master;*/
+    struct HeaderParams params;
+    struct ArrowLayout layout;
+    TreeRectangle bounds = {0, 0, 100, 24};
+    int width = 0, height = 0, fixedHeight = -1;
+
+#ifdef MAC_OSX_TK
+    if (args->tree->useTheme &&
+	    TreeTheme_GetHeaderFixedHeight(tree, &fixedHeight) == TCL_OK) {
+	/* nothing */
+    }
+#endif
+    HeaderGetParams(tree, elemX, &params);
+
+    HeaderLayoutArrow(tree, elemX, &params, TreeRect_Left(bounds),
+	TreeRect_Top(bounds), TreeRect_Width(bounds),
+	TreeRect_Height(bounds), &layout);
+
+    if (layout.arrow != COLUMN_ARROW_NONE) {
+	width = layout.padX[0] + layout.width + layout.padX[1];
+	height = layout.padY[0] + layout.height + layout.padY[1];
+    }
+
+#if 0
+     /* Original header code never considered borderWidth or
+      * TreeTheme_GetHeaderContentMargins when calculating needed width. */
+    width += params.margins[0] + params.margins[1];
+#endif
+    height += params.margins[1] + params.margins[3];
+
+    args->needed.width = width;
+    args->needed.height = (fixedHeight > 0) ? fixedHeight : height;
+}
+
+static int StateProcHeader(TreeElementArgs *args)
+{
+    /* The per-state options are not affected by changes to the item's state,
+     * only the element's -state option. */
+    return 0;
+}
+
+static int UndefProcHeader(TreeElementArgs *args)
+{
+    /* The per-state options are not affected by changes to the item's state,
+     * only the element's -state option. */
+    return 0;
+}
+
+static int ActualProcHeader(TreeElementArgs *args)
+{
+    TreeCtrl *tree = args->tree;
+    ElementHeader *elemX = (ElementHeader *) args->elem;
+    ElementHeader *masterX = (ElementHeader *) args->elem->master;
+    static CONST char *optionName[] = {
+	"-background",
+	"-relief",
+	(char *) NULL };
+    int index, match, matchM;
+    Tcl_Obj *obj = NULL;
+    int elemState = 0x01, columnState = COLUMN_STATE_NORMAL;
+
+    if (Tcl_GetIndexFromObj(tree->interp, args->actual.obj, optionName,
+		"option", 0, &index) != TCL_OK)
+	return TCL_ERROR;
+
+    /* The per-state options are not affected by changes to the item's state,
+     * only the element's -state option. */
+    if (elemX->state != -1)
+	columnState = elemX->state;
+    else if (masterX != NULL && masterX->state != -1)
+	columnState = masterX->state;
+
+    if (columnState == COLUMN_STATE_ACTIVE)
+	elemState = 0x02;
+    else if (columnState == COLUMN_STATE_PRESSED)
+	elemState = 0x04;
+
+    switch (index) {
+	case 0: {
+	    OBJECT_FOR_STATE(obj, pstBorder, border, elemState)
+	    break;
+	}
+	case 1: {
+	    OBJECT_FOR_STATE(obj, pstRelief, relief, elemState)
+	    break;
+	}
+    }
+    if (obj != NULL)
+	Tcl_SetObjResult(tree->interp, obj);
+    return TCL_OK;
+}
+
+TreeElementType treeElemTypeHeader = {
+    "header",
+    sizeof(ElementHeader),
+    headerOptionSpecs,
+    NULL,
+    CreateProcHeader,
+    DeleteProcHeader,
+    ConfigProcHeader,
+    DisplayProcHeader,
+    NeededProcHeader,
+    NULL, /* heightProc */
+    WorldChangedProcHeader,
+    StateProcHeader,
+    UndefProcHeader,
+    ActualProcHeader,
+    NULL /* onScreenProc */
+};
+
+void
+TreeElement_GetContentMargins(
+    TreeCtrl *tree,
+    TreeElement elem,
+    int margins[4]
+    )
+{
+    margins[0] = margins[1] = margins[2] = margins[3] = 0;
+
+    if (ELEMENT_TYPE_MATCHES(elem->typePtr, &treeElemTypeHeader)) {
+	ElementHeader *elemX = (ElementHeader *) elem;
+	struct HeaderParams params;
+	struct ArrowLayout layout;
+	TreeRectangle bounds = {0, 0, 100, 24};
+
+	HeaderGetParams(tree, elemX, &params);
+
+	margins[1] = params.margins[1];
+	margins[3] = params.margins[3];
+
+	if (params.arrow == COLUMN_ARROW_NONE)
+	    return;
+
+	HeaderLayoutArrow(tree, elemX, &params, TreeRect_Left(bounds),
+	    TreeRect_Top(bounds), TreeRect_Width(bounds),
+	    TreeRect_Height(bounds), &layout);
+
+	if (layout.arrowSide == SIDE_LEFT) {
+	    margins[0] = layout.x + layout.width + layout.padX[PAD_BOTTOM_RIGHT] - TreeRect_Left(bounds);
+	} else {
+	    margins[2] = TreeRect_Right(bounds) - (layout.x - layout.padX[PAD_TOP_LEFT]);
+	}
+    }
+}
+
+/*****/
+
 typedef struct ElementImage ElementImage;
 
 struct ElementImage
@@ -4510,6 +5182,25 @@ int TreeElement_Init(Tcl_Interp *interp)
 	&pstRelief, TreeStateFromObj);
 
     /*
+     * header
+     */
+    StringTableCO_Init(treeElemTypeHeader.optionSpecs, "-arrow",
+	headerArrowST);
+    PerStateCO_Init(treeElemTypeHeader.optionSpecs, "-arrowbitmap",
+	&pstBitmap, TreeStateFromObj);
+    StringTableCO_Init(treeElemTypeHeader.optionSpecs, "-arrowgravity",
+	headerArrowSideST);
+    PerStateCO_Init(treeElemTypeHeader.optionSpecs, "-arrowimage",
+	&pstImage, TreeStateFromObj);
+    StringTableCO_Init(treeElemTypeHeader.optionSpecs, "-arrowside",
+	headerArrowSideST);
+    PerStateCO_Init(treeElemTypeHeader.optionSpecs, "-background",
+	&pstBorder, TreeStateFromObj);
+    PerStateCO_Init(treeElemTypeHeader.optionSpecs, "-relief",
+	&pstRelief, TreeStateFromObj);
+    StringTableCO_Init(treeElemTypeHeader.optionSpecs, "-state", headerStateST);
+
+    /*
      * image
      */
 #ifdef DEPRECATED
@@ -4667,6 +5358,7 @@ int TreeElement_Init(Tcl_Interp *interp)
     TreeCtrl_RegisterElementType(interp, &treeElemTypeBitmap);
     TreeCtrl_RegisterElementType(interp, &treeElemTypeBorder);
 /*    TreeCtrl_RegisterElementType(interp, &treeElemTypeCheckButton);*/
+    TreeCtrl_RegisterElementType(interp, &treeElemTypeHeader);
     TreeCtrl_RegisterElementType(interp, &treeElemTypeImage);
     TreeCtrl_RegisterElementType(interp, &treeElemTypeRect);
     TreeCtrl_RegisterElementType(interp, &treeElemTypeText);
