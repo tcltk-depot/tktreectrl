@@ -7102,6 +7102,33 @@ SetBuffering(
     }
 }
 
+#if 0
+struct ExposeRestrictClientData {
+    TreeCtrl *tree;
+    unsigned long serial;
+};
+static Tk_RestrictAction
+ExposeRestrictProc(
+    ClientData clientData,
+    XEvent *eventPtr
+    )
+{
+    struct ExposeRestrictClientData *cd = clientData;
+    TreeCtrl *tree = cd->tree;
+dbwin("ExposeRestrictProc type=%d", eventPtr->type);
+    if ((eventPtr->type == Expose) &&
+	    (eventPtr->xexpose.window == Tk_WindowId(tree->tkwin)) &&
+	    (eventPtr->xany.serial == cd->serial)) {
+	int x = eventPtr->xexpose.x, y = eventPtr->xexpose.y;
+	int w = eventPtr->xexpose.width, h = eventPtr->xexpose.height;
+	if (w > 0 && h > 0)
+	    DblBufWinDirty(tree, x, y, x + w, y + h); /* FIXME: DINFO_DRAW_BORDERS */
+	return TK_DISCARD_EVENT;
+    }
+    return TK_DEFER_EVENT;
+}
+#endif
+
 /*
  *--------------------------------------------------------------
  *
@@ -7653,6 +7680,27 @@ UpdateDItemsForHeaders(tree, dInfo->dItemHeader, tree->headerItems);
 
     if (tree->debug.enable && tree->debug.display)
 	dbwin("copy %d draw %d %s\n", numCopy, numDraw, Tk_PathName(tkwin));
+
+#if 0
+    /* Eat <Expose> events caused by embedded windows during scrolling. */
+    if ((tree->doubleBuffer == DOUBLEBUFFER_WINDOW) && (didScrollX || didScrollY)) {
+	ClientData oldArg;
+	Tk_RestrictProc *oldProc;
+	struct ExposeRestrictClientData cd;
+	int oldMode;
+
+while (Tcl_DoOneEvent(TCL_IDLE_EVENTS|TCL_DONT_WAIT)) {};
+oldMode = Tcl_SetServiceMode(TCL_SERVICE_ALL);
+	cd.tree = tree;
+	cd.serial = LastKnownRequestProcessed(tree->display);
+	TkpSync(tree->display);
+	oldProc = Tk_RestrictEvents(ExposeRestrictProc, &cd, &oldArg);
+	while (Tcl_ServiceEvent(TCL_WINDOW_EVENTS)) {}
+	Tk_RestrictEvents(oldProc, oldArg, &oldArg);
+/*	while (Tcl_DoOneEvent(TCL_IDLE_EVENTS|TCL_DONT_WAIT)) {}*/
+Tcl_SetServiceMode(oldMode);
+    }
+#endif
 
 #if 0 && REDRAW_RGN == 1
     tree->drawableXOrigin = tree->xOrigin;
