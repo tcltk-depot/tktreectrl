@@ -8881,6 +8881,9 @@ Tree_InvalidateItemDInfo(
 		    left -= tree->canvasPadX[PAD_TOP_LEFT]; /* canvas -> item coords */
 	    }
 
+if (column == tree->columnTail)
+    width = area->width - dColumn->offset;
+else
 	    /* If only one column is visible, the width may be
 	    * different than the column width. */
 	    if ((TreeColumn_Lock(column) == COLUMN_LOCK_NONE) &&
