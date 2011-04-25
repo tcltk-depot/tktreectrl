@@ -1145,18 +1145,11 @@ proc ::TreeCtrl::Release1 {w x y} {
 	    set column [$w header dragcget -indicatorcolumn]
 	    $w header dragconfigure -imagecolumn "" -indicatorcolumn ""
 	    if {$visible && ($column ne "")} {
-		set side [$w header dragcget -indicatorside]
 		# If dragging to the right, drop after the last column in the
 		# span of the indicator column.
 		if {[$w column order $Priv(column)] < [$w column order $column]} {
 		    set span [$w header dragcget -indicatorspan]
 		    set column [$w column id "$column span $span next"]
-if 0 {
-		    # span could be > last column in this -lock group
-		    set span [$w header dragcget -indicatorspan]
-		    set lastInSpan [expr {[$w column order $column] + $span - 1}]
-		    set column [$w column id "order $lastInSpan next"]
-}
 		}
 		set lock [$w column cget $Priv(column) -lock]
 		if {$column eq "" || [$w column compare $column > "last lock $lock next"]} {
@@ -1733,7 +1726,6 @@ proc ::TreeCtrl::Cancel w {
 	set first $last
 	set last $tmp
     }
-if 1 {
     set select {}
     set deselect {}
     foreach item [$w item id "range $first $last visible"] {
@@ -1744,15 +1736,6 @@ if 1 {
 	}
     }
     $w selection modify $select $deselect
-} else {
-    $w selection clear $first $last
-    while {[$w item compare $first <= $last]} {
-	if {[lsearch $Priv(selection) $first] >= 0} {
-	    $w selection add $first
-	}
-	set first [$w item id "$first next visible"]
-    }
-}
     return
 }
 
