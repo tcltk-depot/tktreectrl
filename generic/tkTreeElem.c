@@ -1701,11 +1701,14 @@ static void DeleteProcHeader(TreeElementArgs *args)
 
 static int WorldChangedProcHeader(TreeElementArgs *args)
 {
+    int flagT = args->change.flagTree;
     int flagM = args->change.flagMaster;
     int flagS = args->change.flagSelf;
     int mask = 0;
 
-    if ((flagS | flagM) & HEADER_CONF_SIZE)
+    if (flagT & TREE_CONF_THEME)
+	mask |= CS_DISPLAY | CS_LAYOUT;
+    else if ((flagS | flagM) & HEADER_CONF_SIZE)
 	mask |= CS_DISPLAY | CS_LAYOUT;
     else if ((flagS | flagM) & HEADER_CONF_DISPLAY)
 	mask |= CS_DISPLAY;
