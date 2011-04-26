@@ -468,24 +468,37 @@ TreeHeaderColumn_ConfigureHeaderStyle(
     TreeCtrl *tree = header->tree;
     Tcl_Interp *interp = tree->interp;
     Tk_OptionSpec *specPtr = columnSpecs;
-    int i, objC = 0, infoObjC = 0, eMask, iMask = 0;
-    Tcl_Obj *staticObjV[STATIC_SIZE], **objV = staticObjV;
+    int i, infoObjC = 0, elemObjC[3], eMask, iMask = 0;
     Tcl_Obj *staticInfoObjV[STATIC_SIZE], **infoObjV = staticInfoObjV;
+    Tcl_Obj *staticElemObjV[STATIC_SIZE][3], **elemObjV[3];
 
     /* With no arguments, it means the style was (re)created, so gotta
      * configure all non-layout options. */
     if (objc == 0) {
 	Tcl_Obj *optionNameObj = Tcl_NewObj();
 	Tcl_IncrRefCount(optionNameObj);
+	elemObjC[0] = elemObjC[1] = elemObjC[2] = 0;
 	while (specPtr->type != TK_OPTION_END) {
-	    if (specPtr->typeMask & (ELEM_HEADER | ELEM_IMAGE | ELEM_TEXT)) {
-		objC += 2;
+	    if (specPtr->typeMask & ELEM_HEADER) {
+		elemObjC[0] += 2;
+		objc += 2;
+	    }
+	    if (specPtr->typeMask & ELEM_IMAGE) {
+		elemObjC[1] += 2;
+		objc += 2;
+	    }
+	    if (specPtr->typeMask & ELEM_TEXT) {
+		elemObjC[2] += 2;
+		objc += 2;
 	    }
 	    specPtr++;
 	}
-	STATIC_ALLOC(objV, Tcl_Obj *, objC);
-	STATIC_ALLOC(infoObjV, Tcl_Obj *, objC / 2);
-	objC = 0;
+	STATIC_ALLOC(infoObjV, Tcl_Obj *, objc / 2);
+	for (i = 0; i < 3; i++) {
+	    elemObjV[i] = staticElemObjV[i];
+	    STATIC_ALLOC(elemObjV[i], Tcl_Obj *, elemObjC[i]);
+	}
+	elemObjC[0] = elemObjC[1] = elemObjC[2] = 0;
 	specPtr = columnSpecs;
 	while (specPtr->type != TK_OPTION_END) {
 	    if (specPtr->typeMask & (ELEM_HEADER | ELEM_IMAGE | ELEM_TEXT)) {
@@ -496,19 +509,70 @@ TreeHeaderColumn_ConfigureHeaderStyle(
 		int listC;
 		Tcl_Obj **listObjV;
 		Tcl_ListObjGetElements(interp, infoObj, &listC, &listObjV);
-		objV[objC] = listObjV[0]; /* name */
-		objV[objC+1] = listObjV[4]; /* value */
+		if (specPtr->typeMask & ELEM_HEADER) {
+		    elemObjV[0][elemObjC[0]++] = listObjV[0]; /* name */
+		    elemObjV[0][elemObjC[0]++] = listObjV[4]; /* value */
+		}
+		if (specPtr->typeMask & ELEM_IMAGE) {
+		    elemObjV[1][elemObjC[1]++] = listObjV[0]; /* name */
+		    elemObjV[1][elemObjC[1]++] = listObjV[4]; /* value */
+		}
+		if (specPtr->typeMask & ELEM_TEXT) {
+		    elemObjV[2][elemObjC[2]++] = listObjV[0]; /* name */
+		    elemObjV[2][elemObjC[2]++] = listObjV[4]; /* value */
+		}
 		Tcl_IncrRefCount(infoObj);
 		infoObjV[infoObjC++] = infoObj;
-		objC += 2;
 	    }
 	    specPtr++;
 	}
 	Tcl_DecrRefCount(optionNameObj);
-	objc = objC;
-	objv = objV;
+    } else {
+	elemObjC[0] = elemObjC[1] = elemObjC[2] = 0;
+	for (i = 0; i < 3; i++) {
+	    elemObjV[i] = staticElemObjV[i];
+	    STATIC_ALLOC(elemObjV[i], Tcl_Obj *, objc);
+	}
+	for (i = 0; i < objc; i += 2) {
+	    specPtr = LookupOption(columnSpecs, Tcl_GetString(objv[i]));
+	    if (specPtr->typeMask & ELEM_HEADER) {
+		elemObjV[0][elemObjC[0]++] = objv[i]; /* name */
+		elemObjV[0][elemObjC[0]++] = objv[i + 1]; /* value */
+	    }
+	    if (specPtr->typeMask & ELEM_IMAGE) {
+		elemObjV[1][elemObjC[1]++] = objv[i]; /* name */
+		elemObjV[1][elemObjC[1]++] = objv[i + 1]; /* value */
+	    }
+	    if (specPtr->typeMask & ELEM_TEXT) {
+		elemObjV[2][elemObjC[2]++] = objv[i]; /* name */
+		elemObjV[2][elemObjC[2]++] = objv[i + 1]; /* value */
+	    }
+	}
     }
 
+#if 1
+    if (elemObjC[0] > 0) {
+	TreeStyle_ElementConfigure(tree, header->item,
+	    column->itemColumn,
+	    TreeItemColumn_GetStyle(tree, column->itemColumn),
+	    tree->headerStyle.headerElem, elemObjC[0], elemObjV[0], &eMask);
+	iMask |= eMask;
+    }
+    if (elemObjC[1] > 0) {
+	TreeStyle_ElementConfigure(tree, header->item,
+	    column->itemColumn,
+	    TreeItemColumn_GetStyle(tree, column->itemColumn),
+	    tree->headerStyle.imageElem, elemObjC[1], elemObjV[1], &eMask);
+	iMask |= eMask;
+    }
+    if (elemObjC[2] > 0) {
+	TreeStyle_ElementConfigure(tree, header->item,
+	    column->itemColumn,
+	    TreeItemColumn_GetStyle(tree, column->itemColumn),
+	    tree->headerStyle.textElem, elemObjC[2], elemObjV[2], &eMask);
+	iMask |= eMask;
+    }
+#else
     for (i = 0; i < objc; i += 2) {
 	specPtr = LookupOption(columnSpecs, Tcl_GetString(objv[i]));
 	if (specPtr->typeMask & ELEM_HEADER) {
@@ -536,6 +600,7 @@ TreeHeaderColumn_ConfigureHeaderStyle(
 	    iMask |= eMask;
 	}
     }
+#endif
     if (iMask & CS_LAYOUT)
 	Tree_FreeItemDInfo(tree, header->item, NULL);
     else if (iMask & CS_DISPLAY)
@@ -544,7 +609,8 @@ TreeHeaderColumn_ConfigureHeaderStyle(
     for (i = 0; i < infoObjC; i++)
 	Tcl_DecrRefCount(infoObjV[i]);
 
-    STATIC_FREE(objV, Tcl_Obj *, objC);
+    for (i = 0; i < 3; i++)
+	STATIC_FREE(elemObjV[i], Tcl_Obj *, elemObjC[i]);
     STATIC_FREE(infoObjV, Tcl_Obj *, infoObjC);
 
     return TCL_OK;
