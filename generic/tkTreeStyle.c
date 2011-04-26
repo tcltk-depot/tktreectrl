@@ -5890,6 +5890,7 @@ TreeElementCmd(
 	    hPtr = Tcl_FirstHashEntry(&tree->elementHash, &search);
 	    while (hPtr != NULL) {
 		elem = (TreeElement) Tcl_GetHashValue(hPtr);
+if (strncmp(elem->name, "treectrl_header_style", strlen("treectrl_header_style")) != 0)
 		Tcl_ListObjAppendElement(interp, listObj, TreeElement_ToObj(elem));
 		hPtr = Tcl_NextHashEntry(&search);
 	    }
@@ -6942,6 +6943,7 @@ TreeStyleCmd(
 	    hPtr = Tcl_FirstHashEntry(&tree->styleHash, &search);
 	    while (hPtr != NULL) {
 		_style = (TreeStyle) Tcl_GetHashValue(hPtr);
+if (strncmp(((MStyle *)_style)->name, "treectrl_header_style", strlen("treectrl_header_style")) != 0)
 		Tcl_ListObjAppendElement(interp, listObj,
 		    TreeStyle_ToObj(_style));
 		hPtr = Tcl_NextHashEntry(&search);
