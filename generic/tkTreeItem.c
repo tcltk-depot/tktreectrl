@@ -6312,7 +6312,7 @@ doneMAP:
 	    /* Return style in one column. */
 	    if (objc == 6) {
 		if (TreeItem_ColumnFromObj(tree, item, objv[5], &column,
-			NULL, NULL, CFO_NOT_NULL | CFO_NOT_TAIL) != TCL_OK)
+			NULL, NULL, CFO_NOT_NULL | tailFlag) != TCL_OK)
 		    return TCL_ERROR;
 		if ((column != NULL) && (column->style != NULL))
 		    Tcl_SetObjResult(interp, TreeStyle_ToObj(
