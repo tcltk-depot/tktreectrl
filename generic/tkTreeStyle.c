@@ -3808,6 +3808,7 @@ Element_CreateAndConfig(
     if (masterElem != NULL) {
 	type = masterElem->typePtr;
 	name = masterElem->name;
+	domain = masterElem->stateDomain;
     }
 
 #ifdef ALLOC_HAX
