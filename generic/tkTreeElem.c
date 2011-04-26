@@ -1410,9 +1410,9 @@ static int ConfigProcCheckButton(TreeElementArgs *args)
 
     for (error = 0; error <= 1; error++) {
 	if (error == 0) {
-	    if (Tk_SetOptions(tree->interp, (char *) elemX,
+	    if (Tree_SetOptions(tree, tree, elem->stateDomain,
 			elem->typePtr->optionTable,
-			args->config.objc, args->config.objv, tree->tkwin,
+			args->config.objc, args->config.objv,
 			&savedOptions, &args->config.flagSelf) != TCL_OK) {
 		args->config.flagSelf = 0;
 		continue;
@@ -1724,9 +1724,9 @@ static int ConfigProcHeader(TreeElementArgs *args)
 
     for (error = 0; error <= 1; error++) {
 	if (error == 0) {
-	    if (Tk_SetOptions(tree->interp, (char *) elemX,
+	    if (Tree_SetOptions(tree, elem->stateDomain, elemX,
 			elem->typePtr->optionTable,
-			args->config.objc, args->config.objv, tree->tkwin,
+			args->config.objc, args->config.objv,
 			&savedOptions, &args->config.flagSelf) != TCL_OK) {
 		args->config.flagSelf = 0;
 		continue;
