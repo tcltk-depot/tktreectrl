@@ -1937,7 +1937,7 @@ HeaderLayoutArrow(
 	layout->x = x + arrowPadX[PAD_TOP_LEFT];
     } else {
 	layout->x = x + width - arrowPadX[PAD_BOTTOM_RIGHT] - arrowWidth;
-layout->x = MAX(layout->x, x + arrowPadX[PAD_TOP_LEFT]); /* hackWidth */
+layout->x = MAX(layout->x, x + arrowPadX[PAD_TOP_LEFT]); /* hackRightEdge */
     }
     layout->width = arrowWidth;
 
@@ -2093,11 +2093,11 @@ static void DisplayProcHeader(TreeElementArgs *args)
 	TRUE, TRUE,
 	&x, &y, &width, &height);
 
-    /* hackWidth is the actual width of the column.  We want the
-     * right side of the header to match the right side of the column
+    /* hackRightEdge is the actual right edge of the column.  We want the
+     * right side of the header to match the right edge of the column
      * and not be clipped when the column width is less than the needed
      * width of the style. */
-    width = MIN(width, args->display.hackWidth);
+    width = MIN(width, args->display.hackRightEdge - x);
 
     HeaderGetParams(tree, elemX, &params);
 
