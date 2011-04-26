@@ -5452,7 +5452,7 @@ TreeItemCmd_Bbox(
 	    /* Validate the style + element here.  If a span has zero size
 	     * it won't be done. */
 	    column = TreeItem_FindColumn(tree, item, TreeColumn_Index(treeColumn));
-	    if (column == NULL || column->style == NULL) {
+	    if (column == NULL || column->style == NULL || TreeStyle_IsHeaderStyle(tree, column->style)) {
 		NoStyleMsg(tree, item, TreeColumn_Index(treeColumn));
 		return TCL_ERROR;
 	    }
