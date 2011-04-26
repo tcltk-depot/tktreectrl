@@ -96,17 +96,20 @@ if 0 {
 
     #
     # Create a style for our custom headers,
-    # just a checkbox image.
+    # a header element with a checkbox image and centered text.
     #
 
     InitPics *checked
 
     $T header state define CHECK
-    $T element create header.check image  -statedomain header \
+    $T element create header.header header -statedomain header
+    $T element create header.check image -statedomain header \
 	-image {checked CHECK unchecked {}}
     set S [$T style create header4 -statedomain header]
-    $T style elements $S header.check
-    $T style layout $S header.check -expand nes -padx 6
+    $T style elements $S {header.header header.check header.text}
+    $T style layout $S header.header -union {header.check header.text} -iexpand news
+    $T style layout $S header.check -expand nes -padx {6 0}
+    $T style layout $S header.text -center xy -padx 6 -squeeze x
 
     #
     # Create a style for our custom headers,
@@ -376,11 +379,7 @@ proc DemoHeaders::ChangeHeaderStyle {style ownerDrawn {sortColor ""}} {
     foreach H [$T header id !header4] {
 	$T header style set $H all $S
 	if {$S ne ""} {
-	    if {$S eq "header4"} {
-		$T header configure all all -textpadx {22 6}
-	    } else {
-		$T header configure all all -textpadx 6
-	    }
+	    $T header configure all all -textpadx 6
 	    foreach C [$T column list] {
 		$T header text $H $C [$T header cget $H $C -text]
 	    }
