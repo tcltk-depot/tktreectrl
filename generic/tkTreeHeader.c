@@ -2788,6 +2788,8 @@ Header_Configure(
 	}
     }
 
+header->ownerDrawn = TRUE;
+
     if ((oldVisible != TreeItem_ReallyVisible(tree, header->item)) ||
 	    (ownerDrawn != header->ownerDrawn)) {
 	tree->headerHeight = -1;
