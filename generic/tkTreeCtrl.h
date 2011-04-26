@@ -1518,15 +1518,21 @@ MODULE_SCOPE Tk_ObjCustomOption TreeCtrlCO_treecolor;
 
 #define STATIC_SIZE 20
 #define STATIC_ALLOC(P,T,C) \
-    if (C > STATIC_SIZE) \
-	P = (T *) ckalloc(sizeof(T) * (C))
+    do { \
+	if (C > STATIC_SIZE) \
+	    P = (T *) ckalloc(sizeof(T) * (C)); \
+    } while (0)
 #define STATIC_FREE(P,T,C) \
-    CWIPE(P, T, C); \
-    if (C > STATIC_SIZE) \
-	ckfree((char *) P)
+    do { \
+	CWIPE(P, T, C); \
+	if (C > STATIC_SIZE) \
+	    ckfree((char *) P); \
+    } while (0)
 #define STATIC_FREE2(P,P2) \
-    if (P != P2) \
-	ckfree((char *) P)
+    do { \
+	if (P != P2) \
+	    ckfree((char *) P); \
+    } while (0)
 
 MODULE_SCOPE TreeColor *Tree_AllocColorFromObj(TreeCtrl *tree, Tcl_Obj *obj);
 MODULE_SCOPE void Tree_FreeColor(TreeCtrl *tree, TreeColor *tc);
