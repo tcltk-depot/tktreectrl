@@ -621,6 +621,26 @@ Column_Configure(
 	    treeColumn, stateOff, stateOn);
     }
 
+    if (!createFlag) {
+	Tcl_Obj *staticObjV[STATIC_SIZE], **objV = staticObjV;
+	int i, objC = objc + 4;
+	int result;
+	STATIC_ALLOC(objV, Tcl_Obj *, objC);
+	objV[0] = Tcl_NewStringObj("::TreeCtrl::UpdateHeaderStyle", -1);
+	objV[1] = Tcl_NewStringObj(Tcl_GetCommandName(tree->interp, tree->widgetCmd), -1);;
+	objV[2] = TreeHeader_ToObj(header);
+	objV[3] = TreeColumn_ToObj(tree, treeColumn);
+	for (i = 0; i < 4; i++)
+	    Tcl_IncrRefCount(objV[i]);
+	for (i = 0; i < objc; i++)
+	    objV[i + 4] = objv[i];
+	result = Tcl_EvalObjv(tree->interp, objC, objV, TCL_EVAL_GLOBAL);
+	for (i = 0; i < 4; i++)
+	    Tcl_DecrRefCount(objV[i]);
+	STATIC_FREE(objV, Tcl_Obj *, objC);
+	return result;
+    }
+
     return TCL_OK;
 }
 
