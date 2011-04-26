@@ -260,6 +260,27 @@ struct TreeStateDomain
     int staticCount;		/* Number of static states. */
 };
 
+typedef struct HeaderStyleParams HeaderStyleParams;
+struct HeaderStyleParams
+{
+    Tk_Justify justify;
+    int bitmap;
+    int image;
+    int imagePadX[2];
+    int imagePadY[2];
+    int text;
+    int textPadX[2];
+    int textPadY[2];
+};
+
+typedef struct HeaderStyle HeaderStyle;
+struct HeaderStyle
+{
+    TreeStyle style;
+    HeaderStyleParams params;
+    HeaderStyle *next;
+};
+
 struct TreeCtrl
 {
     /* Standard stuff */
@@ -549,6 +570,19 @@ struct TreeCtrl
     int tailExtend;		/* This is the distance the tail column
 				 * extends past the right edge of the
 				 * content area. */
+
+    struct {
+	int nextId;
+	HeaderStyle *first;
+	TreeElement headerElem;
+	TreeElement bitmapElem;
+	TreeElement imageElem;
+	TreeElement textElem;
+	Tcl_Obj *headerElemNameObjPtr;
+	Tcl_Obj *bitmapElemNameObjPtr;
+	Tcl_Obj *imageElemNameObjPtr;
+	Tcl_Obj *textElemNameObjPtr;
+    } headerStyle;
 
     /* These two options contain "-image" and "-text".
      * They are used by the [item image] and [item text] commands.
@@ -905,7 +939,12 @@ MODULE_SCOPE int TreeStyle_FindElement(TreeCtrl *tree, TreeStyle style_, TreeEle
 MODULE_SCOPE TreeStyle TreeStyle_NewInstance(TreeCtrl *tree, TreeStyle master);
 MODULE_SCOPE int TreeStyle_ElementActual(TreeCtrl *tree, TreeStyle style_, int state, Tcl_Obj *elemObj, Tcl_Obj *obj);
 MODULE_SCOPE int TreeStyle_ElementCget(TreeCtrl *tree, TreeItem item, TreeItemColumn column, TreeStyle style_, Tcl_Obj *elemObj, Tcl_Obj *obj);
-MODULE_SCOPE int TreeStyle_ElementConfigure(TreeCtrl *tree, TreeItem item, TreeItemColumn column, TreeStyle style_, Tcl_Obj *elemObj, int objc, Tcl_Obj **objv, int *eMask);
+MODULE_SCOPE int TreeStyle_ElementConfigure(TreeCtrl *tree, TreeItem item,
+    TreeItemColumn column, TreeStyle style_, TreeElement elem, int objc,
+    Tcl_Obj **objv, int *eMask);
+MODULE_SCOPE int TreeStyle_ElementConfigureFromObj(TreeCtrl *tree,
+    TreeItem item, TreeItemColumn column, TreeStyle style_, Tcl_Obj *elemObj,
+    int objc, Tcl_Obj **objv, int *eMask);
 MODULE_SCOPE void TreeStyle_ListElements(TreeCtrl *tree, TreeStyle style_);
 MODULE_SCOPE int TreeStyle_GetButtonY(TreeCtrl *tree, TreeStyle style_);
 MODULE_SCOPE TreeStyle TreeStyle_GetMaster(TreeCtrl *tree, TreeStyle style_);
@@ -931,6 +970,8 @@ MODULE_SCOPE int TreeStyleCmd(ClientData clientData, Tcl_Interp *interp, int obj
 MODULE_SCOPE int TreeStyle_ChangeState(TreeCtrl *tree, TreeStyle style_, int state1, int state2);
 MODULE_SCOPE void Tree_UndefineState(TreeCtrl *tree, int domain, int state);
 MODULE_SCOPE int TreeStyle_NumElements(TreeCtrl *tree, TreeStyle style_);
+MODULE_SCOPE int TreeStyle_IsHeaderStyle(TreeCtrl *tree, TreeStyle style);
+MODULE_SCOPE TreeStyle Tree_MakeHeaderStyle(TreeCtrl *tree, HeaderStyleParams *params);
 MODULE_SCOPE void TreeStyle_UpdateWindowPositions(StyleDrawArgs *drawArgs);
 MODULE_SCOPE void TreeStyle_OnScreen(TreeCtrl *tree, TreeStyle style_, int onScreen);
 

@@ -1836,7 +1836,7 @@ Style_DoLayoutV(
     int *ePadY, *iPadY, *uPadY;
     int numExpandNS = 0;
     int numSqueezeY = 0;
-    int i, j, eLinkCount = 0;
+    int i, eLinkCount = 0;
     int bottomEdge = 0;
     int iCenterMin = -1, iCenterMax = -1;
 
@@ -5575,21 +5575,17 @@ TreeStyle_ElementConfigure(
     TreeItem item,		/* Item containing the element. */
     TreeItemColumn column,	/* Item-column containing the element. */
     TreeStyle style_,		/* Style containing the element. */
-    Tcl_Obj *elemObj,		/* Name of the element. */
+    TreeElement elem,		/* Name of the element. */
     int objc,			/* Number of arguments. */
     Tcl_Obj **objv,		/* Argument values. */
     int *eMask			/* Returned CS_xxx flags. */
     )
 {
     IStyle *style = (IStyle *) style_;
-    TreeElement elem;
     IElementLink *eLink;
     TreeElementArgs args;
 
     (*eMask) = 0;
-
-    if (Element_FromObj(tree, elemObj, &elem) != TCL_OK)
-	return TCL_ERROR;
 
     if (objc <= 1) {
 	Tcl_Obj *resultObjPtr;
@@ -5662,6 +5658,29 @@ TreeStyle_ElementConfigure(
 	}
     }
     return TCL_OK;
+}
+
+int
+TreeStyle_ElementConfigureFromObj(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeItem item,		/* Item containing the element. */
+    TreeItemColumn column,	/* Item-column containing the element. */
+    TreeStyle style,		/* Style containing the element. */
+    Tcl_Obj *elemObj,		/* Name of the element. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj **objv,		/* Argument values. */
+    int *eMask			/* Returned CS_xxx flags. */
+    )
+{
+    TreeElement elem;
+
+    (*eMask) = 0;
+
+    if (Element_FromObj(tree, elemObj, &elem) != TCL_OK)
+	return TCL_ERROR;
+
+    return TreeStyle_ElementConfigure(tree, item, column, style,
+	elem, objc, objv, eMask);
 }
 
 /*
@@ -7740,6 +7759,171 @@ TreeStyle_NumElements(
     return (style->master == NULL) ?
 	masterStyle->numElements :
 	style->master->numElements;
+}
+
+int
+TreeStyle_IsHeaderStyle(
+    TreeCtrl *tree,
+    TreeStyle style
+    )
+{
+    HeaderStyle *hs;
+
+    if (((IStyle *)style)->master != NULL)
+	style = TreeStyle_GetMaster(tree, style);
+    for (hs = tree->headerStyle.first; hs != NULL; hs = hs->next) {
+	if (hs->style == style)
+	    return TRUE;
+    }
+    return FALSE;
+}
+
+TreeStyle
+Tree_MakeHeaderStyle(
+    TreeCtrl *tree,
+    HeaderStyleParams *params
+    )
+{
+    HeaderStyle *hs;
+    int i, count = 0, map[4];
+    char name[64];
+    MStyle *style;
+    TreeElement elements[4];
+    MElementLink *eLink;
+
+    if (params->image)
+	params->bitmap = 0;
+    else {
+	params->imagePadX[0] = params->imagePadX[1] = 0;
+	params->imagePadY[0] = params->imagePadY[1] = 0;
+    }
+    if (!params->text) {
+	params->textPadX[0] = params->textPadX[1] = 0;
+	params->textPadY[0] = params->textPadY[1] = 0;
+    }
+
+    for (hs = tree->headerStyle.first; hs != NULL; hs = hs->next) {
+	if (hs->params.justify != params->justify) continue;
+	if (hs->params.bitmap != params->bitmap) continue;
+	if (hs->params.image != params->image) continue;
+	if (hs->params.text != params->text) continue;
+	for (i = 0; i < 2; i++) {
+	    if (hs->params.imagePadX[i] != params->imagePadX[i]) break;
+	    if (hs->params.textPadX[i] != params->textPadX[i]) break;
+	}
+	if (i < 2) continue;
+	break;
+    }
+
+    if (hs != NULL) {
+	return hs->style;
+    }
+
+    /* Create the master elements shared by all header styles if they don't
+     * exist. */
+    if (tree->headerStyle.headerElem == NULL) {
+	Tcl_Obj *obj = Tcl_NewStringObj("header", -1);
+	TreeElementType *typePtr;
+	Tcl_IncrRefCount(obj);
+	TreeElement_TypeFromObj(tree, obj, &typePtr);
+	Tcl_DecrRefCount(obj);
+	sprintf(name, "treectrl_header_elem.header");
+	tree->headerStyle.headerElem =
+	    Element_CreateAndConfig(tree, NULL, NULL, NULL, typePtr,
+	    name, 0, NULL);
+	tree->headerStyle.headerElemNameObjPtr = Tcl_NewStringObj(name, -1);
+    }
+    if (tree->headerStyle.bitmapElem == NULL) {
+	Tcl_Obj *obj = Tcl_NewStringObj("bitmap", -1);
+	TreeElementType *typePtr;
+	Tcl_IncrRefCount(obj);
+	TreeElement_TypeFromObj(tree, obj, &typePtr);
+	Tcl_DecrRefCount(obj);
+	sprintf(name, "treectrl_header_elem.bitmap");
+	tree->headerStyle.bitmapElem =
+	    Element_CreateAndConfig(tree, NULL, NULL, NULL,
+	    typePtr, name, 0, NULL);
+	tree->headerStyle.bitmapElemNameObjPtr = Tcl_NewStringObj(name, -1);
+    }
+    if (tree->headerStyle.imageElem == NULL) {
+	Tcl_Obj *obj = Tcl_NewStringObj("image", -1);
+	TreeElementType *typePtr;
+	Tcl_IncrRefCount(obj);
+	TreeElement_TypeFromObj(tree, obj, &typePtr);
+	Tcl_DecrRefCount(obj);
+	sprintf(name, "treectrl_header_elem.image");
+	tree->headerStyle.imageElem =
+	    Element_CreateAndConfig(tree, NULL, NULL, NULL,
+	    typePtr, name, 0, NULL);
+	tree->headerStyle.imageElemNameObjPtr = Tcl_NewStringObj(name, -1);
+    }
+    if (tree->headerStyle.textElem == NULL) {
+	Tcl_Obj *obj = Tcl_NewStringObj("text", -1);
+	TreeElementType *typePtr;
+	Tcl_IncrRefCount(obj);
+	TreeElement_TypeFromObj(tree, obj, &typePtr);
+	Tcl_DecrRefCount(obj);
+	sprintf(name, "treectrl_header_elem.text");
+	tree->headerStyle.textElem =
+	    Element_CreateAndConfig(tree, NULL, NULL, NULL,
+	    typePtr, name, 0, NULL);
+	tree->headerStyle.textElemNameObjPtr = Tcl_NewStringObj(name, -1);
+    }
+
+    sprintf(name, "treectrl_header_style_%d", tree->headerStyle.nextId);
+    style = Style_CreateAndConfig(tree, name, 0, NULL);
+
+    /* Alloc element list. */
+    elements[count++] = tree->headerStyle.headerElem;
+    if (params->bitmap) elements[count++] = tree->headerStyle.bitmapElem;
+    if (params->image) elements[count++] = tree->headerStyle.imageElem;
+    if (params->text) elements[count++] = tree->headerStyle.textElem;
+    map[0] = map[1] = map[2] = map[3] = -1;
+    MStyle_ChangeElementsAux(tree, style, count, elements, map);
+
+    /* Layout. */
+    eLink = &style->elements[0]; /* header */
+    if (count > 1) {
+	eLink->onionCount = count - 1;
+	eLink->onion = (int *) ckalloc(sizeof(int) * eLink->onionCount);
+	for (i = 1; i < count; i++)
+	    eLink->onion[i - 1] = i;
+	eLink->flags |= ELF_iEXPAND; /* wens */
+    } else {
+	eLink->flags |= ELF_iEXPAND_X | ELF_iEXPAND_Y;
+    }
+    if (params->bitmap || params->image) {
+	eLink = &style->elements[1];
+	for (i = 0; i < 2; i++) {
+	    eLink->ePadX[i] = params->imagePadX[i];
+	    eLink->ePadY[i] = params->imagePadY[i];
+	}
+	if (params->justify == TK_JUSTIFY_CENTER)
+	    eLink->flags |= ELF_CENTER_X;
+	else if (params->justify == TK_JUSTIFY_RIGHT)
+	    eLink->flags |= ELF_eEXPAND_W;
+    }
+    if (params->text) {
+	eLink = &style->elements[1 + (params->bitmap || params->image)];
+	for (i = 0; i < 2; i++) {
+	    eLink->ePadX[i] = params->textPadX[i];
+	    eLink->ePadY[i] = params->textPadY[i];
+	}
+	eLink->ePadX[0] = MAX(params->imagePadX[1], params->textPadX[0]);
+	eLink->flags |= ELF_SQUEEZE_X;
+	if (params->justify == TK_JUSTIFY_CENTER)
+	    eLink->flags |= ELF_CENTER_X;
+	else if (!(params->bitmap || params->image) && (params->justify == TK_JUSTIFY_RIGHT))
+	    eLink->flags |= ELF_eEXPAND_W;
+    }
+
+    hs = (HeaderStyle *) ckalloc(sizeof(HeaderStyle));
+    hs->style = (TreeStyle) style;
+    hs->params = *params;
+    hs->next = tree->headerStyle.first;
+    tree->headerStyle.first = hs;
+    tree->headerStyle.nextId++;
+    return hs->style;
 }
 
 /*

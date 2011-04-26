@@ -112,6 +112,10 @@ static CONST char *stateST[] = { "normal", "active", "pressed", (char *) NULL };
 #define COLU_CONF_TEXT		0x0200
 #define COLU_CONF_BITMAP	0x0400
 
+#define ELEM_HEADER		0x00010000
+#define ELEM_IMAGE		0x00020000
+#define ELEM_TEXT		0x00040000
+
 static Tk_OptionSpec columnSpecs[] = {
     {TK_OPTION_STRING_TABLE, "-arrow", (char *) NULL, (char *) NULL,
      "none", -1, Tk_Offset(HeaderColumn, arrow),
@@ -161,7 +165,8 @@ static Tk_OptionSpec columnSpecs[] = {
     {TK_OPTION_STRING, "-image", (char *) NULL, (char *) NULL,
      (char *) NULL, -1, Tk_Offset(HeaderColumn, imageString),
      TK_OPTION_NULL_OK, (ClientData) NULL,
-     COLU_CONF_IMAGE | COLU_CONF_NWIDTH | COLU_CONF_NHEIGHT | COLU_CONF_DISPLAY},
+     COLU_CONF_IMAGE | COLU_CONF_NWIDTH | COLU_CONF_NHEIGHT | COLU_CONF_DISPLAY
+     | ELEM_IMAGE},
     {TK_OPTION_CUSTOM, "-imagepadx", (char *) NULL, (char *) NULL,
      "6", Tk_Offset(HeaderColumn, imagePadXObj),
      Tk_Offset(HeaderColumn, imagePadX), 0, (ClientData) &TreeCtrlCO_pad,
@@ -175,11 +180,12 @@ static Tk_OptionSpec columnSpecs[] = {
      0, (ClientData) NULL, COLU_CONF_DISPLAY | COLU_CONF_JUSTIFY},
     {TK_OPTION_STRING_TABLE, "-state", (char *) NULL, (char *) NULL,
      "normal", -1, Tk_Offset(HeaderColumn, state), 0, (ClientData) stateST,
-     COLU_CONF_STATE},
+     COLU_CONF_STATE | ELEM_HEADER},
     {TK_OPTION_STRING, "-text", (char *) NULL, (char *) NULL,
      (char *) NULL, Tk_Offset(HeaderColumn, textObj), Tk_Offset(HeaderColumn, text),
      TK_OPTION_NULL_OK, (ClientData) NULL,
-     COLU_CONF_TEXT | COLU_CONF_NWIDTH | COLU_CONF_NHEIGHT | COLU_CONF_DISPLAY},
+     COLU_CONF_TEXT | COLU_CONF_NWIDTH | COLU_CONF_NHEIGHT | COLU_CONF_DISPLAY |
+     ELEM_TEXT},
     /* -textcolor initialized by TreeHeader_InitInterp() */
     {TK_OPTION_CUSTOM, "-textcolor", (char *) NULL, (char *) NULL,
      (char *) NULL, Tk_Offset(HeaderColumn, textColor.obj),
@@ -405,6 +411,145 @@ ImageChangedProc(
 }
 #endif
 
+static Tk_OptionSpec*
+LookupOption(
+    Tk_OptionSpec *tablePtr,
+    CONST char *name
+    )
+{
+    Tk_OptionSpec *specPtr = tablePtr, *bestPtr = NULL;
+    CONST char *p1, *p2;
+
+    while (specPtr->type != TK_OPTION_END) {
+	for (p1 = name, p2 = specPtr->optionName;
+		*p1 == *p2; p1++, p2++) {
+	    if (*p1 == 0) {
+		/*
+		* This is an exact match.  We're done.
+		*/
+
+		bestPtr = specPtr;
+		return bestPtr;
+	    }
+	}
+	if (*p1 == 0) {
+	    /*
+	    * The name is an abbreviation for this option.  Keep
+	    * to make sure that the abbreviation only matches one
+	    * option name.  If we've already found a match in the
+	    * past, then it is an error unless the full names for
+	    * the two options are identical; in this case, the first
+	    * option overrides the second.
+	    */
+
+	    if (bestPtr == NULL) {
+		bestPtr = specPtr;
+	    } else {
+		if (strcmp(bestPtr->optionName,
+			specPtr->optionName) != 0) {
+		    return NULL;
+		}
+	    }
+	}
+	specPtr++;
+    }
+    return bestPtr;
+}
+
+int
+TreeHeaderColumn_ConfigureHeaderStyle(
+    TreeHeader header,
+    TreeHeaderColumn column,
+    TreeColumn treeColumn,
+    int objc,
+    Tcl_Obj *CONST objv[]
+    )
+{
+    TreeCtrl *tree = header->tree;
+    Tcl_Interp *interp = tree->interp;
+    Tk_OptionSpec *specPtr = columnSpecs;
+    int i, objC = 0, infoObjC = 0, eMask, iMask = 0;
+    Tcl_Obj *staticObjV[STATIC_SIZE], **objV = staticObjV;
+    Tcl_Obj *staticInfoObjV[STATIC_SIZE], **infoObjV = staticInfoObjV;
+
+    /* With no arguments, it means the style was (re)created, so gotta
+     * configure all non-layout options. */
+    if (objc == 0) {
+	Tcl_Obj *optionNameObj = Tcl_NewObj();
+	Tcl_IncrRefCount(optionNameObj);
+	while (specPtr->type != TK_OPTION_END) {
+	    if (specPtr->typeMask & (ELEM_HEADER | ELEM_IMAGE | ELEM_TEXT)) {
+		objC += 2;
+	    }
+	    specPtr++;
+	}
+	STATIC_ALLOC(objV, Tcl_Obj *, objC);
+	STATIC_ALLOC(infoObjV, Tcl_Obj *, objC / 2);
+	objC = 0;
+	specPtr = columnSpecs;
+	while (specPtr->type != TK_OPTION_END) {
+	    if (specPtr->typeMask & (ELEM_HEADER | ELEM_IMAGE | ELEM_TEXT)) {
+		Tcl_SetStringObj(optionNameObj, specPtr->optionName, -1);
+		Tcl_Obj *infoObj = Tk_GetOptionInfo(interp, (char *) column,
+		    tree->headerColumnOptionTable, optionNameObj,
+		    tree->tkwin);
+		int listC;
+		Tcl_Obj **listObjV;
+		Tcl_ListObjGetElements(interp, infoObj, &listC, &listObjV);
+		objV[objC] = listObjV[0]; /* name */
+		objV[objC+1] = listObjV[4]; /* value */
+		Tcl_IncrRefCount(infoObj);
+		infoObjV[infoObjC++] = infoObj;
+		objC += 2;
+	    }
+	    specPtr++;
+	}
+	Tcl_DecrRefCount(optionNameObj);
+	objc = objC;
+	objv = objV;
+    }
+
+    for (i = 0; i < objc; i += 2) {
+	specPtr = LookupOption(columnSpecs, Tcl_GetString(objv[i]));
+	if (specPtr->typeMask & ELEM_HEADER) {
+	    TreeStyle_ElementConfigure(tree, header->item,
+		column->itemColumn,
+		TreeItemColumn_GetStyle(tree, column->itemColumn),
+		tree->headerStyle.headerElem, 2,
+		(Tcl_Obj **) objv + i, &eMask);
+	    iMask |= eMask;
+	}
+	if (specPtr->typeMask & ELEM_IMAGE) {
+	    TreeStyle_ElementConfigure(tree, header->item,
+		column->itemColumn,
+		TreeItemColumn_GetStyle(tree, column->itemColumn),
+		tree->headerStyle.imageElem, 2,
+		(Tcl_Obj **) objv + i, &eMask);
+	    iMask |= eMask;
+	}
+	if (specPtr->typeMask & ELEM_TEXT) {
+	    TreeStyle_ElementConfigure(tree, header->item,
+		column->itemColumn,
+		TreeItemColumn_GetStyle(tree, column->itemColumn),
+		tree->headerStyle.textElem, 2,
+		(Tcl_Obj **) objv + i, &eMask);
+	    iMask |= eMask;
+	}
+    }
+    if (iMask & CS_LAYOUT)
+	Tree_FreeItemDInfo(tree, header->item, NULL);
+    else if (iMask & CS_DISPLAY)
+	Tree_InvalidateItemDInfo(tree, treeColumn, header->item, NULL);
+
+    for (i = 0; i < infoObjC; i++)
+	Tcl_DecrRefCount(infoObjV[i]);
+
+    STATIC_FREE(objV, Tcl_Obj *, objC);
+    STATIC_FREE(infoObjV, Tcl_Obj *, infoObjC);
+
+    return TCL_OK;
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -621,6 +766,13 @@ Column_Configure(
 	    treeColumn, stateOff, stateOn);
     }
 
+#if 1
+    if (!createFlag) {
+	TreeHeaderColumn_EnsureStyleExists(header, column, treeColumn);
+	TreeHeaderColumn_ConfigureHeaderStyle(header, column, treeColumn,
+	    objc, objv);
+    }
+#else
     if (!createFlag) {
 	Tcl_Obj *staticObjV[STATIC_SIZE], **objV = staticObjV;
 	int i, objC = objc + 4;
@@ -640,7 +792,7 @@ Column_Configure(
 	STATIC_FREE(objV, Tcl_Obj *, objC);
 	return result;
     }
-
+#endif
     return TCL_OK;
 }
 
@@ -651,6 +803,39 @@ TreeHeaderColumn_EnsureStyleExists(
     TreeColumn treeColumn
     )
 {
+#if 1
+    TreeCtrl *tree = header->tree;
+    TreeItemColumn itemColumn = column->itemColumn;
+    TreeStyle styleOld, styleNew;
+    HeaderStyleParams params;
+    int i;
+
+    styleOld = TreeItemColumn_GetStyle(tree, itemColumn);
+    if (styleOld != NULL) {
+	styleOld = TreeStyle_GetMaster(tree, styleOld);
+	if (!TreeStyle_IsHeaderStyle(tree, styleOld))
+	    return TCL_OK; /* it's a custom style */
+    }
+
+    params.justify = column->justify;
+    params.text = column->textLen > 0;
+    params.image = column->image != NULL;
+    params.bitmap = column->bitmap != None;
+    for (i = 0; i < 2; i++) {
+	params.textPadX[i] = column->textPadX[i];
+	params.textPadY[i] = column->textPadY[i];
+	params.imagePadX[i] = column->imagePadX[i];
+	params.imagePadY[i] = column->imagePadY[i];
+    }
+    styleNew = Tree_MakeHeaderStyle(tree, &params);
+    if (styleOld != styleNew) {
+	styleNew = TreeStyle_NewInstance(tree, styleNew);
+	TreeItemColumn_SetStyle(tree, itemColumn, styleNew);
+	TreeHeaderColumn_ConfigureHeaderStyle(header, column, treeColumn,
+	    0, NULL);
+    }
+    return TCL_OK;
+#else
     TreeCtrl *tree = header->tree;
     Tcl_Obj *objV[4];
     int i, objC = 4;
@@ -668,6 +853,7 @@ TreeHeaderColumn_EnsureStyleExists(
     for (i = 0; i < 4; i++)
 	Tcl_DecrRefCount(objV[i]);
     return result;
+#endif
 }
 
 /*

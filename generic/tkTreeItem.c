@@ -421,6 +421,19 @@ TreeItemColumn_ForgetStyle(
     }
 }
 
+void
+TreeItemColumn_SetStyle(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeItemColumn column,	/* Column token. */
+    TreeStyle style		/* New instance style. */
+    )
+{
+    if (column->style != NULL) {
+	TreeStyle_FreeResources(tree, column->style);
+    }
+    column->style = style;
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -5848,7 +5861,7 @@ TreeItemCmd_Element(
 		result = TCL_ERROR;
 		break;
 	    }
-	    if ((column == NULL) || (column->style == NULL)) {
+	    if ((column == NULL) || (column->style == NULL) || TreeStyle_IsHeaderStyle(tree, column->style)) {
 		NoStyleMsg(tree, item, columnIndex);
 		result = TCL_ERROR;
 		break;
@@ -5884,7 +5897,7 @@ TreeItemCmd_Element(
 		result = TCL_ERROR;
 		break;
 	    }
-	    if ((column == NULL) || (column->style == NULL)) {
+	    if ((column == NULL) || (column->style == NULL) || TreeStyle_IsHeaderStyle(tree, column->style)) {
 		NoStyleMsg(tree, item, columnIndex);
 		result = TCL_ERROR;
 		break;
@@ -6016,7 +6029,7 @@ if (!co[index].isColumn) panic("isColumn == FALSE");
 
 			columnIndex = TreeColumn_Index(treeColumn);
 			column = TreeItem_FindColumn(tree, item, columnIndex);
-			if ((column == NULL) || (column->style == NULL)) {
+			if ((column == NULL) || (column->style == NULL) || TreeStyle_IsHeaderStyle(tree, column->style)) {
 			    NoStyleMsg(tree, item, columnIndex);
 			    result = TCL_ERROR;
 			    break;
@@ -6030,7 +6043,7 @@ if (!co[index].isColumn) panic("isColumn == FALSE");
 #ifdef TREECTRL_DEBUG
 if (co[indexElem].numArgs == -1) panic("indexElem=%d (%s) objc=%d numArgs == -1", indexElem, Tcl_GetString(objv[indexElem]), objc);
 #endif
-			    result = TreeStyle_ElementConfigure(tree, item,
+			    result = TreeStyle_ElementConfigureFromObj(tree, item,
 				    column, column->style, objv[indexElem],
 				    co[indexElem].numArgs, (Tcl_Obj **) objv + indexElem + 1, &eMask);
 			    if (result != TCL_OK)
@@ -6187,7 +6200,7 @@ TreeItemCmd_Style(
 		result = TCL_ERROR;
 		break;
 	    }
-	    if ((column == NULL) || (column->style == NULL)) {
+	    if ((column == NULL) || (column->style == NULL) || TreeStyle_IsHeaderStyle(tree, column->style)) {
 		NoStyleMsg(tree, item, columnIndex);
 		result = TCL_ERROR;
 		break;
@@ -6244,13 +6257,14 @@ TreeItemCmd_Style(
 		COLUMN_FOR_EACH(treeColumn, &columns, NULL, &citer) {
 		    columnIndex = TreeColumn_Index(treeColumn);
 		    column = Item_CreateColumn(tree, item, columnIndex, NULL);
-		    if (column->style != NULL) {
+		    if ((column->style != NULL) && !TreeStyle_IsHeaderStyle(tree, column->style)) {
 			if (TreeStyle_Remap(tree, column->style, style, objcM,
 				objvM) != TCL_OK) {
 			    result = TCL_ERROR;
 			    break;
 			}
 		    } else {
+			TreeItemColumn_ForgetStyle(tree, column);
 			column->style = TreeStyle_NewInstance(tree, style);
 		    }
 		    TreeItemColumn_InvalidateSize(tree, column);
@@ -6295,7 +6309,7 @@ doneMAP:
 		treeColumn = Tree_FirstColumn(tree, -1, tailOK);
 		column = item->columns;
 		while (treeColumn != NULL) {
-		    if ((column != NULL) && (column->style != NULL))
+		    if ((column != NULL) && (column->style != NULL) && !TreeStyle_IsHeaderStyle(tree, column->style))
 			Tcl_ListObjAppendElement(interp, listObj,
 				TreeStyle_ToObj(TreeStyle_GetMaster(
 				tree, column->style)));
@@ -6314,7 +6328,7 @@ doneMAP:
 		if (TreeItem_ColumnFromObj(tree, item, objv[5], &column,
 			NULL, NULL, CFO_NOT_NULL | tailFlag) != TCL_OK)
 		    return TCL_ERROR;
-		if ((column != NULL) && (column->style != NULL))
+		if ((column != NULL) && (column->style != NULL) && !TreeStyle_IsHeaderStyle(tree, column->style))
 		    Tcl_SetObjResult(interp, TreeStyle_ToObj(
 			TreeStyle_GetMaster(tree, column->style)));
 		break;
@@ -8896,7 +8910,7 @@ reqSameRoot:
 			result = TCL_ERROR;
 			goto doneComplex;
 		    }
-		    if (TreeStyle_ElementConfigure(tree, item, column,
+		    if (TreeStyle_ElementConfigureFromObj(tree, item, column,
 			    column->style, objv2[0], objc2 - 1, objv2 + 1,
 			    &eMask) != TCL_OK) {
 			result = TCL_ERROR;
@@ -9545,7 +9559,7 @@ if (item->header != NULL) {
 
     (*data->columnPtr) = spanPtr->treeColumn;
 
-    if (drawArgs->style != NULL)
+    if ((drawArgs->style != NULL) && !TreeStyle_IsHeaderStyle(tree, drawArgs->style))
 	(*data->elemPtr) = TreeStyle_Identify(drawArgs, data->x, data->y);
 
     return 1; /* stop */
