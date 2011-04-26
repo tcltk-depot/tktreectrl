@@ -633,7 +633,7 @@ Column_Configure(
 	for (i = 0; i < 4; i++)
 	    Tcl_IncrRefCount(objV[i]);
 	for (i = 0; i < objc; i++)
-	    objV[i + 4] = objv[i];
+	    objV[i + 4] = objv[i]; /* FIXME: get the unabbreviated option name */
 	result = Tcl_EvalObjv(tree->interp, objC, objV, TCL_EVAL_GLOBAL);
 	for (i = 0; i < 4; i++)
 	    Tcl_DecrRefCount(objV[i]);
@@ -642,6 +642,32 @@ Column_Configure(
     }
 
     return TCL_OK;
+}
+
+int
+TreeHeaderColumn_EnsureStyleExists(
+    TreeHeader header,
+    TreeHeaderColumn column,
+    TreeColumn treeColumn
+    )
+{
+    TreeCtrl *tree = header->tree;
+    Tcl_Obj *objV[4];
+    int i, objC = 4;
+    int result;
+
+    objV[0] = Tcl_NewStringObj("::TreeCtrl::UpdateHeaderStyle", -1);
+    objV[1] = Tcl_NewStringObj(Tcl_GetCommandName(tree->interp, tree->widgetCmd), -1);;
+    objV[2] = TreeHeader_ToObj(header);
+    objV[3] = TreeColumn_ToObj(tree, treeColumn);
+    for (i = 0; i < 4; i++)
+	Tcl_IncrRefCount(objV[i]);
+    result = Tcl_EvalObjv(tree->interp, objC, objV, TCL_EVAL_GLOBAL);
+    if (result != TCL_OK)
+	Tcl_BackgroundError(tree->interp);
+    for (i = 0; i < 4; i++)
+	Tcl_DecrRefCount(objV[i]);
+    return result;
 }
 
 /*

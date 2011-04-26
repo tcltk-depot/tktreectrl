@@ -6360,6 +6360,7 @@ doneMAP:
 			    if (column == NULL || column->style == NULL)
 				continue;
 			    TreeItemColumn_ForgetStyle(tree, column);
+if (doHeaders) TreeHeaderColumn_EnsureStyleExists(item->header, column->headerColumn, treeColumn);
 			} else {
 			    column = Item_CreateColumn(tree, item,
 				    TreeColumn_Index(treeColumn), NULL);

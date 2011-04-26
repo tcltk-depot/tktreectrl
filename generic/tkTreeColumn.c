@@ -3163,6 +3163,14 @@ TreeColumnCmd(
 		Column_Move(column, before);
 	    }
 
+item = tree->headerItems;
+while (item != NULL) {
+    TreeItemColumn itemColumn = TreeItem_FindColumn(tree, item, column->index);
+    TreeHeaderColumn_EnsureStyleExists(TreeItem_GetHeader(tree, item),
+	TreeItemColumn_GetHeaderColumn(tree, itemColumn), column);
+    item = TreeItem_GetNextSibling(tree, item);
+}
+
 	    /* Indicate that all items must recalculate their list of spans. */
 	    TreeItem_SpansInvalidate(tree, NULL);
 
