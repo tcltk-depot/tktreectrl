@@ -665,7 +665,7 @@ MODULE_SCOPE int TreeHeaderColumn_SetImageOrText(TreeHeader header,
 MODULE_SCOPE int TreeHeader_ConsumeColumnCget(TreeCtrl *tree,
     TreeColumn treeColumn, Tcl_Obj *objPtr);
 MODULE_SCOPE int TreeHeader_ConsumeColumnConfig(TreeCtrl *tree,
-    TreeColumn treeColumn, int objc, Tcl_Obj *CONST objv[]);
+    TreeColumn treeColumn, int objc, Tcl_Obj *CONST objv[], int createFlag);
 MODULE_SCOPE Tcl_Obj *TreeHeader_ConsumeColumnOptionInfo(TreeCtrl *tree,
     TreeColumn treeColumn, Tcl_Obj *objPtr);
 MODULE_SCOPE TreeHeader TreeHeader_CreateWithItem(TreeCtrl *tree,

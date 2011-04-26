@@ -698,7 +698,8 @@ TreeHeader_ConsumeColumnConfig(
     TreeColumn treeColumn,	/* Used to determine which header-column to
 				 * configure. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[]	/* Argument values. */
+    Tcl_Obj *CONST objv[],	/* Argument values. */
+    int createFlag		/* TRUE if column is being created. */
     )
 {
     TreeItemColumn itemColumn;
@@ -721,7 +722,8 @@ TreeHeader_ConsumeColumnConfig(
 	    tree->columnPrefix, TreeColumn_GetID(treeColumn));
 #endif
     column = TreeItemColumn_GetHeaderColumn(tree, itemColumn);
-    return Column_Configure(TreeItem_GetHeader(tree, tree->headerItems), column, treeColumn, objc, objv, FALSE);
+    return Column_Configure(TreeItem_GetHeader(tree, tree->headerItems),
+	column, treeColumn, objc, objv, createFlag);
 }
 
 /*
