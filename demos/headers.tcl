@@ -55,7 +55,7 @@ proc DemoHeaders::Run {} {
     set S [$T style create header1 -orient horizontal -statedomain header]
     $T style elements $S {header.border header.text header.sort}
     $T style layout $S header.border -detach yes -indent no -iexpand xy
-    $T style layout $S header.text -center xy -padx 6 -pady 2
+    $T style layout $S header.text -center xy -padx 6 -pady 2 -squeeze x
     $T style layout $S header.sort -expand nws -padx {0 6} \
 	-visible {no {!down !up}}
 
@@ -76,7 +76,7 @@ proc DemoHeaders::Run {} {
     set S [$T style create header2 -orient horizontal -statedomain header]
     $T style elements $S {header.rrect header.text header.sort}
     $T style layout $S header.rrect -detach yes -iexpand xy -padx {1 0} -pady 1
-    $T style layout $S header.text -center xy -padx 6 -pady 4
+    $T style layout $S header.text -center xy -padx 6 -pady 4 -squeeze x
     $T style layout $S header.sort -expand nws -padx {0 6} \
 	-visible {no {!down !up}}
 
