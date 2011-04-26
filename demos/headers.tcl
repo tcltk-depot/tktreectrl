@@ -329,13 +329,6 @@ if 0 {
 	DemoHeaders::ButtonPress1 %x %y
     }
 
-
-demolist header configure 1 3 -image checked -justify r
-demolist header configure 0 1 -justify l
-::TreeCtrl::CreateHeaderStyles $T 0
-::TreeCtrl::CreateHeaderStyles $T 1
-::TreeCtrl::CreateHeaderStyles $T 2
-
     return
 }
 
@@ -578,13 +571,40 @@ proc DemoHeaders::ButtonPress1 {x y} {
 # text elem options >> -textlines
 # The options above don't require a new style, those below do:
 # -image -bitmap -imagepadx/y -justify -textpadx/y
+proc ::TreeCtrl::GetHeaderStyleParams {T H C} {
+    lappend result justify [$T header cget $H $C -justify]
+    if {[$T header cget $H $C -image] ne ""} {
+	lappend result image 1
+	lappend result bitmap 0
+	lappend result imagepadx [$T header cget $H $C -imagepadx]
+    } elseif {[$T header cget $H $C -bitmap] ne ""} {
+	lappend result image 0
+	lappend result bitmap 1
+	lappend result imagepadx [$T header cget $H $C -imagepadx]
+    } else {
+	lappend result image 0
+	lappend result bitmap 0
+    }
+    if {[$T header cget $H $C -text] ne ""} {
+	lappend result text 1
+	lappend result textpadx [$T header cget $H $C -textpadx]
+    } else {
+	lappend result text 0
+    }
+    return $result
+}
 
 proc ::TreeCtrl::CreateHeaderStyle {T H C} {
     variable HeaderStyleParams
     variable HeaderStyleId
+
     incr HeaderStyleId
     set S treectrl_header_style_$HeaderStyleId
     set elements {}
+
+    set HeaderStyleParams($S) [GetHeaderStyleParams $T $H $C]
+    array set params {image 0 bitmap 0 text 0}
+    array set params $HeaderStyleParams($S)
 if 0 {
     $T element create $S.header border -statedomain header \
 	-thickness [$T header cget $H $C -borderwidth] \
@@ -598,14 +618,14 @@ if 0 {
 	-borderwidth [$T header cget $H $C -borderwidth]
 }
     lappend elements $S.header
-    if {[$T header cget $H $C -image] ne ""} {
+    if {$params(image)} {
 	$T element create $S.image image -statedomain header
 	lappend elements $S.image
-    } elseif {[$T header cget $H $C -bitmap] ne ""} {
+    } elseif {$params(bitmap)} {
 	$T element create $S.bitmap bitmap -statedomain header
 	lappend elements $S.bitmap
     }
-    if {[$T header cget $H $C -text] ne ""} {
+    if {$params(text)} {
 	$T element create $S.text text -statedomain header \
 	    -lines [$T header cget $H $C -textlines]
 	lappend elements $S.text
@@ -621,13 +641,13 @@ if 0 {
 	$T style layout $S $S.header \
 	    -iexpand xy
     }
-    if {[$T header cget $H $C -image] ne ""} {
+    if {$params(image)} {
 	$T style layout $S $S.image \
 	    -padx [$T header cget $H $C -imagepadx] \
 	    -pady [$T header cget $H $C -imagepady] \
 	    -expand ns
 	set imgPadRight [$T header cget $H $C -imagepadx]
-    } elseif {[$T header cget $H $C -bitmap] ne ""} {
+    } elseif {$params(bitmap)} {
 	$T style layout $S $S.bitmap \
 	    -padx [$T header cget $H $C -imagepadx] \
 	    -pady [$T header cget $H $C -imagepady] \
@@ -636,7 +656,7 @@ if 0 {
     } else {
 	set imgPadRight 0
     }
-    if {[$T header cget $H $C -text] ne ""} {
+    if {$params(text)} {
 	if {[llength $imgPadRight] == 2} {
 	    set imgPadRight [lindex $imgPadRight 1]
 	}
@@ -655,29 +675,30 @@ if 0 {
 	    -pady [$T header cget $H $C -textpady] \
 	    -squeeze x -expand ns
     }
-    switch [$T header cget $H $C -justify] {
+    switch $params(justify) {
 	left {
 	}
 	center {
-	    if {[$T header cget $H $C -image] ne ""} {
+	    if {$params(image)} {
 		$T style layout $S $S.image -center x
-	    } elseif {[$T header cget $H $C -bitmap] ne ""} {
+	    } elseif {$params(bitmap)} {
 		$T style layout $S $S.bitmap -center x
 	    }
-	    if {[$T header cget $H $C -text] ne ""} {
+	    if {$params(text)} {
 		$T style layout $S $S.text -center x
 	    }
 	}
 	right {
-	    if {[$T header cget $H $C -image] ne ""} {
+	    if {$params(image)} {
 		$T style layout $S $S.image -expand wns
-	    } elseif {[$T header cget $H $C -bitmap] ne ""} {
+	    } elseif {$params(bitmap)} {
 		$T style layout $S $S.bitmap -expand wns
-	    } elseif {[$T header cget $H $C -text] ne ""} {
+	    } elseif {$params(text)} {
 		$T style layout $S $S.text -expand wns
 	    }
 	}
     }
+if 0 {
     set HeaderStyleParams($S,justify) [$T header cget $H $C -justify]
     if {[$T header cget $H $C -image] ne ""} {
 	set HeaderStyleParams($S,image) 1
@@ -697,42 +718,95 @@ if 0 {
     } else {
 	set HeaderStyleParams($S,text) 0
     }
+}
     return $S
 }
 
-proc ::TreeCtrl::CreateHeaderStyles {T H} {
+proc ::TreeCtrl::UpdateHeaderStyle {T H C args} {
     variable HeaderStyleParams
-    foreach C [$T column id all] {
-	set image [$T header cget $H $C -image]
-	set bitmap [$T header cget $H $C -bitmap]
-	if {$image ne ""} {
-	    set bitmap ""
-	}
-	set imagepadx  [$T header cget $H $C -imagepadx]
-	set imagepady  [$T header cget $H $C -imagepady]
-	set justify  [$T header cget $H $C -justify]
-	set text [$T header cget $H $C -text]
-	set textpadx  [$T header cget $H $C -textpadx]
-	set textpady  [$T header cget $H $C -textpady]
-	set match ""
-	foreach S [$T style names] {
-	    if {![string match treectrl_header_style* $S]} continue
-	    if {($image ne "") ^ $HeaderStyleParams($S,image)} continue
-	    if {($bitmap ne "") ^ $HeaderStyleParams($S,bitmap)} continue
-	    if {($text ne "") ^ $HeaderStyleParams($S,text)} continue
-	    if {($image ne "") && ([$T style layout $S $S.image -padx] ne $HeaderStyleParams($S,imagepadx))} continue
-	    if {($bitmap ne "") && ([$T style layout $S $S.bitmap -padx] ne $HeaderStyleParams($S,imagepadx))} continue
-	    if {($text ne "") && ([$T style layout $S $S.text -padx] ne $HeaderStyleParams($S,textpadx))} continue
-	    if {$HeaderStyleParams($S,justify) ne $justify} continue
-	    set match $S
-	    break
-	}
-	if {$match eq ""} {
-	    set match [CreateHeaderStyle $T $H $C]
-	}
-	$T header style set $H $C $match
-	$T header text $H $C [$T header cget $H $C -text]
-	$T header image $H $C [$T header cget $H $C -image]
+
+if 1 {
+    set paramList [GetHeaderStyleParams $T $H $C]
+    set match ""
+    foreach S [$T style names] {
+	if {![string match treectrl_header_style* $S]} continue
+	if {$paramList ne $HeaderStyleParams($S)} continue
+	set match $S
+	break
     }
+    array set params {text 0 image 0 bitmap 0}
+    array set params $paramList
+} else {
+    set image [$T header cget $H $C -image]
+    set bitmap [$T header cget $H $C -bitmap]
+    if {$image ne ""} {
+	set bitmap ""
+    }
+    set imagepadx  [$T header cget $H $C -imagepadx]
+    set imagepady  [$T header cget $H $C -imagepady]
+    set justify  [$T header cget $H $C -justify]
+    set text [$T header cget $H $C -text]
+    set textpadx  [$T header cget $H $C -textpadx]
+    set textpady  [$T header cget $H $C -textpady]
+    set match ""
+    foreach S [$T style names] {
+	if {![string match treectrl_header_style* $S]} continue
+	if {($image ne "") ^ $HeaderStyleParams($S,image)} continue
+	if {($bitmap ne "") ^ $HeaderStyleParams($S,bitmap)} continue
+	if {($text ne "") ^ $HeaderStyleParams($S,text)} continue
+	if {($image ne "") && ([$T style layout $S $S.image -padx] ne $HeaderStyleParams($S,imagepadx))} continue
+	if {($bitmap ne "") && ([$T style layout $S $S.bitmap -padx] ne $HeaderStyleParams($S,imagepadx))} continue
+	if {($text ne "") && ([$T style layout $S $S.text -padx] ne $HeaderStyleParams($S,textpadx))} continue
+	if {$HeaderStyleParams($S,justify) ne $justify} continue
+	set match $S
+	break
+    }
+}
+    if {$match eq ""} {
+	set match [CreateHeaderStyle $T $H $C]
+    }
+    set S $match
+    if {[$T column compare $C != tail] && [$T header style set $H $C] ne $S} {
+	foreach optionInfo [$T header configure $H $C] {
+	    lassign $optionInfo name x y default current
+	    array set config [list $name $current]
+	}
+    }
+    $T header style set $H $C $S
+    array set config $args ; # FIXME could be abbreviations/synonyms
+    if {$params(text) && [llength [array names config -text]]} {
+	$T header element configure $H $C $S.text -text $config(-text)
+    }
+    if {$params(image) && [llength [array names config -image]]} {
+	$T header element configure $H $C $S.image -image $config(-image)
+    }
+    if {$params(bitmap) && [llength [array names config -bitmap]]} {
+	$T header element configure $H $C $S.bitmap -image $config(-bitmap)
+    }
+    set validOptions [list -arrow -arrowbitmap -arrowimage -arrowside \
+	-arrowgravity -arrowpadx -arrowpady -background -borderwidth -state]
+    set optval {}
+    foreach {option value} $args {
+	if {[lsearch -glob $validOptions $option*] != -1} {
+	    lappend optval $option $value
+	}
+    }
+if 1 {
+    if {[llength $optval]} {
+	eval $T header element configure $H $C $S.header $optval
+    }
+} else {
+    $T header element configure $H $C $S.header \
+	-arrow [$T header cget $H $C -arrow] \
+	-arrowbitmap [$T header cget $H $C -arrowbitmap] \
+	-arrowimage [$T header cget $H $C -arrowimage] \
+	-arrowside [$T header cget $H $C -arrowside] \
+	-arrowgravity [$T header cget $H $C -arrowgravity] \
+	-arrowpadx [$T header cget $H $C -arrowpadx] \
+	-arrowpady [$T header cget $H $C -arrowpady] \
+	-background [$T header cget $H $C -background] \
+	-borderwidth [$T header cget $H $C -borderwidth] \
+	-state [$T header cget $H $C -state]
+}
     return
 }
