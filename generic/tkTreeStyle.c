@@ -5401,11 +5401,13 @@ Tree_ElementChangedItself(
 #endif
 	style->neededWidth = style->neededHeight = -1;
 
-	TreeColumns_InvalidateWidthOfItems(tree, Tree_FindColumn(tree, columnIndex));
+	if (TreeItem_GetHeader(tree, item) == NULL)
+	    TreeColumns_InvalidateWidthOfItems(tree, Tree_FindColumn(tree, columnIndex));
 	TreeItemColumn_InvalidateSize(tree, column);
 	TreeItem_InvalidateHeight(tree, item);
 	Tree_FreeItemDInfo(tree, item, NULL);
-	Tree_DInfoChanged(tree, DINFO_REDO_RANGES);
+	if (TreeItem_GetHeader(tree, item) == NULL)
+	    Tree_DInfoChanged(tree, DINFO_REDO_RANGES);
     }
     else if (csM & CS_DISPLAY) {
 	int columnIndex;
