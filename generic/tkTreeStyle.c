@@ -671,8 +671,6 @@ Layout_AddUnionPadding(
     iPadX = layout->iPadX;
     iPadY = layout->iPadY;
 
-TreeElement_GetContentMargins(tree, layout->eLink->elem, layout->margins);
-
     for (i = 0; i < 2; i++) {
 	padX[i] = MAX(totalPadX[i], ePadX[i]) + iPadX[i] + layout->margins[i*2];
 	padY[i] = MAX(totalPadY[i], ePadY[i]) + iPadY[i] + layout->margins[i*2+1];
@@ -1325,12 +1323,13 @@ Style_DoLayoutH(
 	    layout->ePadY[j] = eLink1->ePadY[j];
 	    layout->iPadX[j] = eLink1->iPadX[j];
 	    layout->iPadY[j] = eLink1->iPadY[j];
-layout->margins[j] = layout->margins[j+2] = 0;
 
 	    /* No -union padding yet */
 	    layout->uPadX[j] = 0;
 	    layout->uPadY[j] = 0;
 	}
+
+TreeElement_GetContentMargins(tree, layout->eLink->elem, drawArgs->state, layout->margins);
 
 	/* Count all non-union, non-detach squeezeable elements */
 	if (DETACH_OR_UNION(eLink1))
@@ -1375,8 +1374,6 @@ layout->margins[j] = layout->margins[j+2] = 0;
 	ePadY = eLink1->ePadY;
 	iPadX = eLink1->iPadX;
 	iPadY = eLink1->iPadY;
-
-TreeElement_GetContentMargins(tree, layout->eLink->elem, layout->margins);
 
 	for (j = 0; j < 2; j++) {
 	    padx[j] = ePadX[j] + iPadX[j] + layout->margins[j*2];
@@ -2611,11 +2608,13 @@ Style_NeededSize(
 	    layout->ePadY[j] = eLink1->ePadY[j];
 	    layout->iPadX[j] = eLink1->iPadX[j];
 	    layout->iPadY[j] = eLink1->iPadY[j];
-layout->margins[j] = layout->margins[j+2] = 0;
+
 	    /* No -union padding yet */
 	    layout->uPadX[j] = 0;
 	    layout->uPadY[j] = 0;
 	}
+
+TreeElement_GetContentMargins(tree, layout->eLink->elem, state, layout->margins);
     }
 
     /* Calculate the padding around elements surrounded by -union elements */
@@ -2636,8 +2635,6 @@ layout->margins[j] = layout->margins[j+2] = 0;
 	ePadY = eLink1->ePadY;
 	iPadX = eLink1->iPadX;
 	iPadY = eLink1->iPadY;
-
-TreeElement_GetContentMargins(tree, layout->eLink->elem, layout->margins);
 
 	for (j = 0; j < 2; j++) {
 	    padx[j] = ePadX[j] + iPadX[j] + layout->margins[j*2];

@@ -1786,57 +1786,46 @@ static int CreateProcHeader(TreeElementArgs *args)
     return TCL_OK;
 }
 
-static int
-HeaderStateToMask(
-    ElementHeader *elemX
-    )
-{
-    ElementHeader *masterX = (ElementHeader *) elemX->header.master;
-    int elemState = 0x01, columnState = COLUMN_STATE_NORMAL;
-
-    if (elemX->state != -1)
-	columnState = elemX->state;
-    else if (masterX != NULL && masterX->state != -1)
-	columnState = masterX->state;
-
-    if (columnState == COLUMN_STATE_ACTIVE)
-	elemState = 0x02;
-    else if (columnState == COLUMN_STATE_PRESSED)
-	elemState = 0x04;
-
-    return elemState;
-}
-
 struct HeaderParams
 {
-    int state;
-    int arrow;
+    int state;		/* COLUMN_STATE_XXX */
+    int arrow;		/* COLUMN_ARROW_XXX */
     int borderWidth;
-    int margins[4]; /* content margins, not including arrow */
+    int margins[4];	/* content margins, not including arrow */
+    int elemState;	/* STATE_XXX */
 };
 
 static void
 HeaderGetParams(
     TreeCtrl *tree,
     ElementHeader *elemX,
+    int state,
     struct HeaderParams *params
     )
 {
     ElementHeader *masterX = (ElementHeader *) elemX->header.master;
 
+    params->elemState = state;
+
+    params->state = COLUMN_STATE_NORMAL;
     if (elemX->state != -1)
 	params->state = elemX->state;
     else if (masterX != NULL && masterX->state != -1)
 	params->state = masterX->state;
-    else
-	params->state = COLUMN_STATE_NORMAL;
+    else if (elemX->header.stateDomain == STATE_DOMAIN_HEADER) {
+	if (state & STATE_HEADER_ACTIVE) params->state = COLUMN_STATE_ACTIVE;
+	if (state & STATE_HEADER_PRESSED) params->state = COLUMN_STATE_PRESSED;
+    }
 
+    params->arrow = COLUMN_ARROW_NONE;
     if (elemX->arrow != -1)
 	params->arrow = elemX->arrow;
     else if (masterX != NULL && masterX->arrow != -1)
 	params->arrow = masterX->arrow;
-    else
-	params->arrow = COLUMN_ARROW_NONE;
+    else if (elemX->header.stateDomain == STATE_DOMAIN_HEADER) {
+	if (state & STATE_HEADER_SORT_UP) params->arrow = COLUMN_ARROW_UP;
+	if (state & STATE_HEADER_SORT_DOWN) params->arrow = COLUMN_ARROW_DOWN;
+    }
 
     if (elemX->borderWidthObj)
 	params->borderWidth = elemX->borderWidth;
@@ -1884,7 +1873,7 @@ HeaderLayoutArrow(
     )
 {
     ElementHeader *masterX = (ElementHeader *) elemX->header.master;
-    int state = HeaderStateToMask(elemX);
+    int state = params->elemState;
     int arrowSide, arrowWidth = -1, arrowHeight;
     Tk_Image image;
     Pixmap bitmap;
@@ -1948,9 +1937,21 @@ HeaderLayoutArrow(
     if ((arrowWidth == -1) && tree->useTheme &&
 	    TreeTheme_GetArrowSize(tree, Tk_WindowId(tree->tkwin),
 	    params->arrow == COLUMN_ARROW_UP, &arrowWidth, &arrowHeight) == TCL_OK) {
+	/* nothing */
     }
 
     if (arrowWidth == -1) {
+#if 0
+	/* This is the original calculation of arrow size. */
+	Tk_Font tkfont = column->tkfont ? column->tkfont : tree->tkfont;
+	Tk_FontMetrics fm;
+	Tk_GetFontMetrics(tkfont, &fm);
+	arrowWidth = (fm.linespace + column->textPadY[PAD_TOP_LEFT] +
+	    column->textPadY[PAD_BOTTOM_RIGHT] + column->borderWidth * 2) / 2;
+	if (!(arrowWidth & 1))
+	    arrowWidth--;
+	arrowHeight = arrowWidth;
+#endif
 	arrowWidth = 9; /* FIXME: -sortarrowwidth */
 	arrowHeight = arrowWidth;
     }
@@ -1990,14 +1991,15 @@ HeaderDrawArrow(
     Tk_Image image;
     Pixmap bitmap;
     Tk_3DBorder border;
-    int state = HeaderStateToMask(elemX);
-    int sunken = (state & 0x04) != 0;
+    int state = params->elemState;
+    int sunken = params->state == COLUMN_STATE_PRESSED;
     struct ArrowLayout layout;
     int match, match2;
 
-    HeaderLayoutArrow(tree, elemX, params, x, y, width, height, &layout);
-    if (layout.arrow == COLUMN_ARROW_NONE)
+    if (params->arrow == COLUMN_ARROW_NONE)
 	return;
+
+    HeaderLayoutArrow(tree, elemX, params, x, y, width, height, &layout);
 
     IMAGE_FOR_STATE(image, arrowImage, state);
     if (image != NULL) {
@@ -2102,7 +2104,6 @@ static void DisplayProcHeader(TreeElementArgs *args)
     Tk_3DBorder border, borderDefault = NULL;
     int relief;
     int match, match2;
-    int elemState = 0x01;
     struct HeaderParams params;
 
 #ifdef MAC_OSX_TK
@@ -2122,7 +2123,7 @@ static void DisplayProcHeader(TreeElementArgs *args)
      * width of the style. */
     width = MIN(width, TreeRect_Right(args->display.spanBbox) - x);
 
-    HeaderGetParams(tree, elemX, &params);
+    HeaderGetParams(tree, elemX, args->state, &params);
 
     if (tree->useTheme && TreeTheme_DrawHeaderItem(tree, args->display.td,
 	    params.state, params.arrow, 0, x, y, width, height)
@@ -2135,12 +2136,7 @@ static void DisplayProcHeader(TreeElementArgs *args)
 	return;
     }
 
-    if (params.state == COLUMN_STATE_ACTIVE)
-	elemState = 0x02;
-    else if (params.state == COLUMN_STATE_PRESSED)
-	elemState = 0x04;
-
-    BORDER_FOR_STATE(border, border, elemState)
+    BORDER_FOR_STATE(border, border, params.elemState)
     if (border == NULL) {
 	Tk_Uid colorName = Tk_GetUid(DEF_BUTTON_BG_COLOR);
 	if (params.state != COLUMN_STATE_NORMAL)
@@ -2152,7 +2148,7 @@ static void DisplayProcHeader(TreeElementArgs *args)
 	border = borderDefault;
     }
 
-    RELIEF_FOR_STATE(relief, relief, elemState)
+    RELIEF_FOR_STATE(relief, relief, params.elemState)
     if (relief == TK_RELIEF_NULL)
 	relief = (params.state == COLUMN_STATE_PRESSED) ? TK_RELIEF_SUNKEN : TK_RELIEF_RAISED;
 
@@ -2182,7 +2178,7 @@ static void NeededProcHeader(TreeElementArgs *args)
 	/* nothing */
     }
 #endif
-    HeaderGetParams(tree, elemX, &params);
+    HeaderGetParams(tree, elemX, args->state, &params);
 
     HeaderLayoutArrow(tree, elemX, &params, TreeRect_Left(bounds),
 	TreeRect_Top(bounds), TreeRect_Width(bounds),
@@ -2206,16 +2202,98 @@ static void NeededProcHeader(TreeElementArgs *args)
 
 static int StateProcHeader(TreeElementArgs *args)
 {
-    /* The per-state options are not affected by changes to the item's state,
-     * only the element's -state option. */
+    TreeCtrl *tree = args->tree;
+    TreeElement elem = args->elem;
+    ElementHeader *elemX = (ElementHeader *) elem;
+    ElementHeader *masterX = (ElementHeader *) elem->master;
+    int match, match2;
+    Tk_Image image1 = NULL, image2 = NULL;
+    Pixmap bitmap1 = None, bitmap2 = None;
+    Tk_3DBorder border1, border2;
+    int relief1, relief2;
+    struct HeaderParams params1, params2;
+
+    if (!args->states.visible2)
+	return 0;
+
+    HeaderGetParams(tree, elemX, args->states.state1, &params1);
+    HeaderGetParams(tree, elemX, args->states.state2, &params2);
+
+    /* Check for -arrow changing to/from "none" */
+    if ((params1.arrow != COLUMN_ARROW_NONE) ^
+	    (params2.arrow != COLUMN_ARROW_NONE))
+	return CS_DISPLAY | CS_LAYOUT;
+
+    if (params1.arrow != COLUMN_ARROW_NONE) {
+	IMAGE_FOR_STATE(image1, arrowImage, args->states.state1)
+    }
+    if (params2.arrow != COLUMN_ARROW_NONE) {
+	IMAGE_FOR_STATE(image2, arrowImage, args->states.state2)
+    }
+    if (image1 != image2) {
+	if ((image1 != NULL) && (image2 != NULL)) {
+	    int w1, h1, w2, h2;
+	    Tk_SizeOfImage(image1, &w1, &h1);
+	    Tk_SizeOfImage(image2, &w2, &h2);
+	    if ((w1 != w2) || (h1 != h2))
+		return CS_DISPLAY | CS_LAYOUT;
+	    return CS_DISPLAY;
+	}
+	return CS_DISPLAY | CS_LAYOUT;
+    }
+
+    if (params1.arrow != COLUMN_ARROW_NONE) {
+	BITMAP_FOR_STATE(bitmap1, arrowBitmap, args->states.state1)
+    }
+    if (params2.arrow != COLUMN_ARROW_NONE) {
+	BITMAP_FOR_STATE(bitmap2, arrowBitmap, args->states.state2)
+    }
+    if (bitmap1 != bitmap2) {
+	if ((bitmap1 != None) && (bitmap2 != None)) {
+	    int w1, h1, w2, h2;
+	    Tk_SizeOfBitmap(tree->display, bitmap1, &w1, &h1);
+	    Tk_SizeOfBitmap(tree->display, bitmap2, &w2, &h2);
+	    if ((w1 != w2) || (h1 != h2))
+		return CS_DISPLAY | CS_LAYOUT;
+	    return CS_DISPLAY;
+	}
+	return CS_DISPLAY | CS_LAYOUT;
+    }
+
+    if (!args->states.draw2)
+	return 0;
+
+    if (params1.state != params2.state)
+	return CS_DISPLAY;
+
+    if (params1.arrow != params2.arrow)
+	return CS_DISPLAY;
+
+    BORDER_FOR_STATE(border1, border, args->states.state1)
+    BORDER_FOR_STATE(border2, border, args->states.state2)
+    if (border1 != border2)
+	return CS_DISPLAY;
+
+    RELIEF_FOR_STATE(relief1, relief, args->states.state1)
+    RELIEF_FOR_STATE(relief2, relief, args->states.state2)
+    if (relief1 != relief2)
+	return CS_DISPLAY;
+
     return 0;
 }
 
 static int UndefProcHeader(TreeElementArgs *args)
 {
-    /* The per-state options are not affected by changes to the item's state,
-     * only the element's -state option. */
-    return 0;
+    TreeCtrl *tree = args->tree;
+    TreeElement elem = args->elem;
+    ElementHeader *elemX = (ElementHeader *) elem;
+    int modified = 0;
+
+    modified |= PerStateInfo_Undefine(tree, &pstBitmap, &elemX->arrowBitmap, elem->stateDomain, args->state);
+    modified |= PerStateInfo_Undefine(tree, &pstImage, &elemX->arrowImage, elem->stateDomain, args->state);
+    modified |= PerStateInfo_Undefine(tree, &pstBorder, &elemX->border, elem->stateDomain, args->state);
+    modified |= PerStateInfo_Undefine(tree, &pstRelief, &elemX->relief, elem->stateDomain, args->state);
+    return modified;
 }
 
 static int ActualProcHeader(TreeElementArgs *args)
@@ -2224,36 +2302,33 @@ static int ActualProcHeader(TreeElementArgs *args)
     ElementHeader *elemX = (ElementHeader *) args->elem;
     ElementHeader *masterX = (ElementHeader *) args->elem->master;
     static CONST char *optionName[] = {
+	"-arrowbitmap",
+	"-arrowimage",
 	"-background",
 	"-relief",
 	(char *) NULL };
     int index, match, matchM;
     Tcl_Obj *obj = NULL;
-    int elemState = 0x01, columnState = COLUMN_STATE_NORMAL;
 
     if (Tcl_GetIndexFromObj(tree->interp, args->actual.obj, optionName,
 		"option", 0, &index) != TCL_OK)
 	return TCL_ERROR;
 
-    /* The per-state options are not affected by changes to the item's state,
-     * only the element's -state option. */
-    if (elemX->state != -1)
-	columnState = elemX->state;
-    else if (masterX != NULL && masterX->state != -1)
-	columnState = masterX->state;
-
-    if (columnState == COLUMN_STATE_ACTIVE)
-	elemState = 0x02;
-    else if (columnState == COLUMN_STATE_PRESSED)
-	elemState = 0x04;
-
     switch (index) {
 	case 0: {
-	    OBJECT_FOR_STATE(obj, pstBorder, border, elemState)
+	    OBJECT_FOR_STATE(obj, pstBitmap, arrowBitmap, args->state)
 	    break;
 	}
 	case 1: {
-	    OBJECT_FOR_STATE(obj, pstRelief, relief, elemState)
+	    OBJECT_FOR_STATE(obj, pstImage, arrowImage, args->state)
+	    break;
+	}
+	case 2: {
+	    OBJECT_FOR_STATE(obj, pstBorder, border, args->state)
+	    break;
+	}
+	case 3: {
+	    OBJECT_FOR_STATE(obj, pstRelief, relief, args->state)
 	    break;
 	}
     }
@@ -2284,6 +2359,7 @@ void
 TreeElement_GetContentMargins(
     TreeCtrl *tree,
     TreeElement elem,
+    int state,
     int margins[4]
     )
 {
@@ -2295,7 +2371,7 @@ TreeElement_GetContentMargins(
 	struct ArrowLayout layout;
 	TreeRectangle bounds = {0, 0, 100, 24};
 
-	HeaderGetParams(tree, elemX, &params);
+	HeaderGetParams(tree, elemX, state, &params);
 
 	margins[1] = params.margins[1];
 	margins[3] = params.margins[3];
