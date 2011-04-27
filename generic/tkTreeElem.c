@@ -11,6 +11,10 @@
 #include "tkTreeCtrl.h"
 #include "tkTreeElem.h"
 
+/* When a column header is in the pressed state, any bitmap, image, and text
+ * elements are offset by 1,1. */
+#define HEADER_OFFSET_HACK 1
+
 /*
  *----------------------------------------------------------------------
  *
@@ -740,6 +744,8 @@ static void DisplayProcBitmap(TreeElementArgs *args)
     Pixmap bitmap;
     XColor *fg, *bg;
     int imgW, imgH;
+    int inHeader = TreeItem_GetHeader(tree, args->display.item) != NULL;
+    int columnState = COLUMN_STATE_NORMAL;
 
 #ifdef DEPRECATED
     BOOLEAN_FOR_STATE(draw, draw, state)
@@ -760,6 +766,22 @@ static void DisplayProcBitmap(TreeElementArgs *args)
 	args->display.width, args->display.height,
 	FALSE, FALSE,
 	&x, &y, &width, &height);
+#if HEADER_OFFSET_HACK == 1
+    if (inHeader) {
+	if (state & STATE_HEADER_ACTIVE)
+	    columnState = COLUMN_STATE_ACTIVE;
+	else if (state & STATE_HEADER_PRESSED)
+	    columnState = COLUMN_STATE_PRESSED;
+    }
+    if (inHeader && columnState == COLUMN_STATE_PRESSED) {
+	/* If this bitmap fills the whole header, don't offset it. */
+	/* FIXME: should have a layout option to control this. */
+	if (imgW < args->display.spanBbox.width ||
+		imgH < args->display.spanBbox.height) {
+	    x += 1, y += 1;
+	}
+    }
+#endif
     if (imgW > args->display.width)
 	imgW = args->display.width;
     if (imgH > args->display.height)
@@ -1937,7 +1959,9 @@ HeaderLayoutArrow(
 	layout->x = x + arrowPadX[PAD_TOP_LEFT];
     } else {
 	layout->x = x + width - arrowPadX[PAD_BOTTOM_RIGHT] - arrowWidth;
-layout->x = MAX(layout->x, x + arrowPadX[PAD_TOP_LEFT]); /* hackRightEdge */
+
+	/* Don't let the arrow go too far left when the column is very narrow. */
+	layout->x = MAX(layout->x, x + arrowPadX[PAD_TOP_LEFT]); /* spanBbox */
     }
     layout->width = arrowWidth;
 
@@ -2093,11 +2117,10 @@ static void DisplayProcHeader(TreeElementArgs *args)
 	TRUE, TRUE,
 	&x, &y, &width, &height);
 
-    /* hackRightEdge is the actual right edge of the column.  We want the
-     * right side of the header to match the right edge of the column
-     * and not be clipped when the column width is less than the needed
+    /* We want the right side of the header to match the right edge of the
+     * column and not be clipped when the column width is less than the needed
      * width of the style. */
-    width = MIN(width, args->display.hackRightEdge - x);
+    width = MIN(width, TreeRect_Right(args->display.spanBbox) - x);
 
     HeaderGetParams(tree, elemX, &params);
 
@@ -2423,6 +2446,8 @@ static void DisplayProcImage(TreeElementArgs *args)
     Tk_Image image;
     int imgW, imgH;
     int tiled = 0, *eit, *eitM = NULL;
+    int inHeader = TreeItem_GetHeader(tree, args->display.item) != NULL;
+    int columnState = COLUMN_STATE_NORMAL;
 
 #ifdef DEPRECATED
     draw = DO_BooleanForState(tree, elem, 1002, state);
@@ -2457,6 +2482,22 @@ static void DisplayProcImage(TreeElementArgs *args)
 	args->display.width, args->display.height,
 	FALSE, FALSE,
 	&x, &y, &width, &height);
+#if HEADER_OFFSET_HACK == 1
+    if (inHeader) {
+	if (state & STATE_HEADER_ACTIVE)
+	    columnState = COLUMN_STATE_ACTIVE;
+	else if (state & STATE_HEADER_PRESSED)
+	    columnState = COLUMN_STATE_PRESSED;
+    }
+    if (inHeader && columnState == COLUMN_STATE_PRESSED) {
+	/* If this image fills the whole header, don't offset it. */
+	/* FIXME: should have a layout option to control this. */
+	if (imgW < args->display.spanBbox.width ||
+		imgH < args->display.spanBbox.height) {
+	    x += 1, y += 1;
+	}
+    }
+#endif
     if (imgW > args->display.width)
 	imgW = args->display.width;
     if (imgH > args->display.height)
@@ -3907,6 +3948,8 @@ static void DisplayProcText(TreeElementArgs *args)
 #if USE_ITEM_PIXMAP == 0
     TreeRectangle trClip, trElem;
 #endif
+    int inHeader = TreeItem_GetHeader(tree, args->display.item) != NULL;
+    int columnState = COLUMN_STATE_NORMAL;
 
 #ifdef DEPRECATED
     draw = DO_BooleanForState(tree, elem, DOID_TEXT_DRAW, state);
@@ -3921,6 +3964,13 @@ static void DisplayProcText(TreeElementArgs *args)
 
     if (text == NULL) /* always false (or layout sets height/width to zero) */
 	return;
+
+    if (inHeader) {
+	if (state & STATE_HEADER_ACTIVE)
+	    columnState = COLUMN_STATE_ACTIVE;
+	else if (state & STATE_HEADER_PRESSED)
+	    columnState = COLUMN_STATE_PRESSED;
+    }
 
     DO_COLOR_FOR_STATE(color, DOID_TEXT_FILL, state);
     tkfont = DO_FontForState(tree, elem, DOID_TEXT_FONT, state);
@@ -3972,6 +4022,11 @@ static void DisplayProcText(TreeElementArgs *args)
 	    args->display.width, args->display.height,
 	    FALSE, FALSE,
 	    &x, &y, &width, &height);
+#if HEADER_OFFSET_HACK == 1
+	/* FIXME: should have a layout option to control this. */
+	if (inHeader && columnState == COLUMN_STATE_PRESSED)
+	    x += 1, y += 1;
+#endif
 #if USE_ITEM_PIXMAP == 0
 	/* Use clipping if text is larger than the display area. */
 	trElem.x = x, trElem.y = y, trElem.width = args->display.width,
@@ -4019,6 +4074,11 @@ static void DisplayProcText(TreeElementArgs *args)
 	args->display.width, args->display.height,
 	FALSE, FALSE,
 	&x, &y, &width, &height);
+#if HEADER_OFFSET_HACK == 1
+    /* FIXME: should have a layout option to control this. */
+    if (inHeader && columnState == COLUMN_STATE_PRESSED)
+	x += 1, y += 1;
+#endif
 #if USE_ITEM_PIXMAP == 0
     /* Use clipping if text is larger than the display area. */
     trElem.x = x, trElem.y = y, trElem.width = args->display.width,

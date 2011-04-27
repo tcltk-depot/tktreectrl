@@ -36,7 +36,6 @@ struct TreeElementArgs
 	int y;
 	int width;
 	int height;
-int hackRightEdge;
 #define STICKY_W 0x1000 /* These values must match ELF_STICKY_xxx */
 #define STICKY_N 0x2000
 #define STICKY_E 0x4000
@@ -45,6 +44,7 @@ int hackRightEdge;
 	TreeDrawable td;
 	Drawable drawable;
 	TreeRectangle bounds;
+	TreeRectangle spanBbox;
 	TreeColumn column; /* needed for gradients */
 	TreeItem item; /* needed for gradients */
     } display;

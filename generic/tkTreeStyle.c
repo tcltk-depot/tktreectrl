@@ -3066,7 +3066,8 @@ TreeStyle_Draw(
     TreeRect_SetXYWH(bounds, x, y, drawArgs->width, drawArgs->height);
     TreeRect_Intersect(&args.display.bounds, &bounds, &drawArgs->bounds);
 
-args.display.hackRightEdge = drawArgs->x + drawArgs->width;
+    TreeRect_SetXYWH(args.display.spanBbox, drawArgs->x, drawArgs->y,
+	drawArgs->width, drawArgs->height);
 
     /* We never lay out the style at less than the minimum size */
     if (drawArgs->width < minWidth + drawArgs->indent)
