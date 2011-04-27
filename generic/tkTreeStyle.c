@@ -7809,7 +7809,9 @@ Tree_MakeHeaderStyle(
 	if (hs->params.text != params->text) continue;
 	for (i = 0; i < 2; i++) {
 	    if (hs->params.imagePadX[i] != params->imagePadX[i]) break;
+	    if (hs->params.imagePadY[i] != params->imagePadY[i]) break;
 	    if (hs->params.textPadX[i] != params->textPadX[i]) break;
+	    if (hs->params.textPadY[i] != params->textPadY[i]) break;
 	}
 	if (i < 2) continue;
 	break;
