@@ -7839,7 +7839,6 @@ Tree_MakeHeaderStyle(
 	hPtr = Tcl_CreateHashEntry(&tree->elementHash, name, &isNew);
 	Tcl_SetHashValue(hPtr, elem);
 	tree->headerStyle.headerElem = elem;
-	tree->headerStyle.headerElemNameObjPtr = Tcl_NewStringObj(name, -1);
     }
     if (tree->headerStyle.bitmapElem == NULL) {
 	Tcl_Obj *obj = Tcl_NewStringObj("bitmap", -1);
@@ -7855,7 +7854,6 @@ Tree_MakeHeaderStyle(
 	hPtr = Tcl_CreateHashEntry(&tree->elementHash, name, &isNew);
 	Tcl_SetHashValue(hPtr, elem);
 	tree->headerStyle.bitmapElem = elem;
-	tree->headerStyle.bitmapElemNameObjPtr = Tcl_NewStringObj(name, -1);
     }
     if (tree->headerStyle.imageElem == NULL) {
 	Tcl_Obj *obj = Tcl_NewStringObj("image", -1);
@@ -7871,7 +7869,6 @@ Tree_MakeHeaderStyle(
 	hPtr = Tcl_CreateHashEntry(&tree->elementHash, name, &isNew);
 	Tcl_SetHashValue(hPtr, elem);
 	tree->headerStyle.imageElem = elem;
-	tree->headerStyle.imageElemNameObjPtr = Tcl_NewStringObj(name, -1);
     }
     if (tree->headerStyle.textElem == NULL) {
 	Tcl_Obj *obj = Tcl_NewStringObj("text", -1);
@@ -7887,7 +7884,6 @@ Tree_MakeHeaderStyle(
 	hPtr = Tcl_CreateHashEntry(&tree->elementHash, name, &isNew);
 	Tcl_SetHashValue(hPtr, elem);
 	tree->headerStyle.textElem = elem;
-	tree->headerStyle.textElemNameObjPtr = Tcl_NewStringObj(name, -1);
     }
 
     sprintf(name, "treectrl_header_style_%d", tree->headerStyle.nextId);

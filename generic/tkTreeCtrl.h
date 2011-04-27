@@ -578,10 +578,6 @@ struct TreeCtrl
 	TreeElement bitmapElem;
 	TreeElement imageElem;
 	TreeElement textElem;
-	Tcl_Obj *headerElemNameObjPtr;
-	Tcl_Obj *bitmapElemNameObjPtr;
-	Tcl_Obj *imageElemNameObjPtr;
-	Tcl_Obj *textElemNameObjPtr;
     } headerStyle;
 
     /* These two options contain "-image" and "-text".
