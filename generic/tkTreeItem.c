@@ -838,6 +838,9 @@ TreeItemColumn_ChangeState(
 	    treeColumn, item->state | column->cstate, item->state | cstate);
 #endif
 
+    if ((iMask & CS_LAYOUT) && (item->header != NULL))
+	TreeColumns_InvalidateWidth(tree);
+
     column->cstate = cstate;
 
     return iMask;
@@ -993,6 +996,8 @@ TreeItem_ChangeState(
 	Tree_FreeItemDInfo(tree, item, NULL);
 	if (item->header == NULL)
 	    Tree_DInfoChanged(tree, DINFO_REDO_RANGES);
+	else
+	    TreeColumns_InvalidateWidth(tree);
     }
 
     item->state = state;
