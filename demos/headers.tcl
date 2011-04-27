@@ -50,7 +50,7 @@ proc DemoHeaders::Run {} {
 	-background $::SystemButtonFace \
 	-relief {sunken pressed raised {}} -thickness 2 -filled yes
     $T element create header.text text -statedomain header \
-	-lines 1
+	-lines 1 -fill black
 
     set S [$T style create header1 -orient horizontal -statedomain header]
     $T style elements $S {header.border header.text header.sort}
