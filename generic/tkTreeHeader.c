@@ -190,11 +190,12 @@ static Tk_OptionSpec columnSpecs[] = {
     /* -textcolor initialized by TreeHeader_InitInterp() */
     {TK_OPTION_CUSTOM, "-textcolor", (char *) NULL, (char *) NULL,
      (char *) NULL, Tk_Offset(HeaderColumn, textColor.obj),
-     Tk_Offset(HeaderColumn, textColor), 0, (ClientData) NULL, COLU_CONF_DISPLAY},
+     Tk_Offset(HeaderColumn, textColor), 0, (ClientData) NULL,
+     COLU_CONF_DISPLAY | ELEM_TEXT},
     {TK_OPTION_INT, "-textlines", (char *) NULL, (char *) NULL,
      "1", -1, Tk_Offset(HeaderColumn, textLines),
      0, (ClientData) NULL, COLU_CONF_TEXT | COLU_CONF_NWIDTH |
-     COLU_CONF_NHEIGHT | COLU_CONF_DISPLAY},
+     COLU_CONF_NHEIGHT | COLU_CONF_DISPLAY | ELEM_TEXT},
     {TK_OPTION_CUSTOM, "-textpadx", (char *) NULL, (char *) NULL,
      "6", Tk_Offset(HeaderColumn, textPadXObj),
      Tk_Offset(HeaderColumn, textPadX), 0, (ClientData) &TreeCtrlCO_pad,
@@ -472,6 +473,7 @@ TreeHeaderColumn_ConfigureHeaderStyle(
     int i, infoObjC = 0, elemObjC[3], eMask, iMask = 0;
     Tcl_Obj *staticInfoObjV[STATIC_SIZE], **infoObjV = staticInfoObjV;
     Tcl_Obj *staticElemObjV[3][STATIC_SIZE], **elemObjV[3];
+    Tcl_Obj *textFillObj = NULL, *textLinesObj = NULL;
     int result;
 
     if (!TreeStyle_IsHeaderStyle(tree,
@@ -530,7 +532,21 @@ TreeHeaderColumn_ConfigureHeaderStyle(
 		}
 		if (specPtr->typeMask & ELEM_TEXT) {
 		    if (column->textLen > 0) {
-			elemObjV[2][elemObjC[2]++] = listObjV[0]; /* name */
+			if (!strcmp(specPtr->optionName, "-textcolor")) {
+			    if (textFillObj == NULL) {
+				textFillObj = Tcl_NewStringObj("-fill", -1);
+				Tcl_IncrRefCount(textFillObj);
+			    }
+			    elemObjV[2][elemObjC[2]++] = textFillObj;
+			} else if (!strcmp(specPtr->optionName, "-textlines")) {
+			    if (textLinesObj == NULL) {
+				textLinesObj = Tcl_NewStringObj("-lines", -1);
+				Tcl_IncrRefCount(textLinesObj);
+			    }
+			    elemObjV[2][elemObjC[2]++] = textLinesObj;
+			} else {
+			    elemObjV[2][elemObjC[2]++] = listObjV[0]; /* name */
+			}
 			elemObjV[2][elemObjC[2]++] = listObjV[4]; /* value */
 		    }
 		}
@@ -559,7 +575,21 @@ TreeHeaderColumn_ConfigureHeaderStyle(
 	    }
 	    if (specPtr->typeMask & ELEM_TEXT) {
 		if (column->textLen > 0) {
-		    elemObjV[2][elemObjC[2]++] = objv[i]; /* name */
+		    if (!strcmp(specPtr->optionName, "-textcolor")) {
+			if (textFillObj == NULL) {
+			    textFillObj = Tcl_NewStringObj("-fill", -1);
+			    Tcl_IncrRefCount(textFillObj);
+			}
+			elemObjV[2][elemObjC[2]++] = textFillObj;
+		    } else if (!strcmp(specPtr->optionName, "-textlines")) {
+			if (textLinesObj == NULL) {
+			    textLinesObj = Tcl_NewStringObj("-lines", -1);
+			    Tcl_IncrRefCount(textLinesObj);
+			}
+			elemObjV[2][elemObjC[2]++] = textLinesObj;
+		    } else {
+			elemObjV[2][elemObjC[2]++] = objv[i]; /* name */
+		    }
 		    elemObjV[2][elemObjC[2]++] = objv[i + 1]; /* value */
 		}
 	    }
@@ -601,6 +631,10 @@ TreeHeaderColumn_ConfigureHeaderStyle(
 
     for (i = 0; i < infoObjC; i++)
 	Tcl_DecrRefCount(infoObjV[i]);
+    if (textFillObj != NULL)
+	Tcl_DecrRefCount(textFillObj);
+    if (textLinesObj != NULL)
+	Tcl_DecrRefCount(textLinesObj);
 
     for (i = 0; i < 3; i++)
 	STATIC_FREE(elemObjV[i], Tcl_Obj *, elemObjC[i]);
