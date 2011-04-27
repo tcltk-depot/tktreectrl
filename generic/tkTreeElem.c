@@ -3973,6 +3973,19 @@ static void DisplayProcText(TreeElementArgs *args)
     }
 
     DO_COLOR_FOR_STATE(color, DOID_TEXT_FILL, state);
+
+    /* If no color is specified and this element is in a header, get the
+     * system theme color.  If no theme color is provided then use the default
+     * header text color. */
+    if ((color == NULL) && inHeader) {
+	if (!tree->useTheme || TreeTheme_GetColumnTextColor(tree, columnState,
+		&color) != TCL_OK) {
+	    color = tree->defColumnTextColor;
+	}
+	if (color->pixel == tree->textGC->foreground)
+	    color = NULL;
+    }
+
     tkfont = DO_FontForState(tree, elem, DOID_TEXT_FONT, state);
 
     /* FIXME: -font {"" {state...}}*/
