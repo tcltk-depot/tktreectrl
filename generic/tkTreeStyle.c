@@ -7898,6 +7898,7 @@ Tree_MakeHeaderStyle(
 	    eLink->ePadX[i] = params->imagePadX[i];
 	    eLink->ePadY[i] = params->imagePadY[i];
 	}
+	eLink->flags |= ELF_eEXPAND_NS;
 	if (params->justify == TK_JUSTIFY_CENTER)
 	    eLink->flags |= ELF_CENTER_X;
 	else if (params->justify == TK_JUSTIFY_RIGHT)
@@ -7910,7 +7911,7 @@ Tree_MakeHeaderStyle(
 	    eLink->ePadY[i] = params->textPadY[i];
 	}
 	eLink->ePadX[0] = MAX(params->imagePadX[1], params->textPadX[0]);
-	eLink->flags |= ELF_SQUEEZE_X;
+	eLink->flags |= ELF_SQUEEZE_X | ELF_eEXPAND_NS;
 	if (params->justify == TK_JUSTIFY_CENTER)
 	    eLink->flags |= ELF_CENTER_X;
 	else if (!(params->bitmap || params->image) && (params->justify == TK_JUSTIFY_RIGHT))
