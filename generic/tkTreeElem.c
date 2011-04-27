@@ -3982,7 +3982,7 @@ static void DisplayProcText(TreeElementArgs *args)
 		&color) != TCL_OK) {
 	    color = tree->defColumnTextColor;
 	}
-	if (color->pixel == tree->textGC->foreground)
+	if (color->pixel == tree->fgColorPtr->pixel)
 	    color = NULL;
     }
 
