@@ -108,6 +108,7 @@ test header-2.8 {header bbox: header is not visible} -setup {
     .t header bbox first
 } -result {}
 
+if 0 {
 test header-2.9 {header bbox: header is ownerdrawn but has no style} -setup {
     .t header configure first -visible yes -ownerdrawn yes
 } -body {
@@ -115,8 +116,10 @@ test header-2.9 {header bbox: header is ownerdrawn but has no style} -setup {
 } -cleanup {
     .t header configure first -ownerdrawn no
 } -result {2 2 202 2}
+}
 
 test header-2.20 {header bbox: invalid column} -body {
+    .t header configure first -visible yes
     .t header bbox 0 first
 } -returnCodes error -result {column "first" doesn't exist}
 

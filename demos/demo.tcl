@@ -1164,8 +1164,10 @@ proc MakeHeaderPopup {T} {
     set m1 [menu $m.mHeader -tearoff no]
     $m add cascade -label "Header" -menu $m1
 
+if 0 {
     $m1 add checkbutton -label "Owner-drawn" -variable Popup(header,ownerdrawn) \
 	-command [list eval $T header configure \$Popup(header) -ownerdrawn \$Popup(header,ownerdrawn)]
+}
     $m1 add checkbutton -label "Visible" -variable Popup(header,visible) \
 	-command [list eval $T header configure \$Popup(header) -visible \$Popup(header,visible)]
 
@@ -1227,8 +1229,10 @@ proc MakeHeaderSubmenu {T H parentMenu} {
 
     set m1 [menu $parentMenu.mHeader$H -tearoff no]
 
+if 0 {
     $m1 add checkbutton -label "Owner-drawn" -variable Popup(header,ownerdrawn,$H) \
 	-command [list eval $T header configure $H -ownerdrawn \$Popup(header,ownerdrawn,$H)]
+}
     $m1 add checkbutton -label "Visible" -variable Popup(header,visible,$H) \
 	-command [list eval $T header configure $H -visible \$Popup(header,visible,$H)]
 
@@ -1323,7 +1327,9 @@ proc ShowPopup {T x y X Y} {
 	    set Popup(arrow,gravity) [$T header cget $H $C -arrowgravity]
 	    set Popup(button) [$T header cget $H $C -button]
 	    set Popup(header,justify) [$T header cget $H $C -justify]
+if 0 {
 	    set Popup(header,ownerdrawn) [$T header cget $H -ownerdrawn]
+}
 	    set Popup(header,visible) [$T header cget $H -visible]
 
 	    set Popup(header,drag,draw) [$T header dragcget $H -draw]
@@ -1436,8 +1442,9 @@ proc ShowPopup {T x y X Y} {
     foreach H [$T header id all] {
 	set m1 [MakeHeaderSubmenu $T $H $m]
 	$m add cascade -menu $m1 -label "Header $H"
-
+if 0 {
 	set Popup(header,ownerdrawn,$H) [$T header cget $H -ownerdrawn]
+}
 	set Popup(header,visible,$H) [$T header cget $H -visible]
     }
 
@@ -1785,8 +1792,11 @@ proc DemoClear {} {
 
     # Delete all the headers (except the first header, it never gets deleted).
     $T header delete all
+if 1 {
+    $T header configure all -visible yes
+} else {
     $T header configure all -ownerdrawn no -visible yes
-
+}
     # Clear all bindings on the demo list added by the previous demo.
     # The bindings are removed from the tag $T only. For those
     # bindings that should not be deleted we use the tag DontDelete.

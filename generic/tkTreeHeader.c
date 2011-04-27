@@ -55,8 +55,11 @@ struct TreeHeaderColumn_
     int state;			/* -state */
 
     int textLen;
+#ifdef OLDCODE
     int textWidth;
+#endif
     Tk_Image image;
+#ifdef OLDCODE
     int neededWidth;		/* calculated from borders + image/bitmap +
 				 * text + arrow */
     int neededHeight;		/* calculated from borders + image/bitmap +
@@ -66,6 +69,7 @@ struct TreeHeaderColumn_
     TextLayout textLayout;	/* multi-line titles */
     int textLayoutWidth;	/* width passed to TextLayout_Compute */
     int textLayoutInvalid;
+#endif
 #define TEXT_WRAP_NULL -1
 #define TEXT_WRAP_CHAR 0
 #define TEXT_WRAP_WORD 1
@@ -95,7 +99,9 @@ struct TreeHeader_
 {
     TreeCtrl *tree;
     TreeItem item;
+#ifdef OLDCODE
     int ownerDrawn;
+#endif
     struct TreeHeaderDrag columnDrag;
 };
 
@@ -223,9 +229,11 @@ static Tk_OptionSpec dragSpecs[] = {
 
 /* We can also configure -height, -tags and -visible item options */
 static Tk_OptionSpec headerSpecs[] = {
+#ifdef OLDCODE
     {TK_OPTION_BOOLEAN, "-ownerdrawn", (char *) NULL, (char *) NULL,
      "0", -1, Tk_Offset(TreeHeader_, ownerDrawn),
      0, (ClientData) NULL, HEADER_CONF_DISPLAY},
+#endif
     {TK_OPTION_END, (char *) NULL, (char *) NULL, (char *) NULL,
      (char *) NULL, 0, -1, 0, 0, 0}
 };
@@ -371,7 +379,7 @@ Tk_ObjCustomOption TreeCtrlCO_header =
     (ClientData) 0
 };
 
-#if 0
+#ifdef OLDCODE
 /*
  *----------------------------------------------------------------------
  *
@@ -679,8 +687,10 @@ Column_Configure(
     int error;
     Tcl_Obj *errorResult = NULL;
     int mask, maskFree = 0;
+#ifdef OLD_CODE
     XGCValues gcValues;
     unsigned long gcMask;
+#endif
     int state = column->state, arrow = column->arrow;
 
     /* Init these to prevent compiler warnings */
@@ -777,13 +787,16 @@ Column_Configure(
 	    (void) Tcl_GetStringFromObj(column->textObj, &column->textLen);
 	else
 	    column->textLen = 0;
+#ifdef OLDCODE
 	if (column->textLen) {
 	    Tk_Font tkfont = column->tkfont ? column->tkfont : tree->tkfont;
 	    column->textWidth = Tk_TextWidth(tkfont, column->text, column->textLen);
 	} else
 	    column->textWidth = 0;
+#endif
     }
 
+#ifdef OLDCODE
     if (mask & COLU_CONF_BITMAP) {
 	if (column->bitmapGC != None) {
 	    Tk_FreeGC(tree->display, column->bitmapGC);
@@ -827,6 +840,7 @@ Column_Configure(
 	    column->imageEpoch = tree->columnDrag.imageEpoch - 1;
 	}
     }
+#endif
 
     /* Keep the STATE_HEADER_XXX flags in sync. */
     /* FIXME: don't call TreeItemColumn_ChangeState twice here */
@@ -1097,6 +1111,7 @@ TreeHeader_ConsumeColumnOptionInfo(
 	tree->headerColumnOptionTable, objPtr,  tree->tkwin);
 }
 
+#ifdef OLDCODE
 #if 1
 
 /*
@@ -1971,6 +1986,8 @@ TreeHeaderColumn_NeededHeight(
     return column->neededHeight;
 }
 
+#endif /* OLDCODE */
+
 /*
  *----------------------------------------------------------------------
  *
@@ -2044,6 +2061,8 @@ TreeHeaderColumn_SetImageOrText(
     objv[1] = valueObj;
     return Column_Configure(header, column, treeColumn, objc, objv, FALSE);
 }
+
+#ifdef OLDCODE
 
 /*
  *----------------------------------------------------------------------
@@ -2494,6 +2513,8 @@ update:
     return mask;
 }
 
+#endif /* OLDCODE */
+
 static TreeColumn
 GetFollowingColumn(
     TreeColumn column,
@@ -2702,6 +2723,7 @@ TreeHeaderColumn_Draw(
      * Currently a span is always created for the tail column. */
     isHiddenTail = (drawArgs->column == tree->columnTail) && !TreeColumn_Visible(drawArgs->column);
 
+#ifdef OLDCODE
     if (header->ownerDrawn || isDragColumn || isHiddenTail) {
 	GC gc = Tk_3DBorderGC(tree->tkwin, tree->border, TK_3D_FLAT_GC);
 	TreeRectangle tr;
@@ -2711,6 +2733,15 @@ TreeHeaderColumn_Draw(
     } else {
 	Column_Draw(header, column, drawArgs->column, td, drawArgs->indent, x, y, width, height, visIndex, FALSE);
     }
+#else
+    if (1) {
+	GC gc = Tk_3DBorderGC(tree->tkwin, tree->border, TK_3D_FLAT_GC);
+	TreeRectangle tr;
+
+	TreeRect_SetXYWH(tr, x, y, width, height);
+	Tree_FillRectangle(tree, td, NULL, gc, tr);
+    }
+#endif
 
     if ((drawArgs->style != NULL) && !isDragColumn && !isHiddenTail) {
 	TreeStyle_Draw(drawArgs); /* may change drawArgs! */
@@ -2765,7 +2796,9 @@ SetImageForColumn(
     Tk_PhotoHandle photoH;
     TreeDrawable td;
     XImage *ximage;
+#ifdef OLD_CODE
     int visIndex = TreeColumn_VisIndex(treeColumn);
+#endif
     char imageName[128];
 
     if ((column->dragImage != NULL) && (column->imageEpoch == tree->columnDrag.imageEpoch))
@@ -2790,6 +2823,7 @@ SetImageForColumn(
     td.drawable = Tk_GetPixmap(tree->display, Tk_WindowId(tree->tkwin),
 	    width, height, Tk_Depth(tree->tkwin));
 
+#ifdef OLD_CODE
     if (header->ownerDrawn) {
 	GC gc = Tk_3DBorderGC(tree->tkwin, tree->border, TK_3D_FLAT_GC);
 	TreeRectangle tr;
@@ -2798,6 +2832,15 @@ SetImageForColumn(
 	Tree_FillRectangle(tree, td, NULL, gc, tr);
     } else
 	Column_Draw(header, column, treeColumn, td, indent, 0, 0, width, height, visIndex, TRUE);
+#else
+    {
+	GC gc = Tk_3DBorderGC(tree->tkwin, tree->border, TK_3D_FLAT_GC);
+	TreeRectangle tr;
+
+	TreeRect_SetXYWH(tr, 0, 0, width, height);
+	Tree_FillRectangle(tree, td, NULL, gc, tr);
+    }
+#endif
 
     if (TreeItemColumn_GetStyle(tree, column->itemColumn) != NULL) {
 	StyleDrawArgs drawArgs;
@@ -2984,7 +3027,9 @@ Header_Configure(
     Tcl_Obj *staticObjV[STATIC_SIZE], **objV = staticObjV;
     Tcl_Obj *staticIObjV[STATIC_SIZE], **iObjV = staticIObjV;
     int i, oldVisible = TreeItem_ReallyVisible(tree, header->item);
+#ifdef OLD_CODE
     int ownerDrawn = header->ownerDrawn;
+#endif
 
     /* Hack -- Pass all unknown options to the underlying item. */
     STATIC_ALLOC(objV, Tcl_Obj *, objc);
@@ -3067,10 +3112,12 @@ Header_Configure(
 	}
     }
 
-header->ownerDrawn = TRUE;
-
+#ifdef OLD_CODE
     if ((oldVisible != TreeItem_ReallyVisible(tree, header->item)) ||
 	    (ownerDrawn != header->ownerDrawn)) {
+#else
+    if (oldVisible != TreeItem_ReallyVisible(tree, header->item)) {
+#endif
 	tree->headerHeight = -1;
 	Tree_FreeItemDInfo(tree, header->item, NULL);
 	TreeColumns_InvalidateWidth(tree);
@@ -3116,7 +3163,9 @@ TreeHeaderColumn_CreateWithItemColumn(
     }
     /* FIXME: should call Column_Configure to handle any option-database tomfoolery */
     column->itemColumn = itemColumn;
+#ifdef OLD_CODE
     column->neededWidth = column->neededHeight = -1;
+#endif
     tree->headerHeight = -1;
     return column;
 }
@@ -3257,12 +3306,16 @@ TreeHeaderColumn_FreeResources(
     TreeHeaderColumn column	/* Column token. */
     )
 {
+#ifdef OLD_CODE
     if (column->bitmapGC != None)
 	Tk_FreeGC(tree->display, column->bitmapGC);
+#endif
     if (column->image != NULL)
 	Tree_FreeImage(tree, column->image);
+#ifdef OLD_CODE
     if (column->textLayout != NULL)
 	TextLayout_Free(column->textLayout);
+#endif
     if (column->dragImage != NULL) {
 	Tk_FreeImage(column->dragImage);
 	Tk_DeleteImage(tree->interp, column->dragImageName);
@@ -3332,9 +3385,11 @@ TreeHeaders_NeededWidthOfColumn(
 	if (TreeItem_ReallyVisible(tree, item)) {
 	    TreeHeader header = TreeItem_GetHeader(tree, item);
 	    TreeItemColumn itemColumn = TreeItem_FindColumn(tree, item, TreeColumn_Index(treeColumn));
+#ifdef OLD_CODE
 	    TreeHeaderColumn column = TreeItemColumn_GetHeaderColumn(tree, itemColumn);
 	    width = TreeHeaderColumn_NeededWidth(header, column); /* native header stuff */
 	    maxWidth = MAX(maxWidth, width);
+#endif
 	    width = TreeItemColumn_NeededWidth(tree, item, itemColumn); /* the style (if any) */
 	    maxWidth = MAX(maxWidth, width);
 	}
@@ -4581,13 +4636,16 @@ TreeHeader_TreeChanged(
     int flagT			/* TREE_CONF_xxx flags. */
     )
 {
+#ifdef OLD_CODE
     TreeItem item = tree->headerItems;
     TreeItemColumn itemColumn;
     TreeHeaderColumn column;
+#endif
 
     if (!(flagT & (TREE_CONF_FONT | TREE_CONF_RELAYOUT)))
 	return;
 
+#ifdef OLD_CODE
     while (item != NULL) {
 	itemColumn = TreeItem_GetFirstColumn(tree, item);
 	while (itemColumn != NULL) {
@@ -4612,6 +4670,7 @@ TreeHeader_TreeChanged(
 	}
 	item = TreeItem_GetNextSibling(tree, item);
     }
+#endif /* OLDCODE */
 
     tree->headerHeight = -1;
 }

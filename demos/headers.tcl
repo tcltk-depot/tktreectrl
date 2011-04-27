@@ -185,7 +185,11 @@ if 0 {
 
     set S header2
 
+if 1 {
+    $T header configure first -tags header1
+} else {
     $T header configure first -ownerdrawn yes -tags header1
+}
     set H header1
     $T header configure $H all -arrowgravity right -justify center
     $T header style set $H all $S
@@ -195,7 +199,11 @@ if 0 {
 	$T header text $H $C $text
     }
 
+if 1 {
+    set H [$T header create -tags header2]
+} else {
     set H [$T header create -ownerdrawn yes -tags header2]
+}
     $T header configure $H all -arrowgravity right -justify center
     $T header style set $H all $S
     $T header span $H all 2
@@ -204,7 +212,11 @@ if 0 {
 	$T header text $H $C $text
     }
 
+if 1 {
+    set H [$T header create -tags header3]
+} else {
     set H [$T header create -ownerdrawn yes -tags header3]
+}
     $T header configure $H all -arrowgravity right -justify center
     $T header style set $H all $S
     foreach {C text} [list Cleft Left C1 D C2 E C3 F C4 G C5 K C6 L C7 M C8 N Cright Right] {
@@ -224,7 +236,11 @@ if 0 {
     $T style layout $S header.divider -detach yes -expand n -iexpand x
     $T style layout $S header.window -iexpand x -squeeze x -padx 1 -pady {0 2}
 
+if 1 {
+    set H [$T header create -tags header4]
+} else {
     set H [$T header create -ownerdrawn yes -tags header4]
+}
     $T header dragconfigure $H -enable no
     $T header style set $H all $S
     foreach C [$T column list] {
@@ -384,7 +400,9 @@ proc DemoHeaders::ChangeHeaderStyle {style ownerDrawn {sortColor ""}} {
 		$T header text $H $C [$T header cget $H $C -text]
 	    }
 	}
+if 0 {
 	$T header configure $H -ownerdrawn $ownerDrawn
+}
     }
     if {$Sort(header) ne ""} {
 	ShowSortArrow $Sort(header) $Sort(column)

@@ -832,9 +832,11 @@ TreeItemColumn_ChangeState(
 	}
     }
 
+#ifdef OLD_CODE
     if (item->header != NULL)
 	TreeHeaderColumn_StateChanged(item->header, column->headerColumn,
 	    treeColumn, item->state | column->cstate, item->state | cstate);
+#endif
 
     column->cstate = cstate;
 
@@ -899,9 +901,11 @@ TreeItem_ChangeState(
 		iMask |= sMask;
 	    }
 	}
+#ifdef OLD_CODE
 	if (item->header != NULL)
 	    TreeHeaderColumn_StateChanged(item->header, column->headerColumn,
 		treeColumn, item->state | column->cstate, state | column->cstate);
+#endif
 	columnIndex++;
 	column = column->next;
 	treeColumn = Tree_ColumnToTheRight(treeColumn, FALSE, tailOK);
@@ -3659,6 +3663,7 @@ Item_HeightOfStyles(
 		drawArgs.width = -1;
 	    height = MAX(height, TreeStyle_UseHeight(&drawArgs));
 	}
+#ifdef OLD_CODE
 	if (TreeColumn_Visible(treeColumn) && (column->headerColumn != NULL)) {
 	    int fixedWidth = -1;
 	    if ((TreeColumn_FixedWidth(treeColumn) != -1) ||
@@ -3669,6 +3674,7 @@ Item_HeightOfStyles(
 	    height = MAX(height, TreeHeaderColumn_NeededHeight(item->header,
 		column->headerColumn, fixedWidth));
 	}
+#endif
 	treeColumn = Tree_ColumnToTheRight(treeColumn, FALSE, tailOK);
 	column = column->next;
     }
