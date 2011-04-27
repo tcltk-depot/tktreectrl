@@ -108,6 +108,7 @@ struct TreeElement_
     TreeElementType *typePtr;
     TreeElement master;		/* NULL if this is master */
     int stateDomain;		/* STATE_DOMAIN_XXX index. */
+    int hidden;			/* Hackish flag for hidden header styles. */
     DynamicOption *options;	/* Dynamically-allocated options. */
     /* type-specific data here */
 };

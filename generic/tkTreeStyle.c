@@ -43,6 +43,7 @@ struct MStyle
     int buttonY;		/* -buttony */
     Tcl_Obj *buttonYObj;	/* -buttony */
     int stateDomain;		/* STATE_DOMAIN_XXX index. */
+    int hidden;			/* Hackish flag for hidden header styles. */
 };
 
 /*
@@ -3041,7 +3042,7 @@ TreeStyle_Draw(
     struct Layout staticLayouts[STATIC_SIZE], *layouts = staticLayouts;
 #undef DEBUG_DRAW
 #ifdef DEBUG_DRAW
-    int debugDraw = FALSE;
+    int debugDraw = TRUE;
 #endif
 
     Style_CheckNeededSize(tree, style, drawArgs->state);
@@ -4034,7 +4035,7 @@ Element_FromObj(
 
     name = Tcl_GetString(obj);
     hPtr = Tcl_FindHashEntry(&tree->elementHash, name);
-    if (hPtr == NULL) {
+    if ((hPtr == NULL) || ((TreeElement) Tcl_GetHashValue(hPtr))->hidden) {
 	Tcl_AppendResult(tree->interp, "element \"", name, "\" doesn't exist",
 	    NULL);
 	return TCL_ERROR;
@@ -4123,7 +4124,7 @@ TreeStyle_FromObj(
 
     name = Tcl_GetString(obj);
     hPtr = Tcl_FindHashEntry(&tree->styleHash, name);
-    if (hPtr == NULL) {
+    if (hPtr == NULL || ((MStyle *) Tcl_GetHashValue(hPtr))->hidden) {
 	Tcl_AppendResult(tree->interp, "style \"", name, "\" doesn't exist",
 	    NULL);
 	return TCL_ERROR;
@@ -5909,8 +5910,8 @@ TreeElementCmd(
 	    hPtr = Tcl_FirstHashEntry(&tree->elementHash, &search);
 	    while (hPtr != NULL) {
 		elem = (TreeElement) Tcl_GetHashValue(hPtr);
-if (strncmp(elem->name, "treectrl_header_style", strlen("treectrl_header_style")) != 0)
-		Tcl_ListObjAppendElement(interp, listObj, TreeElement_ToObj(elem));
+		if (!elem->hidden)
+		    Tcl_ListObjAppendElement(interp, listObj, TreeElement_ToObj(elem));
 		hPtr = Tcl_NextHashEntry(&search);
 	    }
 	    Tcl_SetObjResult(interp, listObj);
@@ -6962,9 +6963,9 @@ TreeStyleCmd(
 	    hPtr = Tcl_FirstHashEntry(&tree->styleHash, &search);
 	    while (hPtr != NULL) {
 		_style = (TreeStyle) Tcl_GetHashValue(hPtr);
-if (strncmp(((MStyle *)_style)->name, "treectrl_header_style", strlen("treectrl_header_style")) != 0)
-		Tcl_ListObjAppendElement(interp, listObj,
-		    TreeStyle_ToObj(_style));
+		if (!((MStyle *)_style)->hidden)
+		    Tcl_ListObjAppendElement(interp, listObj,
+			TreeStyle_ToObj(_style));
 		hPtr = Tcl_NextHashEntry(&search);
 	    }
 	    Tcl_SetObjResult(interp, listObj);
@@ -7785,11 +7786,12 @@ Tree_MakeHeaderStyle(
     )
 {
     HeaderStyle *hs;
-    int i, count = 0, map[4];
+    int i, count = 0, map[4], isNew;
     char name[64];
     MStyle *style;
-    TreeElement elements[4];
+    TreeElement elem, elements[4];
     MElementLink *eLink;
+    Tcl_HashEntry *hPtr;
 
     if (params->image)
 	params->bitmap = 0;
@@ -7830,9 +7832,13 @@ Tree_MakeHeaderStyle(
 	TreeElement_TypeFromObj(tree, obj, &typePtr);
 	Tcl_DecrRefCount(obj);
 	sprintf(name, "treectrl_header_elem.header");
-	tree->headerStyle.headerElem =
-	    Element_CreateAndConfig(tree, NULL, NULL, NULL, typePtr,
-	    name, 0, NULL);
+	elem = Element_CreateAndConfig(tree, NULL, NULL, NULL, typePtr, name,
+	    0, NULL);
+	elem->hidden = TRUE;
+	elem->stateDomain = STATE_DOMAIN_HEADER;
+	hPtr = Tcl_CreateHashEntry(&tree->elementHash, name, &isNew);
+	Tcl_SetHashValue(hPtr, elem);
+	tree->headerStyle.headerElem = elem;
 	tree->headerStyle.headerElemNameObjPtr = Tcl_NewStringObj(name, -1);
     }
     if (tree->headerStyle.bitmapElem == NULL) {
@@ -7842,9 +7848,13 @@ Tree_MakeHeaderStyle(
 	TreeElement_TypeFromObj(tree, obj, &typePtr);
 	Tcl_DecrRefCount(obj);
 	sprintf(name, "treectrl_header_elem.bitmap");
-	tree->headerStyle.bitmapElem =
-	    Element_CreateAndConfig(tree, NULL, NULL, NULL,
-	    typePtr, name, 0, NULL);
+	elem = Element_CreateAndConfig(tree, NULL, NULL, NULL, typePtr, name,
+	    0, NULL);
+	elem->hidden = TRUE;
+	elem->stateDomain = STATE_DOMAIN_HEADER;
+	hPtr = Tcl_CreateHashEntry(&tree->elementHash, name, &isNew);
+	Tcl_SetHashValue(hPtr, elem);
+	tree->headerStyle.bitmapElem = elem;
 	tree->headerStyle.bitmapElemNameObjPtr = Tcl_NewStringObj(name, -1);
     }
     if (tree->headerStyle.imageElem == NULL) {
@@ -7854,9 +7864,13 @@ Tree_MakeHeaderStyle(
 	TreeElement_TypeFromObj(tree, obj, &typePtr);
 	Tcl_DecrRefCount(obj);
 	sprintf(name, "treectrl_header_elem.image");
-	tree->headerStyle.imageElem =
-	    Element_CreateAndConfig(tree, NULL, NULL, NULL,
-	    typePtr, name, 0, NULL);
+	elem = Element_CreateAndConfig(tree, NULL, NULL, NULL, typePtr, name,
+	    0, NULL);
+	elem->hidden = TRUE;
+	elem->stateDomain = STATE_DOMAIN_HEADER;
+	hPtr = Tcl_CreateHashEntry(&tree->elementHash, name, &isNew);
+	Tcl_SetHashValue(hPtr, elem);
+	tree->headerStyle.imageElem = elem;
 	tree->headerStyle.imageElemNameObjPtr = Tcl_NewStringObj(name, -1);
     }
     if (tree->headerStyle.textElem == NULL) {
@@ -7866,14 +7880,22 @@ Tree_MakeHeaderStyle(
 	TreeElement_TypeFromObj(tree, obj, &typePtr);
 	Tcl_DecrRefCount(obj);
 	sprintf(name, "treectrl_header_elem.text");
-	tree->headerStyle.textElem =
-	    Element_CreateAndConfig(tree, NULL, NULL, NULL,
-	    typePtr, name, 0, NULL);
+	elem = Element_CreateAndConfig(tree, NULL, NULL, NULL, typePtr, name,
+	    0, NULL);
+	elem->hidden = TRUE;
+	elem->stateDomain = STATE_DOMAIN_HEADER;
+	hPtr = Tcl_CreateHashEntry(&tree->elementHash, name, &isNew);
+	Tcl_SetHashValue(hPtr, elem);
+	tree->headerStyle.textElem = elem;
 	tree->headerStyle.textElemNameObjPtr = Tcl_NewStringObj(name, -1);
     }
 
     sprintf(name, "treectrl_header_style_%d", tree->headerStyle.nextId);
     style = Style_CreateAndConfig(tree, name, 0, NULL);
+    style->hidden = TRUE;
+
+    hPtr = Tcl_CreateHashEntry(&tree->styleHash, name, &isNew);
+    Tcl_SetHashValue(hPtr, style);
 
     /* Alloc element list. */
     elements[count++] = tree->headerStyle.headerElem;
