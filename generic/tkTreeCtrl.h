@@ -692,6 +692,8 @@ MODULE_SCOPE int TreeHeaderColumn_SetImageOrText(TreeHeader header,
     TreeHeaderColumn column, TreeColumn treeColumn, Tcl_Obj *valueObj,
     int isImage);
 
+MODULE_SCOPE int TreeHeaderColumn_EnsureStyleExists(TreeHeader header,
+    TreeHeaderColumn column, TreeColumn treeColumn);
 MODULE_SCOPE int TreeHeader_ConsumeColumnCget(TreeCtrl *tree,
     TreeColumn treeColumn, Tcl_Obj *objPtr);
 MODULE_SCOPE int TreeHeader_ConsumeColumnConfig(TreeCtrl *tree,
@@ -881,6 +883,7 @@ MODULE_SCOPE TreeItemColumn TreeItem_GetFirstColumn(TreeCtrl *tree, TreeItem ite
 MODULE_SCOPE TreeItemColumn TreeItemColumn_GetNext(TreeCtrl *tree, TreeItemColumn column);
 MODULE_SCOPE void TreeItemColumn_InvalidateSize(TreeCtrl *tree, TreeItemColumn column);
 MODULE_SCOPE TreeStyle TreeItemColumn_GetStyle(TreeCtrl *tree, TreeItemColumn column);
+MODULE_SCOPE void TreeItemColumn_SetStyle(TreeCtrl *tree, TreeItemColumn column, TreeStyle style);
 MODULE_SCOPE int TreeItemColumn_Index(TreeCtrl *tree, TreeItem item_, TreeItemColumn column_);
 MODULE_SCOPE void TreeItemColumn_ForgetStyle(TreeCtrl *tree, TreeItemColumn column_);
 MODULE_SCOPE int TreeItemColumn_NeededWidth(TreeCtrl *tree, TreeItem item_, TreeItemColumn column_);
