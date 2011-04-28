@@ -203,7 +203,7 @@ if {$tile} {
 	    set font {Geneva 9}
 	}
 	macosx {
-	    set font {{Lucida Grande} 11}
+	    set font {{Lucida Grande} 13}
 	}
 	unix {
 	    set font {Helvetica -12}
