@@ -2258,6 +2258,11 @@ static int StateProcHeader(TreeElementArgs *args)
     if (!args->states.draw2)
 	return 0;
 
+    /* Headers look different on MacOSX in the background. */
+    if ((args->states.state1 & STATE_HEADER_BG) ^
+	    (args->states.state2 & STATE_HEADER_BG))
+	return CS_DISPLAY;
+
     if (params1.state != params2.state)
 	return CS_DISPLAY;
 
