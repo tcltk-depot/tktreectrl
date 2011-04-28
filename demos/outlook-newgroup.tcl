@@ -456,7 +456,7 @@ proc DemoOutlookNewgroup_FixItemStyles {T} {
 
 	# The clip/arrow/watch columns only get a style when they are
 	# between the first and last text-containing columns.
-	if {$C in $columns1} {
+	if {[lsearch -exact $columns1 $C] != -1} {
 	    if {[$T column compare $C > [lindex $columns2 0]] &&
 		[$T column compare $C < [lindex $columns2 end]]} {
 		$T item style set all $C s2
