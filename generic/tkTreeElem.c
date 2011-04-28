@@ -744,7 +744,7 @@ static void DisplayProcBitmap(TreeElementArgs *args)
     Pixmap bitmap;
     XColor *fg, *bg;
     int imgW, imgH;
-    int inHeader = TreeItem_GetHeader(tree, args->display.item) != NULL;
+    int inHeader = elem->stateDomain == STATE_DOMAIN_HEADER;
     int columnState = COLUMN_STATE_NORMAL;
 
 #ifdef DEPRECATED
@@ -2522,7 +2522,7 @@ static void DisplayProcImage(TreeElementArgs *args)
     Tk_Image image;
     int imgW, imgH;
     int tiled = 0, *eit, *eitM = NULL;
-    int inHeader = TreeItem_GetHeader(tree, args->display.item) != NULL;
+    int inHeader = elem->stateDomain == STATE_DOMAIN_HEADER;
     int columnState = COLUMN_STATE_NORMAL;
 
 #ifdef DEPRECATED
@@ -3619,6 +3619,7 @@ TextUpdateLayout(
     ElementText *elemX = (ElementText *) elem;
     ElementText *masterX = (ElementText *) elem->master;
     int state = args->state;
+    int inHeader = elem->stateDomain == STATE_DOMAIN_HEADER;
     Tk_Font tkfont;
     char *text = NULL;
     int textLen = 0;
@@ -3671,7 +3672,7 @@ TextUpdateLayout(
 
     tkfont = DO_FontForState(tree, elem, DOID_TEXT_FONT, state);
     if (tkfont == NULL)
-	tkfont = tree->tkfont;
+	tkfont = inHeader ? tree->tkfontHeader : tree->tkfont;
 
     if (etl != NULL && etl->wrap != TEXT_WRAP_NULL)
 	wrap = etl->wrap;
@@ -4024,7 +4025,7 @@ static void DisplayProcText(TreeElementArgs *args)
 #if USE_ITEM_PIXMAP == 0
     TreeRectangle trClip, trElem;
 #endif
-    int inHeader = TreeItem_GetHeader(tree, args->display.item) != NULL;
+    int inHeader = elem->stateDomain == STATE_DOMAIN_HEADER;
     int columnState = COLUMN_STATE_NORMAL;
 
 #ifdef DEPRECATED
@@ -4058,7 +4059,7 @@ static void DisplayProcText(TreeElementArgs *args)
 		&color) != TCL_OK) {
 	    color = tree->defColumnTextColor;
 	}
-	if (color->pixel == tree->fgColorPtr->pixel)
+	if (color->pixel == tree->defColumnTextColor->pixel)
 	    color = NULL;
     }
 
@@ -4069,16 +4070,19 @@ static void DisplayProcText(TreeElementArgs *args)
 	XGCValues gcValues;
 	unsigned long gcMask = 0;
 	if (color == NULL)
-	    color = tree->fgColorPtr;
+	    color = inHeader ? tree->defColumnTextColor : tree->fgColorPtr;
 	gcValues.foreground = color->pixel;
 	gcMask |= GCForeground;
 	if (tkfont == NULL)
-	    tkfont = tree->tkfont;
+	    tkfont = inHeader ? tree->tkfontHeader : tree->tkfont;
 	gcValues.font = Tk_FontId(tkfont);
 	gcMask |= GCFont;
 	gcValues.graphics_exposures = False;
 	gcMask |= GCGraphicsExposures;
 	gc = Tree_GetGC(tree, gcMask, &gcValues);
+    } else if (inHeader) {
+	tkfont = tree->tkfontHeader;
+	gc = tree->headerTextGC;
     } else {
 	tkfont = tree->tkfont;
 	gc = tree->textGC;
@@ -4249,6 +4253,7 @@ static void NeededProcText(TreeElementArgs *args)
     int width = 0, height = 0;
     ElementTextLayout *etl, *etlM = NULL;
     ElementTextLayout2 *etl2;
+    int inHeader = elem->stateDomain == STATE_DOMAIN_HEADER;
 
     etl = DynamicOption_FindData(args->elem->options, DOID_TEXT_LAYOUT);
     if (masterX != NULL)
@@ -4299,7 +4304,7 @@ static void NeededProcText(TreeElementArgs *args)
 
 	    tkfont = DO_FontForState(tree, elem, DOID_TEXT_FONT, state);
 	    if (tkfont == NULL)
-		tkfont = tree->tkfont;
+		tkfont = inHeader ? tree->tkfontHeader : tree->tkfont;
 
 	    width = Tk_TextWidth(tkfont, text, textLen);
 	    if (etl != NULL && etl->widthObj != NULL)

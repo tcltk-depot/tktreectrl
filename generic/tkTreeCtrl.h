@@ -317,6 +317,8 @@ struct TreeCtrl
     char *takeFocus;		/* -takfocus */
     Tcl_Obj *fontObj;		/* -font */
     Tk_Font tkfont;		/* -font */
+    Tcl_Obj *headerFontObj;	/* -headerfont */
+    Tk_Font tkfontHeader;	/* -headerfont */
     int showButtons;		/* boolean: Draw expand/collapse buttons */
     int showLines;		/* boolean: Draw lines connecting parent to
 				 * child */
@@ -421,6 +423,7 @@ struct TreeCtrl
     int yOrigin;		/* offset from content y=0 to window y=0 */
     GC copyGC;
     GC textGC;
+    GC headerTextGC;
     GC buttonGC;
     GC lineGC[2];
     Tk_Image backgroundImage;	/* -backgroundimage */

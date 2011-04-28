@@ -167,6 +167,10 @@ static Tk_OptionSpec optionSpecs[] = {
     {TK_OPTION_COLOR, "-foreground", "foreground", "Foreground",
      DEF_LISTBOX_FG, Tk_Offset(TreeCtrl, fgObj), Tk_Offset(TreeCtrl, fgColorPtr),
      0, (ClientData) NULL, TREE_CONF_FG | TREE_CONF_REDISPLAY},
+    {TK_OPTION_FONT, "-headerfont", "headerFont", "Font",
+     (char *) NULL, /* DEFAULT VALUE IS INITIALIZED LATER */
+     Tk_Offset(TreeCtrl, headerFontObj), Tk_Offset(TreeCtrl, tkfontHeader),
+     0, (ClientData) NULL, TREE_CONF_FONT | TREE_CONF_RELAYOUT},
     {TK_OPTION_PIXELS, "-height", "height", "Height",
      "200", Tk_Offset(TreeCtrl, heightObj), Tk_Offset(TreeCtrl, height),
      0, (ClientData) NULL, TREE_CONF_RELAYOUT},
@@ -1471,6 +1475,14 @@ badWrap:
 	if (tree->textGC != None)
 	    Tk_FreeGC(tree->display, tree->textGC);
 	tree->textGC = Tk_GetGC(tree->tkwin, gcMask, &gcValues);
+
+	gcValues.font = Tk_FontId(tree->tkfontHeader);
+	gcValues.foreground = tree->defColumnTextColor->pixel;
+	gcValues.graphics_exposures = False;
+	gcMask = GCForeground | GCFont | GCGraphicsExposures;
+	if (tree->headerTextGC != None)
+	    Tk_FreeGC(tree->display, tree->headerTextGC);
+	tree->headerTextGC = Tk_GetGC(tree->tkwin, gcMask, &gcValues);
     }
 
     if (tree->copyGC == None) {
@@ -1604,6 +1616,14 @@ TreeWorldChanged(
     if (tree->textGC != None)
 	Tk_FreeGC(tree->display, tree->textGC);
     tree->textGC = Tk_GetGC(tree->tkwin, gcMask, &gcValues);
+
+    gcValues.font = Tk_FontId(tree->tkfontHeader);
+    gcValues.foreground = tree->defColumnTextColor->pixel;
+    gcValues.graphics_exposures = False;
+    gcMask = GCForeground | GCFont | GCGraphicsExposures;
+    if (tree->headerTextGC != None)
+	Tk_FreeGC(tree->display, tree->headerTextGC);
+    tree->headerTextGC = Tk_GetGC(tree->tkwin, gcMask, &gcValues);
 
     TreeStyle_TreeChanged(tree, TREE_CONF_FONT | TREE_CONF_RELAYOUT);
     TreeHeader_TreeChanged(tree, TREE_CONF_FONT | TREE_CONF_RELAYOUT);
@@ -1790,6 +1810,8 @@ TreeDestroy(
 	Tk_FreeGC(tree->display, tree->copyGC);
     if (tree->textGC != None)
 	Tk_FreeGC(tree->display, tree->textGC);
+    if (tree->headerTextGC != None)
+	Tk_FreeGC(tree->display, tree->headerTextGC);
     if (tree->buttonGC != None)
 	Tk_FreeGC(tree->display, tree->buttonGC);
     if (tree->lineGC[0] != None)
@@ -4504,8 +4526,9 @@ Treectrl_Init(
 #else
     static CONST char *tcl_version = "8.4";
 #endif
+    Tk_OptionSpec *specPtr;
 #ifdef TREECTRL_DEBUG
-    Tk_OptionSpec *specPtr, *prevSpecPtr = NULL;
+    Tk_OptionSpec *prevSpecPtr = NULL;
 #endif
 
 #ifdef USE_TCL_STUBS
@@ -4538,6 +4561,25 @@ Treectrl_Init(
 
     PerStateCO_Init(optionSpecs, "-buttonbitmap", &pstBitmap, TreeStateFromObj);
     PerStateCO_Init(optionSpecs, "-buttonimage", &pstImage, TreeStateFromObj);
+
+    /* Try to create TkHeadingFont.  If it exists, an error is returned, in
+     * which case we will use it as the default value of -headerfont.
+     * If TkHeadingFont doesn't exist (as in Tk 8.4), no error is returned,
+     * in which case the new font is deleted and the default value of
+     * -headerfont is set to DEF_LISTBOX_FONT. */
+    /* Would be nice if there was an API to test for named font existence. */
+    /* FIXME: this is only done on the first interpreter we are loaded into.
+     * What if TkHeadingFont isn't in another interpreter? */
+    specPtr = Tree_FindOptionSpec(optionSpecs, "-headerfont");
+    if (specPtr->defValue == NULL) {
+	if (Tcl_GlobalEval(interp, "font create TkHeadingFont") != TCL_OK) {
+	    Tcl_ResetResult(interp);
+	    specPtr->defValue = "TkHeadingFont";
+	} else {
+	    Tcl_GlobalEval(interp, "font delete TkHeadingFont");
+	    specPtr->defValue = DEF_LISTBOX_FONT;
+	}
+    }
 
     if (TreeElement_Init(interp) != TCL_OK) {
 	return TCL_ERROR;
