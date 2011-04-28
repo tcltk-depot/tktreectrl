@@ -1835,6 +1835,13 @@ if 1 {
     $T item configure root -button no -wrap no
     $T item expand root
 
+    # Restore header defaults
+    foreach spec [$T header configure 0] {
+	if {[llength $spec] == 2} continue
+	lassign $spec name x y default current
+	$T header configure all $name $default
+    }
+
     # Restore some happy defaults to the demo list
     foreach spec [$T configure] {
 	if {[llength $spec] == 2} continue
