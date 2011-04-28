@@ -44,6 +44,9 @@ struct MStyle
     Tcl_Obj *buttonYObj;	/* -buttony */
     int stateDomain;		/* STATE_DOMAIN_XXX index. */
     int hidden;			/* Hackish flag for hidden header styles. */
+    int hasHeaderElem;		/* Hackish flag to remember if the style has
+				 * any elements of type 'header'.  Headers
+				 * are a fixed height on Aqua. */
 };
 
 /*
@@ -4340,6 +4343,14 @@ MStyle_ChangeElementsAux(
 
     style->elements = eLinks;
     style->numElements = count;
+
+    /* Hack - Remember if any of the elements are of type 'header'. */
+    style->hasHeaderElem = FALSE;
+    for (i = 0; i < count; i++) {
+	/* Hack - Remember if any of the elements are of type 'header'. */
+	if (ELEMENT_TYPE_MATCHES(eLinks[i].elem->typePtr, &treeElemTypeHeader))
+	    style->hasHeaderElem = TRUE;
+    }
 }
 
 /*
@@ -7777,6 +7788,18 @@ TreeStyle_IsHeaderStyle(
 	    return TRUE;
     }
     return FALSE;
+}
+
+int
+TreeStyle_HasHeaderElement(
+    TreeCtrl *tree,
+    TreeStyle style
+    )
+{
+    MStyle *mstyle = (MStyle *) style;
+    if (mstyle->master != NULL)
+	mstyle = (MStyle *) mstyle->master;
+    return mstyle->hasHeaderElem;
 }
 
 TreeStyle

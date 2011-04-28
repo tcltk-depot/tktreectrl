@@ -1503,6 +1503,8 @@ TreeTheme_Init(
     tree->themeData->animButtonTimer = NULL;
     tree->themeData->animButtonAngle = 0;
 
+    (void) TreeTheme_GetHeaderFixedHeight(tree, &tree->themeHeaderHeight);
+
     return TCL_OK;
 }
 

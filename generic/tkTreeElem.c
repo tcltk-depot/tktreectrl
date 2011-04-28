@@ -2106,12 +2106,9 @@ static void DisplayProcHeader(TreeElementArgs *args)
     int match, match2;
     struct HeaderParams params;
 
-#ifdef MAC_OSX_TK
-    if (args->tree->useTheme &&
-	    TreeTheme_GetHeaderFixedHeight(args->tree, &height) == TCL_OK) {
-	/* nothing */
+    if (tree->useTheme && (tree->themeHeaderHeight > 0)) {
+	height = tree->themeHeaderHeight;
     }
-#endif
 
     AdjustForSticky(args->display.sticky,
 	args->display.width, args->display.height,
@@ -2172,12 +2169,10 @@ static void NeededProcHeader(TreeElementArgs *args)
     TreeRectangle bounds = {0, 0, 100, 24};
     int width = 0, height = 0, fixedHeight = -1;
 
-#ifdef MAC_OSX_TK
-    if (args->tree->useTheme &&
-	    TreeTheme_GetHeaderFixedHeight(tree, &fixedHeight) == TCL_OK) {
-	/* nothing */
+    if (args->tree->useTheme && (tree->themeHeaderHeight > 0)) {
+	fixedHeight = tree->themeHeaderHeight;
     }
-#endif
+
     HeaderGetParams(tree, elemX, args->state, &params);
 
     HeaderLayoutArrow(tree, elemX, &params, TreeRect_Left(bounds),

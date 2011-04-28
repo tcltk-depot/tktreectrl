@@ -3652,7 +3652,7 @@ Item_HeightOfStyles(
     int tailOK = item->header != NULL;
     TreeColumn treeColumn = Tree_FirstColumn(tree, -1, tailOK);
     StyleDrawArgs drawArgs;
-    int height = 0;
+    int height = 0, hasHeaderElem = FALSE;
 
     drawArgs.tree = tree;
 
@@ -3667,6 +3667,9 @@ Item_HeightOfStyles(
 	    } else
 		drawArgs.width = -1;
 	    height = MAX(height, TreeStyle_UseHeight(&drawArgs));
+	    if (!hasHeaderElem && (item->header != NULL) &&
+		    TreeStyle_HasHeaderElement(tree, column->style))
+		hasHeaderElem = TRUE;
 	}
 #ifdef OLD_CODE
 	if (TreeColumn_Visible(treeColumn) && (column->headerColumn != NULL)) {
@@ -3682,6 +3685,12 @@ Item_HeightOfStyles(
 #endif
 	treeColumn = Tree_ColumnToTheRight(treeColumn, FALSE, tailOK);
 	column = column->next;
+    }
+
+    /* List headers are a fixed height on Aqua */
+    if (hasHeaderElem && tree->useTheme) {
+	if (tree->themeHeaderHeight > 0)
+	    return tree->themeHeaderHeight;
     }
 
     return height;
@@ -3729,7 +3738,7 @@ TreeItem_Height(
 	    return 0;
 	if (item->fixedHeight > 0)
 	    return item->fixedHeight;
-	return Item_HeightOfStyles(tree, item); /* styles *plus* header stuff */
+	return Item_HeightOfStyles(tree, item);
     }
 
     /* Get requested height of the style in each column */

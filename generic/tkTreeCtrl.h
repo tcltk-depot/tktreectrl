@@ -443,6 +443,7 @@ struct TreeCtrl
     int columnCount;		/* Number of columns */
     int columnCountVis;		/* Number of visible columns */
     int headerHeight;		/* Height of column titles */
+    int themeHeaderHeight;	/* Fixed theme height of column titles */
     int widthOfColumns;		/* Sum of column widths */
     int columnTreeLeft;		/* left of column where buttons/lines are
 				 * drawn */
@@ -973,6 +974,7 @@ MODULE_SCOPE int TreeStyle_ChangeState(TreeCtrl *tree, TreeStyle style_, int sta
 MODULE_SCOPE void Tree_UndefineState(TreeCtrl *tree, int domain, int state);
 MODULE_SCOPE int TreeStyle_NumElements(TreeCtrl *tree, TreeStyle style_);
 MODULE_SCOPE int TreeStyle_IsHeaderStyle(TreeCtrl *tree, TreeStyle style);
+MODULE_SCOPE int TreeStyle_HasHeaderElement(TreeCtrl *tree, TreeStyle style);
 MODULE_SCOPE TreeStyle Tree_MakeHeaderStyle(TreeCtrl *tree, HeaderStyleParams *params);
 MODULE_SCOPE void TreeStyle_UpdateWindowPositions(StyleDrawArgs *drawArgs);
 MODULE_SCOPE void TreeStyle_OnScreen(TreeCtrl *tree, TreeStyle style_, int onScreen);
