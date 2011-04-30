@@ -194,6 +194,7 @@ struct Layout
     int unionParent;	/* TRUE if this element is in one or more element's
 			 * -union */
 int margins[4];
+int arrowHeight;
 };
 
 #define IS_HIDDEN(L) ((L)->visible == 0)
@@ -1332,7 +1333,7 @@ Style_DoLayoutH(
 	    layout->uPadY[j] = 0;
 	}
 
-TreeElement_GetContentMargins(tree, layout->eLink->elem, drawArgs->state, layout->margins);
+TreeElement_GetContentMargins(tree, layout->eLink->elem, drawArgs->state, layout->margins, &layout->arrowHeight);
 
 	/* Count all non-union, non-detach squeezeable elements */
 	if (DETACH_OR_UNION(eLink1))
@@ -2554,6 +2555,7 @@ Style_NeededSize(
     int i, j, eLinkCount = masterStyle->numElements;
     int x = 0, y = 0;
     int squeezeX = 0, squeezeY = 0;
+int headerHeight = 0;
 
     STATIC_ALLOC(layouts, struct Layout, eLinkCount);
 
@@ -2617,7 +2619,10 @@ Style_NeededSize(
 	    layout->uPadY[j] = 0;
 	}
 
-TreeElement_GetContentMargins(tree, layout->eLink->elem, state, layout->margins);
+TreeElement_GetContentMargins(tree, layout->eLink->elem, state, layout->margins, &layout->arrowHeight);
+if (IS_UNION(eLink1)) {
+    headerHeight = MAX(headerHeight, layout->margins[1] + layout->arrowHeight + layout->margins[3]);
+}
     }
 
     /* Calculate the padding around elements surrounded by -union elements */
@@ -2735,6 +2740,15 @@ TreeElement_GetContentMargins(tree, layout->eLink->elem, state, layout->margins)
 
     Layout_Size(masterStyle->vertical, eLinkCount, layouts,
 	widthPtr, heightPtr);
+/*
+the height of a header was:
+    content margin top +
+	MAX(text pady top + height + pady bottom,
+	    image pady top + height + pady bottom,
+	    arrow pady top + height + pady bottom)
+    + content margin bottom
+*/
+*heightPtr = MAX(*heightPtr, headerHeight);
 
     if (squeezeX || squeezeY) {
 	for (i = 0; i < eLinkCount; i++) {

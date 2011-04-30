@@ -2360,10 +2360,12 @@ TreeElement_GetContentMargins(
     TreeCtrl *tree,
     TreeElement elem,
     int state,
-    int margins[4]
+    int margins[4],
+    int *arrowHeight
     )
 {
     margins[0] = margins[1] = margins[2] = margins[3] = 0;
+    *arrowHeight = 0;
 
     if (ELEMENT_TYPE_MATCHES(elem->typePtr, &treeElemTypeHeader)) {
 	ElementHeader *elemX = (ElementHeader *) elem;
@@ -2388,6 +2390,8 @@ TreeElement_GetContentMargins(
 	} else {
 	    margins[2] = TreeRect_Right(bounds) - (layout.x - layout.padX[PAD_TOP_LEFT]);
 	}
+
+	*arrowHeight = layout.padY[0] + layout.height + layout.padY[1];
     }
 }
 
