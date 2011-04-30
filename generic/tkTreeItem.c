@@ -6575,7 +6575,7 @@ TreeItemCmd_ImageOrText(
 	    COLUMN_FOR_EACH(treeColumn, &co[i].columns, NULL, &citer) {
 		columnIndex = TreeColumn_Index(treeColumn);
 		column = TreeItem_FindColumn(tree, item, columnIndex);
-		if ((column == NULL) || (column->style == NULL)) {
+		if ((column == NULL) || (column->style == NULL) || TreeStyle_IsHeaderStyle(tree, column->style)) {
 		    if (doHeaders) {
 #ifdef TREECTRL_DEBUG
 			if (item->header == NULL) panic("TreeItemCmd_ImageOrText item->header == NULL for doHeaders=TRUE");
