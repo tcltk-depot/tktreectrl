@@ -480,11 +480,21 @@ TreeHeaderColumn_ConfigureHeaderStyle(
     Tcl_Obj *staticInfoObjV[STATIC_SIZE], **infoObjV = staticInfoObjV;
     Tcl_Obj *staticElemObjV[4][STATIC_SIZE], **elemObjV[4];
     Tcl_Obj *textFillObj = NULL, *textLinesObj = NULL;
+    HeaderStyleParams params;
     int result;
 
+    /* If the column header uses a user-defined style, generate a
+     * <Header-configure> event. */
     if (!TreeStyle_IsHeaderStyle(tree,
 	    TreeItemColumn_GetStyle(tree, column->itemColumn)))
 	return TCL_OK;
+
+    if (treeColumn == tree->columnTail)
+	return TCL_OK;
+
+    params.text = column->textLen > 0;
+    params.image = column->image != NULL;
+    params.bitmap = !params.image && (column->bitmap != None);
 
     /* With no arguments, it means the style was (re)created, so gotta
      * configure all non-layout options. */
@@ -499,17 +509,17 @@ TreeHeaderColumn_ConfigureHeaderStyle(
 		objc += 2;
 	    }
 	    if (specPtr->typeMask & ELEM_IMAGE) {
-		if (column->image != NULL)
+		if (params.image)
 		    elemObjC[1] += 2;
 		objc += 2;
 	    }
 	    if (specPtr->typeMask & ELEM_TEXT) {
-		if (column->textLen > 0)
+		if (params.text)
 		    elemObjC[2] += 2;
 		objc += 2;
 	    }
 	    if (specPtr->typeMask & ELEM_BITMAP) {
-		if (column->image == NULL && column->bitmap != None)
+		if (params.bitmap)
 		    elemObjC[3] += 2;
 		objc += 2;
 	    }
@@ -537,13 +547,13 @@ TreeHeaderColumn_ConfigureHeaderStyle(
 		    elemObjV[0][elemObjC[0]++] = listObjV[4]; /* value */
 		}
 		if (specPtr->typeMask & ELEM_IMAGE) {
-		    if (column->image != NULL) {
+		    if (params.image) {
 			elemObjV[1][elemObjC[1]++] = listObjV[0]; /* name */
 			elemObjV[1][elemObjC[1]++] = listObjV[4]; /* value */
 		    }
 		}
 		if (specPtr->typeMask & ELEM_TEXT) {
-		    if (column->textLen > 0) {
+		    if (params.text) {
 			if (!strcmp(specPtr->optionName, "-textcolor")) {
 			    if (textFillObj == NULL) {
 				textFillObj = Tcl_NewStringObj("-fill", -1);
@@ -563,7 +573,7 @@ TreeHeaderColumn_ConfigureHeaderStyle(
 		    }
 		}
 		if (specPtr->typeMask & ELEM_BITMAP) {
-		    if (column->image == NULL && column->bitmap != None) {
+		    if (params.bitmap) {
 			elemObjV[3][elemObjC[3]++] = listObjV[0]; /* name */
 			elemObjV[3][elemObjC[3]++] = listObjV[4]; /* value */
 		    }
@@ -586,13 +596,13 @@ TreeHeaderColumn_ConfigureHeaderStyle(
 		elemObjV[0][elemObjC[0]++] = objv[i + 1]; /* value */
 	    }
 	    if (specPtr->typeMask & ELEM_IMAGE) {
-		if (column->image != NULL) {
+		if (params.image) {
 		    elemObjV[1][elemObjC[1]++] = objv[i]; /* name */
 		    elemObjV[1][elemObjC[1]++] = objv[i + 1]; /* value */
 		}
 	    }
 	    if (specPtr->typeMask & ELEM_TEXT) {
-		if (column->textLen > 0) {
+		if (params.text) {
 		    if (!strcmp(specPtr->optionName, "-textcolor")) {
 			if (textFillObj == NULL) {
 			    textFillObj = Tcl_NewStringObj("-fill", -1);
@@ -612,7 +622,7 @@ TreeHeaderColumn_ConfigureHeaderStyle(
 		}
 	    }
 	    if (specPtr->typeMask & ELEM_BITMAP) {
-		if (column->image == NULL && column->bitmap != None) {
+		if (params.bitmap) {
 		    elemObjV[3][elemObjC[3]++] = objv[i]; /* name */
 		    elemObjV[3][elemObjC[3]++] = objv[i + 1]; /* value */
 		}
@@ -872,7 +882,7 @@ Column_Configure(
 
     /* Keep the STATE_HEADER_XXX flags in sync. */
     /* FIXME: don't call TreeItemColumn_ChangeState twice here */
-    if (state != column->state) {
+    if (treeColumn != tree->columnTail && state != column->state) {
 	int stateOff = 0, stateOn = 0;
 	switch (state) {
 	    case COLUMN_STATE_ACTIVE: stateOff = STATE_HEADER_ACTIVE; break;
@@ -887,7 +897,7 @@ Column_Configure(
 	TreeItemColumn_ChangeState(tree, header->item, column->itemColumn,
 	    treeColumn, stateOff, stateOn);
     }
-    if (arrow != column->arrow) {
+    if (treeColumn != tree->columnTail && arrow != column->arrow) {
 	int stateOff = 0, stateOn = 0;
 	switch (arrow) {
 	    case COLUMN_ARROW_UP: stateOff = STATE_HEADER_SORT_UP; break;
@@ -955,12 +965,15 @@ TreeHeaderColumn_EnsureStyleExists(
     params.justify = column->justify;
     params.text = column->textLen > 0;
     params.image = column->image != NULL;
-    params.bitmap = column->bitmap != None;
+    params.bitmap = !params.image && (column->bitmap != None);
     for (i = 0; i < 2; i++) {
 	params.textPadX[i] = column->textPadX[i];
 	params.textPadY[i] = column->textPadY[i];
 	params.imagePadX[i] = column->imagePadX[i];
 	params.imagePadY[i] = column->imagePadY[i];
+    }
+    if (treeColumn == tree->columnTail) {
+	params.text = params.image = params.bitmap = FALSE;
     }
     styleNew = Tree_MakeHeaderStyle(tree, &params);
     if (styleOld != styleNew) {
@@ -2058,7 +2071,7 @@ TreeHeaderColumn_GetImageOrText(
  * TreeHeaderColumn_SetImageOrText --
  *
  *	Configures the -image or -text option of a header-column.
- *	This is called by the [header image] and [header text] command
+ *	This is called by the [header image] and [header text] commands
  *	when a header-column has no style or no style with a text
  *	element.
  *
