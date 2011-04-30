@@ -6391,7 +6391,8 @@ doneMAP:
 			if (cs[i].style == NULL) {
 			    column = TreeItem_FindColumn(tree, item,
 				    TreeColumn_Index(treeColumn));
-			    if (column == NULL || column->style == NULL)
+			    if (column == NULL || column->style == NULL ||
+				    TreeStyle_IsHeaderStyle(tree, column->style))
 				continue;
 			    TreeItemColumn_ForgetStyle(tree, column);
 if (doHeaders) TreeHeaderColumn_EnsureStyleExists(item->header, column->headerColumn, treeColumn);
