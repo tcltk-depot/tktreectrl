@@ -1793,6 +1793,8 @@ struct HeaderParams
     int borderWidth;
     int margins[4];	/* content margins, not including arrow */
     int elemState;	/* STATE_XXX */
+    int eUnionBbox[4];
+    int iUnionBbox[4];
 };
 
 static void
@@ -1804,6 +1806,7 @@ HeaderGetParams(
     )
 {
     ElementHeader *masterX = (ElementHeader *) elemX->header.master;
+    int i;
 
     params->elemState = state;
 
@@ -1850,6 +1853,9 @@ HeaderGetParams(
 	params->margins[0] = params->margins[2] = 0;
 	params->margins[1] = params->margins[3] = params->borderWidth;
     }
+
+    for (i = 0; i < 4; i++)
+	params->eUnionBbox[i] = params->iUnionBbox[i] = -1;
 }
 
 struct ArrowLayout {
@@ -1874,7 +1880,7 @@ HeaderLayoutArrow(
 {
     ElementHeader *masterX = (ElementHeader *) elemX->header.master;
     int state = params->elemState;
-    int arrowSide, arrowWidth = -1, arrowHeight;
+    int arrowSide, arrowWidth = -1, arrowGravity, arrowHeight;
     Tk_Image image;
     Pixmap bitmap;
     int defPadX[2] = {6, 6}, defPadY[2] = {0, 0}, *arrowPadX, *arrowPadY;
@@ -1891,6 +1897,12 @@ HeaderLayoutArrow(
     arrowSide = elemX->arrowSide;
     if (arrowSide == -1 && masterX != NULL)
 	arrowSide = masterX->arrowSide;
+
+    arrowGravity = elemX->arrowGravity;
+    if (arrowGravity == -1 && masterX != NULL)
+	arrowGravity = masterX->arrowGravity;
+    if (arrowGravity == -1)
+	arrowGravity = SIDE_LEFT;
 
     arrowPadX = elemX->arrowPadX;
     if (arrowPadX == NULL && masterX != NULL) {
@@ -1963,6 +1975,17 @@ HeaderLayoutArrow(
 
 	/* Don't let the arrow go too far left when the column is very narrow. */
 	layout->x = MAX(layout->x, x + arrowPadX[PAD_TOP_LEFT]); /* spanBbox */
+    }
+    if (arrowSide == SIDE_LEFT) {
+	if (arrowGravity == SIDE_RIGHT && params->eUnionBbox[0] != -1) {
+	    int padLeft = params->iUnionBbox[0] - params->eUnionBbox[0];
+	    layout->x = (x + params->iUnionBbox[0]) - MAX(padLeft, arrowPadX[PAD_BOTTOM_RIGHT]) - arrowWidth;
+	}
+    } else {
+	if (arrowGravity == SIDE_LEFT && params->eUnionBbox[2] != -1) {
+	    int padRight = params->eUnionBbox[2] - params->iUnionBbox[2];
+	    layout->x = (x + params->iUnionBbox[2]) + MAX(padRight, arrowPadX[PAD_TOP_LEFT]);
+	}
     }
     layout->width = arrowWidth;
 
@@ -2102,14 +2125,20 @@ static void DisplayProcHeader(TreeElementArgs *args)
     int x = args->display.x, y = args->display.y;
     int width = args->display.width, height = args->display.height;
     Tk_3DBorder border, borderDefault = NULL;
-    int relief;
+    int i, relief;
     int match, match2;
     struct HeaderParams params;
 
     if (tree->useTheme && (tree->themeHeaderHeight > 0)) {
 	height = tree->themeHeaderHeight;
     }
-
+#if 0
+    if ((elem->stateDomain == STATE_DOMAIN_HEADER) &&
+	    (x == args->display.spanBbox.x + tree->canvasPadX[PAD_TOP_LEFT])) {
+	x -= tree->canvasPadX[PAD_TOP_LEFT];
+	width += tree->canvasPadX[PAD_TOP_LEFT];
+    }
+#endif
     AdjustForSticky(args->display.sticky,
 	args->display.width, args->display.height,
 	TRUE, TRUE,
@@ -2121,6 +2150,11 @@ static void DisplayProcHeader(TreeElementArgs *args)
     width = MIN(width, TreeRect_Right(args->display.spanBbox) - x);
 
     HeaderGetParams(tree, elemX, args->state, &params);
+
+    for (i = 0; i < 4; i++) {
+	params.eUnionBbox[i] = args->display.eUnionBbox[i] - (x - args->display.spanBbox.x);
+	params.iUnionBbox[i] = args->display.iUnionBbox[i] - (x - args->display.spanBbox.x);
+    }
 
     if (tree->useTheme && TreeTheme_DrawHeaderItem(tree, args->display.td,
 	    params.state, params.arrow, 0, x, y, width, height)

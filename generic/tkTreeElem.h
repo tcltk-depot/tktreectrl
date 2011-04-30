@@ -45,6 +45,8 @@ struct TreeElementArgs
 	Drawable drawable;
 	TreeRectangle bounds;
 	TreeRectangle spanBbox;
+int eUnionBbox[4];
+int iUnionBbox[4];
 	TreeColumn column; /* needed for gradients */
 	TreeItem item; /* needed for gradients */
     } display;

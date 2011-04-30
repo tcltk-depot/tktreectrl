@@ -194,6 +194,8 @@ struct Layout
     int unionParent;	/* TRUE if this element is in one or more element's
 			 * -union */
 int margins[4];
+int eUnionBbox[4];
+int iUnionBbox[4];
 int arrowHeight;
 };
 
@@ -923,6 +925,7 @@ Layout_CalcUnionLayoutH(
     MElementLink *eLink = &masterStyle->elements[iElem];
     int *ePadX, *iPadX;
     int i, w, e;
+int eW, eE;
 
 #ifdef TREECTRL_DEBUG
     if (IS_HIDDEN(layout))
@@ -933,6 +936,7 @@ Layout_CalcUnionLayoutH(
 	return;
 
     w = 1000000, e = -1000000;
+eW = w, eE = e;
 
     for (i = 0; i < eLink->onionCount; i++) {
 	struct Layout *layout2 = &layouts[eLink->onion[i]];
@@ -941,7 +945,14 @@ Layout_CalcUnionLayoutH(
 	Layout_CalcUnionLayoutH(drawArgs, masterStyle, layouts, eLink->onion[i]);
 	w = MIN(w, layout2->x + layout2->ePadX[PAD_TOP_LEFT]);
 	e = MAX(e, layout2->x + layout2->ePadX[PAD_TOP_LEFT] + layout2->iWidth);
+eW = MIN(eW, layout2->x);
+eE = MAX(eE, layout2->x + layout2->eWidth);
     }
+
+layout->iUnionBbox[0] = w;
+layout->iUnionBbox[2] = e;
+layout->eUnionBbox[0] = eW;
+layout->eUnionBbox[2] = eE;
 
     ePadX = layout->ePadX;
     iPadX = layout->iPadX;
@@ -993,6 +1004,7 @@ Layout_CalcUnionLayoutV(
     MElementLink *eLink = &masterStyle->elements[iElem];
     int *ePadY, *iPadY;
     int i, n, s;
+int eN, eS;
 
 #ifdef TREECTRL_DEBUG
     if (IS_HIDDEN(layout))
@@ -1003,6 +1015,7 @@ Layout_CalcUnionLayoutV(
 	return;
 
     n = 1000000, s = -1000000;
+eN = n, eS = s;
 
     for (i = 0; i < eLink->onionCount; i++) {
 	struct Layout *layout2 = &layouts[eLink->onion[i]];
@@ -1011,7 +1024,14 @@ Layout_CalcUnionLayoutV(
 	Layout_CalcUnionLayoutV(drawArgs, masterStyle, layouts, eLink->onion[i]);
 	n = MIN(n, layout2->y + layout2->ePadY[PAD_TOP_LEFT]);
 	s = MAX(s, layout2->y + layout2->ePadY[PAD_TOP_LEFT] + layout2->iHeight);
+eN = MIN(eN, layout2->y);
+eS = MAX(eS, layout2->y + layout2->eHeight);
     }
+
+layout->iUnionBbox[1] = n;
+layout->iUnionBbox[3] = s;
+layout->eUnionBbox[1] = eN;
+layout->eUnionBbox[3] = eS;
 
     ePadY = layout->ePadY;
     iPadY = layout->iPadY;
@@ -1331,6 +1351,9 @@ Style_DoLayoutH(
 	    /* No -union padding yet */
 	    layout->uPadX[j] = 0;
 	    layout->uPadY[j] = 0;
+
+layout->iUnionBbox[j] = layout->iUnionBbox[j+2] = -1;
+layout->eUnionBbox[j] = layout->eUnionBbox[j+2] = -1;
 	}
 
 TreeElement_GetContentMargins(tree, layout->eLink->elem, drawArgs->state, layout->margins, &layout->arrowHeight);
@@ -3052,7 +3075,7 @@ TreeStyle_Draw(
     TreeCtrl *tree = drawArgs->tree;
     TreeRectangle bounds;
     TreeElementArgs args;
-    int i, x, y, minWidth, minHeight;
+    int i, j, x, y, minWidth, minHeight;
     struct Layout staticLayouts[STATIC_SIZE], *layouts = staticLayouts;
 #undef DEBUG_DRAW
 #ifdef DEBUG_DRAW
@@ -3129,6 +3152,13 @@ TreeStyle_Draw(
 	    args.display.width = layout->useWidth;
 	    args.display.height = layout->useHeight;
 	    args.display.sticky = layout->master->flags & ELF_STICKY;
+
+/* This is used by the header element to adjust the arrow position according
+ * to -arrowgravity. */
+for (j = 0; j < 4; j++) {
+    args.display.eUnionBbox[j] = layout->eUnionBbox[j];
+    args.display.iUnionBbox[j] = layout->iUnionBbox[j];
+}
 #ifdef DEBUG_DRAW
 	    if (debugDraw) {
 		XColor *color[3];
