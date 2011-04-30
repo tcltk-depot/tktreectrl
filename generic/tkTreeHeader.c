@@ -142,17 +142,15 @@ static Tk_OptionSpec columnSpecs[] = {
      COLU_CONF_NWIDTH | COLU_CONF_NHEIGHT | COLU_CONF_DISPLAY | ELEM_HEADER},
     {TK_OPTION_CUSTOM, "-arrowpadx", (char *) NULL, (char *) NULL,
      "6", Tk_Offset(HeaderColumn, arrowPadXObj), Tk_Offset(HeaderColumn, arrowPadX),
-     0, (ClientData) &TreeCtrlCO_pad, COLU_CONF_NWIDTH | COLU_CONF_DISPLAY},
+     0, (ClientData) &TreeCtrlCO_pad, COLU_CONF_NWIDTH | COLU_CONF_DISPLAY | ELEM_HEADER},
     {TK_OPTION_CUSTOM, "-arrowpady", (char *) NULL, (char *) NULL,
      "0", Tk_Offset(HeaderColumn, arrowPadYObj), Tk_Offset(HeaderColumn, arrowPadY),
-     0, (ClientData) &TreeCtrlCO_pad, COLU_CONF_NWIDTH | COLU_CONF_DISPLAY},
+     0, (ClientData) &TreeCtrlCO_pad, COLU_CONF_NWIDTH | COLU_CONF_DISPLAY | ELEM_HEADER},
     {TK_OPTION_STRING_TABLE, "-arrowside", (char *) NULL, (char *) NULL,
      "right", -1, Tk_Offset(HeaderColumn, arrowSide),
      0, (ClientData) arrowSideST, COLU_CONF_NWIDTH | COLU_CONF_DISPLAY | ELEM_HEADER},
-     /* NOTE: -background is a per-state option, so DEF_BUTTON_BG_COLOR
-      * must be a list of one element */
     {TK_OPTION_CUSTOM, "-background", (char *) NULL, (char *) NULL,
-     (char *) NULL /* initialized later */,
+     (char *) NULL, /* DEFAULT VALUE IS INITIALIZED LATER */
      Tk_Offset(HeaderColumn, border.obj), Tk_Offset(HeaderColumn, border),
      0, (ClientData) NULL, COLU_CONF_DISPLAY | ELEM_HEADER},
     {TK_OPTION_BITMAP, "-bitmap", (char *) NULL, (char *) NULL,
@@ -193,9 +191,9 @@ static Tk_OptionSpec columnSpecs[] = {
      TK_OPTION_NULL_OK, (ClientData) NULL,
      COLU_CONF_TEXT | COLU_CONF_NWIDTH | COLU_CONF_NHEIGHT | COLU_CONF_DISPLAY |
      ELEM_TEXT},
-    /* -textcolor initialized by TreeHeader_InitInterp() */
     {TK_OPTION_CUSTOM, "-textcolor", (char *) NULL, (char *) NULL,
-     (char *) NULL, Tk_Offset(HeaderColumn, textColor.obj),
+     (char *) NULL, /* DEFAULT VALUE IS INITIALIZED LATER */
+     Tk_Offset(HeaderColumn, textColor.obj),
      Tk_Offset(HeaderColumn, textColor), 0, (ClientData) NULL,
      COLU_CONF_DISPLAY | ELEM_TEXT},
     {TK_OPTION_INT, "-textlines", (char *) NULL, (char *) NULL,
