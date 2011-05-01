@@ -7810,7 +7810,8 @@ TreeGradientCmd(
 		    return TCL_ERROR;
 		}
 		if (native != tree->nativeGradients) {
-		    Tree_DInfoChanged(tree, DINFO_INVALIDATE | DINFO_OUT_OF_DATE);
+		    Tree_DInfoChanged(tree, DINFO_INVALIDATE | DINFO_OUT_OF_DATE
+			| DINFO_DRAW_HEADER);
 		    tree->nativeGradients = native;
 		}
 	    }
