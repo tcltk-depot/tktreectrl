@@ -32,23 +32,25 @@ struct TreeElementArgs
 	TreeItemColumn column;
     } config;
     struct {
-	int x;
-	int y;
-	int width;
-	int height;
-#define STICKY_W 0x1000 /* These values must match ELF_STICKY_xxx */
+	int x;			/* Display area of the element. */
+	int y;			/* ^ */
+	int width;		/* ^ */
+	int height;		/* ^ */
+#define STICKY_W 0x1000		/* These values must match ELF_STICKY_xxx */
 #define STICKY_N 0x2000
 #define STICKY_E 0x4000
 #define STICKY_S 0x8000
-	int sticky;
-int indent;
-int spanIndex;
-	TreeDrawable td;
-	Drawable drawable;
-	TreeRectangle bounds;
-	TreeRectangle spanBbox;
-int eUnionBbox[4];
-int iUnionBbox[4];
+	int sticky;		/* How to stretch/position the element within
+				 * its display area. */
+	int indent;		/* Distance the style is indented from the
+				 * left of spanBbox. */
+	int spanIndex;		/* 0-based index in the list of visible spans. */
+	TreeDrawable td;	/* Where to draw. */
+	Drawable drawable;	/* Where to draw. */
+	TreeRectangle bounds;	/* TREE_AREA_XXX bounds. */
+	TreeRectangle spanBbox;	/* Bounds of the span. */
+	int eUnionBbox[4];	/* Bounds of elements in a this element's */
+	int iUnionBbox[4];	/*  -union. */
 	TreeColumn column; /* needed for gradients */
 	TreeItem item; /* needed for gradients */
     } display;

@@ -193,11 +193,15 @@ struct Layout
 				* element's -union */
     int unionParent;	/* TRUE if this element is in one or more element's
 			 * -union */
-int eMargins[4];
-int uMargins[4];
-int eUnionBbox[4];
-int iUnionBbox[4];
-int arrowHeight;
+
+    /* These are all hacks for header elements. */
+    int eMargins[4];	/* Content margins, including arrow width but not -arrowpadx */
+    int uMargins[4];	/* Content margins, including arrow width and -arrowpadx */
+    int eUnionBbox[4];	/* Bounds of elements in a this element's -union,
+			 * including external padding of those elements. */
+    int iUnionBbox[4];	/* Bounds of elements in a this element's -union,
+			 * not including external padding of those elements. */
+    int arrowHeight;	/* Height of the sort arrow + -arrowpady. */
 };
 
 #define IS_HIDDEN(L) ((L)->visible == 0)
@@ -669,7 +673,6 @@ Layout_AddUnionPadding(
 	uPadY[PAD_BOTTOM_RIGHT] = MAX(uPadY[PAD_BOTTOM_RIGHT], totalPadY[PAD_BOTTOM_RIGHT]);
     }
 
-#if 1
     /* In the original header-layout code, the bitmap/image/text/arrow's
      * -XXXpady padding did not overlap the content margins, so the top and
      * bottom external padding of elements in a header element's -union is
@@ -703,7 +706,6 @@ Layout_AddUnionPadding(
 	layout->uPadY[PAD_TOP_LEFT] += layout->ePadY[PAD_TOP_LEFT];
 	layout->uPadY[PAD_BOTTOM_RIGHT] += layout->ePadY[PAD_BOTTOM_RIGHT];
     }
-#endif
 
     if (!IS_UNION(eLink)){
 	return;
@@ -755,8 +757,10 @@ Layout_ExpandUnionH(
     if (!(eLink1->flags & ELF_EXPAND_WE))
 	return;
 
-if ((masterStyle->stateDomain == STATE_DOMAIN_HEADER) && !(eLink1->flags & ELF_INDENT))
-    indent = 0;
+    /* Hack -- header elements aren't indented by -canvaspadx. */
+    if ((masterStyle->stateDomain == STATE_DOMAIN_HEADER) &&
+	    !(eLink1->flags & ELF_INDENT))
+	indent = 0;
 
     if (drawArgs->width - (layout->eWidth + indent) <= 0)
 	return;
@@ -964,8 +968,7 @@ Layout_CalcUnionLayoutH(
     struct Layout *layout = &layouts[iElem];
     MElementLink *eLink = &masterStyle->elements[iElem];
     int *ePadX, *iPadX;
-    int i, w, e;
-int eW, eE;
+    int i, iW, iE, eW, eE;
 
 #ifdef TREECTRL_DEBUG
     if (IS_HIDDEN(layout))
@@ -975,36 +978,35 @@ int eW, eE;
     if (!IS_UNION(eLink))
 	return;
 
-    w = 1000000, e = -1000000;
-eW = w, eE = e;
+    eW = iW = 1000000, eE = iE = -1000000;
 
     for (i = 0; i < eLink->onionCount; i++) {
 	struct Layout *layout2 = &layouts[eLink->onion[i]];
 	if (IS_HIDDEN(layout2))
 	    continue;
 	Layout_CalcUnionLayoutH(drawArgs, masterStyle, layouts, eLink->onion[i]);
-	w = MIN(w, layout2->x + layout2->ePadX[PAD_TOP_LEFT]);
-	e = MAX(e, layout2->x + layout2->ePadX[PAD_TOP_LEFT] + layout2->iWidth);
-eW = MIN(eW, layout2->x);
-eE = MAX(eE, layout2->x + layout2->eWidth);
+	iW = MIN(iW, layout2->x + layout2->ePadX[PAD_TOP_LEFT]);
+	iE = MAX(iE, layout2->x + layout2->ePadX[PAD_TOP_LEFT] + layout2->iWidth);
+	eW = MIN(eW, layout2->x);
+	eE = MAX(eE, layout2->x + layout2->eWidth);
     }
 
-layout->iUnionBbox[0] = w;
-layout->iUnionBbox[2] = e;
-layout->eUnionBbox[0] = eW;
-layout->eUnionBbox[2] = eE;
+    layout->iUnionBbox[0] = iW;
+    layout->iUnionBbox[2] = iE;
+    layout->eUnionBbox[0] = eW;
+    layout->eUnionBbox[2] = eE;
 
     ePadX = layout->ePadX;
     iPadX = layout->iPadX;
 
 #if 1
-    layout->x = w - layout->uMargins[0] - iPadX[PAD_TOP_LEFT] - ePadX[PAD_TOP_LEFT];
-    layout->useWidth = layout->uMargins[0] + (e - w) + layout->uMargins[2];
+    layout->x = iW - layout->uMargins[0] - iPadX[PAD_TOP_LEFT] - ePadX[PAD_TOP_LEFT];
+    layout->useWidth = layout->uMargins[0] + (iE - iW) + layout->uMargins[2];
     layout->iWidth = iPadX[PAD_TOP_LEFT] + layout->useWidth + iPadX[PAD_BOTTOM_RIGHT];
     layout->eWidth = ePadX[PAD_TOP_LEFT] + layout->iWidth + ePadX[PAD_BOTTOM_RIGHT];
 #else
-    layout->x = w - iPadX[PAD_TOP_LEFT] - ePadX[PAD_TOP_LEFT];
-    layout->useWidth = (e - w);
+    layout->x = iW - iPadX[PAD_TOP_LEFT] - ePadX[PAD_TOP_LEFT];
+    layout->useWidth = (iE - iW);
     layout->iWidth = iPadX[PAD_TOP_LEFT] + layout->useWidth + iPadX[PAD_BOTTOM_RIGHT];
     layout->eWidth = ePadX[PAD_TOP_LEFT] + layout->iWidth + ePadX[PAD_BOTTOM_RIGHT];
 #endif
@@ -1043,8 +1045,7 @@ Layout_CalcUnionLayoutV(
     struct Layout *layout = &layouts[iElem];
     MElementLink *eLink = &masterStyle->elements[iElem];
     int *ePadY, *iPadY;
-    int i, n, s;
-int eN, eS;
+    int i, iN, iS, eN, eS;
 
 #ifdef TREECTRL_DEBUG
     if (IS_HIDDEN(layout))
@@ -1054,36 +1055,35 @@ int eN, eS;
     if (!IS_UNION(eLink))
 	return;
 
-    n = 1000000, s = -1000000;
-eN = n, eS = s;
+    eN = iN = 1000000, eS = iS = -1000000;
 
     for (i = 0; i < eLink->onionCount; i++) {
 	struct Layout *layout2 = &layouts[eLink->onion[i]];
 	if (IS_HIDDEN(layout2))
 	    continue;
 	Layout_CalcUnionLayoutV(drawArgs, masterStyle, layouts, eLink->onion[i]);
-	n = MIN(n, layout2->y + layout2->ePadY[PAD_TOP_LEFT]);
-	s = MAX(s, layout2->y + layout2->ePadY[PAD_TOP_LEFT] + layout2->iHeight);
-eN = MIN(eN, layout2->y);
-eS = MAX(eS, layout2->y + layout2->eHeight);
+	iN = MIN(iN, layout2->y + layout2->ePadY[PAD_TOP_LEFT]);
+	iS = MAX(iS, layout2->y + layout2->ePadY[PAD_TOP_LEFT] + layout2->iHeight);
+	eN = MIN(eN, layout2->y);
+	eS = MAX(eS, layout2->y + layout2->eHeight);
     }
 
-layout->iUnionBbox[1] = n;
-layout->iUnionBbox[3] = s;
-layout->eUnionBbox[1] = eN;
-layout->eUnionBbox[3] = eS;
+    layout->iUnionBbox[1] = iN;
+    layout->iUnionBbox[3] = iS;
+    layout->eUnionBbox[1] = eN;
+    layout->eUnionBbox[3] = eS;
 
     ePadY = layout->ePadY;
     iPadY = layout->iPadY;
 
 #if 1
-    layout->y = n - layout->uMargins[1] - iPadY[PAD_TOP_LEFT] - ePadY[PAD_TOP_LEFT];
-    layout->useHeight = layout->uMargins[1] + (s - n) + layout->uMargins[3];
+    layout->y = iN - layout->uMargins[1] - iPadY[PAD_TOP_LEFT] - ePadY[PAD_TOP_LEFT];
+    layout->useHeight = layout->uMargins[1] + (iS - iN) + layout->uMargins[3];
     layout->iHeight = iPadY[PAD_TOP_LEFT] + layout->useHeight + iPadY[PAD_BOTTOM_RIGHT];
     layout->eHeight = ePadY[PAD_TOP_LEFT] + layout->iHeight + ePadY[PAD_BOTTOM_RIGHT];
 #else
-    layout->y = n - iPadY[PAD_TOP_LEFT] - ePadY[PAD_TOP_LEFT];
-    layout->useHeight = (s - n);
+    layout->y = iN - iPadY[PAD_TOP_LEFT] - ePadY[PAD_TOP_LEFT];
+    layout->useHeight = (iS - iN);
     layout->iHeight = iPadY[PAD_TOP_LEFT] + layout->useHeight + iPadY[PAD_BOTTOM_RIGHT];
     layout->eHeight = ePadY[PAD_TOP_LEFT] + layout->iHeight + ePadY[PAD_BOTTOM_RIGHT];
 #endif
@@ -8080,6 +8080,11 @@ TreeStyle_Init(
     TreeCtrl *tree		/* Widget info. */
     )
 {
+#ifdef TREECTRL_DEBUG
+    if (STICKY_W != ELF_STICKY_W || STICKY_E != ELF_STICKY_E ||
+	STICKY_N != ELF_STICKY_N || STICKY_S != ELF_STICKY_S)
+	panic("STICKY_XYZ != ELF_STICKY_XYZ");
+#endif
     tree->styleOptionTable = Tk_CreateOptionTable(tree->interp,
 	styleOptionSpecs);
     tree->imageOptionNameObj = Tcl_NewStringObj("-image", -1);

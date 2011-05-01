@@ -907,19 +907,19 @@ MODULE_SCOPE int StringTableCO_Init(Tk_OptionSpec *optionTable, CONST char *opti
 struct StyleDrawArgs
 {
     TreeCtrl *tree;
-    TreeColumn column; /* needed for gradients */
-    TreeItem item; /* needed for gradients */
+    TreeColumn column;
+    TreeItem item;
     TreeStyle style;
     int indent;
-    int x;
-    int y;
-    int width;
-    int height;
-    int spanIndex;
-    TreeDrawable td;
-    int state;		/* STATE_xxx */
-    Tk_Justify justify;
-    TreeRectangle bounds;
+    int x;			/* Display area of the style. */
+    int y;			/* ^ */
+    int width;			/* ^ */
+    int height;			/* ^ */
+    int spanIndex;		/* 0-based index in the list of visible spans. */
+    TreeDrawable td;		/* Where to draw. */
+    int state;			/* STATE_xxx */
+    Tk_Justify justify;		/* How to justify the style within 'bounds'. */
+    TreeRectangle bounds;	/* TREE_AREA_XXX bounds. */
 };
 
 /* tkTreeStyle.c */
