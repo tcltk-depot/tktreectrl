@@ -273,22 +273,22 @@ if 1 {
     $T style layout $S theme.button -expand we -pady {3 6}
 
     NewButtonItem "" \
-	"Use no style, just the built-in header background, sort arrow and text.\nstyle=none, -ownerdrawn=no" \
+	"Use no style, just the built-in header background, sort arrow and text." \
 	no
     NewButtonItem header1 \
-	"Use the 'header1' style, consisting of a border element for the background and an image for the sort arrow.\nstyle=header1, -ownerdrawn=yes" \
+	"Use the 'header1' style, consisting of a border element for the background and an image for the sort arrow." \
 	yes black
     NewButtonItem header2 \
-	"Use the 'header2' style, consisting of a rounded rectangle element for the background and an image for the sort arrow.\nstyle=header2, -ownerdrawn=yes" \
+	"Use the 'header2' style, consisting of a rounded rectangle element for the background and an image for the sort arrow." \
 	yes blue
     NewButtonItem header4 \
-	"Use the 'header4' style, consisting only of an image element serving as a checkbutton.  The style is drawn overtop the built-in parts of the header.\nstyle=header4, -ownerdrawn=no" \
+	"Use the 'header4' style, consisting of a header element to display the background and sort arrow, and an image element serving as a checkbutton." \
 	no
     NewButtonItem header5 \
-	"Use the 'header5' style, consisting .\nstyle=header5, -ownerdrawn=yes" \
+	"Use the 'header5' style, consisting of a gradient-filled rectangle element for the background and an image for the sort arrow." \
 	yes #0080FF
     NewButtonItem header6 \
-	"Use the 'header6' style, consisting .\nstyle=header6, -ownerdrawn=yes" \
+	"Use the 'header6' style, consisting of a gradient-filled rectangle element for the background and an image for the sort arrow." \
 	yes orange
 
     $T item state set styleheader2 current
