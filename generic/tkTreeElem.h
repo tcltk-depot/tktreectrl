@@ -41,6 +41,7 @@ struct TreeElementArgs
 #define STICKY_E 0x4000
 #define STICKY_S 0x8000
 	int sticky;
+int indent;
 	TreeDrawable td;
 	Drawable drawable;
 	TreeRectangle bounds;

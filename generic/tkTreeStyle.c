@@ -743,7 +743,7 @@ Layout_ExpandUnionH(
     struct Layout *layout = &layouts[iElem];
     MElementLink *eLink1 = &masterStyle->elements[iElem];
     int *ePadX, *iPadX, *uPadX;
-    int extraWidth, x;
+    int extraWidth, x, indent = drawArgs->indent;
 
 #ifdef TREECTRL_DEBUG
     if (IS_HIDDEN(layout))
@@ -755,7 +755,10 @@ Layout_ExpandUnionH(
     if (!(eLink1->flags & ELF_EXPAND_WE))
 	return;
 
-    if (drawArgs->width - (layout->eWidth + drawArgs->indent) <= 0)
+if ((masterStyle->stateDomain == STATE_DOMAIN_HEADER) && !(eLink1->flags & ELF_INDENT))
+    indent = 0;
+
+    if (drawArgs->width - (layout->eWidth + indent) <= 0)
 	return;
 
     ePadX = layout->ePadX;
@@ -763,7 +766,7 @@ Layout_ExpandUnionH(
     uPadX = layout->uPadX;
 
     x = layout->x + ePadX[PAD_TOP_LEFT] - MAX(ePadX[PAD_TOP_LEFT], uPadX[PAD_TOP_LEFT]);
-    extraWidth = x - drawArgs->indent;
+    extraWidth = x - indent;
     if ((extraWidth > 0) && (eLink1->flags & ELF_EXPAND_W)) {
 
 	/* External and internal expansion: W */
@@ -771,7 +774,7 @@ Layout_ExpandUnionH(
 	    int eExtra = extraWidth / 2;
 	    int iExtra = extraWidth - extraWidth / 2;
 
-	    layout->x = drawArgs->indent + uPadX[PAD_TOP_LEFT];
+	    layout->x = indent + uPadX[PAD_TOP_LEFT];
 
 	    /* External expansion */
 	    ePadX[PAD_TOP_LEFT] += eExtra;
@@ -785,14 +788,14 @@ Layout_ExpandUnionH(
 	/* External expansion only: W */
 	else if (eLink1->flags & ELF_eEXPAND_W) {
 	    ePadX[PAD_TOP_LEFT] += extraWidth;
-	    layout->x = drawArgs->indent + uPadX[PAD_TOP_LEFT];
+	    layout->x = indent + uPadX[PAD_TOP_LEFT];
 	    layout->eWidth += extraWidth;
 	}
 
 	/* Internal expansion only: W */
 	else {
 	    iPadX[PAD_TOP_LEFT] += extraWidth;
-	    layout->x = drawArgs->indent + uPadX[PAD_TOP_LEFT];
+	    layout->x = indent + uPadX[PAD_TOP_LEFT];
 	    layout->iWidth += extraWidth;
 	    layout->eWidth += extraWidth;
 	}
@@ -3159,6 +3162,7 @@ TreeStyle_Draw(
     args.display.drawable = drawArgs->td.drawable;
     args.display.column = drawArgs->column; /* needed for gradients */
     args.display.item = drawArgs->item; /* needed for gradients */
+    args.display.indent = drawArgs->indent;
 
     for (i = 0; i < masterStyle->numElements; i++) {
 	struct Layout *layout = &layouts[i];
@@ -7993,6 +7997,7 @@ Tree_MakeHeaderStyle(
     sprintf(name, "treectrl_header_style_%d", tree->headerStyle.nextId);
     style = Style_CreateAndConfig(tree, name, 0, NULL);
     style->hidden = TRUE;
+    style->stateDomain = STATE_DOMAIN_HEADER;
 
     hPtr = Tcl_CreateHashEntry(&tree->styleHash, name, &isNew);
     Tcl_SetHashValue(hPtr, style);
@@ -8013,8 +8018,10 @@ Tree_MakeHeaderStyle(
 	for (i = 1; i < count; i++)
 	    eLink->onion[i - 1] = i;
 	eLink->flags |= ELF_iEXPAND; /* wens */
+	eLink->flags &= ~ELF_INDENT;
     } else {
-	eLink->flags |= ELF_iEXPAND_X | ELF_iEXPAND_Y;
+	eLink->flags |= ELF_DETACH | ELF_iEXPAND_X | ELF_iEXPAND_Y;
+	eLink->flags &= ~ELF_INDENT;
     }
     if (params->bitmap || params->image) {
 	eLink = &style->elements[1];

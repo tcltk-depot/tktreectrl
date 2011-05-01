@@ -1875,6 +1875,7 @@ HeaderLayoutArrow(
     ElementHeader *elemX,
     struct HeaderParams *params,
     int x, int y, int width, int height, /* bounds of whole element */
+    int indent,
     struct ArrowLayout *layout
     )
 {
@@ -1971,7 +1972,7 @@ HeaderLayoutArrow(
 	arrowHeight = arrowWidth;
     }
 
-    minX = x;
+    minX = x + indent;
     maxX = x + width;
     padX[PAD_TOP_LEFT] = padX[PAD_BOTTOM_RIGHT] = 0;
     if (arrowSide == SIDE_LEFT) {
@@ -1988,13 +1989,13 @@ HeaderLayoutArrow(
 
     if (arrowGravity == SIDE_LEFT) {
 	layout->x = minX + MAX(padX[PAD_BOTTOM_RIGHT], arrowPadX[PAD_TOP_LEFT]);
-	layout->x = MIN(layout->x, (x + width) - arrowPadX[PAD_BOTTOM_RIGHT] - arrowWidth); /* spanBbox */
+	layout->x = MIN(layout->x, (x + width) - arrowPadX[PAD_BOTTOM_RIGHT] - arrowWidth);
     } else {
 	layout->x = maxX - MAX(padX[PAD_TOP_LEFT], arrowPadX[PAD_BOTTOM_RIGHT]) - arrowWidth;
     }
 
     /* Don't let the arrow go too far left when the column is very narrow. */
-    layout->x = MAX(layout->x, x + arrowPadX[PAD_TOP_LEFT]); /* spanBbox */
+    layout->x = MAX(layout->x, x + indent + arrowPadX[PAD_TOP_LEFT]);
 
     layout->width = arrowWidth;
 
@@ -2013,7 +2014,8 @@ static void
 HeaderDrawArrow(
     TreeElementArgs *args,
     struct HeaderParams *params,
-    int x, int y, int width, int height /* bounds of whole element */
+    int x, int y, int width, int height, /* bounds of whole element */
+    int indent
     )
 {
     TreeCtrl *tree = args->tree;
@@ -2031,7 +2033,7 @@ HeaderDrawArrow(
     if (params->arrow == COLUMN_ARROW_NONE)
 	return;
 
-    HeaderLayoutArrow(tree, elemX, params, x, y, width, height, &layout);
+    HeaderLayoutArrow(tree, elemX, params, x, y, width, height, indent, &layout);
 
     IMAGE_FOR_STATE(image, arrowImage, state);
     if (image != NULL) {
@@ -2133,6 +2135,7 @@ static void DisplayProcHeader(TreeElementArgs *args)
 /*    int state = args->state;*/
     int x = args->display.x, y = args->display.y;
     int width = args->display.width, height = args->display.height;
+    int arrowIndent = 0;
     Tk_3DBorder border, borderDefault = NULL;
     int i, relief;
     int match, match2;
@@ -2141,13 +2144,7 @@ static void DisplayProcHeader(TreeElementArgs *args)
     if (tree->useTheme && (tree->themeHeaderHeight > 0)) {
 	height = tree->themeHeaderHeight;
     }
-#if 0
-    if ((elem->stateDomain == STATE_DOMAIN_HEADER) &&
-	    (x == args->display.spanBbox.x + tree->canvasPadX[PAD_TOP_LEFT])) {
-	x -= tree->canvasPadX[PAD_TOP_LEFT];
-	width += tree->canvasPadX[PAD_TOP_LEFT];
-    }
-#endif
+
     AdjustForSticky(args->display.sticky,
 	args->display.width, args->display.height,
 	TRUE, TRUE,
@@ -2157,6 +2154,11 @@ static void DisplayProcHeader(TreeElementArgs *args)
      * column and not be clipped when the column width is less than the needed
      * width of the style. */
     width = MIN(width, TreeRect_Right(args->display.spanBbox) - x);
+
+    /* Don't draw the sort arrow in the canvasPadX space. */
+    if (x < args->display.spanBbox.x + args->display.indent) {
+	arrowIndent = args->display.indent;
+    }
 
     HeaderGetParams(tree, elemX, args->state, &params);
 
@@ -2170,8 +2172,9 @@ static void DisplayProcHeader(TreeElementArgs *args)
 	    == TCL_OK) {
 
 #if !defined(MAC_OSX_TK)
-	/* Under Aqua, we let the Appearance Manager draw the sort arrow. */
-	HeaderDrawArrow(args, &params, x, y, width, height);
+	/* Under Aqua, the Appearance Manager draws the sort arrow as part of
+	 * the header background. */
+	HeaderDrawArrow(args, &params, x, y, width, height, arrowIndent);
 #endif
 	return;
     }
@@ -2195,7 +2198,7 @@ static void DisplayProcHeader(TreeElementArgs *args)
     if (relief == TK_RELIEF_NULL)
 	relief = (params.state == COLUMN_STATE_PRESSED) ? TK_RELIEF_SUNKEN : TK_RELIEF_RAISED;
 
-    HeaderDrawArrow(args, &params, x, y, width, height);
+    HeaderDrawArrow(args, &params, x, y, width, height, arrowIndent);
 
     Tk_Draw3DRectangle(tree->tkwin, args->display.drawable, border,
 	    x, y, width, height, params.borderWidth, relief);
@@ -2223,7 +2226,7 @@ static void NeededProcHeader(TreeElementArgs *args)
 
     HeaderLayoutArrow(tree, elemX, &params, TreeRect_Left(bounds),
 	TreeRect_Top(bounds), TreeRect_Width(bounds),
-	TreeRect_Height(bounds), &layout);
+	TreeRect_Height(bounds), 0, &layout);
 
     if (layout.arrow != COLUMN_ARROW_NONE) {
 	width = layout.padX[0] + layout.width + layout.padX[1];
@@ -2436,7 +2439,7 @@ TreeElement_GetContentMargins(
 
 	HeaderLayoutArrow(tree, elemX, &params, TreeRect_Left(bounds),
 	    TreeRect_Top(bounds), TreeRect_Width(bounds),
-	    TreeRect_Height(bounds), &layout);
+	    TreeRect_Height(bounds), 0, &layout);
 
 	if (layout.arrowSide == SIDE_LEFT) {
 	    uMargins[0] = layout.padX[PAD_TOP_LEFT] + layout.width + layout.padX[PAD_BOTTOM_RIGHT];
