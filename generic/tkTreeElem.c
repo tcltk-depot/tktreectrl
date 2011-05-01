@@ -1976,6 +1976,7 @@ HeaderLayoutArrow(
 	/* Don't let the arrow go too far left when the column is very narrow. */
 	layout->x = MAX(layout->x, x + arrowPadX[PAD_TOP_LEFT]); /* spanBbox */
     }
+
     if (arrowSide == SIDE_LEFT) {
 	if (arrowGravity == SIDE_RIGHT && params->eUnionBbox[0] != -1) {
 	    int padLeft = params->iUnionBbox[0] - params->eUnionBbox[0];
@@ -2394,11 +2395,13 @@ TreeElement_GetContentMargins(
     TreeCtrl *tree,
     TreeElement elem,
     int state,
-    int margins[4],
+    int eMargins[4],
+    int uMargins[4],
     int *arrowHeight
     )
 {
-    margins[0] = margins[1] = margins[2] = margins[3] = 0;
+    eMargins[0] = eMargins[1] = eMargins[2] = eMargins[3] = 0;
+    uMargins[0] = uMargins[1] = uMargins[2] = uMargins[3] = 0;
     *arrowHeight = 0;
 
     if (ELEMENT_TYPE_MATCHES(elem->typePtr, &treeElemTypeHeader)) {
@@ -2409,8 +2412,13 @@ TreeElement_GetContentMargins(
 
 	HeaderGetParams(tree, elemX, state, &params);
 
-	margins[1] = params.margins[1];
-	margins[3] = params.margins[3];
+	/* Added to ePadY of elements in the -union */
+	eMargins[1] = params.margins[1];
+	eMargins[3] = params.margins[3];
+
+	/* Added to iPadY of this element */
+	uMargins[1] = params.margins[1];
+	uMargins[3] = params.margins[3];
 
 	if (params.arrow == COLUMN_ARROW_NONE)
 	    return;
@@ -2420,9 +2428,11 @@ TreeElement_GetContentMargins(
 	    TreeRect_Height(bounds), &layout);
 
 	if (layout.arrowSide == SIDE_LEFT) {
-	    margins[0] = layout.x + layout.width + layout.padX[PAD_BOTTOM_RIGHT] - TreeRect_Left(bounds);
+	    uMargins[0] = layout.x + layout.width + layout.padX[PAD_BOTTOM_RIGHT] - TreeRect_Left(bounds);
+	    eMargins[0] = layout.x + layout.width - TreeRect_Left(bounds);
 	} else {
-	    margins[2] = TreeRect_Right(bounds) - (layout.x - layout.padX[PAD_TOP_LEFT]);
+	    uMargins[2] = TreeRect_Right(bounds) - (layout.x - layout.padX[PAD_TOP_LEFT]);
+	    eMargins[2] = TreeRect_Right(bounds) - layout.x;
 	}
 
 	*arrowHeight = layout.padY[0] + layout.height + layout.padY[1];

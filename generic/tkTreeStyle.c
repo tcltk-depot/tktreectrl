@@ -193,7 +193,8 @@ struct Layout
 				* element's -union */
     int unionParent;	/* TRUE if this element is in one or more element's
 			 * -union */
-int margins[4];
+int eMargins[4];
+int uMargins[4];
 int eUnionBbox[4];
 int iUnionBbox[4];
 int arrowHeight;
@@ -668,6 +669,42 @@ Layout_AddUnionPadding(
 	uPadY[PAD_BOTTOM_RIGHT] = MAX(uPadY[PAD_BOTTOM_RIGHT], totalPadY[PAD_BOTTOM_RIGHT]);
     }
 
+#if 1
+    /* In the original header-layout code, the bitmap/image/text/arrow did not
+     * overlap the content margins vertically, so the content margins are
+     * added to the external padding of elements in a header element's
+     * -union. */
+
+    /* In the original header-layout code, the -arrowpadx padding would
+     * overlap the padding of the adjacent bitmap/image/text, so any elements
+     * adjacent to the sort arrow have their union padding increased by the
+     * difference between their external padding and the sort arrow's external
+     * padding. */
+    if (masterStyle->vertical) {
+	int arrowPadLeft = layoutP->uMargins[0] - layoutP->eMargins[0];
+	int arrowPadRight = layoutP->uMargins[2] - layoutP->eMargins[2];
+	if (arrowPadLeft > 0)
+	    uPadX[PAD_TOP_LEFT] += MAX(layout->ePadX[PAD_TOP_LEFT] - arrowPadLeft, 0);
+	if (arrowPadRight > 0)
+	    uPadX[PAD_BOTTOM_RIGHT] += MAX(layout->ePadX[PAD_BOTTOM_RIGHT] - arrowPadRight, 0);
+	if (iElem == layoutP->unionFirst) /* topmost */
+	    layout->ePadY[PAD_TOP_LEFT] += layoutP->eMargins[1];
+	if (iElem == layoutP->unionLast) /* bottommost */
+	    layout->ePadY[PAD_BOTTOM_RIGHT] += layoutP->eMargins[3];
+    } else {
+	if (iElem == layoutP->unionFirst && layoutP->uMargins[0] > 0) { /* leftmost */
+	    int arrowPadRight = layoutP->uMargins[0] - layoutP->eMargins[0];
+	    uPadX[PAD_TOP_LEFT] += MAX(layout->ePadX[PAD_TOP_LEFT] - arrowPadRight, 0);
+	}
+	if (iElem == layoutP->unionLast && layoutP->uMargins[2] > 0) { /* rightmost */
+	    int arrowPadLeft = layoutP->uMargins[2] - layoutP->eMargins[2];
+	    uPadX[PAD_BOTTOM_RIGHT] += MAX(layout->ePadX[PAD_BOTTOM_RIGHT] - arrowPadLeft, 0);
+	}
+	layout->ePadY[PAD_TOP_LEFT] += layoutP->eMargins[1];
+	layout->ePadY[PAD_BOTTOM_RIGHT] += layoutP->eMargins[3];
+    }
+#endif
+
     if (!IS_UNION(eLink)){
 	return;
     }
@@ -678,8 +715,8 @@ Layout_AddUnionPadding(
     iPadY = layout->iPadY;
 
     for (i = 0; i < 2; i++) {
-	padX[i] = MAX(totalPadX[i], ePadX[i]) + iPadX[i] + layout->margins[i*2];
-	padY[i] = MAX(totalPadY[i], ePadY[i]) + iPadY[i] + layout->margins[i*2+1];
+	padX[i] = MAX(totalPadX[i], ePadX[i]) + iPadX[i] + layout->uMargins[i*2];
+	padY[i] = MAX(totalPadY[i], ePadY[i]) + iPadY[i] + layout->uMargins[i*2+1];
     }
     for (i = 0; i < eLink->onionCount; i++) {
 	struct Layout *layout2 = &layouts[eLink->onion[i]];
@@ -958,8 +995,8 @@ layout->eUnionBbox[2] = eE;
     iPadX = layout->iPadX;
 
 #if 1
-    layout->x = w - layout->margins[0] - iPadX[PAD_TOP_LEFT] - ePadX[PAD_TOP_LEFT];
-    layout->useWidth = layout->margins[0] + (e - w) + layout->margins[2];
+    layout->x = w - layout->uMargins[0] - iPadX[PAD_TOP_LEFT] - ePadX[PAD_TOP_LEFT];
+    layout->useWidth = layout->uMargins[0] + (e - w) + layout->uMargins[2];
     layout->iWidth = iPadX[PAD_TOP_LEFT] + layout->useWidth + iPadX[PAD_BOTTOM_RIGHT];
     layout->eWidth = ePadX[PAD_TOP_LEFT] + layout->iWidth + ePadX[PAD_BOTTOM_RIGHT];
 #else
@@ -1037,8 +1074,8 @@ layout->eUnionBbox[3] = eS;
     iPadY = layout->iPadY;
 
 #if 1
-    layout->y = n - layout->margins[1] - iPadY[PAD_TOP_LEFT] - ePadY[PAD_TOP_LEFT];
-    layout->useHeight = layout->margins[1] + (s - n) + layout->margins[3];
+    layout->y = n - layout->uMargins[1] - iPadY[PAD_TOP_LEFT] - ePadY[PAD_TOP_LEFT];
+    layout->useHeight = layout->uMargins[1] + (s - n) + layout->uMargins[3];
     layout->iHeight = iPadY[PAD_TOP_LEFT] + layout->useHeight + iPadY[PAD_BOTTOM_RIGHT];
     layout->eHeight = ePadY[PAD_TOP_LEFT] + layout->iHeight + ePadY[PAD_BOTTOM_RIGHT];
 #else
@@ -1356,7 +1393,7 @@ layout->iUnionBbox[j] = layout->iUnionBbox[j+2] = -1;
 layout->eUnionBbox[j] = layout->eUnionBbox[j+2] = -1;
 	}
 
-TreeElement_GetContentMargins(tree, layout->eLink->elem, drawArgs->state, layout->margins, &layout->arrowHeight);
+TreeElement_GetContentMargins(tree, layout->eLink->elem, drawArgs->state, layout->eMargins, layout->uMargins, &layout->arrowHeight);
 
 	/* Count all non-union, non-detach squeezeable elements */
 	if (DETACH_OR_UNION(eLink1))
@@ -1397,14 +1434,14 @@ TreeElement_GetContentMargins(tree, layout->eLink->elem, drawArgs->state, layout
 	if (!IS_UNION(eLink1) || layout->unionParent)
 	    continue;
 
-	ePadX = eLink1->ePadX;
-	ePadY = eLink1->ePadY;
-	iPadX = eLink1->iPadX;
-	iPadY = eLink1->iPadY;
+	ePadX = layout->ePadX;
+	ePadY = layout->ePadY;
+	iPadX = layout->iPadX;
+	iPadY = layout->iPadY;
 
 	for (j = 0; j < 2; j++) {
-	    padx[j] = ePadX[j] + iPadX[j] + layout->margins[j*2];
-	    pady[j] = ePadY[j] + iPadY[j] + layout->margins[j*2+1];
+	    padx[j] = ePadX[j] + iPadX[j] + layout->uMargins[j*2];
+	    pady[j] = ePadY[j] + iPadY[j] + layout->uMargins[j*2+1];
 	}
 	for (j = 0; j < eLink1->onionCount; j++) {
 	    struct Layout *layout2 = &layouts[eLink1->onion[j]];
@@ -1477,8 +1514,8 @@ TreeElement_GetContentMargins(tree, layout->eLink->elem, drawArgs->state, layout
 	if (!IS_DETACH(eLink1) && !masterStyle->vertical)
 	    continue;
 
-	ePadX = eLink1->ePadX;
-	iPadX = eLink1->iPadX;
+	ePadX = layout->ePadX;
+	iPadX = layout->iPadX;
 	uPadX = layout->uPadX;
 
 	width =
@@ -1515,8 +1552,8 @@ TreeElement_GetContentMargins(tree, layout->eLink->elem, drawArgs->state, layout
 	if (DETACH_OR_UNION(eLink1))
 	    continue;
 
-	ePadX = eLink1->ePadX;
-	iPadX = eLink1->iPadX;
+	ePadX = layout->ePadX;
+	iPadX = layout->iPadX;
 	uPadX = layout->uPadX;
 
 	layout->x = x + abs(ePadX[PAD_TOP_LEFT] - MAX(ePadX[PAD_TOP_LEFT], uPadX[PAD_TOP_LEFT]));
@@ -1774,8 +1811,8 @@ TreeElement_GetContentMargins(tree, layout->eLink->elem, drawArgs->state, layout
 	if (!IS_DETACH(eLink1) || IS_UNION(eLink1))
 	    continue;
 
-	ePadX = eLink1->ePadX;
-	iPadX = eLink1->iPadX;
+	ePadX = layout->ePadX;
+	iPadX = layout->iPadX;
 	uPadX = layout->uPadX;
 
 	layout->x = abs(ePadX[PAD_TOP_LEFT] - MAX(ePadX[PAD_TOP_LEFT], uPadX[PAD_TOP_LEFT]));
@@ -1950,8 +1987,8 @@ Style_DoLayoutV(
 	    if (!IS_DETACH(eLink1) && masterStyle->vertical)
 		continue;
 
-	    ePadY = eLink1->ePadY;
-	    iPadY = eLink1->iPadY;
+	    ePadY = layout->ePadY;
+	    iPadY = layout->iPadY;
 	    uPadY = layout->uPadY;
 
 	    height =
@@ -1985,8 +2022,8 @@ Style_DoLayoutV(
 	if (DETACH_OR_UNION(eLink1))
 	    continue;
 
-	ePadY = eLink1->ePadY;
-	iPadY = eLink1->iPadY;
+	ePadY = layout->ePadY;
+	iPadY = layout->iPadY;
 	uPadY = layout->uPadY;
 
 	layout->y = y + abs(ePadY[PAD_TOP_LEFT] - MAX(ePadY[PAD_TOP_LEFT], uPadY[PAD_TOP_LEFT]));
@@ -2208,8 +2245,8 @@ Style_DoLayoutV(
 	if (!IS_DETACH(eLink1) || IS_UNION(eLink1))
 	    continue;
 
-	ePadY = eLink1->ePadY;
-	iPadY = eLink1->iPadY;
+	ePadY = layout->ePadY;
+	iPadY = layout->iPadY;
 	uPadY = layout->uPadY;
 
 	layout->y = abs(ePadY[PAD_TOP_LEFT] - MAX(ePadY[PAD_TOP_LEFT], uPadY[PAD_TOP_LEFT]));
@@ -2388,8 +2425,8 @@ Style_DoLayoutNeededV(
 	if (IS_DETACH(eLink1))
 	    continue;
 
-	ePadY = eLink1->ePadY;
-	iPadY = eLink1->iPadY;
+	ePadY = layout->ePadY;
+	iPadY = layout->iPadY;
 	uPadY = layout->uPadY;
 
 	layout->y = y + abs(ePadY[PAD_TOP_LEFT] - MAX(ePadY[PAD_TOP_LEFT], uPadY[PAD_TOP_LEFT]));
@@ -2413,8 +2450,8 @@ Style_DoLayoutNeededV(
 	if (!IS_DETACH(eLink1) || IS_UNION(eLink1))
 	    continue;
 
-	ePadY = eLink1->ePadY;
-	iPadY = eLink1->iPadY;
+	ePadY = layout->ePadY;
+	iPadY = layout->iPadY;
 	uPadY = layout->uPadY;
 
 	layout->y = abs(ePadY[PAD_TOP_LEFT] - MAX(ePadY[PAD_TOP_LEFT], uPadY[PAD_TOP_LEFT]));
@@ -2642,9 +2679,9 @@ int headerHeight = 0;
 	    layout->uPadY[j] = 0;
 	}
 
-TreeElement_GetContentMargins(tree, layout->eLink->elem, state, layout->margins, &layout->arrowHeight);
+TreeElement_GetContentMargins(tree, layout->eLink->elem, state, layout->eMargins, layout->uMargins, &layout->arrowHeight);
 if (IS_UNION(eLink1)) {
-    headerHeight = MAX(headerHeight, layout->margins[1] + layout->arrowHeight + layout->margins[3]);
+    headerHeight = MAX(headerHeight, layout->eMargins[1] + layout->arrowHeight + layout->eMargins[3]);
 }
     }
 
@@ -2662,14 +2699,14 @@ if (IS_UNION(eLink1)) {
 	if (!IS_UNION(eLink1) || layout->unionParent)
 	    continue;
 
-	ePadX = eLink1->ePadX;
-	ePadY = eLink1->ePadY;
-	iPadX = eLink1->iPadX;
-	iPadY = eLink1->iPadY;
+	ePadX = layout->ePadX;
+	ePadY = layout->ePadY;
+	iPadX = layout->iPadX;
+	iPadY = layout->iPadY;
 
 	for (j = 0; j < 2; j++) {
-	    padx[j] = ePadX[j] + iPadX[j] + layout->margins[j*2];
-	    pady[j] = ePadY[j] + iPadY[j] + layout->margins[j*2+1];
+	    padx[j] = ePadX[j] + iPadX[j] + layout->uMargins[j*2];
+	    pady[j] = ePadY[j] + iPadY[j] + layout->uMargins[j*2+1];
 	}
 	for (j = 0; j < eLink1->onionCount; j++) {
 	    struct Layout *layout2 = &layouts[eLink1->onion[j]];
@@ -2713,10 +2750,10 @@ if (IS_UNION(eLink1)) {
 	if (IS_DETACH(eLink1))
 	    continue;
 
-	ePadX = eLink1->ePadX;
-	ePadY = eLink1->ePadY;
-	iPadX = eLink1->iPadX;
-	iPadY = eLink1->iPadY;
+	ePadX = layout->ePadX;
+	ePadY = layout->ePadY;
+	iPadX = layout->iPadX;
+	iPadY = layout->iPadY;
 	uPadX = layout->uPadX;
 	uPadY = layout->uPadY;
 
@@ -2746,10 +2783,10 @@ if (IS_UNION(eLink1)) {
 	if (!IS_DETACH(eLink1) || IS_UNION(eLink1))
 	    continue;
 
-	ePadX = eLink1->ePadX;
-	ePadY = eLink1->ePadY;
-	iPadX = eLink1->iPadX;
-	iPadY = eLink1->iPadY;
+	ePadX = layout->ePadX;
+	ePadY = layout->ePadY;
+	iPadX = layout->iPadX;
+	iPadY = layout->iPadY;
 	uPadX = layout->uPadX;
 	uPadY = layout->uPadY;
 

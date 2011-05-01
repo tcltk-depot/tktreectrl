@@ -142,7 +142,8 @@ MODULE_SCOPE void Tree_ElementChangedItself(TreeCtrl *tree, TreeItem item,
     TreeItemColumn column, TreeElement elem, int flags, int mask);
 MODULE_SCOPE int TreeCtrl_RegisterElementType(Tcl_Interp *interp, TreeElementType *newTypePtr);
 MODULE_SCOPE void TreeElement_GetContentMargins(TreeCtrl *tree,
-	TreeElement elem, int state, int margins[4], int *arrowHeight);
+	TreeElement elem, int state, int eMargins[4], int uMargins[4],
+	int *arrowHeight);
 
 typedef struct TreeCtrlStubs TreeCtrlStubs;
 struct TreeCtrlStubs
