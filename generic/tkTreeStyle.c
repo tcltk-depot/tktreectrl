@@ -3162,6 +3162,7 @@ TreeStyle_Draw(
     args.display.drawable = drawArgs->td.drawable;
     args.display.column = drawArgs->column; /* needed for gradients */
     args.display.item = drawArgs->item; /* needed for gradients */
+    args.display.spanIndex = drawArgs->spanIndex;
     args.display.indent = drawArgs->indent;
 
     for (i = 0; i < masterStyle->numElements; i++) {

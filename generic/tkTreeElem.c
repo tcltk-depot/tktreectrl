@@ -2168,7 +2168,7 @@ static void DisplayProcHeader(TreeElementArgs *args)
     }
 
     if (tree->useTheme && TreeTheme_DrawHeaderItem(tree, args->display.td,
-	    params.state, params.arrow, 0, x, y, width, height)
+	    params.state, params.arrow, args->display.spanIndex, x, y, width, height)
 	    == TCL_OK) {
 
 #if !defined(MAC_OSX_TK)

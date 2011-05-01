@@ -915,6 +915,7 @@ struct StyleDrawArgs
     int y;
     int width;
     int height;
+    int spanIndex;
     TreeDrawable td;
     int state;		/* STATE_xxx */
     Tk_Justify justify;

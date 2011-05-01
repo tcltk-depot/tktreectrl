@@ -4428,6 +4428,7 @@ else
 	drawArgs.y = y;
 	drawArgs.width = columnWidth;
 	drawArgs.height = height;
+	drawArgs.spanIndex = spanIndex;
 if (item->header != NULL) {
     drawArgs.justify = TreeHeaderColumn_Justify(item->header, itemColumn->headerColumn);
 } else
