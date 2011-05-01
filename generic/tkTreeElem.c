@@ -1885,6 +1885,7 @@ HeaderLayoutArrow(
     Pixmap bitmap;
     int defPadX[2] = {6, 6}, defPadY[2] = {0, 0}, *arrowPadX, *arrowPadY;
     int match, match2;
+    int minX, maxX, padX[2];
 #ifdef MAC_OSX_TK
     int margins[4];
 #endif
@@ -1897,6 +1898,8 @@ HeaderLayoutArrow(
     arrowSide = elemX->arrowSide;
     if (arrowSide == -1 && masterX != NULL)
 	arrowSide = masterX->arrowSide;
+    if (arrowSide == -1)
+	arrowSide = SIDE_RIGHT;
 
     arrowGravity = elemX->arrowGravity;
     if (arrowGravity == -1 && masterX != NULL)
@@ -1968,26 +1971,31 @@ HeaderLayoutArrow(
 	arrowHeight = arrowWidth;
     }
 
+    minX = x;
+    maxX = x + width;
+    padX[PAD_TOP_LEFT] = padX[PAD_BOTTOM_RIGHT] = 0;
     if (arrowSide == SIDE_LEFT) {
-	layout->x = x + arrowPadX[PAD_TOP_LEFT];
-    } else {
-	layout->x = x + width - arrowPadX[PAD_BOTTOM_RIGHT] - arrowWidth;
-
-	/* Don't let the arrow go too far left when the column is very narrow. */
-	layout->x = MAX(layout->x, x + arrowPadX[PAD_TOP_LEFT]); /* spanBbox */
-    }
-
-    if (arrowSide == SIDE_LEFT) {
-	if (arrowGravity == SIDE_RIGHT && params->eUnionBbox[0] != -1) {
-	    int padLeft = params->iUnionBbox[0] - params->eUnionBbox[0];
-	    layout->x = (x + params->iUnionBbox[0]) - MAX(padLeft, arrowPadX[PAD_BOTTOM_RIGHT]) - arrowWidth;
+	if (params->iUnionBbox[0] != -1) {
+	    maxX = x + params->iUnionBbox[0];
+	    padX[PAD_TOP_LEFT] = params->iUnionBbox[0] - params->eUnionBbox[0];
 	}
     } else {
-	if (arrowGravity == SIDE_LEFT && params->eUnionBbox[2] != -1) {
-	    int padRight = params->eUnionBbox[2] - params->iUnionBbox[2];
-	    layout->x = (x + params->iUnionBbox[2]) + MAX(padRight, arrowPadX[PAD_TOP_LEFT]);
+	if (params->iUnionBbox[2] != -1) {
+	    minX = x + params->iUnionBbox[2];
+	    padX[PAD_BOTTOM_RIGHT] = params->eUnionBbox[2] - params->iUnionBbox[2];
 	}
     }
+
+    if (arrowGravity == SIDE_LEFT) {
+	layout->x = minX + MAX(padX[PAD_BOTTOM_RIGHT], arrowPadX[PAD_TOP_LEFT]);
+	layout->x = MIN(layout->x, (x + width) - arrowPadX[PAD_BOTTOM_RIGHT] - arrowWidth); /* spanBbox */
+    } else {
+	layout->x = maxX - MAX(padX[PAD_TOP_LEFT], arrowPadX[PAD_BOTTOM_RIGHT]) - arrowWidth;
+    }
+
+    /* Don't let the arrow go too far left when the column is very narrow. */
+    layout->x = MAX(layout->x, x + arrowPadX[PAD_TOP_LEFT]); /* spanBbox */
+
     layout->width = arrowWidth;
 
     layout->y = y + (height - (arrowHeight + arrowPadY[PAD_TOP_LEFT] +
@@ -2431,11 +2439,11 @@ TreeElement_GetContentMargins(
 	    TreeRect_Height(bounds), &layout);
 
 	if (layout.arrowSide == SIDE_LEFT) {
-	    uMargins[0] = layout.x + layout.width + layout.padX[PAD_BOTTOM_RIGHT] - TreeRect_Left(bounds);
-	    eMargins[0] = layout.x + layout.width - TreeRect_Left(bounds);
+	    uMargins[0] = layout.padX[PAD_TOP_LEFT] + layout.width + layout.padX[PAD_BOTTOM_RIGHT];
+	    eMargins[0] = layout.padX[PAD_TOP_LEFT] + layout.width;
 	} else {
-	    uMargins[2] = TreeRect_Right(bounds) - (layout.x - layout.padX[PAD_TOP_LEFT]);
-	    eMargins[2] = TreeRect_Right(bounds) - layout.x;
+	    uMargins[2] = layout.padX[PAD_TOP_LEFT] + layout.width + layout.padX[PAD_BOTTOM_RIGHT];
+	    eMargins[2] =                             layout.width + layout.padX[PAD_BOTTOM_RIGHT];
 	}
 
 	*arrowHeight = layout.padY[0] + layout.height + layout.padY[1];
