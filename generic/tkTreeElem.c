@@ -4391,6 +4391,7 @@ static void HeightProcText(TreeElementArgs *args)
     TreeElement elem = args->elem;
     ElementText *elemX = (ElementText *) elem;
     ElementText *masterX = (ElementText *) elem->master;
+    int inHeader = elem->stateDomain == STATE_DOMAIN_HEADER;
     int state = args->state;
     int height = 0;
     char *text = NULL;
@@ -4414,7 +4415,7 @@ static void HeightProcText(TreeElementArgs *args)
 	if (textLen > 0) {
 	    tkfont = DO_FontForState(tree, elem, DOID_TEXT_FONT, state);
 	    if (tkfont == NULL)
-		tkfont = tree->tkfont;
+		tkfont = inHeader ? tree->tkfontHeader : tree->tkfont;
 	    Tk_GetFontMetrics(tkfont, &fm);
 	    height = fm.linespace;
 	}
