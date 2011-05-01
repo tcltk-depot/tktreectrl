@@ -2110,7 +2110,7 @@ HeaderDrawArrow(
 	BORDER_FOR_STATE(border, border, state)
 	if (border == NULL) {
 	    Tk_Uid colorName = Tk_GetUid(DEF_BUTTON_BG_COLOR);
-	    if (state & 0x02 /*columnState == COLUMN_STATE_ACTIVE*/)
+	    if (params->state == COLUMN_STATE_ACTIVE)
 		colorName = Tk_GetUid(DEF_BUTTON_ACTIVE_BG_COLOR);
 	    border = Tk_Get3DBorder(tree->interp, tree->tkwin,
 		colorName); /* FIXME: cache it! */
