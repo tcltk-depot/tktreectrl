@@ -1925,14 +1925,21 @@ HeaderLayoutArrow(
     }
 
 #ifdef MAC_OSX_TK
+    /* Under Aqua, the Appearance Manager draws the sort arrow as part of
+    * the header background. */
     if (tree->useTheme && TreeTheme_GetHeaderContentMargins(tree,
 	    params->state, params->arrow, margins) == TCL_OK) {
-	arrowSide = SIDE_RIGHT;
-	arrowWidth = margins[2];
-	arrowHeight = 1; /* bogus value */
-	defPadX[PAD_TOP_LEFT] = arrowPadX[PAD_TOP_LEFT];
-	defPadX[PAD_BOTTOM_RIGHT] = 0;
-	arrowPadX = defPadX;
+	layout->arrowSide = SIDE_RIGHT;
+	layout->width = margins[2];
+	layout->x = width - layout->width;
+	layout->y = 0;
+	layout->height = 1; /* bogus value */
+	/* The content margins do not include padding on the left of the
+	 * sort arrow. */
+	layout->padX[PAD_TOP_LEFT] = arrowPadX[PAD_TOP_LEFT];
+	layout->padX[PAD_BOTTOM_RIGHT] = 0;
+	layout->padY[PAD_TOP_LEFT] = layout->padY[PAD_BOTTOM_RIGHT] = 0;
+	return;
     }
 #endif
 
