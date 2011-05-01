@@ -1516,7 +1516,7 @@ proc InitDemoList {} {
 	"Explorer (Details, Win98)" DemoExplorerDetails explorer.tcl \
 	"Explorer (Details, Win7)" DemoExplorerDetailsWin7 explorer.tcl \
 	"Explorer (List)" DemoExplorerList explorer.tcl \
-	"Explorer (Large icons, WinX98)" DemoExplorerLargeIcons explorer.tcl \
+	"Explorer (Large icons, Win98)" DemoExplorerLargeIcons explorer.tcl \
 	"Explorer (Large icons, Win7)" DemoExplorerLargeIconsWin7 explorer.tcl \
 	"Explorer (Small icons)" DemoExplorerSmallIcons explorer.tcl \
 	"Internet Options" DemoInternetOptions www-options.tcl \
