@@ -670,10 +670,10 @@ Layout_AddUnionPadding(
     }
 
 #if 1
-    /* In the original header-layout code, the bitmap/image/text/arrow did not
-     * overlap the content margins vertically, so the content margins are
-     * added to the external padding of elements in a header element's
-     * -union. */
+    /* In the original header-layout code, the bitmap/image/text/arrow's
+     * -XXXpady padding did not overlap the content margins, so the top and
+     * bottom external padding of elements in a header element's -union is
+     * added to the union padding around each element. */
 
     /* In the original header-layout code, the -arrowpadx padding would
      * overlap the padding of the adjacent bitmap/image/text, so any elements
@@ -688,9 +688,9 @@ Layout_AddUnionPadding(
 	if (arrowPadRight > 0)
 	    uPadX[PAD_BOTTOM_RIGHT] += MAX(layout->ePadX[PAD_BOTTOM_RIGHT] - arrowPadRight, 0);
 	if (iElem == layoutP->unionFirst) /* topmost */
-	    layout->ePadY[PAD_TOP_LEFT] += layoutP->eMargins[1];
+	    layout->uPadY[PAD_TOP_LEFT] += layout->ePadY[PAD_TOP_LEFT];
 	if (iElem == layoutP->unionLast) /* bottommost */
-	    layout->ePadY[PAD_BOTTOM_RIGHT] += layoutP->eMargins[3];
+	    layout->uPadY[PAD_BOTTOM_RIGHT] += layout->ePadY[PAD_BOTTOM_RIGHT];
     } else {
 	if (iElem == layoutP->unionFirst && layoutP->uMargins[0] > 0) { /* leftmost */
 	    int arrowPadRight = layoutP->uMargins[0] - layoutP->eMargins[0];
@@ -700,8 +700,8 @@ Layout_AddUnionPadding(
 	    int arrowPadLeft = layoutP->uMargins[2] - layoutP->eMargins[2];
 	    uPadX[PAD_BOTTOM_RIGHT] += MAX(layout->ePadX[PAD_BOTTOM_RIGHT] - arrowPadLeft, 0);
 	}
-	layout->ePadY[PAD_TOP_LEFT] += layoutP->eMargins[1];
-	layout->ePadY[PAD_BOTTOM_RIGHT] += layoutP->eMargins[3];
+	layout->uPadY[PAD_TOP_LEFT] += layout->ePadY[PAD_TOP_LEFT];
+	layout->uPadY[PAD_BOTTOM_RIGHT] += layout->ePadY[PAD_BOTTOM_RIGHT];
     }
 #endif
 
