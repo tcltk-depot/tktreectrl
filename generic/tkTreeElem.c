@@ -2180,17 +2180,20 @@ static void DisplayProcHeader(TreeElementArgs *args)
 	border = borderDefault;
     }
 
+    Tk_Fill3DRectangle(tree->tkwin, args->display.drawable, border,
+	    x, y, width, height, params.borderWidth, TK_RELIEF_FLAT);
+
     RELIEF_FOR_STATE(relief, relief, params.elemState)
     if (relief == TK_RELIEF_NULL)
 	relief = (params.state == COLUMN_STATE_PRESSED) ? TK_RELIEF_SUNKEN : TK_RELIEF_RAISED;
 
-    Tk_Fill3DRectangle(tree->tkwin, args->display.drawable, border,
+    HeaderDrawArrow(args, &params, x, y, width, height);
+
+    Tk_Draw3DRectangle(tree->tkwin, args->display.drawable, border,
 	    x, y, width, height, params.borderWidth, relief);
 
     if (borderDefault != NULL)
 	Tk_Free3DBorder(borderDefault);
-
-    HeaderDrawArrow(args, &params, x, y, width, height);
 }
 
 static void NeededProcHeader(TreeElementArgs *args)
