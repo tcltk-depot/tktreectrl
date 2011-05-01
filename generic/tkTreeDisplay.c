@@ -6902,6 +6902,7 @@ CheckPendingHeaderUpdate(
     if (dInfo->headerHeight != Tree_HeaderHeight(tree)) {
 	dInfo->headerHeight = Tree_HeaderHeight(tree);
 	dInfo->flags |=
+	    DINFO_INVALIDATE | /* FIXME: only do this for items covered/exposed */
 	    DINFO_OUT_OF_DATE |
 	    DINFO_SET_ORIGIN_Y |
 	    DINFO_UPDATE_SCROLLBAR_Y |
