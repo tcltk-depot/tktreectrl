@@ -1477,7 +1477,7 @@ badWrap:
 	tree->textGC = Tk_GetGC(tree->tkwin, gcMask, &gcValues);
 
 	gcValues.font = Tk_FontId(tree->tkfontHeader);
-	gcValues.foreground = tree->defColumnTextColor->pixel;
+	gcValues.foreground = tree->defHeaderTextColor->pixel;
 	gcValues.graphics_exposures = False;
 	gcMask = GCForeground | GCFont | GCGraphicsExposures;
 	if (tree->headerTextGC != None)
@@ -1618,7 +1618,7 @@ TreeWorldChanged(
     tree->textGC = Tk_GetGC(tree->tkwin, gcMask, &gcValues);
 
     gcValues.font = Tk_FontId(tree->tkfontHeader);
-    gcValues.foreground = tree->defColumnTextColor->pixel;
+    gcValues.foreground = tree->defHeaderTextColor->pixel;
     gcValues.graphics_exposures = False;
     gcMask = GCForeground | GCFont | GCGraphicsExposures;
     if (tree->headerTextGC != None)

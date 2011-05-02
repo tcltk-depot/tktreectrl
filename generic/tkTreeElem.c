@@ -4126,9 +4126,9 @@ static void DisplayProcText(TreeElementArgs *args)
     if ((color == NULL) && inHeader) {
 	if (!tree->useTheme || TreeTheme_GetColumnTextColor(tree, columnState,
 		&color) != TCL_OK) {
-	    color = tree->defColumnTextColor;
+	    color = tree->defHeaderTextColor;
 	}
-	if (color->pixel == tree->defColumnTextColor->pixel)
+	if (color->pixel == tree->defHeaderTextColor->pixel)
 	    color = NULL;
     }
 
@@ -4139,7 +4139,7 @@ static void DisplayProcText(TreeElementArgs *args)
 	XGCValues gcValues;
 	unsigned long gcMask = 0;
 	if (color == NULL)
-	    color = inHeader ? tree->defColumnTextColor : tree->fgColorPtr;
+	    color = inHeader ? tree->defHeaderTextColor : tree->fgColorPtr;
 	gcValues.foreground = color->pixel;
 	gcMask |= GCForeground;
 	if (tkfont == NULL)

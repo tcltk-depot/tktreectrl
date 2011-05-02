@@ -4357,15 +4357,17 @@ Tree_InitColumns(
     tree->columnCount = 0;
     Column_Config(column, 0, NULL, TRUE);
 
-    tree->columnDrag.optionTable = Tk_CreateOptionTable(tree->interp, dragSpecs);
+    tree->columnDrag.optionTable = Tk_CreateOptionTable(tree->interp,
+	dragSpecs);
     (void) Tk_InitOptions(tree->interp, (char *) tree,
-	    tree->columnDrag.optionTable, tree->tkwin);
+	tree->columnDrag.optionTable, tree->tkwin);
 
 #ifdef UNIFORM_GROUP
     Tcl_InitHashTable(&tree->uniformGroupHash, TCL_STRING_KEYS);
 #endif
 
-    tree->defColumnTextColor = Tk_GetColor(tree->interp, tree->tkwin, DEF_BUTTON_FG);
+    tree->defHeaderTextColor = Tk_GetColor(tree->interp, tree->tkwin,
+	DEF_BUTTON_FG);
 }
 
 /*
@@ -4401,7 +4403,7 @@ void Tree_FreeColumns(
     Tcl_DeleteHashTable(&tree->uniformGroupHash);
 #endif
 
-    Tk_FreeColor(tree->defColumnTextColor);
+    Tk_FreeColor(tree->defHeaderTextColor);
 }
 
 /*
