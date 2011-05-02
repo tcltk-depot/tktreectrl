@@ -1795,6 +1795,7 @@ renumber:
 	/* Must update column widths because of expansion. */
 	/* Also update columnTreeLeft. */
 	TreeColumns_InvalidateWidth(tree);
+	TreeColumns_InvalidateCounts(tree);
     }
 }
 
@@ -2000,6 +2001,9 @@ Column_Config(
     /* Indicate that all items must recalculate their list of spans. */
     if (visible != column->visible || lock != column->lock)
 	TreeItem_SpansInvalidate(tree, NULL);
+
+    if (visible != column->visible || lock != column->lock)
+	TreeColumns_InvalidateCounts(tree);
 
     if (mask & COLU_CONF_ITEMBG) {
 	if (!createFlag) {
@@ -3163,17 +3167,20 @@ TreeColumnCmd(
 		Column_Move(column, before);
 	    }
 
-item = tree->headerItems;
-while (item != NULL) {
-    TreeItemColumn itemColumn = TreeItem_FindColumn(tree, item, column->index);
-    TreeHeaderColumn_EnsureStyleExists(TreeItem_GetHeader(tree, item),
-	TreeItemColumn_GetHeaderColumn(tree, itemColumn), column);
-    item = TreeItem_GetNextSibling(tree, item);
-}
+	    item = tree->headerItems;
+	    while (item != NULL) {
+		TreeItemColumn itemColumn = TreeItem_FindColumn(tree, item,
+		    column->index);
+		TreeHeaderColumn_EnsureStyleExists(TreeItem_GetHeader(tree,
+		    item), TreeItemColumn_GetHeaderColumn(tree, itemColumn),
+		    column);
+		item = TreeItem_GetNextSibling(tree, item);
+	    }
 
 	    /* Indicate that all items must recalculate their list of spans. */
 	    TreeItem_SpansInvalidate(tree, NULL);
 
+	    TreeColumns_InvalidateCounts(tree);
 	    Tree_DInfoChanged(tree, DINFO_REDO_COLUMN_WIDTH);
 	    Tcl_SetObjResult(interp, TreeColumn_ToObj(tree, column));
 	    break;
@@ -3244,9 +3251,11 @@ while (item != NULL) {
 		    }
 
 		    tree->columnTree = NULL;
+#if 0
 		    tree->widthOfColumns = tree->headerHeight = -1;
 		    tree->widthOfColumnsLeft = tree->widthOfColumnsRight = -1;
 		    Tree_DInfoChanged(tree, DINFO_REDO_COLUMN_WIDTH);
+#endif
 		    goto doneDELETE;
 		}
 
@@ -3322,11 +3331,12 @@ while (item != NULL) {
 	    }
 	    tree->columnTail->index = index;
 
+doneDELETE:
+	    TreeColumns_InvalidateCounts(tree);
 	    tree->widthOfColumns = tree->headerHeight = -1;
 	    tree->widthOfColumnsLeft = tree->widthOfColumnsRight = -1;
 	    Tree_DInfoChanged(tree, DINFO_REDO_COLUMN_WIDTH);
 
-doneDELETE:
 	    /* Indicate that all items must recalculate their list of spans. */
 	    TreeItem_SpansInvalidate(tree, NULL);
 
@@ -3840,9 +3850,11 @@ LayoutColumns(
 	panic("recursive call to LayoutColumns");
 #endif
 
+#if 0
     if (visPtr != NULL)
 	(*visPtr) = NULL;
     (*countVisPtr) = 0;
+#endif
 
     if (first == NULL)
 	return 0;
@@ -3903,9 +3915,11 @@ LayoutColumns(
 		    numSqueeze++;
 #endif
 	    }
+#if 0
 	    if (visPtr != NULL && (*visPtr) == NULL)
 		(*visPtr) = column;
 	    (*countVisPtr)++;
+#endif
 	} else
 	    width = 0;
 	column->useWidth = width;
@@ -4067,6 +4081,12 @@ Tree_WidthOfColumns(
     TreeCtrl *tree		/* Widget info. */
     )
 {
+    /* Tree_WidthOfColumns used to update columnCountVis, but that is now
+     * done in a separate function TreeColumns_UpdateCounts, because
+     * TreeItem_ReallyVisible needs up-to-date counts (for header items)
+     * and LayoutColumns may call TreeItem_ReallyVisible. */
+    TreeColumns_UpdateCounts(tree);
+
     /* This gets called when the layout of all columns needs to be current.
      * So update the layout of the left- and right-locked columns too. */
     (void) Tree_WidthOfLeftColumns(tree);
@@ -4189,6 +4209,121 @@ Tree_WidthOfRightColumns(
 	&tree->columnCountVisRight);
 
     return tree->widthOfColumnsRight;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * UpdateColumnCounts --
+ *
+ *	Calculates the number of visible columns with the same -lock
+ *	value, and optionally returns the first visible column in the
+ *	group.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+UpdateColumnCounts(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeColumn first,		/* First column to check. All columns
+				 * with the same -lock value are checked. */
+    TreeColumn *visPtr,		/* Out: first visible column. */
+    int *countVisPtr		/* Out: number of visible columns. */
+    )
+{
+    TreeColumn column;
+
+    if (visPtr != NULL)
+	(*visPtr) = NULL;
+    (*countVisPtr) = 0;
+
+    for (column = first;
+	    column != NULL && column->lock == first->lock;
+	    column = column->next) {
+	if (column->visible) {
+	    if (visPtr != NULL && (*visPtr) == NULL)
+		(*visPtr) = column;
+	    (*countVisPtr)++;
+	}
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeColumns_UpdateCounts --
+ *
+ *	Recalculates the number of visible columns and the first
+ *	visible non-locked column if needed.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TreeColumns_UpdateCounts(
+    TreeCtrl *tree		/* Widget info. */
+    )
+{
+    if (tree->columnCountVis >= 0)
+	return;
+
+    UpdateColumnCounts(tree, tree->columnLockNone,
+	&tree->columnVis, &tree->columnCountVis);
+
+    if (Tree_ShouldDisplayLockedColumns(tree)) {
+	UpdateColumnCounts(tree, tree->columnLockLeft,
+	    NULL, &tree->columnCountVisLeft);
+	UpdateColumnCounts(tree, tree->columnLockRight,
+	    NULL, &tree->columnCountVisRight);
+    } else {
+	tree->columnCountVisLeft = 0;
+	tree->columnCountVisRight = 0;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeColumns_InvalidateCounts --
+ *
+ *	Marks the number of visible columns as out-of-date.
+ *	The number of visible columns changes when:
+ *	1) creating a column
+ *	2) deleting a column
+ *	3) moving a column (affects tree->columnVis anyway)
+ *	4) -visible changes
+ *	5) -lock changes
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TreeColumns_InvalidateCounts(
+    TreeCtrl *tree		/* Widget info. */
+    )
+{
+    tree->columnCountVis = -1;
+    tree->columnCountVisLeft = -1;
+    tree->columnCountVisRight = -1;
 }
 
 /*

@@ -3729,9 +3729,14 @@ TreeItem_Height(
     int buttonHeight = 0;
     int useHeight;
 
+#if 1
+    if (!TreeItem_ReallyVisible(tree, item))
+	return 0;
+#else
     /* FIXME: should this routine call ReallyVisible()? */
     if (!IS_VISIBLE(item) || (IS_ROOT(item) && !tree->showRoot))
 	return 0;
+#endif
 
     if (item->header != NULL) {
 	if (!tree->showHeader)
@@ -5107,7 +5112,18 @@ TreeItem_ReallyVisible(
     TreeItem parent = item->parent;
 
     if (item->header != NULL) {
-	return tree->showHeader && IS_VISIBLE(item);
+	if (!tree->showHeader || !IS_VISIBLE(item))
+	    return 0;
+
+	/* For compatibility, if there are no visible columns then don't
+	 * display the lone tail column. */
+	(void) TreeColumns_UpdateCounts(tree);
+	if (tree->columnCountVis +
+		tree->columnCountVisLeft +
+		tree->columnCountVisRight == 0)
+	    return 0;
+
+	return 1;
     }
 
     if (!tree->updateIndex)
