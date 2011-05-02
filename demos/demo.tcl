@@ -806,6 +806,9 @@ proc TreePlusScrollbarsInAFrame {f h v} {
 	frame $f -borderwidth 1 -relief sunken
     }
     treectrl $f.t -highlightthickness 0 -borderwidth 0
+    if {[Platform unix]} {
+	$f.t configure -headerfont [$f.t cget -font]
+    }
     $f.t configure -xscrollincrement 20 -xscrollsmoothing 1
 #    $f.t configure -itemprefix item# -columnprefix column#
     $f.t debug configure -enable no -display yes -erasecolor pink \
@@ -1851,6 +1854,9 @@ if 1 {
     $T configure -background white
     $T configure -borderwidth [expr {$::tileFull ? 0 : 6}]
     $T configure -font DemoFont
+    if {[Platform unix]} {
+	$T configure -headerfont DemoFont
+    }
     $T configure -highlightthickness [expr {$::tileFull ? 0 : 3}]
     $T configure -relief ridge
 
