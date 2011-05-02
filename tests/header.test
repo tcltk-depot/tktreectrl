@@ -69,9 +69,10 @@ test header-2.3 {header bbox: invalid header} -body {
     .t header bbox foo
 } -returnCodes error -result {header "foo" doesn't exist}
 
-test header-2.4 {header bbox: no columns} -body {
+test header-2.4 {header bbox: no visible columns, tail isn't shown} -body {
+    # When there are no visible columns, a header isn't ReallyVisible
     .t header bbox 0
-} -result {2 2 202 2}
+} -result {}
 
 test header-2.5 {header bbox: zero-sized visible column} -setup {
     .t column create -width 0 -tags column0
@@ -90,8 +91,9 @@ test header-2.6 {header bbox: zero-sized visible -lock=left column} -setup {
 test header-2.6.1 {header bbox: no visible columns is same as no columns} -setup {
     .t column configure column0 -lock left -visible no
 }  -body {
+    # When there are no visible columns, a header isn't ReallyVisible
     .t header bbox 0
-} -result {2 2 202 2}
+} -result {}
 
 test header-2.7 {header bbox: tree doesn't show headers} -setup {
     .t configure -showheader 0
@@ -405,7 +407,7 @@ test header-5.6 {header delete: delete one} -body {
     .t header create -tags header1
     .t header create -tags header2
     .t header create -tags header3
-    .t header create -tags header4    
+    .t header create -tags header4
     .t header delete header1
     .t header id all
 } -result {0 2 3 4}
@@ -720,11 +722,125 @@ test header-22.2 {squeezing columns invalidates needed height of headers} -body 
     expr {$bottom1 >= $bottom + $fh}
 } -result {1}
 
+test header-23.1 {layout: no bitmap/image/text/arrow, as tall as borders} -setup {
+    .t header delete all
+    .t column delete all
+    .t column create -tags C0 -width 100
+    .t header configure 0 C0 -borderwidth 3
+    .t configure -showheader yes -usetheme no -highlightthickness 0 -borderwidth 0
+} -body {
+    .t header bbox 0 C0
+} -result {0 0 100 6}
+
+test header-23.2 {layout: no bitmap/image/text, add a sort arrow} -setup {
+    .t header configure 0 C0 -arrow up
+} -body {
+    # Assuming non-themed arrow height==9
+    .t header bbox 0 C0
+} -result {0 0 100 15}
+
+test header-23.3 {layout: no bitmap/image/text, width is -arrowpadx plus arrow width} -setup {
+    .t column configure C0 -width ""
+} -body {
+    # Assuming non-themed arrow width==9 and -arrowpadx==6, borders ignored
+    .t header bbox 0 C0
+} -result {0 0 21 15}
+
+test header-23.4 {layout: -arrowpady added to height} -setup {
+    .t header configure 0 C0 -arrowpady 2
+} -body {
+    # height was 3 + 9 + 3, -arrowpady adds +4
+    .t header bbox 0 C0
+} -result {0 0 21 19}
+
+test header-23.5 {layout: add an -image} -setup {
+    image create photo headerImage -width 20 -height 20
+    .t header configure 0 C0 -image headerImage
+} -body {
+    # width = 6 + img=20 + max(6,6) + arrow=9 + 6
+    # height = 3 + 20 + 3
+    .t header bbox 0 C0
+} -result {0 0 47 26}
+
+test header-23.6 {layout: -imagepadx and -arrowpadx overlap} -setup {
+    .t header configure 0 C0 -imagepadx {6 0}
+} -body {
+    .t header bbox 0 C0
+} -cleanup {
+    .t header configure 0 C0 -imagepadx 6
+} -result {0 0 47 26}
+
+test header-23.7 {layout: -canvaspadx adds to the width} -setup {
+    .t configure -canvaspadx 10
+} -body {
+    .t header bbox 0 C0
+} -cleanup {
+    .t configure -canvaspadx 0
+} -result {0 0 57 26}
+
+test header-23.8 {layout: -imagepady adds to height} -setup {
+    .t header configure 0 C0 -imagepady 2
+} -body {
+    .t header bbox 0 C0
+} -result {0 0 47 30}
+
+test header-23.9 {layout: arrow on the left doesn't change anything} -setup {
+    .t header configure 0 C0 -arrowside left
+} -body {
+    .t header bbox 0 C0
+} -result {0 0 47 30}
+
+test header-24.1 {custom style: } -setup {
+    .t header delete all
+    .t column delete all
+    .t column create -tags C0 -width ""
+    .t header configure 0 C0
+    .t configure -showheader yes -usetheme no -highlightthickness 0 -borderwidth 0
+
+    .t element create custom.header header -statedomain header -borderwidth 3
+    .t element create custom.image image -statedomain header -image headerImage
+    .t style create custom -statedomain header -orient horizontal
+    .t style elements custom {custom.header custom.image}
+    .t style layout custom custom.header -union custom.image
+    .t style layout custom custom.image -padx 6
+
+    .t header style set 0 C0 custom
+} -body {
+    .t header bbox 0 C0
+} -result {0 0 32 26}
+
+test header-24.2 {custom style: header element sees -arrow option} -setup {
+    # Not configuring header element's -arrow here, it checks the header state flags
+    .t header configure 0 C0 -arrow down
+} -body {
+    # 6 + img=20 + max(6,6) + arrow=9 + 6
+    list [.t header bbox 0 C0] [.t header bbox 0 C0 custom.image]
+} -result {{0 0 47 26} {6 3 26 23}}
+
+test header-24.3 {custom style: arrow on the left} -setup {
+    .t element configure custom.header -arrowside left
+} -body {
+    # 6 + arrow=9 + max(6,6) + img=20 + 6
+    list [.t header bbox 0 C0] [.t header bbox 0 C0 custom.image]
+} -result {{0 0 47 26} {21 3 41 23}}
+
+test header-24.4 {custom style: unequal padding} -setup {
+    .t element configure custom.header -arrowpadx {6 12}
+} -body {
+    # 6 + arrow=9 + max(12,6) + img=20 + 6
+    list [.t header bbox 0 C0] [.t header bbox 0 C0 custom.image]
+} -result {{0 0 53 26} {27 3 47 23}}
+
+test header-24.5 {custom style: } -setup {
+} -body {
+} -result {}
+
 test header-99.1 {some needed cleanup} -body {
     destroy .t
 } -result {}
 
 # cleanup
 image delete emptyImg
+image delete headerImage
 ::tcltest::cleanupTests
 return
