@@ -591,7 +591,9 @@ struct TreeCtrl
     Tcl_Obj *textOptionNameObj;
 
 #ifdef TREECTRL_DEBUG
-    int inLayoutColumns; /* detect recursion */
+    struct {
+	int inLayoutColumns;
+    } debugCheck;
 #endif
 };
 

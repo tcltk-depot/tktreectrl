@@ -3836,7 +3836,7 @@ LayoutColumns(
 #endif
 
 #ifdef TREECTRL_DEBUG
-    if (tree->inLayoutColumns)
+    if (tree->debugCheck.inLayoutColumns)
 	panic("recursive call to LayoutColumns");
 #endif
 
@@ -3850,7 +3850,7 @@ LayoutColumns(
     tree = first->tree;
 
 #ifdef TREECTRL_DEBUG
-    tree->inLayoutColumns = TRUE;
+    tree->debugCheck.inLayoutColumns = TRUE;
 #endif
 
 #ifdef UNIFORM_GROUP
@@ -4035,7 +4035,7 @@ doOffsets:
     }
 
 #ifdef TREECTRL_DEBUG
-    tree->inLayoutColumns = FALSE;
+    tree->debugCheck.inLayoutColumns = FALSE;
 #endif
 
     return totalWidth;
