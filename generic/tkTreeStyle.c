@@ -211,7 +211,7 @@ struct Layout
  *
  * Style_DoExpandH --
  *
- *	Add extra horizontal space to an element. The space is
+ *	Add extra horizontal space to a single element. The space is
  *	distributed from right to left until all available space
  *	is used or expansion is not possible.
  *
@@ -344,7 +344,7 @@ Style_DoExpandH(
  *
  * Style_DoExpandV --
  *
- *	Add extra vertical space to an element. The space is
+ *	Add extra vertical space to a single element. The space is
  *	distributed from bottom to top until all available space
  *	is used or expansion is not possible.
  *
@@ -632,14 +632,14 @@ Layout_CalcVisibility(
 
 static void
 Layout_AddUnionPadding(
-    TreeCtrl *tree,			/* Widget info. */
-    MStyle *masterStyle,		/* Style being layed out. */
-    struct Layout layouts[],		/* Layout info for every element. */
-    int iElemParent,			/* Whose -union iElem is in. */
-    int iElem,				/* The element to update. */
-    const int totalPadX[2],		/* The cumulative padding around */
-    const int totalPadY[2]		/* iElemParent plus the -ipad */
-					/* padding of iElemParent itself. */
+    TreeCtrl *tree,		/* Widget info. */
+    MStyle *masterStyle,	/* Style being layed out. */
+    struct Layout layouts[],	/* Layout info for every element. */
+    int iElemParent,		/* Whose -union iElem is in. */
+    int iElem,			/* The element to update. */
+    const int totalPadX[2],	/* The cumulative padding around */
+    const int totalPadY[2]	/* iElemParent plus the -ipad */
+				/* padding of iElemParent itself. */
     )
 {
     struct Layout *layoutP = &layouts[iElemParent];
@@ -730,16 +730,31 @@ Layout_AddUnionPadding(
     }
 }
 
-    /* Expand -union elements if needed: horizontal. */
-    /* Expansion of "-union" elements is different than non-"-union" elements.
-     * Expanding a -union element never changes the size or position of any
-     * element other than the -union element itself. */
+/*
+ *----------------------------------------------------------------------
+ *
+ * Layout_ExpandUnionH --
+ *
+ *	Add extra horizontal space to a single IS_UNION element.
+ *	Expansion of -union elements is different than non-union
+ *	elements. Expanding a -union element never changes the size or
+ *	position of any element other than the -union element itself.
+ *
+ * Results:
+ *	Layout.ePadX and Layout.iPadX are given extra space as needed.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
 static void
 Layout_ExpandUnionH(
-    StyleDrawArgs *drawArgs,		/* Various args. */
-    MStyle *masterStyle,		/* Style being layed out. */
-    struct Layout layouts[],		/* Layout info for every element. */
-    int iElem				/* The element to update. */
+    StyleDrawArgs *drawArgs,	/* Various args. */
+    MStyle *masterStyle,	/* Style being layed out. */
+    struct Layout layouts[],	/* Layout info for every element. */
+    int iElem			/* The element to update. */
     )
 {
     struct Layout *layout = &layouts[iElem];
@@ -757,7 +772,7 @@ Layout_ExpandUnionH(
     if (!(eLink1->flags & ELF_EXPAND_WE))
 	return;
 
-    /* Hack -- header elements aren't indented by -canvaspadx. */
+    /* Hack -- header elements may not be indented by -canvaspadx. */
     if ((masterStyle->stateDomain == STATE_DOMAIN_HEADER) &&
 	    !(eLink1->flags & ELF_INDENT))
 	indent = 0;
@@ -838,13 +853,31 @@ Layout_ExpandUnionH(
     }
 }
 
-/* Expand -union elements if needed: vertical */
+/*
+ *----------------------------------------------------------------------
+ *
+ * Layout_ExpandUnionV --
+ *
+ *	Add extra vertical space to a single IS_UNION element.
+ *	Expansion of -union elements is different than non-union
+ *	elements. Expanding a -union element never changes the size or
+ *	position of any element other than the -union element itself.
+ *
+ * Results:
+ *	Layout.ePadY and Layout.iPadY are given extra space as needed.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
 static void
 Layout_ExpandUnionV(
-    StyleDrawArgs *drawArgs,		/* Various args. */
-    MStyle *masterStyle,		/* Style being layed out. */
-    struct Layout layouts[],		/* Layout info for every element. */
-    int iElem				/* The element to update. */
+    StyleDrawArgs *drawArgs,	/* Various args. */
+    MStyle *masterStyle,	/* Style being layed out. */
+    struct Layout layouts[],	/* Layout info for every element. */
+    int iElem			/* The element to update. */
     )
 {
     struct Layout *layout = &layouts[iElem];
@@ -959,10 +992,10 @@ Layout_ExpandUnionV(
 
 static void
 Layout_CalcUnionLayoutH(
-    StyleDrawArgs *drawArgs,		/* Various args. */
-    MStyle *masterStyle,		/* Style being layed out. */
-    struct Layout layouts[],		/* Layout info for every element. */
-    int iElem				/* The element to update. */
+    StyleDrawArgs *drawArgs,	/* Various args. */
+    MStyle *masterStyle,	/* Style being layed out. */
+    struct Layout layouts[],	/* Layout info for every element. */
+    int iElem			/* Index of the union element. */
     )
 {
     struct Layout *layout = &layouts[iElem];
@@ -1036,10 +1069,10 @@ Layout_CalcUnionLayoutH(
 
 static void
 Layout_CalcUnionLayoutV(
-    StyleDrawArgs *drawArgs,		/* Various args. */
-    MStyle *masterStyle,
-    struct Layout layouts[],
-    int iElem
+    StyleDrawArgs *drawArgs,	/* Various args. */
+    MStyle *masterStyle,	/* Style being layed out. */
+    struct Layout layouts[],	/* Layout info for every element. */
+    int iElem			/* Index of the union element. */
     )
 {
     struct Layout *layout = &layouts[iElem];
@@ -1091,13 +1124,29 @@ Layout_CalcUnionLayoutV(
     Layout_ExpandUnionV(drawArgs, masterStyle, layouts, iElem);
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Layout_ExpandElementsH --
+ *
+ *	Adds extra horizontal space to a range of elements.
+ *
+ * Results:
+ *	layouts[] is updated.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
 static int
 Layout_ExpandElementsH(
-    StyleDrawArgs *drawArgs,
-    struct Layout layouts[],
-    int iElemMin,
-    int iElemMax,
-    int maxX
+    StyleDrawArgs *drawArgs,	/* Various args. */
+    struct Layout layouts[],	/* All the layouts for the style. */
+    int iElemMin,		/* Index of the first element. */
+    int iElemMax,		/* Index of the last element. */
+    int maxX			/* The right edge limiting expansion. */
     )
 {
     MElementLink *eLink1;
@@ -1192,13 +1241,29 @@ Layout_ExpandElementsH(
     return totalUsed;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Layout_ExpandElementsV --
+ *
+ *	Adds extra vertical space to a range of elements.
+ *
+ * Results:
+ *	layouts[] is updated.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
 static int
 Layout_ExpandElementsV(
-    StyleDrawArgs *drawArgs,
-    struct Layout layouts[],
-    int iElemMin,
-    int iElemMax,
-    int maxY
+    StyleDrawArgs *drawArgs,	/* Various args. */
+    struct Layout layouts[],	/* All the layouts for the style. */
+    int iElemMin,		/* Index of the first element. */
+    int iElemMax,		/* Index of the last element. */
+    int maxY			/* The bottom edge limiting expansion. */
     )
 {
     MElementLink *eLink1;
@@ -2618,7 +2683,7 @@ Style_NeededSize(
     int i, j, eLinkCount = masterStyle->numElements;
     int x = 0, y = 0;
     int squeezeX = 0, squeezeY = 0;
-int headerHeight = 0;
+    int headerHeight = 0;
 
     STATIC_ALLOC(layouts, struct Layout, eLinkCount);
 
@@ -2682,10 +2747,13 @@ int headerHeight = 0;
 	    layout->uPadY[j] = 0;
 	}
 
-TreeElement_GetContentMargins(tree, layout->eLink->elem, state, layout->eMargins, layout->uMargins, &layout->arrowHeight);
-if (IS_UNION(eLink1)) {
-    headerHeight = MAX(headerHeight, layout->eMargins[1] + layout->arrowHeight + layout->eMargins[3]);
-}
+	TreeElement_GetContentMargins(tree, layout->eLink->elem, state,
+	    layout->eMargins, layout->uMargins, &layout->arrowHeight);
+
+	if (IS_UNION(eLink1)) {
+	    headerHeight = MAX(headerHeight, layout->eMargins[1] +
+		layout->arrowHeight + layout->eMargins[3]);
+	}
     }
 
     /* Calculate the padding around elements surrounded by -union elements */
@@ -2803,15 +2871,16 @@ if (IS_UNION(eLink1)) {
 
     Layout_Size(masterStyle->vertical, eLinkCount, layouts,
 	widthPtr, heightPtr);
-/*
-the height of a header was:
-    content margin top +
-	MAX(text pady top + height + pady bottom,
-	    image pady top + height + pady bottom,
-	    arrow pady top + height + pady bottom)
-    + content margin bottom
-*/
-*heightPtr = MAX(*heightPtr, headerHeight);
+
+    /*
+    the height of a header was:
+	content margin top +
+	    MAX(text pady top + height + pady bottom,
+		image pady top + height + pady bottom,
+		arrow pady top + height + pady bottom)
+	+ content margin bottom
+    */
+    *heightPtr = MAX(*heightPtr, headerHeight);
 
     if (squeezeX || squeezeY) {
 	for (i = 0; i < eLinkCount; i++) {
@@ -3195,12 +3264,12 @@ TreeStyle_Draw(
 	    args.display.height = layout->useHeight;
 	    args.display.sticky = layout->master->flags & ELF_STICKY;
 
-/* This is used by the header element to adjust the arrow position according
- * to -arrowgravity. */
-for (j = 0; j < 4; j++) {
-    args.display.eUnionBbox[j] = layout->eUnionBbox[j];
-    args.display.iUnionBbox[j] = layout->iUnionBbox[j];
-}
+	    /* This is used by the header element to adjust the arrow position
+	     * according to -arrowgravity. */
+	    for (j = 0; j < 4; j++) {
+		args.display.eUnionBbox[j] = layout->eUnionBbox[j];
+		args.display.iUnionBbox[j] = layout->iUnionBbox[j];
+	    }
 #ifdef DEBUG_DRAW
 	    if (debugDraw) {
 		XColor *color[3];
@@ -4097,43 +4166,6 @@ TreeStyle_NewInstance(
 /*
  *----------------------------------------------------------------------
  *
- * Element_FromObj --
- *
- *	Convert a Tcl_Obj to a master element.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-Element_FromObj(
-    TreeCtrl *tree,		/* Widget info. */
-    Tcl_Obj *obj,		/* Object to convert from. */
-    TreeElement *elemPtr	/* Returned record. */
-    )
-{
-    char *name;
-    Tcl_HashEntry *hPtr;
-
-    name = Tcl_GetString(obj);
-    hPtr = Tcl_FindHashEntry(&tree->elementHash, name);
-    if ((hPtr == NULL) || ((TreeElement) Tcl_GetHashValue(hPtr))->hidden) {
-	Tcl_AppendResult(tree->interp, "element \"", name, "\" doesn't exist",
-	    NULL);
-	return TCL_ERROR;
-    }
-    (*elemPtr) = (TreeElement) Tcl_GetHashValue(hPtr);
-    return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * TreeElement_FromObj --
  *
  *	Convert a Tcl_Obj to a master element.
@@ -4154,7 +4186,18 @@ TreeElement_FromObj(
     TreeElement *elemPtr	/* Returned master element token. */
     )
 {
-    return Element_FromObj(tree, obj, elemPtr);
+    char *name;
+    Tcl_HashEntry *hPtr;
+
+    name = Tcl_GetString(obj);
+    hPtr = Tcl_FindHashEntry(&tree->elementHash, name);
+    if ((hPtr == NULL) || ((TreeElement) Tcl_GetHashValue(hPtr))->hidden) {
+	Tcl_AppendResult(tree->interp, "element \"", name, "\" doesn't exist",
+	    NULL);
+	return TCL_ERROR;
+    }
+    (*elemPtr) = (TreeElement) Tcl_GetHashValue(hPtr);
+    return TCL_OK;
 }
 
 
@@ -4308,10 +4351,10 @@ Style_Changed(
     IStyle *style;
 
     hPtr = Tcl_FirstHashEntry(tablePtr, &search);
-if (hPtr == NULL) {
-    tablePtr = &tree->headerHash;
-    hPtr = Tcl_FirstHashEntry(tablePtr, &search);
-}
+    if (hPtr == NULL) {
+	tablePtr = &tree->headerHash;
+	hPtr = Tcl_FirstHashEntry(tablePtr, &search);
+    }
     while (hPtr != NULL) {
 	item = (TreeItem) Tcl_GetHashValue(hPtr);
 	treeColumn = Tree_FirstColumn(tree, -1, TreeItem_GetHeader(tree, item) != NULL);
@@ -4344,10 +4387,10 @@ if (hPtr == NULL) {
 	    updateDInfo = TRUE;
 	}
 	hPtr = Tcl_NextHashEntry(&search);
-if (hPtr == NULL && tablePtr == &tree->itemHash) {
-    tablePtr = &tree->headerHash;
-    hPtr = Tcl_FirstHashEntry(tablePtr, &search);
-}
+	if (hPtr == NULL && tablePtr == &tree->itemHash) {
+	    tablePtr = &tree->headerHash;
+	    hPtr = Tcl_FirstHashEntry(tablePtr, &search);
+	}
     }
     if (updateDInfo)
 	Tree_DInfoChanged(tree, DINFO_REDO_RANGES);
@@ -4358,7 +4401,7 @@ if (hPtr == NULL && tablePtr == &tree->itemHash) {
  *
  * MStyle_ChangeElementsAux --
  *
- *	Update the list of elements used by a style. Elements
+ *	Update the list of elements used by a master style. Elements
  *	may be inserted or deleted.
  *
  * Results:
@@ -4433,7 +4476,6 @@ MStyle_ChangeElementsAux(
     /* Hack - Remember if any of the elements are of type 'header'. */
     style->hasHeaderElem = FALSE;
     for (i = 0; i < count; i++) {
-	/* Hack - Remember if any of the elements are of type 'header'. */
 	if (ELEMENT_TYPE_MATCHES(eLinks[i].elem->typePtr, &treeElemTypeHeader))
 	    style->hasHeaderElem = TRUE;
     }
@@ -4444,7 +4486,7 @@ MStyle_ChangeElementsAux(
  *
  * IStyle_ChangeElementsAux --
  *
- *	Update the list of elements used by a style. Elements
+ *	Update the list of elements used by an instance style. Elements
  *	may be inserted or deleted.
  *
  * Results:
@@ -4614,10 +4656,10 @@ Style_ChangeElements(
     MStyle_ChangeElementsAux(tree, masterStyle, count, elemList, map);
 
     hPtr = Tcl_FirstHashEntry(tablePtr, &search);
-if (hPtr == NULL) {
-    tablePtr = &tree->headerHash;
-    hPtr = Tcl_FirstHashEntry(tablePtr, &search);
-}
+    if (hPtr == NULL) {
+	tablePtr = &tree->headerHash;
+	hPtr = Tcl_FirstHashEntry(tablePtr, &search);
+    }
     while (hPtr != NULL) {
 	item = (TreeItem) Tcl_GetHashValue(hPtr);
 	treeColumn = Tree_FirstColumn(tree, -1, TreeItem_GetHeader(tree, item) != NULL);
@@ -4643,10 +4685,10 @@ if (hPtr == NULL) {
 	    updateDInfo = TRUE;
 	}
 	hPtr = Tcl_NextHashEntry(&search);
-if (hPtr == NULL && tablePtr == &tree->itemHash) {
-    tablePtr = &tree->headerHash;
-    hPtr = Tcl_FirstHashEntry(tablePtr, &search);
-}
+	if (hPtr == NULL && tablePtr == &tree->itemHash) {
+	    tablePtr = &tree->headerHash;
+	    hPtr = Tcl_FirstHashEntry(tablePtr, &search);
+	}
     }
     if (updateDInfo)
 	Tree_DInfoChanged(tree, DINFO_REDO_RANGES);
@@ -4705,10 +4747,10 @@ Style_ElemChanged(
     args.change.flagSelf = 0;
 
     hPtr = Tcl_FirstHashEntry(tablePtr, &search);
-if (hPtr == NULL) {
-    tablePtr = &tree->headerHash;
-    hPtr = Tcl_FirstHashEntry(tablePtr, &search);
-}
+    if (hPtr == NULL) {
+	tablePtr = &tree->headerHash;
+	hPtr = Tcl_FirstHashEntry(tablePtr, &search);
+    }
     while (hPtr != NULL) {
 	item = (TreeItem) Tcl_GetHashValue(hPtr);
 	tailOK = TreeItem_GetHeader(tree, item) != NULL;
@@ -4760,10 +4802,10 @@ if (hPtr == NULL) {
 	else if (iMask & CS_DISPLAY) {
 	}
 	hPtr = Tcl_NextHashEntry(&search);
-if (hPtr == NULL && tablePtr == &tree->itemHash) {
-    tablePtr = &tree->headerHash;
-    hPtr = Tcl_FirstHashEntry(tablePtr, &search);
-}
+	if (hPtr == NULL && tablePtr == &tree->itemHash) {
+	    tablePtr = &tree->headerHash;
+	    hPtr = Tcl_FirstHashEntry(tablePtr, &search);
+	}
     }
     if (updateDInfo)
 	Tree_DInfoChanged(tree, DINFO_REDO_RANGES);
@@ -5153,10 +5195,10 @@ Style_Deleted(
     int tailOK;
 
     hPtr = Tcl_FirstHashEntry(tablePtr, &search);
-if (hPtr == NULL) {
-    tablePtr = &tree->headerHash;
-    hPtr = Tcl_FirstHashEntry(tablePtr, &search);
-}
+    if (hPtr == NULL) {
+	tablePtr = &tree->headerHash;
+	hPtr = Tcl_FirstHashEntry(tablePtr, &search);
+    }
     while (hPtr != NULL) {
 	item = (TreeItem) Tcl_GetHashValue(hPtr);
 	tailOK = TreeItem_GetHeader(tree, item) != NULL;
@@ -5176,10 +5218,10 @@ if (hPtr == NULL) {
 	    treeColumn = Tree_ColumnToTheRight(treeColumn, FALSE, tailOK);
 	}
 	hPtr = Tcl_NextHashEntry(&search);
-if (hPtr == NULL && tablePtr == &tree->itemHash) {
-    tablePtr = &tree->headerHash;
-    hPtr = Tcl_FirstHashEntry(tablePtr, &search);
-}
+	if (hPtr == NULL && tablePtr == &tree->itemHash) {
+	    tablePtr = &tree->headerHash;
+	    hPtr = Tcl_FirstHashEntry(tablePtr, &search);
+	}
     }
 
     /* Update each column's -itemstyle option */
@@ -5620,8 +5662,9 @@ TreeStyle_ElementCget(
     Tcl_Obj *resultObjPtr = NULL;
     TreeElement elem;
     IElementLink *eLink;
+    int inHeader = TreeItem_GetHeader(tree, item) != NULL;
 
-    if (Element_FromObj(tree, elemObj, &elem) != TCL_OK)
+    if (TreeElement_FromObj(tree, elemObj, &elem) != TCL_OK)
 	return TCL_ERROR;
 
     eLink = IStyle_FindElem(tree, style, elem, NULL);
@@ -5630,8 +5673,9 @@ TreeStyle_ElementCget(
 	TreeColumn treeColumn = Tree_FindColumn(tree, index);
 
 	FormatResult(tree->interp,
-	    "element %s is not configured in item %s%d column %s%d",
-	    elem->name, tree->itemPrefix, TreeItem_GetID(tree, item),
+	    "element %s is not configured in %s %s%d column %s%d",
+	    elem->name, inHeader ? "header" : "item",
+	    tree->itemPrefix, TreeItem_GetID(tree, item),
 	    tree->columnPrefix, TreeColumn_GetID(treeColumn));
 	return TCL_ERROR;
     }
@@ -5682,6 +5726,7 @@ TreeStyle_ElementConfigure(
     IStyle *style = (IStyle *) style_;
     IElementLink *eLink;
     TreeElementArgs args;
+    int inHeader = TreeItem_GetHeader(tree, item) != NULL;
 
     (*eMask) = 0;
 
@@ -5694,8 +5739,9 @@ TreeStyle_ElementConfigure(
 	    TreeColumn treeColumn = Tree_FindColumn(tree, index);
 
 	    FormatResult(tree->interp,
-		"element %s is not configured in item %s%d column %s%d",
-		elem->name, tree->itemPrefix, TreeItem_GetID(tree, item),
+		"element %s is not configured in %s %s%d column %s%d",
+		elem->name, inHeader ? "header" : "item",
+		tree->itemPrefix, TreeItem_GetID(tree, item),
 		tree->columnPrefix, TreeColumn_GetID(treeColumn));
 	    return TCL_ERROR;
 	}
@@ -5758,6 +5804,24 @@ TreeStyle_ElementConfigure(
     return TCL_OK;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeStyle_ElementConfigureFromObj --
+ *
+ *	This procedure is invoked to process the [item element configure]
+ *	widget command.  See the user documentation for details on what
+ *	it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
 int
 TreeStyle_ElementConfigureFromObj(
     TreeCtrl *tree,		/* Widget info. */
@@ -5774,7 +5838,7 @@ TreeStyle_ElementConfigureFromObj(
 
     (*eMask) = 0;
 
-    if (Element_FromObj(tree, elemObj, &elem) != TCL_OK)
+    if (TreeElement_FromObj(tree, elemObj, &elem) != TCL_OK)
 	return TCL_ERROR;
 
     return TreeStyle_ElementConfigure(tree, item, column, style,
@@ -5813,7 +5877,7 @@ TreeStyle_ElementActual(
     IElementLink *eLink;
     TreeElementArgs args;
 
-    if (Element_FromObj(tree, elemObj, &masterElem) != TCL_OK)
+    if (TreeElement_FromObj(tree, elemObj, &masterElem) != TCL_OK)
 	return TCL_ERROR;
 
     eLink = IStyle_FindElem(tree, style, masterElem, NULL);
@@ -5886,7 +5950,7 @@ TreeElementCmd(
 		Tcl_WrongNumArgs(interp, 3, objv, "name option");
 		return TCL_ERROR;
 	    }
-	    if (Element_FromObj(tree, objv[3], &elem) != TCL_OK)
+	    if (TreeElement_FromObj(tree, objv[3], &elem) != TCL_OK)
 		return TCL_ERROR;
 	    /* Hack -- allow [cget -statedomain] but not [configure] */
 	    {
@@ -5916,7 +5980,7 @@ TreeElementCmd(
 		Tcl_WrongNumArgs(interp, 3, objv, "name ?option? ?value option value ...?");
 		return TCL_ERROR;
 	    }
-	    if (Element_FromObj(tree, objv[3], &elem) != TCL_OK)
+	    if (TreeElement_FromObj(tree, objv[3], &elem) != TCL_OK)
 		return TCL_ERROR;
 	    if (objc <= 5) {
 		resultObjPtr = Tk_GetOptionInfo(interp, (char *) elem,
@@ -5985,7 +6049,7 @@ TreeElementCmd(
 	    int i;
 
 	    for (i = 3; i < objc; i++) {
-		if (Element_FromObj(tree, objv[i], &elem) != TCL_OK)
+		if (TreeElement_FromObj(tree, objv[i], &elem) != TCL_OK)
 		    return TCL_ERROR;
 		Element_Deleted(tree, elem);
 		Element_FreeResources(tree, elem);
@@ -6027,7 +6091,7 @@ TreeElementCmd(
 		return TCL_ERROR;
 	    }
 
-	    if (Element_FromObj(tree, objv[3], &elem) != TCL_OK)
+	    if (TreeElement_FromObj(tree, objv[3], &elem) != TCL_OK)
 		return TCL_ERROR;
 
 	    if (Tree_StateFromListObj(tree, elem->stateDomain, objv[5], states,
@@ -6048,7 +6112,7 @@ TreeElementCmd(
 		Tcl_WrongNumArgs(interp, 3, objv, "name");
 		return TCL_ERROR;
 	    }
-	    if (Element_FromObj(tree, objv[3], &elem) != TCL_OK)
+	    if (TreeElement_FromObj(tree, objv[3], &elem) != TCL_OK)
 		return TCL_ERROR;
 	    Tcl_SetResult(interp, elem->typePtr->name, TCL_STATIC); /* Tk_Uid */
 	    break;
@@ -6426,7 +6490,7 @@ StyleLayoutCmd(
 	return TCL_ERROR;
     style = (MStyle *) _style;
 
-    if (Element_FromObj(tree, objv[4], &elem) != TCL_OK)
+    if (TreeElement_FromObj(tree, objv[4], &elem) != TCL_OK)
 	return TCL_ERROR;
 
     eLink = MStyle_FindElem(tree, style, elem, &eIndex);
@@ -6606,7 +6670,7 @@ StyleLayoutCmd(
 		    TreeElement elem2;
 		    MElementLink *eLink2;
 
-		    if (Element_FromObj(tree, objv1[j], &elem2) != TCL_OK) {
+		    if (TreeElement_FromObj(tree, objv1[j], &elem2) != TCL_OK) {
 			ckfree((char *) onion);
 			goto badConfig;
 		    }
@@ -6994,7 +7058,7 @@ TreeStyleCmd(
 		if (listObjc > 0)
 		    elemList = (TreeElement *) ckalloc(sizeof(TreeElement_) * listObjc);
 		for (i = 0; i < listObjc; i++) {
-		    if (Element_FromObj(tree, listObjv[i], &elem) != TCL_OK) {
+		    if (TreeElement_FromObj(tree, listObjv[i], &elem) != TCL_OK) {
 			ckfree((char *) elemList);
 			return TCL_ERROR;
 		    }
@@ -7178,7 +7242,7 @@ Tree_ButtonHeight(
  *	Perform hit-testing on a style.
  *
  * Results:
- *	The name of the element containing the given point, or NULL.
+ *	The element containing the given point, or NULL.
  *
  * Side effects:
  *	None.
@@ -7370,7 +7434,7 @@ TreeStyle_Remap(
 
     for (i = 0; i < objc; i += 2) {
 	/* Get the old-style element */
-	if (Element_FromObj(tree, objv[i], &elemFrom) != TCL_OK) {
+	if (TreeElement_FromObj(tree, objv[i], &elemFrom) != TCL_OK) {
 	    result = TCL_ERROR;
 	    goto done;
 	}
@@ -7384,7 +7448,7 @@ TreeStyle_Remap(
 	}
 
 	/* Get the new-style element */
-	if (Element_FromObj(tree, objv[i + 1], &elemTo) != TCL_OK) {
+	if (TreeElement_FromObj(tree, objv[i + 1], &elemTo) != TCL_OK) {
 	    result = TCL_ERROR;
 	    goto done;
 	}
@@ -7555,7 +7619,7 @@ TreeStyle_GetElemRects(
     STATIC_ALLOC(elems, TreeElement, objc);
 
     for (j = 0; j < objc; j++) {
-	if (Element_FromObj(drawArgs->tree, objv[j], &elems[j]) != TCL_OK) {
+	if (TreeElement_FromObj(drawArgs->tree, objv[j], &elems[j]) != TCL_OK) {
 	    count = -1;
 	    goto done;
 	}
@@ -7782,10 +7846,10 @@ Tree_UndefineState(
     args.state = state;
 
     hPtr = Tcl_FirstHashEntry(tablePtr, &search);
-if (hPtr == NULL) {
-    tablePtr = &tree->headerHash;
-    hPtr = Tcl_FirstHashEntry(tablePtr, &search);
-}
+    if (hPtr == NULL) {
+	tablePtr = &tree->headerHash;
+	hPtr = Tcl_FirstHashEntry(tablePtr, &search);
+    }
     while (hPtr != NULL) {
 	item = (TreeItem) Tcl_GetHashValue(hPtr);
 	column = TreeItem_GetFirstColumn(tree, item);
@@ -7814,10 +7878,10 @@ if (hPtr == NULL) {
 	Tree_FreeItemDInfo(tree, item, NULL);
 	TreeItem_UndefineState(tree, item, state);
 	hPtr = Tcl_NextHashEntry(&search);
-if (hPtr == NULL && tablePtr == &tree->itemHash) {
-    tablePtr = &tree->headerHash;
-    hPtr = Tcl_FirstHashEntry(tablePtr, &search);
-}
+	if (hPtr == NULL && tablePtr == &tree->itemHash) {
+	    tablePtr = &tree->headerHash;
+	    hPtr = Tcl_FirstHashEntry(tablePtr, &search);
+	}
     }
     TreeColumns_InvalidateWidthOfItems(tree, NULL);
     Tree_DInfoChanged(tree, DINFO_REDO_RANGES);
@@ -7859,12 +7923,36 @@ TreeStyle_NumElements(
 	style->master->numElements;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeStyle_IsHeaderStyle --
+ *
+ *	Determine if a style was created by Tree_MakeHeaderStyle for use
+ *	in column headers.
+ *
+ * Results:
+ *	TRUE if the style was created by the widget itself, FALSE if
+ *	it was created by [style create].
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
 int
 TreeStyle_IsHeaderStyle(
-    TreeCtrl *tree,
-    TreeStyle style
+    TreeCtrl *tree,		/* Widget info. */
+    TreeStyle style		/* The style. */
     )
 {
+#if 1
+    if (((IStyle *)style)->master != NULL)
+	style = TreeStyle_GetMaster(tree, style);
+    /* Faster check. */
+    return ((MStyle *) style)->hidden;
+#else
     HeaderStyle *hs;
 
     if (((IStyle *)style)->master != NULL)
@@ -7873,13 +7961,30 @@ TreeStyle_IsHeaderStyle(
 	if (hs->style == style)
 	    return TRUE;
     }
+#endif
     return FALSE;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeStyle_HasHeaderElement --
+ *
+ *	Determine if a style has a 'header' type element.
+ *
+ * Results:
+ *	TRUE if the style has a 'header' type element, FALSE otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
 int
 TreeStyle_HasHeaderElement(
-    TreeCtrl *tree,
-    TreeStyle style
+    TreeCtrl *tree,		/* Widget info. */
+    TreeStyle style		/* The style. */
     )
 {
     MStyle *mstyle = (MStyle *) style;
@@ -7888,10 +7993,33 @@ TreeStyle_HasHeaderElement(
     return mstyle->hasHeaderElem;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tree_MakeHeaderStyle --
+ *
+ *	Returns a master style suitable for use in a column header.
+ *	If a style meeting the requirements exists, it is returned.
+ *	Otherwise, a new style is created with a 'header' element
+ *	and possibly a bitmap, image, and/or text element.
+ *
+ *	Note that the any styles and elements created by this function
+ *	are hidden from the user.
+ *
+ * Results:
+ *	A master style token.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
 TreeStyle
 Tree_MakeHeaderStyle(
-    TreeCtrl *tree,
-    HeaderStyleParams *params
+    TreeCtrl *tree,		/* Widget info. */
+    HeaderStyleParams *params	/* Acts as a unique signature for the
+				 * style. */
     )
 {
     HeaderStyle *hs;
