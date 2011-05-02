@@ -64,8 +64,12 @@ proc DemoHeaders::Run {} {
     # a light-blue rounded rectangle with centered text.
     #
 
+    set radius 9
+    if {[Platform unix]} {
+	set radius 7
+    }
     $T element create header.rrect rect -statedomain header \
-	-rx 9 -fill {
+	-rx $radius -fill {
 	    #cee8f0 active
 	    #87c6da pressed
 	    #87c6da up
