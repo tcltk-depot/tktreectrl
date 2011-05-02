@@ -8930,12 +8930,12 @@ Tree_InvalidateItemDInfo(
 		    left -= tree->canvasPadX[PAD_TOP_LEFT]; /* canvas -> item coords */
 	    }
 
-if (column == tree->columnTail)
-    width = area->width - dColumn->offset;
-else
+	    if (column == tree->columnTail)
+		width = area->width - dColumn->offset;
+
 	    /* If only one column is visible, the width may be
 	    * different than the column width. */
-	    if ((TreeColumn_Lock(column) == COLUMN_LOCK_NONE) &&
+	    else if ((TreeColumn_Lock(column) == COLUMN_LOCK_NONE) &&
 		    (tree->columnCountVis == 1)) {
 		width = area->width;
 
@@ -8964,6 +8964,14 @@ else
 		    column2 = TreeColumn_Next(column2);
 		}
 	    }
+
+#ifdef MAC_OSX_TK
+	    /* Aqua headers overlap one pixel on the left edge. */
+	    if (TreeItem_GetHeader(tree, item) != NULL) {
+		left -= 1;
+		width += 2;
+	    }
+#endif
 
 	    if (width > 0) {
 		InvalidateDItemX(dItem, area, 0, left, width);
