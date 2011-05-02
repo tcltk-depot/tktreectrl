@@ -419,6 +419,24 @@ ImageChangedProc(
 }
 #endif
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * LookupOption --
+ *
+ *	Find the configuration option that matches the given
+ *	possibly-truncated name.  This code was copied from the Tk
+ *	sources, but doesn't handle chained option tables.
+ *
+ * Results:
+ *	Pointer to the matching option record, or NULL.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
 static Tk_OptionSpec*
 LookupOption(
     Tk_OptionSpec *tablePtr,
@@ -464,13 +482,33 @@ LookupOption(
     return bestPtr;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeHeaderColumn_ConfigureHeaderStyle --
+ *
+ *	Passes configuration option/value pairs to the appropriate
+ *	element in the underlying style for a column header.
+ *
+ *	If the column header is not using one of the default header
+ *	styles, or if this is the tail column, then nothing is done.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	May cause layout changes and a redraw of the widget.
+ *
+ *----------------------------------------------------------------------
+ */
+
 int
 TreeHeaderColumn_ConfigureHeaderStyle(
-    TreeHeader header,
-    TreeHeaderColumn column,
-    TreeColumn treeColumn,
-    int objc,
-    Tcl_Obj *CONST objv[]
+    TreeHeader header,		/* Header containing the column. */
+    TreeHeaderColumn column,	/* Column that was configured. */
+    TreeColumn treeColumn,	/* The tree-column. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *CONST objv[]	/* Option/value pairs. */
     )
 {
     TreeCtrl *tree = header->tree;
@@ -483,7 +521,7 @@ TreeHeaderColumn_ConfigureHeaderStyle(
     HeaderStyleParams params;
     int result;
 
-    /* If the column header uses a user-defined style, generate a
+    /* TODO: If the column header uses a user-defined style, generate a
      * <Header-configure> event. */
     if (!TreeStyle_IsHeaderStyle(tree,
 	    TreeItemColumn_GetStyle(tree, column->itemColumn)))
@@ -583,6 +621,8 @@ TreeHeaderColumn_ConfigureHeaderStyle(
 	    specPtr++;
 	}
 	Tcl_DecrRefCount(optionNameObj);
+
+    /* Some option/value pairs were given. */
     } else {
 	for (i = 0; i < 4; i++) {
 	    elemObjV[i] = staticElemObjV[i];
@@ -911,44 +951,44 @@ Column_Configure(
 	    treeColumn, stateOff, stateOn);
     }
 
-#if 1
     if (!createFlag) {
 	TreeHeaderColumn_EnsureStyleExists(header, column, treeColumn);
 	TreeHeaderColumn_ConfigureHeaderStyle(header, column, treeColumn,
 	    objc, objv);
     }
-#else
-    if (!createFlag) {
-	Tcl_Obj *staticObjV[STATIC_SIZE], **objV = staticObjV;
-	int i, objC = objc + 4;
-	int result;
-	STATIC_ALLOC(objV, Tcl_Obj *, objC);
-	objV[0] = Tcl_NewStringObj("::TreeCtrl::UpdateHeaderStyle", -1);
-	objV[1] = Tcl_NewStringObj(Tcl_GetCommandName(tree->interp, tree->widgetCmd), -1);;
-	objV[2] = TreeHeader_ToObj(header);
-	objV[3] = TreeColumn_ToObj(tree, treeColumn);
-	for (i = 0; i < 4; i++)
-	    Tcl_IncrRefCount(objV[i]);
-	for (i = 0; i < objc; i++)
-	    objV[i + 4] = objv[i]; /* FIXME: get the unabbreviated option name */
-	result = Tcl_EvalObjv(tree->interp, objC, objV, TCL_EVAL_GLOBAL);
-	for (i = 0; i < 4; i++)
-	    Tcl_DecrRefCount(objV[i]);
-	STATIC_FREE(objV, Tcl_Obj *, objC);
-	return result;
-    }
-#endif
+
     return TCL_OK;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeHeaderColumn_EnsureStyleExists --
+ *
+ *	This procedure maintains the style assigned to a column header.
+ *	If the column header uses a custom user-defined style, it is left
+ *	alone.  Otherwise, a new header style may be created if one
+ *	doesn't already exist that satisfies the various configuration
+ *	options of the column header.  If a new header style is created,
+ *	the current instance style (if any) is freed and a new instance
+ *	style is assigned and configured.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
 int
 TreeHeaderColumn_EnsureStyleExists(
-    TreeHeader header,
-    TreeHeaderColumn column,
-    TreeColumn treeColumn
+    TreeHeader header,		/* Header token. */
+    TreeHeaderColumn column,	/* Column token. */
+    TreeColumn treeColumn	/* Column token. */
     )
 {
-#if 1
     TreeCtrl *tree = header->tree;
     TreeItemColumn itemColumn = column->itemColumn;
     TreeStyle styleOld, styleNew;
@@ -983,25 +1023,6 @@ TreeHeaderColumn_EnsureStyleExists(
 	    0, NULL);
     }
     return TCL_OK;
-#else
-    TreeCtrl *tree = header->tree;
-    Tcl_Obj *objV[4];
-    int i, objC = 4;
-    int result;
-
-    objV[0] = Tcl_NewStringObj("::TreeCtrl::UpdateHeaderStyle", -1);
-    objV[1] = Tcl_NewStringObj(Tcl_GetCommandName(tree->interp, tree->widgetCmd), -1);;
-    objV[2] = TreeHeader_ToObj(header);
-    objV[3] = TreeColumn_ToObj(tree, treeColumn);
-    for (i = 0; i < 4; i++)
-	Tcl_IncrRefCount(objV[i]);
-    result = Tcl_EvalObjv(tree->interp, objC, objV, TCL_EVAL_GLOBAL);
-    if (result != TCL_OK)
-	Tcl_BackgroundError(tree->interp);
-    for (i = 0; i < 4; i++)
-	Tcl_DecrRefCount(objV[i]);
-    return result;
-#endif
 }
 
 /*
