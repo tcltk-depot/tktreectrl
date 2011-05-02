@@ -10,7 +10,7 @@ proc DemoHeaders::Run {} {
 
     $T configure \
 	-showroot no -xscrollsmoothing yes -yscrollsmoothing yes \
-	-selectmode multiple -xscrollincrement 20 -canvaspadx 40
+	-selectmode multiple -xscrollincrement 20 -canvaspadx 0
 
     #
     # Create one locked column on each side plus 8 non-locked columns
@@ -37,7 +37,7 @@ proc DemoHeaders::Run {} {
     # styles.
     #
 
-    InitSortImages blue
+    InitSortImages blue 5
     $T element create header.sort image -statedomain header \
 	-image {::DemoHeaders::arrow-down down ::DemoHeaders::arrow-up up}
 
@@ -80,19 +80,35 @@ proc DemoHeaders::Run {} {
     $T style layout $S header.sort -expand nws -padx {0 6} \
 	-visible {no {!down !up}}
 
-if 0 {
     #
     # Create a style for our custom headers,
-    # a header element with centered text.
+    # Window 7 Explorer type headers.
     #
 
-    $T element create header.header header -thickness 1
+    $T gradient create G.header3.fill.active -orient vertical \
+	-stops {{0.0 #f3f8fd} {1.0 #eff3f9}} -steps 8
+    $T gradient create G.header3.fill.pressed -orient vertical \
+	-stops {{0.0 #c1ccda} {0.2 white} {1.0 white}} -steps 8
+    $T gradient create G.header3.outline.normal -orient vertical \
+	-stops {{0.0 #e3e8ee} {1.0 white}} -steps 8
+
+    $T element create header.outline3 rect -statedomain header \
+	-outline {#e3e8ee active #c0cbd9 pressed G.header3.outline.normal normal} \
+	-outlinewidth 1 -open {w normal}
+    $T element create header.rect3 rect -statedomain header \
+	-fill G.header3.fill.active
+    $T element create header.rect3.pressed rect -statedomain header \
+	-fill G.header3.fill.pressed
 
     set S [$T style create header3 -orient horizontal -statedomain header]
-    $T style elements $S {header.header header.text}
-    $T style layout $S header.header -union header.text -iexpand news
-    $T style layout $S header.text -expand wens -padx 6 -pady 2 -squeeze x ; # $T style layout $S header.text -expand ns -center x -padx 6 -pady 2 -squeeze x
-}
+    $T style elements $S {header.rect3.pressed header.outline3 header.rect3 header.text header.sort}
+    $T style layout $S header.outline3 -detach yes -iexpand xy
+    $T style layout $S header.rect3 -detach yes -iexpand xy \
+	-padx 2 -pady 2 -visible {no !active}
+    $T style layout $S header.rect3.pressed -detach yes -iexpand xy \
+	-visible {no !pressed}
+    $T style layout $S header.text -center xy -padx 6 -pady {6 3} -squeeze x
+    $T style layout $S header.sort -detach yes -expand we -pady 2
 
     #
     # Create a style for our custom headers,
@@ -113,7 +129,7 @@ if 0 {
 
     #
     # Create a style for our custom headers,
-    # a gradient-filled rectangle with centered text.
+    # Mac OS X type headers.
     #
 
     $T gradient create Gnormal -orient vertical -stops {{0.0 white} {0.5 gray87} {1.0 white}} -steps 6
@@ -122,7 +138,7 @@ if 0 {
     $T gradient create Gsorted -orient vertical -stops {{0.0 white} {0.5 {sky blue}} {1.0 white}} -steps 6
     $T gradient create Gactive_sorted -orient vertical -stops {{0.0 white} {0.5 {light blue}} {1.0 white}} -steps 6
     $T gradient create Gpressed_sorted -orient vertical -stops {{0.0 white} {0.5 {sky blue}} {1.0 white}} -steps 6
-    $T element create header.rect1 rect  -statedomain header \
+    $T element create header.rect5 rect -statedomain header \
     -fill {
 	Gactive_sorted {active up}
 	Gpressed_sorted {pressed up}
@@ -142,8 +158,8 @@ if 0 {
     }
 
     set S [$T style create header5 -orient horizontal -statedomain header]
-    $T style elements $S {header.rect1 header.text header.sort}
-    $T style layout $S header.rect1 -detach yes -iexpand xy
+    $T style elements $S {header.rect5 header.text header.sort}
+    $T style layout $S header.rect5 -detach yes -iexpand xy
     $T style layout $S header.text -center xy -padx 6 -pady 2 -squeeze x
     $T style layout $S header.sort -expand nws -padx {0 6} \
 	-visible {no {!down !up}}
@@ -273,23 +289,24 @@ if 1 {
     $T style layout $S theme.button -expand we -pady {3 6}
 
     NewButtonItem "" \
-	"Use no style, just the built-in header background, sort arrow and text." \
-	no
+	"Use no style, just the built-in header background, sort arrow and text."
     NewButtonItem header1 \
 	"Use the 'header1' style, consisting of a border element for the background and an image for the sort arrow." \
-	yes black
+	"" black
     NewButtonItem header2 \
 	"Use the 'header2' style, consisting of a rounded rectangle element for the background and an image for the sort arrow." \
-	yes blue
+	"" blue
+    NewButtonItem header3 \
+	"Use the 'header3' style, consisting of a gradient-filled rectangle element for the background and an image for the sort arrow." \
+	#6d6d6d {{light blue}} 4
     NewButtonItem header4 \
-	"Use the 'header4' style, consisting of a header element to display the background and sort arrow, and an image element serving as a checkbutton." \
-	no
+	"Use the 'header4' style, consisting of a header element to display the background and sort arrow, and an image element serving as a checkbutton."
     NewButtonItem header5 \
 	"Use the 'header5' style, consisting of a gradient-filled rectangle element for the background and an image for the sort arrow." \
-	yes #0080FF
+	"" #0080FF
     NewButtonItem header6 \
 	"Use the 'header6' style, consisting of a gradient-filled rectangle element for the background and an image for the sort arrow." \
-	yes orange
+	red orange
 
     $T item state set styleheader2 current
 
@@ -364,31 +381,30 @@ proc DemoHeaders::NewButtonItem {S text args} {
     return
 }
 
-proc DemoHeaders::InitSortImages {color} {
+proc DemoHeaders::InitSortImages {color height} {
     set img ::DemoHeaders::arrow-down
     image create photo $img
-    $img put [list [string repeat "$color " 9]] -to 0 0
-    $img put [list [string repeat "$color " 7]] -to 1 1
-    $img put [list [string repeat "$color " 5]] -to 2 2
-    $img put [list [string repeat "$color " 3]] -to 3 3
-    $img put [list [string repeat "$color " 1]] -to 4 4
+    for {set i 0} {$i < $height} {incr i} {
+	set width [expr {2 * $height - ($i * 2 + 1)}]
+	$img put [list [string repeat "$color " $width]] -to $i $i
+    }
 
     set img ::DemoHeaders::arrow-up
     image create photo $img
-    $img put [list [string repeat "$color " 1]] -to 4 0
-    $img put [list [string repeat "$color " 3]] -to 3 1
-    $img put [list [string repeat "$color " 5]] -to 2 2
-    $img put [list [string repeat "$color " 7]] -to 1 3
-    $img put [list [string repeat "$color " 9]] -to 0 4
+    for {set i 0} {$i < $height} {incr i} {
+	set width [expr {($i * 2 + 1)}]
+	$img put [list [string repeat "$color " $width]] -to [expr {$height - $i - 1}] $i
+    }
     return
 }
 
-proc DemoHeaders::ChangeHeaderStyle {style ownerDrawn {sortColor ""}} {
+proc DemoHeaders::ChangeHeaderStyle {style {textColor black} {sortColor ""} {imgHeight 5}} {
     variable HeaderStyle
     variable Sort
     set T [DemoList]
+    $T element configure header.text -fill $textColor
     if {$sortColor ne ""} {
-	InitSortImages $sortColor
+	InitSortImages $sortColor $imgHeight
     }
     set HeaderStyle $style
     set S $HeaderStyle
