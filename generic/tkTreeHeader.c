@@ -4771,6 +4771,11 @@ TreeHeader_Init(
     /* Create the default/topmost header item.  It can't be deleted. */
     tree->headerItems = TreeItem_CreateHeader(tree);
 
+    /* Create the style for the tail column. */
+    TreeHeaderColumn_EnsureStyleExists(TreeItem_GetHeader(tree, tree->headerItems),
+	TreeItemColumn_GetHeaderColumn(tree, TreeItem_GetFirstColumn(tree, tree->headerItems)),
+	tree->columnTail);
+
     return TCL_OK;
 }
 
