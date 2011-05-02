@@ -5468,6 +5468,9 @@ TreeItemCmd_Bbox(
 	 * is returned. */
 	if (Tree_ItemBbox(tree, item, COLUMN_LOCK_NONE, &rect) < 0)
 	    return TCL_OK;
+
+	if (doHeaders)
+	    rect.width -= tree->tailExtend;
     } else {
 	if (TreeColumn_FromObj(tree, objv[4], &treeColumn,
 		CFO_NOT_NULL | CFO_NOT_TAIL) != TCL_OK)
