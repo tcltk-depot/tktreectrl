@@ -1647,7 +1647,6 @@ struct ElementHeader
 {
     TreeElement_ header; /* Must be first */
     PerStateInfo border;	/* -background */
-    PerStateInfo relief;	/* -relief */
     int borderWidth;		/* -borderwidth */
     Tcl_Obj *borderWidthObj;	/* -borderwidth */
     PerStateInfo arrowBitmap;	/* -arrowbitmap */
@@ -1703,10 +1702,6 @@ static Tk_OptionSpec headerOptionSpecs[] = {
      (char *) NULL, Tk_Offset(ElementHeader, borderWidthObj),
      Tk_Offset(ElementHeader, borderWidth),
      TK_OPTION_NULL_OK, (ClientData) NULL, HEADER_CONF_SIZE | HEADER_CONF_DISPLAY},
-    {TK_OPTION_CUSTOM, "-relief", (char *) NULL, (char *) NULL,
-     (char *) NULL,
-     Tk_Offset(ElementHeader, relief.obj), Tk_Offset(ElementHeader, relief),
-     TK_OPTION_NULL_OK, (ClientData) NULL, HEADER_CONF_DISPLAY},
     {TK_OPTION_CUSTOM, "-state", (char *) NULL, (char *) NULL,
      (char *) NULL, -1, Tk_Offset(ElementHeader, state), TK_OPTION_NULL_OK,
      (ClientData) NULL, HEADER_CONF_DISPLAY},
@@ -2201,12 +2196,10 @@ static void DisplayProcHeader(TreeElementArgs *args)
     Tk_Fill3DRectangle(tree->tkwin, args->display.drawable, border,
 	    x, y, width, height, params.borderWidth, TK_RELIEF_FLAT);
 
-    RELIEF_FOR_STATE(relief, relief, params.elemState)
-    if (relief == TK_RELIEF_NULL)
-	relief = (params.state == COLUMN_STATE_PRESSED) ? TK_RELIEF_SUNKEN : TK_RELIEF_RAISED;
-
     HeaderDrawArrow(args, &params, x, y, width, height, arrowIndent);
 
+    relief = (params.state == COLUMN_STATE_PRESSED) ?
+	TK_RELIEF_SUNKEN : TK_RELIEF_RAISED;
     Tk_Draw3DRectangle(tree->tkwin, args->display.drawable, border,
 	    x, y, width, height, params.borderWidth, relief);
 
@@ -2261,7 +2254,6 @@ static int StateProcHeader(TreeElementArgs *args)
     Tk_Image image1 = NULL, image2 = NULL;
     Pixmap bitmap1 = None, bitmap2 = None;
     Tk_3DBorder border1, border2;
-    int relief1, relief2;
     struct HeaderParams params1, params2;
 
     if (!args->states.visible2)
@@ -2330,11 +2322,6 @@ static int StateProcHeader(TreeElementArgs *args)
     if (border1 != border2)
 	return CS_DISPLAY;
 
-    RELIEF_FOR_STATE(relief1, relief, args->states.state1)
-    RELIEF_FOR_STATE(relief2, relief, args->states.state2)
-    if (relief1 != relief2)
-	return CS_DISPLAY;
-
     return 0;
 }
 
@@ -2348,7 +2335,6 @@ static int UndefProcHeader(TreeElementArgs *args)
     modified |= PerStateInfo_Undefine(tree, &pstBitmap, &elemX->arrowBitmap, elem->stateDomain, args->state);
     modified |= PerStateInfo_Undefine(tree, &pstImage, &elemX->arrowImage, elem->stateDomain, args->state);
     modified |= PerStateInfo_Undefine(tree, &pstBorder, &elemX->border, elem->stateDomain, args->state);
-    modified |= PerStateInfo_Undefine(tree, &pstRelief, &elemX->relief, elem->stateDomain, args->state);
     return modified;
 }
 
@@ -2361,7 +2347,6 @@ static int ActualProcHeader(TreeElementArgs *args)
 	"-arrowbitmap",
 	"-arrowimage",
 	"-background",
-	"-relief",
 	(char *) NULL };
     int index, match, matchM;
     Tcl_Obj *obj = NULL;
@@ -2381,10 +2366,6 @@ static int ActualProcHeader(TreeElementArgs *args)
 	}
 	case 2: {
 	    OBJECT_FOR_STATE(obj, pstBorder, border, args->state)
-	    break;
-	}
-	case 3: {
-	    OBJECT_FOR_STATE(obj, pstRelief, relief, args->state)
 	    break;
 	}
     }
@@ -5423,8 +5404,6 @@ int TreeElement_Init(Tcl_Interp *interp)
 	headerArrowSideST);
     PerStateCO_Init(treeElemTypeHeader.optionSpecs, "-background",
 	&pstBorder, TreeStateFromObj);
-    PerStateCO_Init(treeElemTypeHeader.optionSpecs, "-relief",
-	&pstRelief, TreeStateFromObj);
     StringTableCO_Init(treeElemTypeHeader.optionSpecs, "-state", headerStateST);
 
     /*
