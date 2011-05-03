@@ -211,6 +211,21 @@ This option no longer has any effect, but was left in for compatibility.
 It used to control the amount of double-buffering that was used when
 displaying a treectrl.
 
+[tkoption_def -headerfont headerFont Font]
+Specifies the font to draw text in column headers with.  The default value is
+TkHeadingFont where available (on Tk 8.5+).  This option can be overridden by
+setting the [option -font] option for individual column headers.
+
+[tkoption_def -headerfg headerForeground Foreground]
+Synonym for -headerforeground.
+
+[tkoption_def -headerforeground headerForeground Foreground]
+Specifies the color to draw text in column headers with.
+The default value is the Tk button foreground color (usually black).
+On Gtk+, the system theme may override this color.
+This option (and the Gtk+ system theme color) can be overridden by setting the
+[option -textcolor] option for individual column headers.
+
 [tkoption_def -height height Height]
 Specifies the desired height for the window
 in any of the forms acceptable to [fun Tk_GetPixels].
@@ -952,6 +967,8 @@ This command returns the current value of the option named [arg option]
 associated with the element given by [arg element].
 [arg Option] may have any of the values accepted by the
 [cmd {element configure}] widget command.
+[para]
+This command also accepts the [option -statedomain] option.
 
 [call [arg pathName] [cmd {element configure}] [arg element] \
      [opt [arg option]] [opt [arg value]] [opt [arg {option value ...}]]]
@@ -970,15 +987,17 @@ modifies the given option(s) to have the given value(s) in [arg element];
 in this case the command returns an empty string.
 See [sectref {ELEMENTS AND STYLES}] below for details on the options available for elements.
 
-[call [arg pathName] [cmd {element create}] [arg element] [arg type] \
+[call [arg pathName] [cmd {element create}] [arg name] [arg type] \
      [opt [arg {option value ...}]]]
-Create a new elememt in [arg pathName] of type [arg type]
-with name [arg element].
-The exact format of the arguments after [arg type] depends on [arg type],
-but generally consist of specifications for zero or more element options.
-See the subsections on individual element types below for more
-on the syntax of this command.
-This command returns the name for the new element.
+Creates a new master element of type [arg type] with the unique user-defined name
+[arg name] and configures it with zero or more option/value pairs.
+See the subsections on individual element types in [sectref {ELEMENTS AND STYLES}]
+for the options that are valid for each type of element.
+This command returns the name of the new element (the same as the [arg name] argument).
+[para]
+This command also accepts the [option -statedomain] option with a value of
+either [const header] or [const item] to specify where this element will be
+displayed.
 
 [call [arg pathName] [cmd {element delete}] [opt [arg {element ...}]]]
 Deletes each of the named elements and returns an empty string.
@@ -1166,7 +1185,6 @@ the meaning of each option):
 [list_begin options]
 
 [opt_def [option -height] [arg height]]
-[opt_def [option -ownerdrawn] [arg boolean]]
 [opt_def [option -tags] [arg tagList]]
 [opt_def [option -visible] [arg boolean]]
 
@@ -1193,11 +1211,11 @@ the meaning of each option):
 [list_begin options]
 [opt_def [option -arrow] [arg direction]]
 [opt_def [option -arrowbitmap] [arg bitmap]]
-[opt_def [option -arrowimage] [arg image]]
-[opt_def [option -arrowside] [arg side]]
 [opt_def [option -arrowgravity] [arg direction]]
+[opt_def [option -arrowimage] [arg image]]
 [opt_def [option -arrowpadx] [arg amount]]
 [opt_def [option -arrowpady] [arg amount]]
+[opt_def [option -arrowside] [arg side]]
 [opt_def [option -background] [arg color]]
 [opt_def [option -bitmap] [arg bitmap]]
 [opt_def [option -borderwidth] [arg size]]
@@ -1234,14 +1252,6 @@ Specifies a fixed height for the header-row in any of the forms acceptable to
 [fun Tk_GetPixels]. Must be >= 0.  If [arg height] is zero then the
 header-row's height is the maximum height of all of its column headers.
 Defaults to 0.
-
-[opt_def [option -ownerdrawn] [arg boolean]]
-[arg Boolean] must have one of the forms accepted by [fun Tcl_GetBoolean].
-When the value of this option is true, only the style (if any) assigned to a
-column header is drawn;  in this case none of the bitmap, image, text, sort arrow
-or header background parts is drawn or affects the height of the header.
-When the value of this option is false, the style (if any) assigned to a
-column header is drawn overtop of the bitmap, image, text, etc.
 
 [opt_def [option -tags] [arg tagList]]
 [arg TagList] is a list of tag names to be added to the new header-row.  The
@@ -1998,6 +2008,10 @@ The following forms of the command are supported:
 
 [list_begin definitions]
 
+[call [arg pathName] [cmd {item state define}] [arg stateName]]
+Defines a new state with the name [arg stateName],
+which must not be the name of an existing state.
+
 [call [arg pathName] [cmd {item state forcolumn}] [arg itemDesc] [arg column] \
      [opt [arg stateDescList]]]
 Just like [cmd {item state set}] but manipulates dynamic states for a single
@@ -2017,6 +2031,14 @@ If a [arg stateName] is specified,
 1 is returned if the specified state is currently switched on for the item,
 0 otherwise.
 
+[call [arg pathName] [cmd {item state linkage}] [arg stateName]]
+Returns a string indicating whether the specified state is user-defined
+by means of the [cmd {item state define}] widget command ([const dynamic])
+or predefined by the treectrl widget itself ([const static]).
+
+[call [arg pathName] [cmd {item state names}]]
+Returns a list containing the names of all user-defined states.
+
 [call [arg pathName] [cmd {item state set}] [arg itemDesc] \
      [opt [arg lastItem]] [arg stateDescList]]
 Every element of [arg stateDescList]
@@ -2030,6 +2052,10 @@ If [arg lastItem] is specified, the state changes will be made for all items
 in the range between [arg itemDesc] and [arg lastItem].
 If [arg lastItem] unspecified,
 then the state changes are made for all items described by [arg itemDesc].
+
+[call [arg pathName] [cmd {item state undefine}] [opt [arg {stateName ...}]]]
+Every [arg stateName] must be the name of a user-defined state.
+Removes this state from the list of user-defined states.
 
 [list_end]
 
@@ -2556,8 +2582,10 @@ A [const <Selection>] event is generated if any items were selected or deselecte
 [list_end]
 
 [call [arg pathName] [cmd state] [arg option] [arg args]]
-This command is used to manipulate the list of user-defined states,
-see section [sectref STATES] below.
+This command is used to manipulate the list of user-defined item states,
+see section [sectref STATES] below.  Item states can also be managed using the
+[cmd {item state}] command.  To manage states for [sectref HEADERS header-rows],
+use the [cmd {header state}] widget command.
 The exact behavior of the command depends on the [arg option] argument
 that follows the [cmd state] argument.
 The following forms of the command are supported:
@@ -2595,6 +2623,8 @@ This command returns the current value of the option named [arg option]
 associated with the style given by [arg style].
 [arg Option] may have any of the values accepted by the
 [cmd {style configure}] widget command.
+[para]
+This command also accepts the [option -statedomain] option.
 
 [call [arg pathName] [cmd {style configure}] [arg style] [opt [arg option]] \
      [opt [arg value]] [opt [arg {option value ...}]]]
@@ -2630,15 +2660,19 @@ Must be either [const horizontal] (the default)
 or [const vertical] or an abbreviation of one of these.
 [list_end]
 
-[call [arg pathName] [cmd {style create}] [arg style] \
+[call [arg pathName] [cmd {style create}] [arg name] \
      [opt [arg {option value ...}]]]
-Create a new style in [arg pathName] with name [arg style].
-After [arg style] there may be any number of [arg option]-[arg value]
+Creates a new style with the unique user-defined name [arg name].
+After [arg name] there may be any number of [arg option]-[arg value]
 pairs, each of which sets one of the configuration options
-for the style.  These same [arg option]-[arg value] pairs may be
-used in [cmd {style configure}] widget commands to change the style's
-configuration.
-Returns the name of the new style.
+for the style.  See the [cmd {style configure}] command for the possible
+options.
+The result of this command is the name of the new style (the same as the
+[arg name] option).
+[para]
+This command also accepts the [option -statedomain] option with a value of
+either [const header] or [const item] to specify where this style will be
+displayed.
 
 [call [arg pathName] [cmd {style delete}] [opt [arg {style ...}]]]
 Deletes each of the named styles and returns an empty string.
@@ -2656,7 +2690,9 @@ An element which was specified in a former call of this command
 for [arg style] but is not included in [arg elementList],
 will be deleted from the elements layed out by [arg style].
 [para]
-
+Every element used by a style must have been created with the same value
+for the [option -statedomain] option.
+[para]
 If the [arg elementList] argument is not specified, a list is returned
 containing the currently defined elements of [arg style].
 
@@ -2991,7 +3027,9 @@ in the header and generate a <Header-invoke> event when a <ButtonRelease-1>
 event occurs in the header. See [sectref {DYNAMIC EVENTS}].
 
 [opt_def [option -font] [arg fontName]]
-Specifies the font to use for the column title inside the column header.
+Specifies the font to use for displaying the column title inside the column header.
+When the value of this option is unspecified, the font specified by the widget
+option [option -headerfont] is used.
 
 [opt_def [option -image] [arg image]]
 Specifies the name of an image to display to the left of the column title.
@@ -3033,8 +3071,8 @@ Specifies a text string to be displayed as the column title.
 [opt_def [option -textcolor] [arg color]]
 Specifies as a [sectref {PER-STATE OPTIONS} per-state] option the color to
 display the column title with.  When the value of this option is unspecified,
-the title will be drawn according to the system theme, if any, otherwise
-the Tk button foreground color (usually black) is used.  The default is unspecified.
+the title will be drawn according to the system theme color, if any, otherwise
+the widget option [option -headerforeground] is used.  The default is unspecified.
 
 [opt_def [option -textlines] [arg count]]
 Specifies the maximum number of lines of text to display in the column title.
@@ -3371,18 +3409,26 @@ The following states are predefined for every column header:
 [def [const active]]
 [def [const normal]]
 [def [const pressed]]
-These states mirror the value of the column header's configuration option
-[option -state].
+These states mirror the value of a column header's configuration option
+[option -state].  Exactly one of these states is set at any time in each
+column header.
 
 [def [const down]]
 [def [const up]]
-These states mirror the value of the column header's configuration option
-[option -arrow].
+These states mirror the value of a column header's configuration option
+[option -arrow].  If the [option -arrow] option is [const none], then neither
+of these states is set.
+
+[def [const background]]
+This state is set for every header-row if the toplevel window containing the
+treectrl is not the foreground active window.  This state cannot be modified
+by means of a widget command, but is maintained in reaction to the <Activate>
+and <Deactivate> windowing system events.
 
 [def [const focus]]
 This state is set for every header-row if the treectrl widget currently has the
 focus. It cannot be modified by means of a widget command, but is maintained
-in reaction to the <FocusIn> and <FocusOut> events.
+in reaction to the <FocusIn> and <FocusOut> windowing system events.
 [list_end]
 
 [def {ITEM STATES}]
@@ -3477,7 +3523,7 @@ chosen regardless of the item's state.
 [section {ELEMENTS AND STYLES}]
 [emph Elements] and [emph styles] are the core visual building blocks that
 determine the appearance of items (and optionally column headers).
-An element can be of type [const bitmap], [const border], [const image],
+An element can be of type [const bitmap], [const border], [const header], [const image],
 [const rect], [const text] or [const window].  One or more elements can be
 assigned to a style which manages the layout of those elements.  It may be
 helpful to think of an element as a Tk widget and a style as a Tk geometry
@@ -3594,6 +3640,89 @@ Specifies the width of the border. If this value is unspecified
 (the default), the border will be exactly as wide as its display area as
 determined by the style layout options.
 
+[list_end]
+
+[section {HEADER ELEMENT}]
+An element of type [const header] can be used to display a themed (or
+non-themed) column header background and sort arrow.  Header elements are
+best used surrounding other elements via the style layout option [option -union],
+so that the sort arrow can be displayed correctly.
+[para]
+Some of the options for this type of element get their default values from
+the [sectref STATES {header state}] flags that are set in the column header in which
+the element is displayed. In particular, the [option -arrow] option gets its
+default value by checking the [const up] and [const down] state flags, and
+the [option -state] option gets its default value by checking the [const active],
+[const normal], and [const pressed] state flags.  If elements of this type are
+displayed in an item instead of a column header, then this behavior isn't used
+since those state flags aren't meaningful for items.
+[para]
+The following options are supported for header elements:
+[list_begin options]
+
+[opt_def [option -arrow] [arg direction]]
+Indicates whether or not a sort arrow should be drawn. [arg Direction] must
+have one of the values [const none], [const up], or [const down].  If
+unspecified, the value defaults to [const none] (but see the note above
+regarding header states).
+
+[opt_def [option -arrowbitmap] [arg bitmap]]
+Specifies as a [sectref {PER-STATE OPTIONS} per-state] option the name of a
+bitmap to use to draw the sort arrow if this element's -arrow option is not
+[const none].
+This option is ignored when drawing themed headers on Mac OS X.
+
+[opt_def [option -arrowgravity] [arg direction]]
+Indicates onto which side the sort arrow should be packed,
+if there is more space available for drawing the arrow than needed.
+[arg direction] must be either [const left] or [const right]. If unspecified,
+the value defaults to [const left].
+This option is ignored when drawing themed headers on Mac OS X.
+
+[opt_def [option -arrowimage] [arg image]]
+Specifies as a [sectref {PER-STATE OPTIONS} per-state] option the name of an
+image to use to draw the sort arrow if this element's -arrow option is not
+[const none]. If an image is specified for a certain state, it overrides the
+-arrowbitmap option.
+This option is ignored when drawing themed headers on Mac OS X.
+
+[opt_def [option -arrowpadx] [arg amount]]
+[arg Amount] specifies how much padding to leave on the left and right of the
+sort arrow. [arg Amount] may be a list of two values to specify padding for
+the left and right separately. If unspecified, the value defaults to 6.
+Padding to the right of the sort arrow is ignored when drawing themed headers
+on Mac OS X.
+
+[opt_def [option -arrowpady] [arg amount]]
+[arg Amount] specifies how much padding to leave on the top and bottom of the
+sort arrow.  [arg Amount] may be a list of two values to specify padding for
+the top and bottom separately. If unspecified, the value defaults to 0.
+This option is ignored when drawing themed headers on Mac OS X.
+
+[opt_def [option -arrowside] [arg side]]
+Indicates on which side of the element the sort arrow should be drawn.
+[arg Side] must be either [const left] or [const right]. If unspecified, the
+value defaults to [const right].
+
+[opt_def [option -background] [arg color]]
+Specifies as a [sectref {PER-STATE OPTIONS} per-state] option the color to
+use for the non-themed background and 3D border.  If unspecified, the value
+defaults to either the Tk button widget's -background or -activebackground
+color.
+
+[opt_def [option -borderwidth] [arg size]]
+Specifies a non-negative value indicating the width of the non-themed 3D
+border to draw around the inner edges of the element (if such a border is being
+drawn; the [option -relief] option determines this).
+The value may have any of the forms acceptable to [fun Tk_GetPixels].
+If unspecified, the value defaults to 2.
+
+[opt_def [option -state] [arg state]]
+Specifies one of three states for the element: [const normal], [const active],
+or [const pressed]. The active state is used when the mouse is over the header.
+The pressed state is used when the mouse button is pressed in the header.
+If unspecified, the value defaults to [const normal] (but see the note above
+regarding header states).
 [list_end]
 
 [section {IMAGE ELEMENT}]
@@ -3719,10 +3848,22 @@ Acceptable values are [const double], [const integer], [const long],
 
 [opt_def [option -fill] [arg color]]
 Specifies as a [sectref {PER-STATE OPTIONS} per-state] option the
-foreground color to use when displaying the text.
-If the color for a certain state is an empty string (the default), then
-the text will be displayed using the color specified by the treectrl's
+foreground color to use when displaying text.
+[para]
+In items, if the color for a certain state is an empty string (the default),
+then the text will be displayed using the color specified by the treectrl's
 [option -foreground] option.
+[para]
+In headers, if the color for a certain state is an empty string,
+then the text will be displayed using the system theme color on Gtk+; if that
+color is not specified then the [option -headerforeground] option is used.
+
+[opt_def [option -font] [arg font]]
+Specifies as a [sectref {PER-STATE OPTIONS} per-state] option the font to
+use when displaying the text.
+If the font for a certain state is an empty string, the text is displayed
+using the font specified by the treectrl's [option -font] option in items
+or the [option -headerfont] option in headers.
 
 [opt_def [option -format] [arg formatString]]
 This option specifies the format string used to display the value of the [option -data] option.
@@ -3734,12 +3875,6 @@ If this value is unspecified the following defaults are used:
 for -datatype double "%g", for -datatype integer "%d", for -datatype long "%ld",
 for -datatype string "%s", and for -datatype time the default format string of the Tcl [cmd clock]
 command.
-
-[opt_def [option -font] [arg font]]
-Specifies as a [sectref {PER-STATE OPTIONS} per-state] option the font to
-use when displaying the text.
-If the font for a certain state is an empty string, the text is displayed
-using the font specified by the treectrl's [option -font] option.
 
 [opt_def [option -justify] [arg how]]
 Specifies how to justify the text when multiple lines are displayed.

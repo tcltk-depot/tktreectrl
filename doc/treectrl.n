@@ -340,7 +340,7 @@ package require \fBtreectrl  2.3.2\fR
 .sp
 \fIpathName\fR \fBelement configure\fR \fIelement\fR ?\fIoption\fR? ?\fIvalue\fR? ?\fIoption value ...\fR?
 .sp
-\fIpathName\fR \fBelement create\fR \fIelement\fR \fItype\fR ?\fIoption value ...\fR?
+\fIpathName\fR \fBelement create\fR \fIname\fR \fItype\fR ?\fIoption value ...\fR?
 .sp
 \fIpathName\fR \fBelement delete\fR ?\fIelement ...\fR?
 .sp
@@ -482,11 +482,19 @@ package require \fBtreectrl  2.3.2\fR
 .sp
 \fIpathName\fR \fBitem state\fR \fIcommand\fR \fIitemDesc\fR ?\fIarg ...\fR?
 .sp
+\fIpathName\fR \fBitem state define\fR \fIstateName\fR
+.sp
 \fIpathName\fR \fBitem state forcolumn\fR \fIitemDesc\fR \fIcolumn\fR ?\fIstateDescList\fR?
 .sp
 \fIpathName\fR \fBitem state get\fR \fIitemDesc\fR ?\fIstateName\fR?
 .sp
+\fIpathName\fR \fBitem state linkage\fR \fIstateName\fR
+.sp
+\fIpathName\fR \fBitem state names\fR
+.sp
 \fIpathName\fR \fBitem state set\fR \fIitemDesc\fR ?\fIlastItem\fR? \fIstateDescList\fR
+.sp
+\fIpathName\fR \fBitem state undefine\fR ?\fIstateName ...\fR?
 .sp
 \fIpathName\fR \fBitem style\fR \fIcommand\fR \fIitemDesc\fR ?\fIarg ...\fR?
 .sp
@@ -602,7 +610,7 @@ package require \fBtreectrl  2.3.2\fR
 .sp
 \fIpathName\fR \fBstyle configure\fR \fIstyle\fR ?\fIoption\fR? ?\fIvalue\fR? ?\fIoption value ...\fR?
 .sp
-\fIpathName\fR \fBstyle create\fR \fIstyle\fR ?\fIoption value ...\fR?
+\fIpathName\fR \fBstyle create\fR \fIname\fR ?\fIoption value ...\fR?
 .sp
 \fIpathName\fR \fBstyle delete\fR ?\fIstyle ...\fR?
 .sp
@@ -989,6 +997,42 @@ Database Class:	\fBDoubleBuffer\fR
 This option no longer has any effect, but was left in for compatibility.
 It used to control the amount of double-buffering that was used when
 displaying a treectrl.
+.LP
+.nf
+.ta 6c
+Command-Line Switch:	\fB-headerfont\fR
+Database Name:	\fBheaderFont\fR
+Database Class:	\fBFont\fR
+
+.fi
+.IP
+Specifies the font to draw text in column headers with.  The default value is
+TkHeadingFont where available (on Tk 8.5+).  This option can be overridden by
+setting the \fB-font\fR option for individual column headers.
+.LP
+.nf
+.ta 6c
+Command-Line Switch:	\fB-headerfg\fR
+Database Name:	\fBheaderForeground\fR
+Database Class:	\fBForeground\fR
+
+.fi
+.IP
+Synonym for -headerforeground.
+.LP
+.nf
+.ta 6c
+Command-Line Switch:	\fB-headerforeground\fR
+Database Name:	\fBheaderForeground\fR
+Database Class:	\fBForeground\fR
+
+.fi
+.IP
+Specifies the color to draw text in column headers with.
+The default value is the Tk button foreground color (usually black).
+On Gtk+, the system theme may override this color.
+This option (and the Gtk+ system theme color) can be overridden by setting the
+\fB-textcolor\fR option for individual column headers.
 .LP
 .nf
 .ta 6c
@@ -1952,6 +1996,8 @@ This command returns the current value of the option named \fIoption\fR
 associated with the element given by \fIelement\fR.
 \fIOption\fR may have any of the values accepted by the
 \fBelement configure\fR widget command.
+.sp
+This command also accepts the \fB-statedomain\fR option.
 .TP
 \fIpathName\fR \fBelement configure\fR \fIelement\fR ?\fIoption\fR? ?\fIvalue\fR? ?\fIoption value ...\fR?
 This command is similar to the \fBconfigure\fR widget command except
@@ -1969,14 +2015,16 @@ modifies the given option(s) to have the given value(s) in \fIelement\fR;
 in this case the command returns an empty string.
 See \fBELEMENTS AND STYLES\fR below for details on the options available for elements.
 .TP
-\fIpathName\fR \fBelement create\fR \fIelement\fR \fItype\fR ?\fIoption value ...\fR?
-Create a new elememt in \fIpathName\fR of type \fItype\fR
-with name \fIelement\fR.
-The exact format of the arguments after \fItype\fR depends on \fItype\fR,
-but generally consist of specifications for zero or more element options.
-See the subsections on individual element types below for more
-on the syntax of this command.
-This command returns the name for the new element.
+\fIpathName\fR \fBelement create\fR \fIname\fR \fItype\fR ?\fIoption value ...\fR?
+Creates a new master element of type \fItype\fR with the unique user-defined name
+\fIname\fR and configures it with zero or more option/value pairs.
+See the subsections on individual element types in \fBELEMENTS AND STYLES\fR
+for the options that are valid for each type of element.
+This command returns the name of the new element (the same as the \fIname\fR argument).
+.sp
+This command also accepts the \fB-statedomain\fR option with a value of
+either \fBheader\fR or \fBitem\fR to specify where this element will be
+displayed.
 .TP
 \fIpathName\fR \fBelement delete\fR ?\fIelement ...\fR?
 Deletes each of the named elements and returns an empty string.
@@ -2166,8 +2214,6 @@ the meaning of each option):
 .TP
 \fB\fB-height\fR\fR \fIheight\fR
 .TP
-\fB\fB-ownerdrawn\fR\fR \fIboolean\fR
-.TP
 \fB\fB-tags\fR\fR \fItagList\fR
 .TP
 \fB\fB-visible\fR\fR \fIboolean\fR
@@ -2195,15 +2241,15 @@ the meaning of each option):
 .TP
 \fB\fB-arrowbitmap\fR\fR \fIbitmap\fR
 .TP
-\fB\fB-arrowimage\fR\fR \fIimage\fR
-.TP
-\fB\fB-arrowside\fR\fR \fIside\fR
-.TP
 \fB\fB-arrowgravity\fR\fR \fIdirection\fR
+.TP
+\fB\fB-arrowimage\fR\fR \fIimage\fR
 .TP
 \fB\fB-arrowpadx\fR\fR \fIamount\fR
 .TP
 \fB\fB-arrowpady\fR\fR \fIamount\fR
+.TP
+\fB\fB-arrowside\fR\fR \fIside\fR
 .TP
 \fB\fB-background\fR\fR \fIcolor\fR
 .TP
@@ -2255,14 +2301,6 @@ Specifies a fixed height for the header-row in any of the forms acceptable to
 \fBTk_GetPixels\fR. Must be >= 0.  If \fIheight\fR is zero then the
 header-row's height is the maximum height of all of its column headers.
 Defaults to 0.
-.TP
-\fB\fB-ownerdrawn\fR\fR \fIboolean\fR
-\fIBoolean\fR must have one of the forms accepted by \fBTcl_GetBoolean\fR.
-When the value of this option is true, only the style (if any) assigned to a
-column header is drawn;  in this case none of the bitmap, image, text, sort arrow
-or header background parts is drawn or affects the height of the header.
-When the value of this option is false, the style (if any) assigned to a
-column header is drawn overtop of the bitmap, image, text, etc.
 .TP
 \fB\fB-tags\fR\fR \fItagList\fR
 \fITagList\fR is a list of tag names to be added to the new header-row.  The
@@ -2998,6 +3036,10 @@ that follows the \fBstyle\fR argument.
 The following forms of the command are supported:
 .RS
 .TP
+\fIpathName\fR \fBitem state define\fR \fIstateName\fR
+Defines a new state with the name \fIstateName\fR,
+which must not be the name of an existing state.
+.TP
 \fIpathName\fR \fBitem state forcolumn\fR \fIitemDesc\fR \fIcolumn\fR ?\fIstateDescList\fR?
 Just like \fBitem state set\fR but manipulates dynamic states for a single
 item column, not the item as a whole. If \fIstateDescList\fR is unspecified,
@@ -3015,6 +3057,14 @@ If a \fIstateName\fR is specified,
 1 is returned if the specified state is currently switched on for the item,
 0 otherwise.
 .TP
+\fIpathName\fR \fBitem state linkage\fR \fIstateName\fR
+Returns a string indicating whether the specified state is user-defined
+by means of the \fBitem state define\fR widget command (\fBdynamic\fR)
+or predefined by the treectrl widget itself (\fBstatic\fR).
+.TP
+\fIpathName\fR \fBitem state names\fR
+Returns a list containing the names of all user-defined states.
+.TP
 \fIpathName\fR \fBitem state set\fR \fIitemDesc\fR ?\fIlastItem\fR? \fIstateDescList\fR
 Every element of \fIstateDescList\fR
 must be the name of a dynamic state (see \fBSTATES\fR below),
@@ -3027,6 +3077,10 @@ If \fIlastItem\fR is specified, the state changes will be made for all items
 in the range between \fIitemDesc\fR and \fIlastItem\fR.
 If \fIlastItem\fR unspecified,
 then the state changes are made for all items described by \fIitemDesc\fR.
+.TP
+\fIpathName\fR \fBitem state undefine\fR ?\fIstateName ...\fR?
+Every \fIstateName\fR must be the name of a user-defined state.
+Removes this state from the list of user-defined states.
 .RE
 .TP
 \fIpathName\fR \fBitem style\fR \fIcommand\fR \fIitemDesc\fR ?\fIarg ...\fR?
@@ -3529,8 +3583,10 @@ A \fB<Selection>\fR event is generated if any items were selected or deselected.
 .RE
 .TP
 \fIpathName\fR \fBstate\fR \fIoption\fR \fIargs\fR
-This command is used to manipulate the list of user-defined states,
-see section \fBSTATES\fR below.
+This command is used to manipulate the list of user-defined item states,
+see section \fBSTATES\fR below.  Item states can also be managed using the
+\fBitem state\fR command.  To manage states for \fBheader-rows\fR,
+use the \fBheader state\fR widget command.
 The exact behavior of the command depends on the \fIoption\fR argument
 that follows the \fBstate\fR argument.
 The following forms of the command are supported:
@@ -3567,6 +3623,8 @@ This command returns the current value of the option named \fIoption\fR
 associated with the style given by \fIstyle\fR.
 \fIOption\fR may have any of the values accepted by the
 \fBstyle configure\fR widget command.
+.sp
+This command also accepts the \fB-statedomain\fR option.
 .TP
 \fIpathName\fR \fBstyle configure\fR \fIstyle\fR ?\fIoption\fR? ?\fIvalue\fR? ?\fIoption value ...\fR?
 This command is similar to the \fBconfigure\fR widget command except
@@ -3600,14 +3658,18 @@ Must be either \fBhorizontal\fR (the default)
 or \fBvertical\fR or an abbreviation of one of these.
 .RE
 .TP
-\fIpathName\fR \fBstyle create\fR \fIstyle\fR ?\fIoption value ...\fR?
-Create a new style in \fIpathName\fR with name \fIstyle\fR.
-After \fIstyle\fR there may be any number of \fIoption\fR-\fIvalue\fR
+\fIpathName\fR \fBstyle create\fR \fIname\fR ?\fIoption value ...\fR?
+Creates a new style with the unique user-defined name \fIname\fR.
+After \fIname\fR there may be any number of \fIoption\fR-\fIvalue\fR
 pairs, each of which sets one of the configuration options
-for the style.  These same \fIoption\fR-\fIvalue\fR pairs may be
-used in \fBstyle configure\fR widget commands to change the style's
-configuration.
-Returns the name of the new style.
+for the style.  See the \fBstyle configure\fR command for the possible
+options.
+The result of this command is the name of the new style (the same as the
+\fIname\fR option).
+.sp
+This command also accepts the \fB-statedomain\fR option with a value of
+either \fBheader\fR or \fBitem\fR to specify where this style will be
+displayed.
 .TP
 \fIpathName\fR \fBstyle delete\fR ?\fIstyle ...\fR?
 Deletes each of the named styles and returns an empty string.
@@ -3623,6 +3685,9 @@ Duplicate names in \fIelementList\fR are ignored.
 An element which was specified in a former call of this command
 for \fIstyle\fR but is not included in \fIelementList\fR,
 will be deleted from the elements layed out by \fIstyle\fR.
+.sp
+Every element used by a style must have been created with the same value
+for the \fB-statedomain\fR option.
 .sp
 If the \fIelementList\fR argument is not specified, a list is returned
 containing the currently defined elements of \fIstyle\fR.
@@ -3958,7 +4023,9 @@ in the header and generate a <Header-invoke> event when a <ButtonRelease-1>
 event occurs in the header. See \fBDYNAMIC EVENTS\fR.
 .TP
 \fB\fB-font\fR\fR \fIfontName\fR
-Specifies the font to use for the column title inside the column header.
+Specifies the font to use for displaying the column title inside the column header.
+When the value of this option is unspecified, the font specified by the widget
+option \fB-headerfont\fR is used.
 .TP
 \fB\fB-image\fR\fR \fIimage\fR
 Specifies the name of an image to display to the left of the column title.
@@ -4000,8 +4067,8 @@ Specifies a text string to be displayed as the column title.
 \fB\fB-textcolor\fR\fR \fIcolor\fR
 Specifies as a \fBper-state\fR option the color to
 display the column title with.  When the value of this option is unspecified,
-the title will be drawn according to the system theme, if any, otherwise
-the Tk button foreground color (usually black) is used.  The default is unspecified.
+the title will be drawn according to the system theme color, if any, otherwise
+the widget option \fB-headerforeground\fR is used.  The default is unspecified.
 .TP
 \fB\fB-textlines\fR\fR \fIcount\fR
 Specifies the maximum number of lines of text to display in the column title.
@@ -4322,19 +4389,27 @@ The following states are predefined for every column header:
 \fBnormal\fR
 .TP
 \fBpressed\fR
-These states mirror the value of the column header's configuration option
-\fB-state\fR.
+These states mirror the value of a column header's configuration option
+\fB-state\fR.  Exactly one of these states is set at any time in each
+column header.
 .TP
 \fBdown\fR
 .TP
 \fBup\fR
-These states mirror the value of the column header's configuration option
-\fB-arrow\fR.
+These states mirror the value of a column header's configuration option
+\fB-arrow\fR.  If the \fB-arrow\fR option is \fBnone\fR, then neither
+of these states is set.
+.TP
+\fBbackground\fR
+This state is set for every header-row if the toplevel window containing the
+treectrl is not the foreground active window.  This state cannot be modified
+by means of a widget command, but is maintained in reaction to the <Activate>
+and <Deactivate> windowing system events.
 .TP
 \fBfocus\fR
 This state is set for every header-row if the treectrl widget currently has the
 focus. It cannot be modified by means of a widget command, but is maintained
-in reaction to the <FocusIn> and <FocusOut> events.
+in reaction to the <FocusIn> and <FocusOut> windowing system events.
 .RE
 .TP
 ITEM STATES
@@ -4433,7 +4508,7 @@ chosen regardless of the item's state.
 .SH "ELEMENTS AND STYLES"
 \fIElements\fR and \fIstyles\fR are the core visual building blocks that
 determine the appearance of items (and optionally column headers).
-An element can be of type \fBbitmap\fR, \fBborder\fR, \fBimage\fR,
+An element can be of type \fBbitmap\fR, \fBborder\fR, \fBheader\fR, \fBimage\fR,
 \fBrect\fR, \fBtext\fR or \fBwindow\fR.  One or more elements can be
 assigned to a style which manages the layout of those elements.  It may be
 helpful to think of an element as a Tk widget and a style as a Tk geometry
@@ -4545,6 +4620,87 @@ Specifies the thickness of the edges of the border.
 Specifies the width of the border. If this value is unspecified
 (the default), the border will be exactly as wide as its display area as
 determined by the style layout options.
+.PP
+.SH "HEADER ELEMENT"
+An element of type \fBheader\fR can be used to display a themed (or
+non-themed) column header background and sort arrow.  Header elements are
+best used surrounding other elements via the style layout option \fB-union\fR,
+so that the sort arrow can be displayed correctly.
+.PP
+Some of the options for this type of element get their default values from
+the \fBheader state\fR flags that are set in the column header in which
+the element is displayed. In particular, the \fB-arrow\fR option gets its
+default value by checking the \fBup\fR and \fBdown\fR state flags, and
+the \fB-state\fR option gets its default value by checking the \fBactive\fR,
+\fBnormal\fR, and \fBpressed\fR state flags.  If elements of this type are
+displayed in an item instead of a column header, then this behavior isn't used
+since those state flags aren't meaningful for items.
+.PP
+The following options are supported for header elements:
+.TP
+\fB\fB-arrow\fR\fR \fIdirection\fR
+Indicates whether or not a sort arrow should be drawn. \fIDirection\fR must
+have one of the values \fBnone\fR, \fBup\fR, or \fBdown\fR.  If
+unspecified, the value defaults to \fBnone\fR (but see the note above
+regarding header states).
+.TP
+\fB\fB-arrowbitmap\fR\fR \fIbitmap\fR
+Specifies as a \fBper-state\fR option the name of a
+bitmap to use to draw the sort arrow if this element's -arrow option is not
+\fBnone\fR.
+This option is ignored when drawing themed headers on Mac OS X.
+.TP
+\fB\fB-arrowgravity\fR\fR \fIdirection\fR
+Indicates onto which side the sort arrow should be packed,
+if there is more space available for drawing the arrow than needed.
+\fIdirection\fR must be either \fBleft\fR or \fBright\fR. If unspecified,
+the value defaults to \fBleft\fR.
+This option is ignored when drawing themed headers on Mac OS X.
+.TP
+\fB\fB-arrowimage\fR\fR \fIimage\fR
+Specifies as a \fBper-state\fR option the name of an
+image to use to draw the sort arrow if this element's -arrow option is not
+\fBnone\fR. If an image is specified for a certain state, it overrides the
+-arrowbitmap option.
+This option is ignored when drawing themed headers on Mac OS X.
+.TP
+\fB\fB-arrowpadx\fR\fR \fIamount\fR
+\fIAmount\fR specifies how much padding to leave on the left and right of the
+sort arrow. \fIAmount\fR may be a list of two values to specify padding for
+the left and right separately. If unspecified, the value defaults to 6.
+Padding to the right of the sort arrow is ignored when drawing themed headers
+on Mac OS X.
+.TP
+\fB\fB-arrowpady\fR\fR \fIamount\fR
+\fIAmount\fR specifies how much padding to leave on the top and bottom of the
+sort arrow.  \fIAmount\fR may be a list of two values to specify padding for
+the top and bottom separately. If unspecified, the value defaults to 0.
+This option is ignored when drawing themed headers on Mac OS X.
+.TP
+\fB\fB-arrowside\fR\fR \fIside\fR
+Indicates on which side of the element the sort arrow should be drawn.
+\fISide\fR must be either \fBleft\fR or \fBright\fR. If unspecified, the
+value defaults to \fBright\fR.
+.TP
+\fB\fB-background\fR\fR \fIcolor\fR
+Specifies as a \fBper-state\fR option the color to
+use for the non-themed background and 3D border.  If unspecified, the value
+defaults to either the Tk button widget's -background or -activebackground
+color.
+.TP
+\fB\fB-borderwidth\fR\fR \fIsize\fR
+Specifies a non-negative value indicating the width of the non-themed 3D
+border to draw around the inner edges of the element (if such a border is being
+drawn; the \fB-relief\fR option determines this).
+The value may have any of the forms acceptable to \fBTk_GetPixels\fR.
+If unspecified, the value defaults to 2.
+.TP
+\fB\fB-state\fR\fR \fIstate\fR
+Specifies one of three states for the element: \fBnormal\fR, \fBactive\fR,
+or \fBpressed\fR. The active state is used when the mouse is over the header.
+The pressed state is used when the mouse button is pressed in the header.
+If unspecified, the value defaults to \fBnormal\fR (but see the note above
+regarding header states).
 .PP
 .SH "IMAGE ELEMENT"
 An element of type \fBimage\fR can be used to display an image in an item.
@@ -4661,10 +4817,22 @@ Acceptable values are \fBdouble\fR, \fBinteger\fR, \fBlong\fR,
 .TP
 \fB\fB-fill\fR\fR \fIcolor\fR
 Specifies as a \fBper-state\fR option the
-foreground color to use when displaying the text.
-If the color for a certain state is an empty string (the default), then
-the text will be displayed using the color specified by the treectrl's
+foreground color to use when displaying text.
+.sp
+In items, if the color for a certain state is an empty string (the default),
+then the text will be displayed using the color specified by the treectrl's
 \fB-foreground\fR option.
+.sp
+In headers, if the color for a certain state is an empty string,
+then the text will be displayed using the system theme color on Gtk+; if that
+color is not specified then the \fB-headerforeground\fR option is used.
+.TP
+\fB\fB-font\fR\fR \fIfont\fR
+Specifies as a \fBper-state\fR option the font to
+use when displaying the text.
+If the font for a certain state is an empty string, the text is displayed
+using the font specified by the treectrl's \fB-font\fR option in items
+or the \fB-headerfont\fR option in headers.
 .TP
 \fB\fB-format\fR\fR \fIformatString\fR
 This option specifies the format string used to display the value of the \fB-data\fR option.
@@ -4676,12 +4844,6 @@ If this value is unspecified the following defaults are used:
 for -datatype double "%g", for -datatype integer "%d", for -datatype long "%ld",
 for -datatype string "%s", and for -datatype time the default format string of the Tcl \fBclock\fR
 command.
-.TP
-\fB\fB-font\fR\fR \fIfont\fR
-Specifies as a \fBper-state\fR option the font to
-use when displaying the text.
-If the font for a certain state is an empty string, the text is displayed
-using the font specified by the treectrl's \fB-font\fR option.
 .TP
 \fB\fB-justify\fR\fR \fIhow\fR
 Specifies how to justify the text when multiple lines are displayed.
