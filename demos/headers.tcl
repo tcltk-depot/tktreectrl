@@ -296,10 +296,10 @@ if 1 {
 	"Use no style, just the built-in header background, sort arrow and text."
     NewButtonItem header1 \
 	"Use the 'header1' style, consisting of a border element for the background and an image for the sort arrow." \
-	"" black
+	black black
     NewButtonItem header2 \
 	"Use the 'header2' style, consisting of a rounded rectangle element for the background and an image for the sort arrow." \
-	"" blue
+	black blue
     NewButtonItem header3 \
 	"Use the 'header3' style, consisting of a gradient-filled rectangle element for the background and an image for the sort arrow." \
 	#6d6d6d {{light blue}} 4
@@ -307,7 +307,7 @@ if 1 {
 	"Use the 'header4' style, consisting of a header element to display the background and sort arrow, and an image element serving as a checkbutton."
     NewButtonItem header5 \
 	"Use the 'header5' style, consisting of a gradient-filled rectangle element for the background and an image for the sort arrow." \
-	"" #0080FF
+	black #0080FF
     NewButtonItem header6 \
 	"Use the 'header6' style, consisting of a gradient-filled rectangle element for the background and an image for the sort arrow." \
 	red orange
@@ -402,10 +402,12 @@ proc DemoHeaders::InitSortImages {color height} {
     return
 }
 
-proc DemoHeaders::ChangeHeaderStyle {style {textColor black} {sortColor ""} {imgHeight 5}} {
+proc DemoHeaders::ChangeHeaderStyle {style {textColor ""} {sortColor ""} {imgHeight 5}} {
     variable HeaderStyle
     variable Sort
     set T [DemoList]
+    # To override the system theme color on Gtk+, set the header element color
+    # and not the widget's -headerforeground color.
     $T element configure header.text -fill $textColor
     if {$sortColor ne ""} {
 	InitSortImages $sortColor $imgHeight
