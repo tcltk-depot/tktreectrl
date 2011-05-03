@@ -469,6 +469,7 @@ struct TreeCtrl
     Tcl_HashTable uniformGroupHash;	/* -uniform -> UniformGroup */
 #endif
 
+    Tcl_Obj *headerFgObj;	/* -headerforeground */
     XColor *defHeaderTextColor;	/* Default column header text color when
     				 * the column's -textcolor option
     				 * is not specified and the system theme

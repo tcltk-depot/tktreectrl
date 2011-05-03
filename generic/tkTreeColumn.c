@@ -4365,9 +4365,6 @@ Tree_InitColumns(
 #ifdef UNIFORM_GROUP
     Tcl_InitHashTable(&tree->uniformGroupHash, TCL_STRING_KEYS);
 #endif
-
-    tree->defHeaderTextColor = Tk_GetColor(tree->interp, tree->tkwin,
-	DEF_BUTTON_FG);
 }
 
 /*
@@ -4402,8 +4399,6 @@ void Tree_FreeColumns(
 #ifdef UNIFORM_GROUP
     Tcl_DeleteHashTable(&tree->uniformGroupHash);
 #endif
-
-    Tk_FreeColor(tree->defHeaderTextColor);
 }
 
 /*
