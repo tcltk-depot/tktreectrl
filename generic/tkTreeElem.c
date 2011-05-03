@@ -3546,29 +3546,12 @@ static void TextUpdateStringRep(TreeElementArgs *args)
 	    ((etd != NULL) && ((etd->dataObj != NULL) ||
 		    (etd->dataType != TDT_NULL) ||
 		    (etd->formatObj != NULL)))) {
-	int i, objc = 0;
+	int objc = 0;
 	Tcl_Obj *objv[5], *resultObj = NULL;
-	static Tcl_Obj *staticObj[3] = { NULL };
-	static Tcl_Obj *staticFormat[4] = { NULL };
 	Tcl_ObjCmdProc *clockObjCmd = NULL, *formatObjCmd = NULL;
 	ClientData clockClientData = NULL, formatClientData = NULL;
 	Tcl_CmdInfo cmdInfo;
 
-	if (staticFormat[0] == NULL) {
-	    staticFormat[0] = Tcl_NewStringObj("%g", -1);
-	    staticFormat[1] = Tcl_NewStringObj("%d", -1);
-	    staticFormat[2] = Tcl_NewStringObj("%ld", -1);
-	    staticFormat[3] = Tcl_NewStringObj("%s", -1);
-	    for (i = 0; i < 4; i++)
-		Tcl_IncrRefCount(staticFormat[i]);
-	}
-	if (staticObj[0] == NULL) {
-	    staticObj[0] = Tcl_NewStringObj("clock", -1);
-	    staticObj[1] = Tcl_NewStringObj("format", -1);
-	    staticObj[2] = Tcl_NewStringObj("-format", -1);
-	    for (i = 0; i < 3; i++)
-		Tcl_IncrRefCount(staticObj[i]);
-	}
 	if (Tcl_GetCommandInfo(tree->interp, "::clock", &cmdInfo) == 1) {
 	    clockObjCmd = cmdInfo.objProc;
 	    clockClientData = cmdInfo.objClientData;
@@ -3586,8 +3569,8 @@ static void TextUpdateStringRep(TreeElementArgs *args)
 	    case TDT_DOUBLE:
 		if (formatObjCmd == NULL)
 		    break;
-		if (formatObj == NULL) formatObj = staticFormat[0];
-		objv[objc++] = staticObj[1]; /* format */
+		if (formatObj == NULL) formatObj = tree->formatFloatObj;
+		objv[objc++] = tree->stringFormatObj;
 		objv[objc++] = formatObj;
 		objv[objc++] = dataObj;
 		if (formatObjCmd(formatClientData, tree->interp, objc, objv)
@@ -3597,8 +3580,8 @@ static void TextUpdateStringRep(TreeElementArgs *args)
 	    case TDT_INTEGER:
 		if (formatObjCmd == NULL)
 		    break;
-		if (formatObj == NULL) formatObj = staticFormat[1];
-		objv[objc++] = staticObj[1]; /* format */
+		if (formatObj == NULL) formatObj = tree->formatIntObj;
+		objv[objc++] = tree->stringFormatObj;
 		objv[objc++] = formatObj;
 		objv[objc++] = dataObj;
 		if (formatObjCmd(formatClientData, tree->interp, objc, objv)
@@ -3608,8 +3591,8 @@ static void TextUpdateStringRep(TreeElementArgs *args)
 	    case TDT_LONG:
 		if (formatObjCmd == NULL)
 		    break;
-		if (formatObj == NULL) formatObj = staticFormat[2];
-		objv[objc++] = staticObj[1]; /* format */
+		if (formatObj == NULL) formatObj = tree->formatLongObj;;
+		objv[objc++] = tree->stringFormatObj;
 		objv[objc++] = formatObj;
 		objv[objc++] = dataObj;
 		if (formatObjCmd(formatClientData, tree->interp, objc, objv)
@@ -3619,8 +3602,8 @@ static void TextUpdateStringRep(TreeElementArgs *args)
 	    case TDT_STRING:
 		if (formatObjCmd == NULL)
 		    break;
-		if (formatObj == NULL) formatObj = staticFormat[3];
-		objv[objc++] = staticObj[1]; /* format */
+		if (formatObj == NULL) formatObj = tree->formatStringObj;;
+		objv[objc++] = tree->stringFormatObj;
 		objv[objc++] = formatObj;
 		objv[objc++] = dataObj;
 		if (formatObjCmd(formatClientData, tree->interp, objc, objv)
@@ -3630,11 +3613,11 @@ static void TextUpdateStringRep(TreeElementArgs *args)
 	    case TDT_TIME:
 		if (clockObjCmd == NULL)
 		    break;
-		objv[objc++] = staticObj[0];
-		objv[objc++] = staticObj[1];
+		objv[objc++] = tree->stringClockObj;
+		objv[objc++] = tree->stringFormatObj;
 		objv[objc++] = dataObj;
 		if (formatObj != NULL) {
-		    objv[objc++] = staticObj[2];
+		    objv[objc++] = tree->optionFormatObj;
 		    objv[objc++] = formatObj;
 		}
 		if (clockObjCmd(clockClientData, tree->interp, objc, objv)
@@ -5231,8 +5214,9 @@ TreeElementType treeElemTypeWindow = {
 
 /*****/
 
+/* This structure holds the list of element types for an interpreter.
+ * Each element type has a Tk_OptionTable that is per-interp. */
 typedef struct ElementAssocData ElementAssocData;
-
 struct ElementAssocData
 {
     TreeElementType *typeList;
@@ -5342,6 +5326,79 @@ static TreeCtrlStubs stubs = {
     PerStateCO_Init
 };
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeElement_InitWidget --
+ *
+ *	Element-related initialization when a treectrl is created.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TreeElement_InitWidget(
+    TreeCtrl *tree
+    )
+{
+    /* These options are used by the text element. Originally these were
+     * static globals but that isn't thread safe. */
+    tree->formatFloatObj = Tcl_NewStringObj("%g", -1);
+    tree->formatIntObj = Tcl_NewStringObj("%d", -1);
+    tree->formatLongObj = Tcl_NewStringObj("%ld", -1);
+    tree->formatStringObj = Tcl_NewStringObj("%s", -1);
+    Tcl_IncrRefCount(tree->formatFloatObj);
+    Tcl_IncrRefCount(tree->formatIntObj);
+    Tcl_IncrRefCount(tree->formatLongObj);
+    Tcl_IncrRefCount(tree->formatStringObj);
+
+    tree->stringClockObj = Tcl_NewStringObj("clock", -1);
+    tree->stringFormatObj = Tcl_NewStringObj("format", -1);
+    tree->optionFormatObj = Tcl_NewStringObj("-format", -1);
+    Tcl_IncrRefCount(tree->stringClockObj);
+    Tcl_IncrRefCount(tree->stringFormatObj);
+    Tcl_IncrRefCount(tree->optionFormatObj);
+
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeElement_FreeWidget --
+ *
+ *	Free element-related resources for a deleted TreeCtrl.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TreeElement_FreeWidget(
+    TreeCtrl *tree
+    )
+{
+    Tcl_DecrRefCount(tree->formatFloatObj);
+    Tcl_DecrRefCount(tree->formatIntObj);
+    Tcl_DecrRefCount(tree->formatLongObj);
+    Tcl_DecrRefCount(tree->formatStringObj);
+
+    Tcl_DecrRefCount(tree->stringClockObj);
+    Tcl_DecrRefCount(tree->stringFormatObj);
+    Tcl_DecrRefCount(tree->optionFormatObj);
+}
+
 static void FreeAssocData(ClientData clientData, Tcl_Interp *interp)
 {
     ElementAssocData *assocData = clientData;
@@ -5357,7 +5414,26 @@ static void FreeAssocData(ClientData clientData, Tcl_Interp *interp)
     ckfree((char *) assocData);
 }
 
-int TreeElement_Init(Tcl_Interp *interp)
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeElement_InitInterp --
+ *
+ *	Element-related initialization when the package is loaded.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TreeElement_InitInterp(
+    Tcl_Interp *interp
+    )
 {
     ElementAssocData *assocData;
 

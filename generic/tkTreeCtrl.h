@@ -577,12 +577,12 @@ struct TreeCtrl
 				 * content area. */
 
     struct {
-	int nextId;
-	HeaderStyle *first;
-	TreeElement headerElem;
-	TreeElement bitmapElem;
-	TreeElement imageElem;
-	TreeElement textElem;
+	int nextId;		/* Next unique id number for a header style. */
+	HeaderStyle *first;	/* First in linked list of header styles. */
+	TreeElement headerElem;	/* Master element used by header styles. */
+	TreeElement bitmapElem;	/* Master element used by header styles. */
+	TreeElement imageElem;	/* Master element used by header styles. */
+	TreeElement textElem;	/* Master element used by header styles. */
     } headerStyle;
 
     /* These two options contain "-image" and "-text".
@@ -590,6 +590,15 @@ struct TreeCtrl
      * Originally these were static globals but that isn't thread safe. */
     Tcl_Obj *imageOptionNameObj;
     Tcl_Obj *textOptionNameObj;
+
+    /* Originally these were static globals but that isn't thread safe. */
+    Tcl_Obj *formatFloatObj;	/* %g */
+    Tcl_Obj *formatIntObj;	/* %d */
+    Tcl_Obj *formatLongObj;	/* %ld */
+    Tcl_Obj *formatStringObj;	/* %s */
+    Tcl_Obj *stringClockObj;	/* clock */
+    Tcl_Obj *stringFormatObj;	/* format */
+    Tcl_Obj *optionFormatObj;	/* -format */
 
 #ifdef TREECTRL_DEBUG
     struct {
@@ -903,7 +912,9 @@ MODULE_SCOPE void TreeItem_RemoveAllColumns(TreeCtrl *tree, TreeItem item_);
 MODULE_SCOPE void TreeItem_MoveColumn(TreeCtrl *tree, TreeItem item_, int columnIndex, int beforeIndex);
 
 /* tkTreeElem.c */
-MODULE_SCOPE int TreeElement_Init(Tcl_Interp *interp);
+MODULE_SCOPE int TreeElement_InitInterp(Tcl_Interp *interp);
+MODULE_SCOPE int TreeElement_InitWidget(TreeCtrl *tree);
+MODULE_SCOPE void TreeElement_FreeWidget(TreeCtrl *tree);
 MODULE_SCOPE int TreeStateFromObj(TreeCtrl *tree, int domain, Tcl_Obj *obj, int *stateOff, int *stateOn);
 MODULE_SCOPE int StringTableCO_Init(Tk_OptionSpec *optionTable, CONST char *optionName, CONST char **tablePtr);
 

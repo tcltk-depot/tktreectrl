@@ -482,6 +482,7 @@ TreeObjCmd(
     Tree_InitColumns(tree);
     TreeItem_Init(tree);
     TreeNotify_Init(tree);
+    (void) TreeElement_InitWidget(tree);
     (void) TreeStyle_Init(tree);
     TreeMarquee_Init(tree);
     TreeDragImage_Init(tree);
@@ -1806,6 +1807,7 @@ TreeDestroy(
     TreeItemList_Free(&tree->preserveItemList);
 
     TreeStyle_Free(tree);
+    TreeElement_FreeWidget(tree);
 
     TreeDragImage_Free(tree->dragImage);
     TreeMarquee_Free(tree->marquee);
@@ -4587,9 +4589,8 @@ Treectrl_Init(
 	}
     }
 
-    if (TreeElement_Init(interp) != TCL_OK) {
+    if (TreeElement_InitInterp(interp) != TCL_OK)
 	return TCL_ERROR;
-    }
 
     (void) TreeDraw_InitInterp(interp);
 
