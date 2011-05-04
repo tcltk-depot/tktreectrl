@@ -680,31 +680,33 @@ Layout_AddUnionPadding(
 
     /* In the original header-layout code, the -arrowpadx padding would
      * overlap the padding of the adjacent bitmap/image/text, so any elements
-     * adjacent to the sort arrow have their union padding increased by the
-     * difference between their external padding and the sort arrow's external
-     * padding. */
-    if (masterStyle->vertical) {
-	int arrowPadLeft = layoutP->uMargins[0] - layoutP->eMargins[0];
-	int arrowPadRight = layoutP->uMargins[2] - layoutP->eMargins[2];
-	if (arrowPadLeft > 0)
-	    uPadX[PAD_TOP_LEFT] += MAX(layout->ePadX[PAD_TOP_LEFT] - arrowPadLeft, 0);
-	if (arrowPadRight > 0)
-	    uPadX[PAD_BOTTOM_RIGHT] += MAX(layout->ePadX[PAD_BOTTOM_RIGHT] - arrowPadRight, 0);
-	if (iElem == layoutP->unionFirst) /* topmost */
-	    layout->uPadY[PAD_TOP_LEFT] += layout->ePadY[PAD_TOP_LEFT];
-	if (iElem == layoutP->unionLast) /* bottommost */
-	    layout->uPadY[PAD_BOTTOM_RIGHT] += layout->ePadY[PAD_BOTTOM_RIGHT];
-    } else {
-	if (iElem == layoutP->unionFirst && layoutP->uMargins[0] > 0) { /* leftmost */
-	    int arrowPadRight = layoutP->uMargins[0] - layoutP->eMargins[0];
+     * adjacent to the sort arrow have their union padding increased by any
+     * positive difference between their external padding and the sort arrow's
+     * external padding. */
+
+    /* In the original header-layout code, the total width of the header was
+     * equal to the width of the bitmap/image/text plus overlapped padding
+     * between them plus padding on the exteme left and right, so, even if
+     * there is no arrow padding, the union padding of elements on the extreme
+     * left or right is increased by those element's external padding. */
+    if (ELEMENT_TYPE_MATCHES(layoutP->master->elem->typePtr, &treeElemTypeHeader)) {
+	int arrowPadLeft = layoutP->uMargins[2] - layoutP->eMargins[2];
+	int arrowPadRight = layoutP->uMargins[0] - layoutP->eMargins[0];
+	if (masterStyle->vertical) {
 	    uPadX[PAD_TOP_LEFT] += MAX(layout->ePadX[PAD_TOP_LEFT] - arrowPadRight, 0);
-	}
-	if (iElem == layoutP->unionLast && layoutP->uMargins[2] > 0) { /* rightmost */
-	    int arrowPadLeft = layoutP->uMargins[2] - layoutP->eMargins[2];
 	    uPadX[PAD_BOTTOM_RIGHT] += MAX(layout->ePadX[PAD_BOTTOM_RIGHT] - arrowPadLeft, 0);
+	    if (iElem == layoutP->unionFirst) /* topmost */
+		uPadY[PAD_TOP_LEFT] += layout->ePadY[PAD_TOP_LEFT];
+	    if (iElem == layoutP->unionLast) /* bottommost */
+		uPadY[PAD_BOTTOM_RIGHT] += layout->ePadY[PAD_BOTTOM_RIGHT];
+	} else {
+	    if (iElem == layoutP->unionFirst) /* leftmost */
+		uPadX[PAD_TOP_LEFT] += MAX(layout->ePadX[PAD_TOP_LEFT] - arrowPadRight, 0);
+	    if (iElem == layoutP->unionLast) /* rightmost */
+		uPadX[PAD_BOTTOM_RIGHT] += MAX(layout->ePadX[PAD_BOTTOM_RIGHT] - arrowPadLeft, 0);
+	    uPadY[PAD_TOP_LEFT] += layout->ePadY[PAD_TOP_LEFT];
+	    uPadY[PAD_BOTTOM_RIGHT] += layout->ePadY[PAD_BOTTOM_RIGHT];
 	}
-	layout->uPadY[PAD_TOP_LEFT] += layout->ePadY[PAD_TOP_LEFT];
-	layout->uPadY[PAD_BOTTOM_RIGHT] += layout->ePadY[PAD_BOTTOM_RIGHT];
     }
 
     if (!IS_UNION(eLink)){

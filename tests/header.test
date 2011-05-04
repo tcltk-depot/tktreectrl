@@ -831,9 +831,19 @@ test header-24.4 {custom style: unequal padding} -setup {
     list [.t header bbox 0 C0] [.t header bbox 0 C0 custom.image]
 } -result {{0 0 53 26} {27 3 47 23}}
 
-test header-24.5 {custom style: } -setup {
+test header-24.5 {custom style: unequal padding} -setup {
+    .t element configure custom.header -arrowpadx {6 0}
 } -body {
-} -result {}
+    # 6 + arrow=9 + max(0,6) + img=20 + 6
+    list [.t header bbox 0 C0] [.t header bbox 0 C0 custom.image]
+} -result {{0 0 47 26} {21 3 41 23}}
+
+test header-24.6 {custom style: external padding of header doesn't change its width} -setup {
+    .t style layout custom custom.header -padx 10
+} -body {
+    # 10 + 6 + arrow=9 + max(0,6) + img=20 + 6 + 10
+    list [.t header bbox 0 C0] [.t header bbox 0 C0 custom.image]
+} -result {{0 0 67 26} {31 3 51 23}}
 
 test header-99.1 {some needed cleanup} -body {
     destroy .t
