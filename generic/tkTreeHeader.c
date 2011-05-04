@@ -572,12 +572,12 @@ TreeHeaderColumn_ConfigureHeaderStyle(
 	specPtr = columnSpecs;
 	while (specPtr->type != TK_OPTION_END) {
 	    if (specPtr->typeMask & (ELEM_HEADER | ELEM_IMAGE | ELEM_TEXT | ELEM_BITMAP)) {
+		int listC;
+		Tcl_Obj *infoObj, **listObjV;
 		Tcl_SetStringObj(optionNameObj, specPtr->optionName, -1);
-		Tcl_Obj *infoObj = Tk_GetOptionInfo(interp, (char *) column,
+		infoObj = Tk_GetOptionInfo(interp, (char *) column,
 		    tree->headerColumnOptionTable, optionNameObj,
 		    tree->tkwin);
-		int listC;
-		Tcl_Obj **listObjV;
 		Tcl_IncrRefCount(infoObj);
 		Tcl_ListObjGetElements(interp, infoObj, &listC, &listObjV);
 		if (specPtr->typeMask & ELEM_HEADER) {
