@@ -1590,7 +1590,6 @@ PerStateInfo_ForState(
 
 #ifdef TREECTRL_DEBUG
     if ((pInfo->data != NULL) && (pInfo->type != typePtr)) {
-*(char*)0 = 0;
 	panic("PerStateInfo_ForState type mismatch: got %s expected %s",
 		pInfo->type ? pInfo->type->name : "NULL", typePtr->name);
     }
