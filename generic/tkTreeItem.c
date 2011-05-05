@@ -6510,7 +6510,7 @@ TreeItemCmd_ImageOrText(
     ItemForEach iter;
     ColumnForEach citer;
     int flags = 0, result = TCL_OK;
-    int tailFlag = doHeaders ? 0 : CFO_NOT_TAIL;
+    int tailFlag = /*doHeaders ? 0 : */CFO_NOT_TAIL;
 
     /* T item text I ?C? ?text? ?C text ...? */
     if (objc < 4) {
