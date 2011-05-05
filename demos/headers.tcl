@@ -302,7 +302,7 @@ if 1 {
 	black blue
     NewButtonItem header3 \
 	"Use the 'header3' style, consisting of a gradient-filled rectangle element for the background and an image for the sort arrow." \
-	#6d6d6d {{light blue}} 4
+	#6d6d6d win7
     NewButtonItem header4 \
 	"Use the 'header4' style, consisting of a header element to display the background and sort arrow, and an image element serving as a checkbutton."
     NewButtonItem header5 \
@@ -388,17 +388,32 @@ proc DemoHeaders::NewButtonItem {S text args} {
 proc DemoHeaders::InitSortImages {color height} {
     set img ::DemoHeaders::arrow-down
     image create photo $img
-    for {set i 0} {$i < $height} {incr i} {
-	set width [expr {2 * $height - ($i * 2 + 1)}]
-	$img put [list [string repeat "$color " $width]] -to $i $i
+    if {$color eq "win7"} {
+	$img put {{#3c5e72 #629ab9 #70a9c6 #72abca #83bad9 #95c6e0 #9ac7e0}} -to 0 0
+	$img put {{        #528bab #73b2d8 #99d0ee #b3dbf1 #c4e3f4        }} -to 1 1
+	$img put {{                #67acd3 #a6d8f3 #c4e3f4                }} -to 2 2
+	$img put {{                        #9acbe6                        }} -to 3 3
+    } else {
+	for {set i 0} {$i < $height} {incr i} {
+	    set width [expr {2 * $height - ($i * 2 + 1)}]
+	    $img put [list [string repeat "$color " $width]] -to $i $i
+	}
     }
 
     set img ::DemoHeaders::arrow-up
     image create photo $img
-    for {set i 0} {$i < $height} {incr i} {
-	set width [expr {($i * 2 + 1)}]
-	$img put [list [string repeat "$color " $width]] -to [expr {$height - $i - 1}] $i
+    if {$color eq "win7"} {
+	$img put {{                        #406274                        }} -to 3 0
+	$img put {{                #3c5e72 #569bc0 #5e88a1                }} -to 2 1
+	$img put {{        #3c596c #6196b6 #86c8eb #91cbec #9ab6c5        }} -to 1 2
+	$img put {{#435f6f #87b1c5 #bae2f4 #b5ddf2 #c4e3f4 #cae6f5 #c3e4f5}} -to 0 3
+    } else {
+	for {set i 0} {$i < $height} {incr i} {
+	    set width [expr {($i * 2 + 1)}]
+	    $img put [list [string repeat "$color " $width]] -to [expr {$height - $i - 1}] $i
+	}
     }
+
     return
 }
 
