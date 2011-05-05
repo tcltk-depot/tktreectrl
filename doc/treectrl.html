@@ -359,28 +359,34 @@ and relief.  The <b class="cmd">treectrl</b> command returns the
 path name of the new window.
 At the time this command is invoked, there must not
 exist a window named <i class="arg">pathName</i>, but <i class="arg">pathName</i>'s parent must exist.</p>
-<p>A treectrl is a widget which displays items in a one- or two-dimensional arrangement.
+<p>A treectrl is a listbox widget which displays items in a one- or
+two-dimensional arrangement.
 Items have a parent-child relationship with other items.
-Items have a set of states, which are boolean properties.
+Items may be arranged from top-to-bottom or from left-to-right.
 Items may be spread about one or more columns.
+Each item-column may be configured to span one or more adjacent item-columns.
+The visibility of items can be set individually.</p>
+<p>Items have a set of states, which are boolean properties.
 For each column of an item there is a style associated,
 which determines how to display the item's column
 taking into account the item's current state set.
-One column can be defined to display the data in a hierarchical structure.</p>
-<p>Normally the origin of the coordinate system is at the
-upper-left corner of the window containing the treectrl.
-It is possible to adjust the origin of the coordinate system
-relative to the origin of the window using the
-<b class="cmd">xview</b> and <b class="cmd">yview</b> widget commands;
-this is typically used for scrolling.</p>
-<p>A treectrl widget can be horizontal or vertical oriented
-like many other Tk widgets.
-For displaying hierarchical data only vertical orientation is useful,
-since only then the children of an item
-are displayed directly below their parent.
-If the treectrl widget is used only
-to display data in a multicolumn listbox,
-the specification of an orientation will give useful results.</p>
+New states may be defined to further control the appearance of items;
+these custom states may be turned on or off in individual columns of items.</p>
+<p>Multiple rows of column headers are supported.
+Column headers have platform-native appearance on Windows, Mac OS X, and Gtk+.
+The appearance of column headers may be customized using styles.</p>
+<p>Columns may be rearranged by the user using drag-and-drop.
+One column can be specified to display the data in a hierarchical structure.
+The visibility of columns can be set individually.</p>
+<p>A treectrl can display a user-resizable selection rectangle called the
+marquee. Another feature, the drag image, may be used to provide feedback
+during drag-and-drop operations. Both of these are features commonly found in
+file browsers.</p>
+<p>A treectrl can generate events when various things happen, such as changes to
+the selection, or a parent item being toggled open or closed.  Scripts may be
+bound to these events.  New events can be defined.</p>
+<p>A treectrl can display a background image.  The background image can be
+configured to be scrolled and tiled on each axis individually.</p>
 </div>
 <div id="section2" class="section"><h2><a name="section2">STANDARD OPTIONS</a></h2>
 <dl class="options">
@@ -2989,17 +2995,14 @@ i.e. do not use item state names.</p>
 <dt><b class="option"><b class="option">-arrowbitmap</b></b> <i class="arg">bitmap</i></dt>
 <dd><p>Specifies as a <span class="sectref"><a href="#section12">per-state</a></span> option the name of a bitmap to
 use to draw the arrow if this column's -arrow option is not <b class="const">none</b>.</p></dd>
-<dt><b class="option"><b class="option">-arrowimage</b></b> <i class="arg">image</i></dt>
-<dd><p>Specifies as a <span class="sectref"><a href="#section12">per-state</a></span> option the name of an image to
-use to draw the sort arrow if this column's -arrow option is not <b class="const">none</b>.
-If an image is specified for a certain state, it overrides the -arrowbitmap option.</p></dd>
-<dt><b class="option"><b class="option">-arrowside</b></b> <i class="arg">side</i></dt>
-<dd><p>Indicates on which side of the bitmap/image/text the sort arrow should be drawn.
-<i class="arg">Side</i> must be either <b class="const">left</b> or <b class="const">right</b> (the default).</p></dd>
 <dt><b class="option"><b class="option">-arrowgravity</b></b> <i class="arg">direction</i></dt>
 <dd><p>Indicates onto which side the sort arrow should be packed,
 if there is more space available for drawing the arrow then needed.
 <i class="arg">direction</i> must be either <b class="const">left</b> (the default) or <b class="const">right</b>.</p></dd>
+<dt><b class="option"><b class="option">-arrowimage</b></b> <i class="arg">image</i></dt>
+<dd><p>Specifies as a <span class="sectref"><a href="#section12">per-state</a></span> option the name of an image to
+use to draw the sort arrow if this column's -arrow option is not <b class="const">none</b>.
+If an image is specified for a certain state, it overrides the -arrowbitmap option.</p></dd>
 <dt><b class="option"><b class="option">-arrowpadx</b></b> <i class="arg">amount</i></dt>
 <dd><p><i class="arg">Amount</i> specifies how much padding to
 leave on the left and right of the sort arrow.
@@ -3012,6 +3015,9 @@ leave on the top and bottom of the sort arrow.
 <i class="arg">Amount</i> may be a list
 of two values to specify padding for top and bottom separately;
 it defaults to 0.</p></dd>
+<dt><b class="option"><b class="option">-arrowside</b></b> <i class="arg">side</i></dt>
+<dd><p>Indicates on which side of the bitmap/image/text the sort arrow should be drawn.
+<i class="arg">Side</i> must be either <b class="const">left</b> or <b class="const">right</b> (the default).</p></dd>
 <dt><b class="option"><b class="option">-bitmap</b></b> <i class="arg">bitmap</i></dt>
 <dd><p>Specifies the name of a bitmap to display to the left of the column title.</p></dd>
 <dt><b class="option"><b class="option">-background</b></b> <i class="arg">color</i></dt>
@@ -3570,7 +3576,7 @@ This option is ignored when drawing themed headers on Mac OS X.</p></dd>
 <dt><b class="option"><b class="option">-arrowgravity</b></b> <i class="arg">direction</i></dt>
 <dd><p>Indicates onto which side the sort arrow should be packed,
 if there is more space available for drawing the arrow than needed.
-<i class="arg">direction</i> must be either <b class="const">left</b> or <b class="const">right</b>. If unspecified,
+<i class="arg">Direction</i> must be either <b class="const">left</b> or <b class="const">right</b>. If unspecified,
 the value defaults to <b class="const">left</b>.
 This option is ignored when drawing themed headers on Mac OS X.</p></dd>
 <dt><b class="option"><b class="option">-arrowimage</b></b> <i class="arg">image</i></dt>

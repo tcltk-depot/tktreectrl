@@ -660,30 +660,40 @@ path name of the new window.
 At the time this command is invoked, there must not
 exist a window named \fIpathName\fR, but \fIpathName\fR's parent must exist.
 .PP
-A treectrl is a widget which displays items in a one- or two-dimensional arrangement.
+A treectrl is a listbox widget which displays items in a one- or
+two-dimensional arrangement.
 Items have a parent-child relationship with other items.
-Items have a set of states, which are boolean properties.
+Items may be arranged from top-to-bottom or from left-to-right.
 Items may be spread about one or more columns.
+Each item-column may be configured to span one or more adjacent item-columns.
+The visibility of items can be set individually.
+.PP
+Items have a set of states, which are boolean properties.
 For each column of an item there is a style associated,
 which determines how to display the item's column
 taking into account the item's current state set.
-One column can be defined to display the data in a hierarchical structure.
+New states may be defined to further control the appearance of items;
+these custom states may be turned on or off in individual columns of items.
 .PP
-Normally the origin of the coordinate system is at the
-upper-left corner of the window containing the treectrl.
-It is possible to adjust the origin of the coordinate system
-relative to the origin of the window using the
-\fBxview\fR and \fByview\fR widget commands;
-this is typically used for scrolling.
+Multiple rows of column headers are supported.
+Column headers have platform-native appearance on Windows, Mac OS X, and Gtk+.
+The appearance of column headers may be customized using styles.
 .PP
-A treectrl widget can be horizontal or vertical oriented
-like many other Tk widgets.
-For displaying hierarchical data only vertical orientation is useful,
-since only then the children of an item
-are displayed directly below their parent.
-If the treectrl widget is used only
-to display data in a multicolumn listbox,
-the specification of an orientation will give useful results.
+Columns may be rearranged by the user using drag-and-drop.
+One column can be specified to display the data in a hierarchical structure.
+The visibility of columns can be set individually.
+.PP
+A treectrl can display a user-resizable selection rectangle called the
+marquee. Another feature, the drag image, may be used to provide feedback
+during drag-and-drop operations. Both of these are features commonly found in
+file browsers.
+.PP
+A treectrl can generate events when various things happen, such as changes to
+the selection, or a parent item being toggled open or closed.  Scripts may be
+bound to these events.  New events can be defined.
+.PP
+A treectrl can display a background image.  The background image can be
+configured to be scrolled and tiled on each axis individually.
 .SH "STANDARD OPTIONS"
 .TP
 \fB\fB-background\fR\fR
@@ -3974,19 +3984,15 @@ Indicates whether or not a sort arrow should be drawn in the column header.
 Specifies as a \fBper-state\fR option the name of a bitmap to
 use to draw the arrow if this column's -arrow option is not \fBnone\fR.
 .TP
-\fB\fB-arrowimage\fR\fR \fIimage\fR
-Specifies as a \fBper-state\fR option the name of an image to
-use to draw the sort arrow if this column's -arrow option is not \fBnone\fR.
-If an image is specified for a certain state, it overrides the -arrowbitmap option.
-.TP
-\fB\fB-arrowside\fR\fR \fIside\fR
-Indicates on which side of the bitmap/image/text the sort arrow should be drawn.
-\fISide\fR must be either \fBleft\fR or \fBright\fR (the default).
-.TP
 \fB\fB-arrowgravity\fR\fR \fIdirection\fR
 Indicates onto which side the sort arrow should be packed,
 if there is more space available for drawing the arrow then needed.
 \fIdirection\fR must be either \fBleft\fR (the default) or \fBright\fR.
+.TP
+\fB\fB-arrowimage\fR\fR \fIimage\fR
+Specifies as a \fBper-state\fR option the name of an image to
+use to draw the sort arrow if this column's -arrow option is not \fBnone\fR.
+If an image is specified for a certain state, it overrides the -arrowbitmap option.
 .TP
 \fB\fB-arrowpadx\fR\fR \fIamount\fR
 \fIAmount\fR specifies how much padding to
@@ -4001,6 +4007,10 @@ leave on the top and bottom of the sort arrow.
 \fIAmount\fR may be a list
 of two values to specify padding for top and bottom separately;
 it defaults to 0.
+.TP
+\fB\fB-arrowside\fR\fR \fIside\fR
+Indicates on which side of the bitmap/image/text the sort arrow should be drawn.
+\fISide\fR must be either \fBleft\fR or \fBright\fR (the default).
 .TP
 \fB\fB-bitmap\fR\fR \fIbitmap\fR
 Specifies the name of a bitmap to display to the left of the column title.
@@ -4653,7 +4663,7 @@ This option is ignored when drawing themed headers on Mac OS X.
 \fB\fB-arrowgravity\fR\fR \fIdirection\fR
 Indicates onto which side the sort arrow should be packed,
 if there is more space available for drawing the arrow than needed.
-\fIdirection\fR must be either \fBleft\fR or \fBright\fR. If unspecified,
+\fIDirection\fR must be either \fBleft\fR or \fBright\fR. If unspecified,
 the value defaults to \fBleft\fR.
 This option is ignored when drawing themed headers on Mac OS X.
 .TP

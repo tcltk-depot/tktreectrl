@@ -27,32 +27,46 @@ At the time this command is invoked, there must not
 exist a window named [arg pathName], but [arg pathName]'s parent must exist.
 
 [para]
-A treectrl is a widget which displays items in a one- or two-dimensional arrangement.
+A treectrl is a listbox widget which displays items in a one- or
+two-dimensional arrangement.
 Items have a parent-child relationship with other items.
-Items have a set of states, which are boolean properties.
+Items may be arranged from top-to-bottom or from left-to-right.
 Items may be spread about one or more columns.
+Each item-column may be configured to span one or more adjacent item-columns.
+The visibility of items can be set individually.
+
+[para]
+Items have a set of states, which are boolean properties.
 For each column of an item there is a style associated,
 which determines how to display the item's column
 taking into account the item's current state set.
-One column can be defined to display the data in a hierarchical structure.
+New states may be defined to further control the appearance of items;
+these custom states may be turned on or off in individual columns of items.
 
 [para]
-Normally the origin of the coordinate system is at the
-upper-left corner of the window containing the treectrl.
-It is possible to adjust the origin of the coordinate system
-relative to the origin of the window using the
-[cmd xview] and [cmd yview] widget commands;
-this is typically used for scrolling.
+Multiple rows of column headers are supported.
+Column headers have platform-native appearance on Windows, Mac OS X, and Gtk+.
+The appearance of column headers may be customized using styles.
 
 [para]
-A treectrl widget can be horizontal or vertical oriented
-like many other Tk widgets.
-For displaying hierarchical data only vertical orientation is useful,
-since only then the children of an item
-are displayed directly below their parent.
-If the treectrl widget is used only
-to display data in a multicolumn listbox,
-the specification of an orientation will give useful results.
+Columns may be rearranged by the user using drag-and-drop.
+One column can be specified to display the data in a hierarchical structure.
+The visibility of columns can be set individually.
+
+[para]
+A treectrl can display a user-resizable selection rectangle called the
+marquee. Another feature, the drag image, may be used to provide feedback
+during drag-and-drop operations. Both of these are features commonly found in
+file browsers.
+
+[para]
+A treectrl can generate events when various things happen, such as changes to
+the selection, or a parent item being toggled open or closed.  Scripts may be
+bound to these events.  New events can be defined.
+
+[para]
+A treectrl can display a background image.  The background image can be
+configured to be scrolled and tiled on each axis individually.
 
 [section {STANDARD OPTIONS}]
 [list_begin options]
@@ -2978,19 +2992,15 @@ Indicates whether or not a sort arrow should be drawn in the column header.
 Specifies as a [sectref {PER-STATE OPTIONS} per-state] option the name of a bitmap to
 use to draw the arrow if this column's -arrow option is not [const none].
 
-[opt_def [option -arrowimage] [arg image]]
-Specifies as a [sectref {PER-STATE OPTIONS} per-state] option the name of an image to
-use to draw the sort arrow if this column's -arrow option is not [const none].
-If an image is specified for a certain state, it overrides the -arrowbitmap option.
-
-[opt_def [option -arrowside] [arg side]]
-Indicates on which side of the bitmap/image/text the sort arrow should be drawn.
-[arg Side] must be either [const left] or [const right] (the default).
-
 [opt_def [option -arrowgravity] [arg direction]]
 Indicates onto which side the sort arrow should be packed,
 if there is more space available for drawing the arrow then needed.
 [arg direction] must be either [const left] (the default) or [const right].
+
+[opt_def [option -arrowimage] [arg image]]
+Specifies as a [sectref {PER-STATE OPTIONS} per-state] option the name of an image to
+use to draw the sort arrow if this column's -arrow option is not [const none].
+If an image is specified for a certain state, it overrides the -arrowbitmap option.
 
 [opt_def [option -arrowpadx] [arg amount]]
 [arg Amount] specifies how much padding to
@@ -3005,6 +3015,10 @@ leave on the top and bottom of the sort arrow.
 [arg Amount] may be a list
 of two values to specify padding for top and bottom separately;
 it defaults to 0.
+
+[opt_def [option -arrowside] [arg side]]
+Indicates on which side of the bitmap/image/text the sort arrow should be drawn.
+[arg Side] must be either [const left] or [const right] (the default).
 
 [opt_def [option -bitmap] [arg bitmap]]
 Specifies the name of a bitmap to display to the left of the column title.
@@ -3675,7 +3689,7 @@ This option is ignored when drawing themed headers on Mac OS X.
 [opt_def [option -arrowgravity] [arg direction]]
 Indicates onto which side the sort arrow should be packed,
 if there is more space available for drawing the arrow than needed.
-[arg direction] must be either [const left] or [const right]. If unspecified,
+[arg Direction] must be either [const left] or [const right]. If unspecified,
 the value defaults to [const left].
 This option is ignored when drawing themed headers on Mac OS X.
 
