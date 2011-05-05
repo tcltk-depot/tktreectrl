@@ -570,11 +570,14 @@ proc ::TreeCtrl::CursorCancel {w} {
 #
 # Arguments:
 # T		The treectrl widget.
-# I		An item id
+# H		Header id
 
 proc ::TreeCtrl::GetSpanStarts {T H} {
     set columns [list]
     set spans [$T header span $H]
+    if {[lindex [lsort -integer $spans] end] eq 1} {
+	return [$T column list]
+    }
     for {set index 0} {$index < [$T column count]} {}  {
 	set Cspan [$T column id "order $index"]
 	set span [lindex $spans $index]
@@ -598,8 +601,8 @@ proc ::TreeCtrl::GetSpanStarts {T H} {
 #
 # Arguments:
 # T		The treectrl widget.
-# I		An item id
-# C		A column id
+# H		Header id
+# C		Column id
 
 proc ::TreeCtrl::GetSpanStartColumn {T H C} {
     set columns [GetSpanStarts $T $H]
