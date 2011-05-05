@@ -6538,14 +6538,16 @@ TreeItemCmd_ImageOrText(
 	Tcl_Obj *listObj = Tcl_NewListObj(0, NULL);
 	column = item->columns;
 	while (treeColumn != NULL) {
-	    if ((column != NULL) && (column->style != NULL)) {
+	    if ((column != NULL) && (column->style != NULL) &&
+		    !TreeStyle_IsHeaderStyle(tree, column->style)) {
 		objPtr = isImage ?
 		    TreeStyle_GetImage(tree, column->style, &elem) :
 		    TreeStyle_GetText(tree, column->style, &elem);
 	    } else
 		objPtr = NULL;
 	    if (doHeaders && elem == NULL)
-		objPtr = TreeHeaderColumn_GetImageOrText(item->header, column->headerColumn, isImage);
+		objPtr = TreeHeaderColumn_GetImageOrText(item->header,
+		    column->headerColumn, isImage);
 	    if (objPtr == NULL)
 		objPtr = Tcl_NewObj();
 	    Tcl_ListObjAppendElement(interp, listObj, objPtr);
@@ -6561,14 +6563,16 @@ TreeItemCmd_ImageOrText(
 		CFO_NOT_NULL | CFO_NOT_TAIL) != TCL_OK) {
 	    goto errorExit;
 	}
-	if ((column != NULL) && (column->style != NULL)) {
+	if ((column != NULL) && (column->style != NULL) &&
+		!TreeStyle_IsHeaderStyle(tree, column->style)) {
 	    objPtr = isImage ?
 		TreeStyle_GetImage(tree, column->style, &elem) :
 		TreeStyle_GetText(tree, column->style, &elem);
 	 } else
 	    objPtr = NULL;
 	if (doHeaders && elem == NULL)
-	    objPtr = TreeHeaderColumn_GetImageOrText(item->header, column->headerColumn, isImage);
+	    objPtr = TreeHeaderColumn_GetImageOrText(item->header,
+		column->headerColumn, isImage);
 	if (objPtr != NULL)
 	    Tcl_SetObjResult(interp, objPtr);
 	goto okExit;
@@ -6595,13 +6599,9 @@ TreeItemCmd_ImageOrText(
 	    COLUMN_FOR_EACH(treeColumn, &co[i].columns, NULL, &citer) {
 		columnIndex = TreeColumn_Index(treeColumn);
 		column = TreeItem_FindColumn(tree, item, columnIndex);
-		if ((column == NULL) || (column->style == NULL) || TreeStyle_IsHeaderStyle(tree, column->style)) {
+		if ((column == NULL) || (column->style == NULL) ||
+			TreeStyle_IsHeaderStyle(tree, column->style)) {
 		    if (doHeaders) {
-#ifdef TREECTRL_DEBUG
-			if (item->header == NULL) panic("TreeItemCmd_ImageOrText item->header == NULL for doHeaders=TRUE");
-			if (column == NULL) panic("TreeItemCmd_ImageOrText column == NULL for doHeaders=TRUE");
-			if (column->headerColumn == NULL) panic("TreeItemCmd_ImageOrText column->headerColumn == NULL for doHeaders=TRUE");
-#endif
 			result = TreeHeaderColumn_SetImageOrText(item->header,
 			    column->headerColumn, treeColumn, co[i].obj, isImage);
 			if (result != TCL_OK)
