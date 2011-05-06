@@ -479,16 +479,16 @@ TreeObjCmd(
     tree->allocData = TreeAlloc_Init();
 #endif
 
-    Tree_InitColumns(tree);
-    TreeItem_Init(tree);
-    TreeNotify_Init(tree);
+    TreeColumn_InitWidget(tree);
+    TreeItem_InitWidget(tree);
+    TreeNotify_InitWidget(tree);
     (void) TreeElement_InitWidget(tree);
-    (void) TreeStyle_Init(tree);
-    TreeMarquee_Init(tree);
-    TreeDragImage_Init(tree);
-    TreeDInfo_Init(tree);
-    TreeGradient_Init(tree);
-    TreeHeader_Init(tree);
+    (void) TreeStyle_InitWidget(tree);
+    TreeMarquee_InitWidget(tree);
+    TreeDragImage_InitWidget(tree);
+    TreeDisplay_InitWidget(tree);
+    TreeGradient_InitWidget(tree);
+    TreeHeader_InitWidget(tree);
 
     Tk_CreateEventHandler(tree->tkwin,
 #ifdef USE_TTK
@@ -503,7 +503,7 @@ TreeObjCmd(
     Tk_MakeWindowExist(tree->tkwin);
 
     /* Window must exist on Win32. */
-    TreeTheme_Init(tree);
+    TreeTheme_InitWidget(tree);
 
     /*
      * Keep a hold of the associated tkwin until we destroy the listbox,
@@ -1795,7 +1795,7 @@ TreeDestroy(
     }
     Tcl_DeleteHashTable(&tree->itemHash);
 
-    TreeHeader_Free(tree);
+    TreeHeader_FreeWidget(tree);
 
     Tcl_DeleteHashTable(&tree->itemSpansHash);
 
@@ -1806,13 +1806,13 @@ TreeDestroy(
     }
     TreeItemList_Free(&tree->preserveItemList);
 
-    TreeStyle_Free(tree);
+    TreeStyle_FreeWidget(tree);
     TreeElement_FreeWidget(tree);
 
-    TreeDragImage_Free(tree->dragImage);
-    TreeMarquee_Free(tree->marquee);
-    TreeDInfo_Free(tree);
-    TreeTheme_Free(tree);
+    TreeDragImage_FreeWidget(tree);
+    TreeMarquee_FreeWidget(tree);
+    TreeDisplay_FreeWidget(tree);
+    TreeTheme_FreeWidget(tree);
 
     if (tree->copyGC != None)
 	Tk_FreeGC(tree->display, tree->copyGC);
@@ -1828,7 +1828,7 @@ TreeDestroy(
 	Tk_FreeGC(tree->display, tree->lineGC[1]);
     Tree_FreeAllGC(tree);
 
-    Tree_FreeColumns(tree);
+    TreeColumn_FreeWidget(tree);
 
     while (tree->regionStackLen > 0)
 	TkDestroyRegion(tree->regionStack[--tree->regionStackLen]);
@@ -1864,7 +1864,7 @@ TreeDestroy(
     Tcl_DeleteHashTable(&tree->selection);
 
     /* Must be done after all gradient users are freed */
-    TreeGradient_Free(tree);
+    TreeGradient_FreeWidget(tree);
 
 #ifdef DEPRECATED
     if (tree->defaultStyle.styles != NULL)

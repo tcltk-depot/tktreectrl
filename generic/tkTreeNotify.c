@@ -802,7 +802,7 @@ TreeNotify_ItemVisibility(
 /*
  *----------------------------------------------------------------------
  *
- * TreeNotify_Init --
+ * TreeNotify_InitWidget --
  *
  *	Perform event-related initialization when a new TreeCtrl is
  *	created.
@@ -817,7 +817,7 @@ TreeNotify_ItemVisibility(
  */
 
 int
-TreeNotify_Init(
+TreeNotify_InitWidget(
     TreeCtrl *tree		/* Widget info. */
     )
 {

@@ -514,7 +514,7 @@ void TreeTheme_ThemeChanged(TreeCtrl *tree)
 {
 }
 
-int TreeTheme_Init(TreeCtrl *tree)
+int TreeTheme_InitWidget(TreeCtrl *tree)
 {
     tree->themeData = (TreeThemeData) ckalloc(sizeof(TreeThemeData_));
     memset(tree->themeData, '\0', sizeof(TreeThemeData_));
@@ -522,7 +522,7 @@ int TreeTheme_Init(TreeCtrl *tree)
     return TCL_OK;
 }
 
-int TreeTheme_Free(TreeCtrl *tree)
+int TreeTheme_FreeWidget(TreeCtrl *tree)
 {
     TreeThemeData themeData = tree->themeData;
 

@@ -4250,7 +4250,7 @@ TreeColumns_InvalidateCounts(
 /*
  *----------------------------------------------------------------------
  *
- * Tree_InitColumns --
+ * TreeColumn_InitWidget --
  *
  *	Perform column-related initialization when a new TreeCtrl is
  *	created.
@@ -4265,7 +4265,7 @@ TreeColumns_InvalidateCounts(
  */
 
 void
-Tree_InitColumns(
+TreeColumn_InitWidget(
     TreeCtrl *tree		/* Widget info. */
     )
 {
@@ -4291,7 +4291,7 @@ Tree_InitColumns(
 /*
  *----------------------------------------------------------------------
  *
- * Tree_FreeColumns --
+ * TreeColumn_FreeWidget --
  *
  *	Free column-related resources for a deleted TreeCtrl.
  *
@@ -4304,7 +4304,8 @@ Tree_InitColumns(
  *----------------------------------------------------------------------
  */
 
-void Tree_FreeColumns(
+void
+TreeColumn_FreeWidget(
     TreeCtrl *tree		/* Widget info. */
     )
 {

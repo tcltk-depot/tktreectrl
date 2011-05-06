@@ -3197,7 +3197,7 @@ TreeHeader_TreeChanged(
 /*
  *----------------------------------------------------------------------
  *
- * TreeHeader_Init --
+ * TreeHeader_InitWidget --
  *
  *	Perform header-related initialization when a new TreeCtrl is
  *	created.
@@ -3212,7 +3212,7 @@ TreeHeader_TreeChanged(
  */
 
 int
-TreeHeader_Init(
+TreeHeader_InitWidget(
     TreeCtrl *tree		/* Widget info. */
     )
 {
@@ -3258,7 +3258,7 @@ TreeHeader_Init(
 /*
  *----------------------------------------------------------------------
  *
- * TreeHeader_Free --
+ * TreeHeader_FreeWidget --
  *
  *	Free header-related resources for a deleted TreeCtrl.
  *
@@ -3272,7 +3272,7 @@ TreeHeader_Init(
  */
 
 void
-TreeHeader_Free(
+TreeHeader_FreeWidget(
     TreeCtrl *tree		/* Widget info. */
     )
 {

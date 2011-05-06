@@ -10181,7 +10181,7 @@ TreeItem_GetHeaderOptionInfo(
 /*
  *----------------------------------------------------------------------
  *
- * TreeItem_Init --
+ * TreeItem_InitWidget --
  *
  *	Perform item-related initialization when a new TreeCtrl is
  *	created.
@@ -10196,7 +10196,7 @@ TreeItem_GetHeaderOptionInfo(
  */
 
 int
-TreeItem_Init(
+TreeItem_InitWidget(
     TreeCtrl *tree		/* Widget info. */
     )
 {

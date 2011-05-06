@@ -2615,7 +2615,7 @@ TreeTheme_ThemeChanged(
 /*
  *----------------------------------------------------------------------
  *
- * TreeTheme_Init --
+ * TreeTheme_InitWidget --
  *
  *	Performs theme-related initialization when a treectrl is
  *	created.
@@ -2630,7 +2630,7 @@ TreeTheme_ThemeChanged(
  */
 
 int
-TreeTheme_Init(
+TreeTheme_InitWidget(
     TreeCtrl *tree		/* Widget info. */
     )
 {
@@ -2656,7 +2656,7 @@ TreeTheme_Init(
 /*
  *----------------------------------------------------------------------
  *
- * TreeTheme_Free --
+ * TreeTheme_FreeWidget --
  *
  *	Performs theme-related cleanup a when a treectrl is destroyed.
  *
@@ -2670,7 +2670,7 @@ TreeTheme_Init(
  */
 
 int
-TreeTheme_Free(
+TreeTheme_FreeWidget(
     TreeCtrl *tree		/* Widget info. */
     )
 {

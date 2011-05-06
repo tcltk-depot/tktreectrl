@@ -688,8 +688,8 @@ MODULE_SCOPE int Tree_StateCmd(TreeCtrl *tree, int domain, int objc, Tcl_Obj *CO
 
 /* tkTreeHeader.c */
 
-MODULE_SCOPE int TreeHeader_Init(TreeCtrl *tree);
-MODULE_SCOPE void TreeHeader_Free(TreeCtrl *tree);
+MODULE_SCOPE int TreeHeader_InitWidget(TreeCtrl *tree);
+MODULE_SCOPE void TreeHeader_FreeWidget(TreeCtrl *tree);
 MODULE_SCOPE int TreeHeaderCmd(ClientData clientData, Tcl_Interp *interp,
     int objc, Tcl_Obj *CONST objv[]);
 MODULE_SCOPE int TreeHeaderList_FromObj(TreeCtrl *tree, Tcl_Obj *objPtr, TreeItemList *items, int flags);
@@ -776,7 +776,7 @@ MODULE_SCOPE void FormatResult(Tcl_Interp *interp, char *fmt, ...);
 MODULE_SCOPE void DStringAppendf(Tcl_DString *dString, char *fmt, ...);
 MODULE_SCOPE void Tree_Debug(TreeCtrl *tree);
 
-MODULE_SCOPE int TreeItem_Init(TreeCtrl *tree);
+MODULE_SCOPE int TreeItem_InitWidget(TreeCtrl *tree);
 MODULE_SCOPE int TreeItem_Debug(TreeCtrl *tree, TreeItem item);
 MODULE_SCOPE void TreeItem_OpenClose(TreeCtrl *tree, TreeItem item, int mode);
 MODULE_SCOPE void TreeItem_Delete(TreeCtrl *tree, TreeItem item);
@@ -937,13 +937,13 @@ struct StyleDrawArgs
 };
 
 /* tkTreeStyle.c */
-MODULE_SCOPE int TreeStyle_Init(TreeCtrl *tree);
+MODULE_SCOPE int TreeStyle_InitWidget(TreeCtrl *tree);
 MODULE_SCOPE int TreeStyle_NeededWidth(TreeCtrl *tree, TreeStyle style_, int state);
 MODULE_SCOPE int TreeStyle_NeededHeight(TreeCtrl *tree, TreeStyle style_, int state);
 MODULE_SCOPE int TreeStyle_UseHeight(StyleDrawArgs *drawArgs);
 MODULE_SCOPE void TreeStyle_Draw(StyleDrawArgs *args);
 MODULE_SCOPE void TreeStyle_FreeResources(TreeCtrl *tree, TreeStyle style_);
-MODULE_SCOPE void TreeStyle_Free(TreeCtrl *tree);
+MODULE_SCOPE void TreeStyle_FreeWidget(TreeCtrl *tree);
 MODULE_SCOPE Tcl_Obj *TreeElement_ToObj(TreeElement elem);
 MODULE_SCOPE int TreeElement_FromObj(TreeCtrl *tree, Tcl_Obj *obj, TreeElement *elemPtr);
 MODULE_SCOPE int TreeElement_IsType(TreeCtrl *tree, TreeElement elem, CONST char *type);
@@ -998,7 +998,7 @@ MODULE_SCOPE void Tree_ButtonMaxSize(TreeCtrl *tree, int *maxWidth, int *maxHeig
 MODULE_SCOPE int Tree_ButtonHeight(TreeCtrl *tree, int state);
 
 /* tkTreeNotify.c */
-MODULE_SCOPE int TreeNotify_Init(TreeCtrl *tree);
+MODULE_SCOPE int TreeNotify_InitWidget(TreeCtrl *tree);
 MODULE_SCOPE void TreeNotify_OpenClose(TreeCtrl *tree, TreeItem item, int isOpen, int before);
 MODULE_SCOPE void TreeNotify_Selection(TreeCtrl *tree, TreeItemList *select, TreeItemList *deselect);
 MODULE_SCOPE int TreeNotifyCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]);
@@ -1011,7 +1011,7 @@ MODULE_SCOPE void TreeNotify_ItemVisibility(TreeCtrl *tree, TreeItemList *v, Tre
 MODULE_SCOPE Tk_ObjCustomOption TreeCtrlCO_column;
 MODULE_SCOPE Tk_ObjCustomOption TreeCtrlCO_column_NOT_TAIL;
 MODULE_SCOPE int TreeColumn_InitInterp(Tcl_Interp *interp);
-MODULE_SCOPE void Tree_InitColumns(TreeCtrl *tree);
+MODULE_SCOPE void TreeColumn_InitWidget(TreeCtrl *tree);
 MODULE_SCOPE TreeColumn Tree_FindColumn(TreeCtrl *tree, int columnIndex);
 MODULE_SCOPE int TreeColumn_FirstAndLast(TreeColumn *first, TreeColumn *last);
 
@@ -1088,8 +1088,7 @@ MODULE_SCOPE int TreeColumn_GridColors(TreeColumn column, TreeColor **leftColorP
 MODULE_SCOPE void Tree_DrawHeader(TreeCtrl *tree, TreeDrawable td, int x, int y);
 MODULE_SCOPE int TreeColumn_WidthOfItems(TreeColumn column_);
 MODULE_SCOPE void TreeColumn_InvalidateWidth(TreeColumn column_);
-MODULE_SCOPE void TreeColumn_Init(TreeCtrl *tree);
-MODULE_SCOPE void Tree_FreeColumns(TreeCtrl *tree);
+MODULE_SCOPE void TreeColumn_FreeWidget(TreeCtrl *tree);
 MODULE_SCOPE void TreeColumns_InvalidateWidthOfItems(TreeCtrl *tree, TreeColumn column);
 MODULE_SCOPE void TreeColumns_InvalidateWidth(TreeCtrl *tree);
 MODULE_SCOPE int TreeColumn_Bbox(TreeColumn column, int *x, int *y, int *w, int *h);
@@ -1104,8 +1103,8 @@ MODULE_SCOPE void TreeColumn_SetDInfo(TreeColumn column, TreeColumnDInfo dInfo);
 MODULE_SCOPE TreeColumnDInfo TreeColumn_GetDInfo(TreeColumn column);
 
 /* tkTreeDrag.c */
-MODULE_SCOPE int TreeDragImage_Init(TreeCtrl *tree);
-MODULE_SCOPE void TreeDragImage_Free(TreeDragImage dragImage_);
+MODULE_SCOPE int TreeDragImage_InitWidget(TreeCtrl *tree);
+MODULE_SCOPE void TreeDragImage_FreeWidget(TreeCtrl *tree);
 MODULE_SCOPE int TreeDragImage_IsXOR(TreeDragImage dragImage_);
 MODULE_SCOPE int TreeDragImage_IsVisible(TreeDragImage dragImage_);
 MODULE_SCOPE void TreeDragImage_Display(TreeDragImage dragImage_);
@@ -1115,8 +1114,8 @@ MODULE_SCOPE void TreeDragImage_Draw(TreeDragImage dragImage, TreeDrawable td);
 MODULE_SCOPE int TreeDragImageCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]);
 
 /* tkTreeMarquee.c */
-MODULE_SCOPE int TreeMarquee_Init(TreeCtrl *tree);
-MODULE_SCOPE void TreeMarquee_Free(TreeMarquee marquee_);
+MODULE_SCOPE int TreeMarquee_InitWidget(TreeCtrl *tree);
+MODULE_SCOPE void TreeMarquee_FreeWidget(TreeCtrl *tree);
 MODULE_SCOPE int TreeMarquee_IsXOR(TreeMarquee marquee_);
 MODULE_SCOPE int TreeMarquee_IsVisible(TreeMarquee marquee_);
 MODULE_SCOPE void TreeMarquee_DrawXOR(TreeMarquee marquee_, Drawable drawable, int x, int y);
@@ -1157,8 +1156,8 @@ TREE_AREA_HEADER_RIGHT
 };
 MODULE_SCOPE int Tree_HitTest(TreeCtrl *tree, int x, int y);
 
-MODULE_SCOPE void TreeDInfo_Init(TreeCtrl *tree);
-MODULE_SCOPE void TreeDInfo_Free(TreeCtrl *tree);
+MODULE_SCOPE void TreeDisplay_InitWidget(TreeCtrl *tree);
+MODULE_SCOPE void TreeDisplay_FreeWidget(TreeCtrl *tree);
 MODULE_SCOPE void Tree_EventuallyRedraw(TreeCtrl *tree);
 MODULE_SCOPE void Tree_GetScrollFractionsX(TreeCtrl *tree, double fractions[2]);
 MODULE_SCOPE void Tree_GetScrollFractionsY(TreeCtrl *tree, double fractions[2]);
@@ -1233,8 +1232,8 @@ MODULE_SCOPE int Tree_DumpDInfo(TreeCtrl *tree, int objc, Tcl_Obj *CONST objv[])
 /* tkTreeTheme.c */
 MODULE_SCOPE int TreeTheme_InitInterp(Tcl_Interp *interp);
 MODULE_SCOPE void TreeTheme_ThemeChanged(TreeCtrl *tree);
-MODULE_SCOPE int TreeTheme_Init(TreeCtrl *tree);
-MODULE_SCOPE int TreeTheme_Free(TreeCtrl *tree);
+MODULE_SCOPE int TreeTheme_InitWidget(TreeCtrl *tree);
+MODULE_SCOPE int TreeTheme_FreeWidget(TreeCtrl *tree);
 MODULE_SCOPE int TreeTheme_DrawHeaderItem(TreeCtrl *tree, TreeDrawable td,
     int state, int arrow, int visIndex, int x, int y, int width, int height);
 MODULE_SCOPE int TreeTheme_GetHeaderFixedHeight(TreeCtrl *tree, int *heightPtr);
@@ -1603,8 +1602,8 @@ typedef struct TreeGradient_
     Tcl_Obj *leftObj, *rightObj, *topObj, *bottomObj;
 } TreeGradient_;
 
-MODULE_SCOPE void TreeGradient_Init(TreeCtrl *tree);
-MODULE_SCOPE void TreeGradient_Free(TreeCtrl *tree);
+MODULE_SCOPE void TreeGradient_InitWidget(TreeCtrl *tree);
+MODULE_SCOPE void TreeGradient_FreeWidget(TreeCtrl *tree);
 MODULE_SCOPE int TreeGradientCmd(ClientData clientData, Tcl_Interp *interp,
     int objc, Tcl_Obj *CONST objv[]);
 MODULE_SCOPE int TreeGradient_FromObj(TreeCtrl *tree, Tcl_Obj *objPtr,

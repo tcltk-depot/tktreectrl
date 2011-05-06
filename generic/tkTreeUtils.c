@@ -7836,7 +7836,7 @@ TreeGradient_IsOpaque(
 /*
  *----------------------------------------------------------------------
  *
- * TreeGradient_Init --
+ * TreeGradient_InitWidget --
  *
  *	Gradient-related package initialization.
  *
@@ -7850,7 +7850,7 @@ TreeGradient_IsOpaque(
  */
 
 void
-TreeGradient_Init(
+TreeGradient_InitWidget(
     TreeCtrl *tree		/* Widget info. */
     )
 {
@@ -7862,7 +7862,7 @@ TreeGradient_Init(
 /*
  *----------------------------------------------------------------------
  *
- * TreeGradient_Free --
+ * TreeGradient_FreeWidget --
  *
  *	Free gradient-related resources for a deleted TreeCtrl.
  *
@@ -7876,7 +7876,7 @@ TreeGradient_Init(
  */
 
 void
-TreeGradient_Free(
+TreeGradient_FreeWidget(
     TreeCtrl *tree		/* Widget info. */
     )
 {

@@ -503,7 +503,7 @@ DragElem_Free(
 /*
  *----------------------------------------------------------------------
  *
- * TreeDragImage_Init --
+ * TreeDragImage_InitWidget --
  *
  *	Perform drag-image-related initialization when a new TreeCtrl is
  *	created.
@@ -518,7 +518,7 @@ DragElem_Free(
  */
 
 int
-TreeDragImage_Init(
+TreeDragImage_InitWidget(
     TreeCtrl *tree		/* Widget info. */
     )
 {
@@ -540,7 +540,7 @@ TreeDragImage_Init(
 /*
  *----------------------------------------------------------------------
  *
- * TreeDragImage_Free --
+ * TreeDragImage_FreeWidget --
  *
  *	Free drag-image-related resources when a TreeCtrl is deleted.
  *
@@ -554,10 +554,11 @@ TreeDragImage_Init(
  */
 
 void
-TreeDragImage_Free(
-    TreeDragImage dragImage	/* Drag image token. */
+TreeDragImage_FreeWidget(
+    TreeCtrl *tree		/* Widget info. */
     )
 {
+    TreeDragImage dragImage = tree->dragImage;
     DragElem *elem = dragImage->elem;
 
     while (elem != NULL)

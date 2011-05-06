@@ -8033,7 +8033,7 @@ Tree_MakeHeaderStyle(
 /*
  *----------------------------------------------------------------------
  *
- * TreeStyle_Init --
+ * TreeStyle_InitWidget --
  *
  *	Style-related package initialization.
  *
@@ -8047,7 +8047,7 @@ Tree_MakeHeaderStyle(
  */
 
 int
-TreeStyle_Init(
+TreeStyle_InitWidget(
     TreeCtrl *tree		/* Widget info. */
     )
 {
@@ -8068,7 +8068,7 @@ TreeStyle_Init(
 /*
  *----------------------------------------------------------------------
  *
- * TreeStyle_Free --
+ * TreeStyle_FreeWidget --
  *
  *	Free style-related resources for a deleted TreeCtrl.
  *
@@ -8082,7 +8082,7 @@ TreeStyle_Init(
  */
 
 void
-TreeStyle_Free(
+TreeStyle_FreeWidget(
     TreeCtrl *tree		/* Widget info. */
     )
 {

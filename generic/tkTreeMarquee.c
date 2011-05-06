@@ -62,7 +62,7 @@ static Tk_OptionSpec optionSpecs[] = {
 /*
  *----------------------------------------------------------------------
  *
- * TreeMarquee_Init --
+ * TreeMarquee_InitWidget --
  *
  *	Perform marquee-related initialization when a new TreeCtrl is
  *	created.
@@ -77,7 +77,7 @@ static Tk_OptionSpec optionSpecs[] = {
  */
 
 int
-TreeMarquee_Init(
+TreeMarquee_InitWidget(
     TreeCtrl *tree		/* Widget info. */
     )
 {
@@ -99,7 +99,7 @@ TreeMarquee_Init(
 /*
  *----------------------------------------------------------------------
  *
- * TreeMarquee_Free --
+ * TreeMarquee_FreeWidget --
  *
  *	Free marquee-related resources when a TreeCtrl is deleted.
  *
@@ -113,10 +113,12 @@ TreeMarquee_Init(
  */
 
 void
-TreeMarquee_Free(
-    TreeMarquee marquee	/* Marquee token. */
+TreeMarquee_FreeWidget(
+    TreeCtrl *tree		/* Widget info. */
     )
 {
+    TreeMarquee marquee = tree->marquee;
+
     Tk_FreeConfigOptions((char *) marquee, marquee->optionTable,
 	marquee->tree->tkwin);
     WFREE(marquee, TreeMarquee_);

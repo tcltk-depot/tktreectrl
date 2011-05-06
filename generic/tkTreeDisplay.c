@@ -9559,7 +9559,7 @@ Tree_ExposeArea(
 /*
  *--------------------------------------------------------------
  *
- * TreeDInfo_Init --
+ * TreeDisplay_InitWidget --
  *
  *	Perform display-related initialization when a new TreeCtrl is
  *	created.
@@ -9574,7 +9574,7 @@ Tree_ExposeArea(
  */
 
 void
-TreeDInfo_Init(
+TreeDisplay_InitWidget(
     TreeCtrl *tree		/* Widget info. */
     )
 {
@@ -9599,7 +9599,7 @@ TreeDInfo_Init(
 /*
  *--------------------------------------------------------------
  *
- * TreeDInfo_Free --
+ * TreeDisplay_FreeWidget --
  *
  *	Free display-related resources for a deleted TreeCtrl.
  *
@@ -9613,7 +9613,7 @@ TreeDInfo_Init(
  */
 
 void
-TreeDInfo_Free(
+TreeDisplay_FreeWidget(
     TreeCtrl *tree		/* Widget info. */
     )
 {
