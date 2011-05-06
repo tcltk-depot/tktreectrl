@@ -3153,7 +3153,6 @@ static int StateProcRect(TreeElementArgs *args)
     if (open1 != open2)
 	return CS_DISPLAY;
 
-
     COLOR_FOR_STATE(c1, outline, args->states.state1)
     COLOR_FOR_STATE(c2, outline, args->states.state2)
     if (c1 != c2)

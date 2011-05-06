@@ -237,12 +237,12 @@ Database Class:	\\fB\\$3\\fR
 .de UL
 \\$1\l'|0\(ul'\\$2
 ..
-.TH "treectrl" n 2.3.2 treectrl "Tk Commands"
+.TH "treectrl" n 2.4 treectrl "Tk Commands"
 .BS
 .SH NAME
 treectrl \- Create and manipulate hierarchical multicolumn widgets
 .SH SYNOPSIS
-package require \fBtreectrl  2.3.2\fR
+package require \fBtreectrl  2.4\fR
 .sp
 \fBtreectrl\fR \fIpathName\fR ?\fIoptions\fR?
 .sp
@@ -4153,9 +4153,8 @@ a header-row's tags are tested for a match.
 \fBvisible\fR
 When this qualifier is given, only header-rows that are displayed are matched.
 A header-row is displayed only if both the \fB-showheader\fR widget option and
-\fB-visible\fR header-row option are true.  Also, if there are no visible
-columns, or if only the tail column is visible, then header-rows are not
-displayed.
+\fB-visible\fR header-row option are true.  Also, if only the tail column is
+visible, then header-rows are not displayed.
 .TP
 \fB!visible\fR
 When this qualifier is given, only header-rows that are *not* displayed are
