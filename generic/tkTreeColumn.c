@@ -4025,10 +4025,7 @@ Tree_WidthOfColumns(
     if (tree->widthOfColumns >= 0)
 	return tree->widthOfColumns;
 
-    tree->widthOfColumns = LayoutColumns(tree,
-	tree->columnLockNone,
-	&tree->columnVis,
-	&tree->columnCountVis);
+    tree->widthOfColumns = LayoutColumns(tree, tree->columnLockNone);
 
     if (tree->columnTree != NULL && TreeColumn_Visible(tree->columnTree)) {
 	tree->columnTreeLeft = tree->columnTree->offset;
@@ -4086,10 +4083,7 @@ Tree_WidthOfLeftColumns(
 	return 0;
     }
 
-    tree->widthOfColumnsLeft = LayoutColumns(tree,
-	tree->columnLockLeft,
-	NULL,
-	&tree->columnCountVisLeft);
+    tree->widthOfColumnsLeft = LayoutColumns(tree, tree->columnLockLeft);
 
     return tree->widthOfColumnsLeft;
 }
@@ -4133,10 +4127,7 @@ Tree_WidthOfRightColumns(
 	return 0;
     }
 
-    tree->widthOfColumnsRight = LayoutColumns(tree,
-	tree->columnLockRight,
-	NULL,
-	&tree->columnCountVisRight);
+    tree->widthOfColumnsRight = LayoutColumns(tree, tree->columnLockRight);
 
     return tree->widthOfColumnsRight;
 }
