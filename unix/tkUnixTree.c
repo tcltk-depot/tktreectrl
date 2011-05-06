@@ -1676,7 +1676,7 @@ TreeTheme_InitWidget(
     )
 {
     tree->themeData = (TreeThemeData) ckalloc(sizeof(struct TreeThemeData_));
-    tree->themeData->animButtonTimer = NULL;
+    memset(tree->themeData, '\0', sizeof(struct TreeThemeData_))
 
     Tcl_MutexLock(&themeMutex);
 

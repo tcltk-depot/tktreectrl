@@ -2392,6 +2392,7 @@ PSDFlagsFromObj(
 	    { 'w', RECT_OPEN_W },
 	    { 0, 0 }
 	};
+	pFlags->flags = 0;
 	if (Tree_GetFlagsFromObj(tree, obj, "open value", openFlags,
 		&pFlags->flags) != TCL_OK) {
 	    return TCL_ERROR;
