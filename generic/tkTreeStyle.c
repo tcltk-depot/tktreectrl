@@ -1034,17 +1034,10 @@ Layout_CalcUnionLayoutH(
     ePadX = layout->ePadX;
     iPadX = layout->iPadX;
 
-#if 1
     layout->x = iW - layout->uMargins[0] - iPadX[PAD_TOP_LEFT] - ePadX[PAD_TOP_LEFT];
     layout->useWidth = layout->uMargins[0] + (iE - iW) + layout->uMargins[2];
     layout->iWidth = iPadX[PAD_TOP_LEFT] + layout->useWidth + iPadX[PAD_BOTTOM_RIGHT];
     layout->eWidth = ePadX[PAD_TOP_LEFT] + layout->iWidth + ePadX[PAD_BOTTOM_RIGHT];
-#else
-    layout->x = iW - iPadX[PAD_TOP_LEFT] - ePadX[PAD_TOP_LEFT];
-    layout->useWidth = (iE - iW);
-    layout->iWidth = iPadX[PAD_TOP_LEFT] + layout->useWidth + iPadX[PAD_BOTTOM_RIGHT];
-    layout->eWidth = ePadX[PAD_TOP_LEFT] + layout->iWidth + ePadX[PAD_BOTTOM_RIGHT];
-#endif
 
     Layout_ExpandUnionH(drawArgs, masterStyle, layouts, iElem);
 }
@@ -1111,17 +1104,10 @@ Layout_CalcUnionLayoutV(
     ePadY = layout->ePadY;
     iPadY = layout->iPadY;
 
-#if 1
     layout->y = iN - layout->uMargins[1] - iPadY[PAD_TOP_LEFT] - ePadY[PAD_TOP_LEFT];
     layout->useHeight = layout->uMargins[1] + (iS - iN) + layout->uMargins[3];
     layout->iHeight = iPadY[PAD_TOP_LEFT] + layout->useHeight + iPadY[PAD_BOTTOM_RIGHT];
     layout->eHeight = ePadY[PAD_TOP_LEFT] + layout->iHeight + ePadY[PAD_BOTTOM_RIGHT];
-#else
-    layout->y = iN - iPadY[PAD_TOP_LEFT] - ePadY[PAD_TOP_LEFT];
-    layout->useHeight = (iS - iN);
-    layout->iHeight = iPadY[PAD_TOP_LEFT] + layout->useHeight + iPadY[PAD_BOTTOM_RIGHT];
-    layout->eHeight = ePadY[PAD_TOP_LEFT] + layout->iHeight + ePadY[PAD_BOTTOM_RIGHT];
-#endif
 
     Layout_ExpandUnionV(drawArgs, masterStyle, layouts, iElem);
 }
@@ -1688,7 +1674,6 @@ TreeElement_GetContentMargins(tree, layout->eLink->elem, drawArgs->state, layout
 
     /* Left-to-right layout. Expand some elements horizontally if we have
      * more space available horizontally than is needed by the Style. */
-#if 1
     if (!masterStyle->vertical &&
 	    (iCenterMin == -1) &&
 	    (drawArgs->width > rightEdge) &&
@@ -1696,78 +1681,6 @@ TreeElement_GetContentMargins(tree, layout->eLink->elem, drawArgs->state, layout
 	rightEdge += Layout_ExpandElementsH(drawArgs, layouts, 0, eLinkCount - 1,
 	    drawArgs->width);
     }
-#else
-    if (!masterStyle->vertical &&
-	(drawArgs->width > rightEdge) &&
-	(numExpandWE > 0)) {
-	int numExpand = 0;
-	int spaceRemaining = drawArgs->width - rightEdge;
-
-	/* Each element has 5 areas that can optionally expand. */
-	for (i = 0; i < eLinkCount; i++) {
-	    struct Layout *layout = &layouts[i];
-
-	    if (IS_HIDDEN(layout))
-		continue;
-
-	    eLink1 = &eLinks1[i];
-
-	    layout->temp = 0;
-
-	    if (DETACH_OR_UNION(eLink1))
-		continue;
-
-	    if (eLink1->flags & ELF_eEXPAND_W) layout->temp++;
-	    if (eLink1->flags & ELF_iEXPAND_W) layout->temp++;
-	    if (eLink1->flags & ELF_iEXPAND_X) {
-		if ((eLink1->maxWidth < 0) ||
-		    (eLink1->maxWidth > layout->useWidth))
-		    layout->temp++;
-	    }
-	    if (eLink1->flags & ELF_iEXPAND_E) layout->temp++;
-	    if (eLink1->flags & ELF_eEXPAND_E) layout->temp++;
-
-	    numExpand += layout->temp;
-	}
-
-	while ((spaceRemaining > 0) && (numExpand > 0)) {
-	    int each = (spaceRemaining >= numExpand) ? spaceRemaining / numExpand : 1;
-
-	    numExpand = 0;
-	    for (i = 0; i < eLinkCount; i++) {
-		struct Layout *layout = &layouts[i];
-		int spaceUsed;
-
-		if (IS_HIDDEN(layout))
-		    continue;
-
-		if (!layout->temp)
-		    continue;
-
-		eLink1 = &eLinks1[i];
-
-		spaceUsed = Style_DoExpandH(layout,
-		    MIN(each * layout->temp, spaceRemaining));
-
-		if (spaceUsed) {
-		    /* Shift following elements to the right */
-		    for (j = i + 1; j < eLinkCount; j++)
-			if (!DETACH_OR_UNION(&eLinks1[j]))
-			    layouts[j].x += spaceUsed;
-
-		    rightEdge += spaceUsed;
-
-		    spaceRemaining -= spaceUsed;
-		    if (!spaceRemaining)
-			break;
-
-		    numExpand += layout->temp;
-		} else
-		    layout->temp = 0;
-	    }
-	}
-    }
-#endif
 
     /* Top-to-bottom layout. Center individual elements horizontally. */
     if (masterStyle->vertical && (iCenterMin != -1)) {
@@ -2157,7 +2070,6 @@ Style_DoLayoutV(
 
     /* Top-to-bottom layout. Expand some elements vertically if we have
      * more space available vertically than is needed by the Style. */
-#if 1
     if (masterStyle->vertical &&
 	    (iCenterMin == -1) &&
 	    (drawArgs->height > bottomEdge) &&
@@ -2165,77 +2077,6 @@ Style_DoLayoutV(
 	bottomEdge += Layout_ExpandElementsV(drawArgs, layouts, 0, eLinkCount - 1,
 	    drawArgs->height);
     }
-#else
-    if (masterStyle->vertical &&
-	(drawArgs->height > bottomEdge) &&
-	(numExpandNS > 0)) {
-	int numExpand = 0;
-	int spaceRemaining = drawArgs->height - bottomEdge;
-
-	for (i = 0; i < eLinkCount; i++) {
-	    struct Layout *layout = &layouts[i];
-
-	    if (IS_HIDDEN(layout))
-		continue;
-
-	    eLink1 = &eLinks1[i];
-
-	    layout->temp = 0;
-
-	    if (DETACH_OR_UNION(eLink1))
-		continue;
-
-	    if (eLink1->flags & ELF_eEXPAND_N) layout->temp++;
-	    if (eLink1->flags & ELF_iEXPAND_N) layout->temp++;
-	    if (eLink1->flags & ELF_iEXPAND_Y) {
-		if ((eLink1->maxHeight < 0) ||
-		    (eLink1->maxHeight > layout->useHeight))
-		    layout->temp++;
-	    }
-	    if (eLink1->flags & ELF_iEXPAND_S) layout->temp++;
-	    if (eLink1->flags & ELF_eEXPAND_S) layout->temp++;
-
-	    numExpand += layout->temp;
-	}
-
-	while ((spaceRemaining > 0) && (numExpand > 0)) {
-	    int each = (spaceRemaining >= numExpand) ? spaceRemaining / numExpand : 1;
-
-	    numExpand = 0;
-	    for (i = 0; i < eLinkCount; i++) {
-		struct Layout *layout = &layouts[i];
-		int spaceUsed;
-
-		if (IS_HIDDEN(layout))
-		    continue;
-
-		if (!layout->temp)
-		    continue;
-
-		eLink1 = &eLinks1[i];
-
-		spaceUsed = Style_DoExpandV(layout,
-		    layout->y + layout->ePadY[PAD_TOP_LEFT] + layout->iHeight +
-		    MAX(layout->ePadY[PAD_BOTTOM_RIGHT], layout->uPadY[PAD_BOTTOM_RIGHT]) +
-		    MIN(each * layout->temp, spaceRemaining));
-
-		if (spaceUsed) {
-		    /* Shift following elements down */
-		    for (j = i + 1; j < eLinkCount; j++)
-			if (!DETACH_OR_UNION(&eLinks1[j]))
-			    layouts[j].y += spaceUsed;
-
-		    spaceRemaining -= spaceUsed;
-		    if (!spaceRemaining)
-			break;
-
-		    numExpand += layout->temp;
-		} else
-		    layout->temp = 0;
-	    }
-	}
-    }
-#endif
 
     /* Left-to-right layout. Center individual elements vertically. */
     if (!masterStyle->vertical && (iCenterMin != -1)) {

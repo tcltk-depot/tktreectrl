@@ -832,12 +832,6 @@ TreeItemColumn_ChangeState(
 	}
     }
 
-#ifdef OLD_CODE
-    if (item->header != NULL)
-	TreeHeaderColumn_StateChanged(item->header, column->headerColumn,
-	    treeColumn, item->state | column->cstate, item->state | cstate);
-#endif
-
     if ((iMask & CS_LAYOUT) && (item->header != NULL))
 	TreeColumns_InvalidateWidth(tree);
 
@@ -904,11 +898,6 @@ TreeItem_ChangeState(
 		iMask |= sMask;
 	    }
 	}
-#ifdef OLD_CODE
-	if (item->header != NULL)
-	    TreeHeaderColumn_StateChanged(item->header, column->headerColumn,
-		treeColumn, item->state | column->cstate, state | column->cstate);
-#endif
 	columnIndex++;
 	column = column->next;
 	treeColumn = Tree_ColumnToTheRight(treeColumn, FALSE, tailOK);
@@ -3671,18 +3660,6 @@ Item_HeightOfStyles(
 		    TreeStyle_HasHeaderElement(tree, column->style))
 		hasHeaderElem = TRUE;
 	}
-#ifdef OLD_CODE
-	if (TreeColumn_Visible(treeColumn) && (column->headerColumn != NULL)) {
-	    int fixedWidth = -1;
-	    if ((TreeColumn_FixedWidth(treeColumn) != -1) ||
-		    TreeColumn_Squeeze(treeColumn)) {
-		fixedWidth = TreeColumn_UseWidth(treeColumn) -
-		    TreeItem_Indent(tree, treeColumn, item);
-	    }
-	    height = MAX(height, TreeHeaderColumn_NeededHeight(item->header,
-		column->headerColumn, fixedWidth));
-	}
-#endif
 	treeColumn = Tree_ColumnToTheRight(treeColumn, FALSE, tailOK);
 	column = column->next;
     }
@@ -3729,18 +3706,10 @@ TreeItem_Height(
     int buttonHeight = 0;
     int useHeight;
 
-#if 1
     if (!TreeItem_ReallyVisible(tree, item))
 	return 0;
-#else
-    /* FIXME: should this routine call ReallyVisible()? */
-    if (!IS_VISIBLE(item) || (IS_ROOT(item) && !tree->showRoot))
-	return 0;
-#endif
 
     if (item->header != NULL) {
-	if (!tree->showHeader)
-	    return 0;
 	if (item->fixedHeight > 0)
 	    return item->fixedHeight;
 	return Item_HeightOfStyles(tree, item);

@@ -5728,35 +5728,6 @@ Tree_GetIntForIndex(
     return TCL_OK;
 }
 
-#if 0
-void
-Tcl_WrongNumArgs2(
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments to print from objv. */
-    Tcl_Obj *const objv[],	/* Initial argument objects, which should be
-				 * included in the error message. */
-    const char *message,	/* First string to append. */
-    ...				/* NULL-terminated list of strings to append. */
-    )
-{
-    va_list ap;
-    Tcl_DString dString;
-    const char *string = message;
-
-    Tcl_DStringInit(&dString);
-
-    va_start(ap, message);
-    while (string != NULL) {
-	Tcl_DStringAppend(&dString, string, -1);
-	string = va_arg(ap, char *);
-    }
-    va_end(ap);
-    Tcl_WrongNumArgs(interp, objc, objv, Tcl_DStringValue(&dString));
-
-    Tcl_DStringFree(&dString);
-}
-#endif
-
 /*
  *----------------------------------------------------------------------
  *

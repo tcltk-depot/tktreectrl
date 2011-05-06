@@ -3251,11 +3251,6 @@ TreeColumnCmd(
 		    }
 
 		    tree->columnTree = NULL;
-#if 0
-		    tree->widthOfColumns = tree->headerHeight = -1;
-		    tree->widthOfColumnsLeft = tree->widthOfColumnsRight = -1;
-		    Tree_DInfoChanged(tree, DINFO_REDO_COLUMN_WIDTH);
-#endif
 		    goto doneDELETE;
 		}
 
@@ -3347,64 +3342,12 @@ doneDELETE:
 
 	/* T column dragcget option */
 	case COMMAND_DRAGCGET: {
-#if 1
 	    return TreeHeaderCmd(clientData, interp, objc, objv);
-#else
-	    Tcl_Obj *resultObjPtr;
-
-	    if (objc != 4) {
-		Tcl_WrongNumArgs(interp, 3, objv, "option");
-		return TCL_ERROR;
-	    }
-	    resultObjPtr = Tk_GetOptionValue(interp, (char *) tree,
-		    tree->columnDrag.optionTable, objv[3], tree->tkwin);
-	    if (resultObjPtr == NULL)
-		return TCL_ERROR;
-	    Tcl_SetObjResult(interp, resultObjPtr);
-	    break;
-#endif
 	}
 
 	/* T column dragconfigure ?option? ?value? ?option value ...? */
 	case COMMAND_DRAGCONF: {
-#if 1
 	    return TreeHeaderCmd(clientData, interp, objc, objv);
-#else
-	    Tcl_Obj *resultObjPtr;
-	    Tk_SavedOptions savedOptions;
-	    int mask, result;
-
-	    if (objc < 3) {
-		Tcl_WrongNumArgs(interp, 3, objv, "?option? ?value?");
-		return TCL_ERROR;
-	    }
-	    if (objc <= 4) {
-		resultObjPtr = Tk_GetOptionInfo(interp, (char *) tree,
-			tree->columnDrag.optionTable,
-			(objc == 3) ? (Tcl_Obj *) NULL : objv[3],
-			tree->tkwin);
-		if (resultObjPtr == NULL)
-		    return TCL_ERROR;
-		Tcl_SetObjResult(interp, resultObjPtr);
-		break;
-	    }
-	    result = Tk_SetOptions(interp, (char *) tree,
-		    tree->columnDrag.optionTable, objc - 3, objv + 3, tree->tkwin,
-		    &savedOptions, &mask);
-	    if (result != TCL_OK) {
-		Tk_RestoreSavedOptions(&savedOptions);
-		return TCL_ERROR;
-	    }
-	    Tk_FreeSavedOptions(&savedOptions);
-
-	    if (tree->columnDrag.alpha < 0)
-		tree->columnDrag.alpha = 0;
-	    if (tree->columnDrag.alpha > 255)
-		tree->columnDrag.alpha = 255;
-
-	    Tree_DInfoChanged(tree, DINFO_DRAW_HEADER);
-	    break;
-#endif
 	}
 
 	case COMMAND_COUNT: {
@@ -3829,10 +3772,8 @@ TreeColumn_Bbox(
 static int
 LayoutColumns(
     TreeCtrl *tree,		/* Widget info. */
-    TreeColumn first,		/* First column to update. All columns
+    TreeColumn first		/* First column to update. All columns
 				 * with the same -lock value are updated. */
-    TreeColumn *visPtr,		/* Out: first visible column. */
-    int *countVisPtr		/* Out: number of visible columns. */
     )
 {
     TreeColumn column;
@@ -3848,12 +3789,6 @@ LayoutColumns(
 #ifdef TREECTRL_DEBUG
     if (tree->debugCheck.inLayoutColumns)
 	panic("recursive call to LayoutColumns");
-#endif
-
-#if 0
-    if (visPtr != NULL)
-	(*visPtr) = NULL;
-    (*countVisPtr) = 0;
 #endif
 
     if (first == NULL)
@@ -3915,11 +3850,6 @@ LayoutColumns(
 		    numSqueeze++;
 #endif
 	    }
-#if 0
-	    if (visPtr != NULL && (*visPtr) == NULL)
-		(*visPtr) = column;
-	    (*countVisPtr)++;
-#endif
 	} else
 	    width = 0;
 	column->useWidth = width;

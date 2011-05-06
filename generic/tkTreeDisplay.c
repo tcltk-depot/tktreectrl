@@ -2918,9 +2918,6 @@ GetOnScreenColumnsForItemAux(
 {
     int minX, maxX, columnIndex = 0, x = 0, i, width;
     TreeColumn column = NULL, column2, column3;
-#if 0
-    int columnCount = tree->columnCount;
-#endif
     int tailOK = TreeItem_GetHeader(tree, dItem->item) != NULL;
 
     minX = MAX(area->x, TreeRect_Left(bounds));
@@ -2929,7 +2926,6 @@ GetOnScreenColumnsForItemAux(
     minX -= area->x;
     maxX -= area->x;
 
-#if 1
     /* FIXME: Perhaps call TreeItem_WalkSpans instead. */
     if (TreeItem_GetHeader(tree, dItem->item) != NULL)
 	x += tree->canvasPadX[PAD_TOP_LEFT];
@@ -2963,54 +2959,6 @@ GetOnScreenColumnsForItemAux(
 	    break;
 	column = column3;
     }
-#else
-    switch (lock) {
-	case COLUMN_LOCK_LEFT:
-	    column = tree->columnLockLeft;
-	    break;
-	case COLUMN_LOCK_NONE:
-	    column = tree->columnLockNone;
-if (TreeItem_GetHeader(tree, dItem->item) != NULL) {
-    if (column == NULL)
-	column = tree->columnTail;
-    columnCount += 1; /* FIXME: invalid index into 'spans' */
-}
-	    break;
-	case COLUMN_LOCK_RIGHT:
-	    column = tree->columnLockRight;
-	    break;
-    }
-
-    for (columnIndex = TreeColumn_Index(column);
-	    columnIndex < columnCount; columnIndex++) {
-	if (TreeColumn_Lock(column) != lock)
-	    break;
-	columnNext = TreeColumn_Next(column);
-	width = TreeColumn_GetDInfo(column)->width;
-	if (width == 0) /* also handles hidden columns */
-	    goto next;
-	if (dItem->spans != NULL) {
-	    /* FIXME: not possible since I skip over the entire span. */
-	    if (dItem->spans[columnIndex] != columnIndex)
-		goto next;
-	    /* Calculate the width of the span. */
-	    for (i = columnIndex + 1; i < tree->columnCount &&
-		    dItem->spans[i] == columnIndex; i++) {
-		width += TreeColumn_GetDInfo(columnNext)->width;
-		columnNext = TreeColumn_Next(columnNext);
-	    }
-	    columnIndex = i - 1;
-	}
-	if (x < maxX && x + width > minX) {
-	    TreeColumnList_Append(columns, column);
-	}
-next:
-	x += width;
-	if (x >= maxX)
-	    break;
-	column = columnNext;
-    }
-#endif
 }
 
 /*
@@ -6675,11 +6623,6 @@ UpdateDItemsForHeaders(
 			(dItem->flags & DITEM_INVALIDATE_ON_SCROLL_X)
 			&& (area->x != dItem->oldX))
 		    area->flags |= DITEM_DIRTY | DITEM_ALL_DIRTY;
-#if 0
-		else if ((dItem->flags & DITEM_INVALIDATE_ON_SCROLL_Y)
-			&& (dItem->y != dItem->oldY))
-		    area->flags |= DITEM_DIRTY | DITEM_ALL_DIRTY;
-#endif
 	    }
 
 	    /* Linked list of DItems */
@@ -8825,10 +8768,6 @@ Tree_FreeItemDInfo(
 	    tree->headerHeight = -1;
 	    dInfo->flags |= DINFO_DRAW_HEADER;
 	    dItemHeadPtr = &dInfo->dItemHeader;
-#if 0
-	    Tree_EventuallyRedraw(tree);
-	    return; /* should only be a range of header items */
-#endif
 	}
 	dItem = (DItem *) TreeItem_GetDInfo(tree, item);
 	if (dItem != NULL) {
