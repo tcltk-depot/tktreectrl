@@ -241,6 +241,14 @@ demo: binaries libraries
 gdb:
 	@$(TCLSH_ENV) gdb --silent --args $(WISH_PROG) $(srcdir)/demos/demo.tcl
 
+VALGRINDARGS=--tool=memcheck --num-callers=8 --leak-resolution=high --leak-check=yes --show-reachable=yes -v
+
+valgrind: binaries libraries
+	$(TCLSH_ENV) valgrind $(VALGRINDARGS) $(TCLSH_PROG) `@CYGPATH@ $(srcdir)/tests/all.tcl` $(TESTFLAGS) | cat
+
+valgrindshell: binaries libraries
+	$(TCLSH_ENV) valgrind $(VALGRINDARGS) $(TCLSH_PROG) $(SCRIPT)
+
 # Type 'make vcexpress' from MSYS to launch the proper wish.exe in the Visual C++
 # 2008 Express Edition debugger.  Start the debugger then type 'source $env(DEMO)'
 # in the wish console to run the treectrl demo.
