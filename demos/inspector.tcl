@@ -156,7 +156,7 @@ proc Inspector::InspectHeaders {inspectMe} {
     set T $Priv(tree2)
     $T item delete all
     $T column delete all
-    foreach title {ID -height -tags -ownerdrawn -visible} {
+    foreach title {ID -height -tags -visible} {
 	$T column create -text $title -tags C$title -itembackground {gray90 ""}
     }
     foreach H [$inspectMe header id all] {
@@ -167,7 +167,7 @@ proc Inspector::InspectHeaders {inspectMe} {
 	    $T item style set $I C$title s1
 	    $T item text $I C$title [$inspectMe header cget $H $title]
 	}
-	foreach title {-ownerdrawn -visible} {
+	foreach title {-visible} {
 	    $T item style set $I C$title styCheck
 	    if {[$inspectMe header cget $H $title]} {
 		$T item state forcolumn $I C$title CHECK
