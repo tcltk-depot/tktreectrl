@@ -4153,7 +4153,9 @@ a header-row's tags are tested for a match.
 \fBvisible\fR
 When this qualifier is given, only header-rows that are displayed are matched.
 A header-row is displayed only if both the \fB-showheader\fR widget option and
-\fB-visible\fR header-row option are true.
+\fB-visible\fR header-row option are true.  Also, if there are no visible
+columns, or if only the tail column is visible, then header-rows are not
+displayed.
 .TP
 \fB!visible\fR
 When this qualifier is given, only header-rows that are *not* displayed are

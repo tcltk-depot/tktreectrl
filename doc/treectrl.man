@@ -3162,7 +3162,8 @@ a header-row's tags are tested for a match.
 [def [const visible]]
 When this qualifier is given, only header-rows that are displayed are matched.
 A header-row is displayed only if both the [const -showheader] widget option and
-[const -visible] header-row option are true.
+[const -visible] header-row option are true.  Also, if only the tail column is
+visible, then header-rows are not displayed.
 
 [def [const !visible]]
 When this qualifier is given, only header-rows that are *not* displayed are

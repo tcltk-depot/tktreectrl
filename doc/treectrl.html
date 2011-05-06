@@ -3138,7 +3138,9 @@ a header-row's tags are tested for a match.</p></dd>
 <dt><b class="const">visible</b></dt>
 <dd><p>When this qualifier is given, only header-rows that are displayed are matched.
 A header-row is displayed only if both the <b class="const">-showheader</b> widget option and
-<b class="const">-visible</b> header-row option are true.</p></dd>
+<b class="const">-visible</b> header-row option are true.  Also, if there are no visible
+columns, or if only the tail column is visible, then header-rows are not
+displayed.</p></dd>
 <dt><b class="const">!visible</b></dt>
 <dd><p>When this qualifier is given, only header-rows that are *not* displayed are
 matched.</p></dd>
