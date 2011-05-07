@@ -1282,10 +1282,9 @@ TreeHeaderColumn_DragBounds(
  *
  * TreeHeaderColumn_Draw --
  *
- *	Draws a single header-column.  If the header has -ownerdrawn=yes
- *	then the area is erased to the tree -background color and only
- *	the item style (if any) is drawn.  When -ownerdrawn=no the
- *	native column stuff is drawn followed by the item style (if any).
+ *	Draws a single header-column.  The background is erased to the
+ *	treectrl's -background color.  The style is drawn if this column
+ *	header isn't part of the drag image (or the hidden tail column).
  *
  * Results:
  *	None.
@@ -1311,6 +1310,8 @@ TreeHeaderColumn_Draw(
     int x = drawArgs->x, y = drawArgs->y,
 	width = drawArgs->width, height = drawArgs->height;
     int isDragColumn = 0, isHiddenTail;
+    GC gc;
+    TreeRectangle tr;
 
     if (header->columnDrag.draw == TRUE && tree->columnDrag.column != NULL) {
 	column1min = tree->columnDrag.column;
@@ -1326,13 +1327,9 @@ TreeHeaderColumn_Draw(
      * Currently a span is always created for the tail column. */
     isHiddenTail = (drawArgs->column == tree->columnTail) && !TreeColumn_Visible(drawArgs->column);
 
-    if (1) {
-	GC gc = Tk_3DBorderGC(tree->tkwin, tree->border, TK_3D_FLAT_GC);
-	TreeRectangle tr;
-
-	TreeRect_SetXYWH(tr, x, y, width, height);
-	Tree_FillRectangle(tree, td, NULL, gc, tr);
-    }
+    gc = Tk_3DBorderGC(tree->tkwin, tree->border, TK_3D_FLAT_GC);
+    TreeRect_SetXYWH(tr, x, y, width, height);
+    Tree_FillRectangle(tree, td, NULL, gc, tr);
 
     if ((drawArgs->style != NULL) && !isDragColumn && !isHiddenTail) {
 	TreeStyle_Draw(drawArgs); /* may change drawArgs! */
@@ -1469,8 +1466,9 @@ SetImageForColumn(
  * TreeHeader_DrawDragImagery --
  *
  *	Draws the drag-and-drop feedback for a single TreeHeader.
- *	This is called after the header has been drawn.  It renders
- *	the transparent drag image(s) on top of what was already drawn.
+ *	This is called after all the column headers have been drawn.  It
+ *	renders the transparent drag image(s) on top of what was already
+ *	drawn.
  *
  * Results:
  *	None.
@@ -1916,10 +1914,8 @@ TreeHeader_FreeResources(
  *
  * TreeHeaders_NeededWidthOfColumn --
  *
- *	Returns the needed width of every header-column above a column.
- *	The needed width is the maximum of the style width (if any) and
- *	the native header elements (which is zero for -ownerdrawn
- *	headers).
+ *	Returns the maximum needed width of a column's header in every
+ *	header-row.
  *
  * Results:
  *	Pixel width. Will be zero if there are no visible headers.
@@ -1942,7 +1938,7 @@ TreeHeaders_NeededWidthOfColumn(
     while (item != NULL) {
 	if (TreeItem_ReallyVisible(tree, item)) {
 	    TreeItemColumn itemColumn = TreeItem_FindColumn(tree, item, TreeColumn_Index(treeColumn));
-	    width = TreeItemColumn_NeededWidth(tree, item, itemColumn); /* the style (if any) */
+	    width = TreeItemColumn_NeededWidth(tree, item, itemColumn);
 	    maxWidth = MAX(maxWidth, width);
 	}
 	item = TreeItem_GetNextSibling(tree, item);

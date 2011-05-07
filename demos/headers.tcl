@@ -205,11 +205,7 @@ proc DemoHeaders::Run {} {
 
     set S header2
 
-if 1 {
     $T header configure first -tags header1
-} else {
-    $T header configure first -ownerdrawn yes -tags header1
-}
     set H header1
     $T header configure $H all -arrowgravity right -justify center
     $T header style set $H all $S
@@ -219,11 +215,7 @@ if 1 {
 	$T header text $H $C $text
     }
 
-if 1 {
     set H [$T header create -tags header2]
-} else {
-    set H [$T header create -ownerdrawn yes -tags header2]
-}
     $T header configure $H all -arrowgravity right -justify center
     $T header style set $H all $S
     $T header span $H all 2
@@ -232,11 +224,7 @@ if 1 {
 	$T header text $H $C $text
     }
 
-if 1 {
     set H [$T header create -tags header3]
-} else {
-    set H [$T header create -ownerdrawn yes -tags header3]
-}
     $T header configure $H all -arrowgravity right -justify center
     $T header style set $H all $S
     foreach {C text} [list Cleft Left C1 D C2 E C3 F C4 G C5 K C6 L C7 M C8 N Cright Right] {
@@ -256,11 +244,7 @@ if 1 {
     $T style layout $S header.divider -detach yes -expand n -iexpand x
     $T style layout $S header.window -iexpand x -squeeze x -padx 1 -pady {0 2}
 
-if 1 {
     set H [$T header create -tags header4]
-} else {
-    set H [$T header create -ownerdrawn yes -tags header4]
-}
     $T header dragconfigure $H -enable no
     $T header style set $H all $S
     foreach C [$T column list] {
@@ -276,7 +260,7 @@ if 1 {
 
     scan [$T column bbox {first lock none}] "%d %d %d %d" left top right bottom
     scan [$T column bbox {last lock none}] "%d %d %d %d" left2 top2 right2 bottom2
-    set width [expr {$right2 - $left}]
+    set width [expr {$right2 - $left - 12}]
 
     $T item state define current
 
@@ -289,7 +273,7 @@ if 1 {
     set S [$T style create theme -orient vertical]
     $T style elements $S {theme.rect theme.text theme.button}
     $T style layout $S theme.rect -detach yes -iexpand xy
-    $T style layout $S theme.text -padx 4 -pady 3
+    $T style layout $S theme.text -padx 6 -pady 3
     $T style layout $S theme.button -expand we -pady {3 6}
 
     NewButtonItem "" \
@@ -331,10 +315,8 @@ if 1 {
     $T column configure !tail -itemstyle $S
     $T item create -count 100 -parent root
 
-    #
-    # Set binding scripts to handle the <Header> dynamic event
-    #
-
+    # Remember which column header is displaying the sort arrow, and
+    # initialize the sort order in each column.
     variable Sort
     set Sort(header) ""
     set Sort(column) ""
@@ -359,6 +341,8 @@ if 1 {
 	DemoHeaders::ColumnDragBegin %H %C
     }
 
+    # Disable the demo.tcl binding on <ColumnDrag-receive> and install our
+    # own to deal with multiple rows of column headers.
     $T notify configure DontDelete <ColumnDrag-receive> -active no
     $T notify bind $T <ColumnDrag-receive> {
 	DemoHeaders::ColumnDragReceive %H %C %b
@@ -372,6 +356,8 @@ if 1 {
     return
 }
 
+# This procedure creates a new item with descriptive text and a pushbutton
+# to change the style used in the column headers.
 proc DemoHeaders::NewButtonItem {S text args} {
     set T [DemoList]
     set I [$T item create -parent root -tags [list style$S config]]
@@ -437,9 +423,6 @@ proc DemoHeaders::ChangeHeaderStyle {style {textColor ""} {sortColor ""} {imgHei
 		$T header text $H $C [$T header cget $H $C -text]
 	    }
 	}
-if 0 {
-	$T header configure $H -ownerdrawn $ownerDrawn
-}
     }
     if {$Sort(header) ne ""} {
 	ShowSortArrow $Sort(header) $Sort(column)
@@ -495,6 +478,7 @@ proc DemoHeaders::HideSortArrow {H C} {
     return
 }
 
+# Toggles a sort arrow between up and down
 proc DemoHeaders::ToggleSortArrow {H C} {
     variable Sort
     if {$Sort(direction,$C) eq "up"} {
@@ -508,6 +492,9 @@ proc DemoHeaders::ToggleSortArrow {H C} {
 
 # This procedure is called to handle the <ColumnDrag-begin> event generated
 # by the treectrl.tcl library script.
+# When dragging in the top row, all header-rows provide feedback.
+# When dragging in the second row, the 2nd, 3rd and 4th rows provide feedback.
+# When dragging in the third row, only the 3rd and 4rd row provides feedback.
 proc DemoHeaders::ColumnDragBegin {H C} {
     set T [DemoList]
     $T header dragconfigure all -draw yes
@@ -541,6 +528,7 @@ proc DemoHeaders::ColumnDragReceive {H C b} {
 	$T column move $C $b
     }
 
+    # Restore the appearance of the top row if dragging happened below
     if {[$T header compare $H > header1]} {
 	foreach span $span1 text $text1 C [$T column list] {
 	    $T header span header1 $C $span
@@ -548,6 +536,8 @@ proc DemoHeaders::ColumnDragReceive {H C b} {
 	    $T header configure header1 $C -text $text
 	}
     }
+
+    # Restore the appearance of the second row if dragging happened below
     if {[$T header compare $H > header2]} {
 	foreach span $span2 text $text2 C [$T column list] {
 	    $T header span header2 $C $span
@@ -568,6 +558,8 @@ proc DemoHeaders::ColumnDragReceive {H C b} {
     return
 }
 
+# Copy the style and element configuration from one column of an item to
+# another.
 proc DemoHeaders::TransferItemStyle {T I Cfrom Cto} {
     set S [$T item style set $I $Cfrom]
     $T item style set $I $Cto $S
@@ -581,6 +573,8 @@ proc DemoHeaders::TransferItemStyle {T I Cfrom Cto} {
     return
 }
 
+# This procedure is called to handle the <ButtonPress1> event.
+# If the click was in the checkbutton image element, toggle the CHECK state.
 proc DemoHeaders::ButtonPress1 {x y} {
     set T [DemoList]
     $T identify -array id $x $y
