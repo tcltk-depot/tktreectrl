@@ -25,12 +25,290 @@
 
 
 
+
+
+
+
   <meta content="text/html; charset=ISO-8859-1" http-equiv="content-type"><title>What's New in TkTreeCtrl</title>
   
 
 
   <meta content="Tim Baker" name="author"></head><body>
-<h1>What's New in TkTreeCtrl 2.3.2</h1>
+<h1>What's New in TkTreeCtrl 2.4</h1>
+<h2>Header Command</h2>
+
+
+
+<table style="text-align: left; width: 100%;" border="1" cellpadding="2" cellspacing="2">
+<tbody><tr><th style="background-color: rgb(255, 255, 204); width: 50%;">New<br>
+</th><th style="background-color: rgb(204, 255, 255);">Comment</th></tr><tr>
+      <td style="vertical-align: top;">header create<br>
+      </td>
+      <td style="vertical-align: top;">Creates a new row of column headers.&nbsp; The result is a unique ID for that header-row.<br>
+</td></tr><tr>
+      <td style="vertical-align: top;">header delete<br>
+      </td>
+      <td style="vertical-align: top;">Deletes one or more header-rows.&nbsp; The top header-row, created when a treectrl is created, cannot be deleted.<br>
+      </td>
+    </tr>
+    <tr>
+      <td colspan="1" rowspan="1" style="vertical-align: top;">header cget<br>
+header configure<br>
+      </td>
+      <td colspan="1" rowspan="1" style="vertical-align: top;">These commands work on both entire header-rows and individual columns within header-rows.&nbsp; The <span style="font-weight: bold;">column configure</span> command may also be used to configure column headers in the top header-row.<br>
+      </td>
+    </tr>
+    <tr>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">header bbox<br>
+header compare<br>
+header count<br>
+header element<br>
+header id<br>
+header image<br>
+header span<br>
+header state<br>
+header style<br>
+header text<br>
+header tag<br>
+      </td>
+      <td style="vertical-align: top;">These commands have the same syntax as the <span style="font-weight: bold;">item</span> subcommands of the same name.<br>
+Header-rows are actually implemented as items.<br>
+      <br>
+The <span style="font-weight: bold;">header image</span> and <span style="font-weight: bold;">header text</span>
+commands will change either the first image or text element in a custom
+style assigned to a column header, or the -image and -text options of a
+column header when no custom style is assigned.<br>
+      <br>
+The <span style="font-weight: bold;">header state</span> command operates on header states, which are distinct from item states. See the updated section called STATES in the manual.<br>
+      </td>
+    </tr>
+    <tr>
+      <td colspan="1" rowspan="1" style="vertical-align: top;">header dragcget<br>
+header dragconfigure<br>
+      </td>
+      <td colspan="1" rowspan="1" style="vertical-align: top;">Same as the <span style="font-weight: bold;">column dragcget</span> and <span style="font-weight: bold;">column dragconfigure</span> commands.<br>
+      <br>
+The visual feedback when dragging column headers has changed.&nbsp; As
+a result, the following options are deprecated and have no effect:<br>
+      <ul>
+        <li>-imagecolor</li>
+        <li>-indicatorcolor</li>
+        <li>-indicatorside</li>
+      </ul>
+
+      </td>
+    </tr>
+    <tr>
+    </tr>
+</tbody>
+</table>
+<h2>Column Configuration Options<br>
+</h2>
+<table style="text-align: left; width: 100%;" border="1" cellpadding="2" cellspacing="2">
+<tbody><tr><th style="background-color: rgb(255, 255, 204); width: 50%;">Option<br>
+</th><th style="background-color: rgb(204, 255, 255);">Comment</th></tr><tr>
+      <td style="vertical-align: top;">
+      <dl class="options">
+<dt><b class="option"><b class="option">-arrow</b></b> <i class="arg">direction</i></dt><dt><b class="option"><b class="option">-arrowbitmap</b></b> <i class="arg">bitmap</i></dt><dt><b class="option"><b class="option">-arrowgravity</b></b> <i class="arg">direction</i></dt><dt><b class="option"><b class="option">-arrowimage</b></b> <i class="arg">image</i></dt><dt><b class="option"><b class="option">-arrowpadx</b></b> <i class="arg">amount</i></dt><dt><b class="option"><b class="option">-arrowpady</b></b> <i class="arg">amount</i></dt><dt><b class="option"><b class="option">-arrowside</b></b> <i class="arg">side</i></dt><dt><b class="option"><b class="option">-background</b></b> <i class="arg">color</i></dt><dt><b class="option"><b class="option">-bitmap</b></b> <i class="arg">bitmap</i></dt><dt><b class="option"><b class="option">-borderwidth</b></b> <i class="arg">size</i></dt><dt><b class="option"><b class="option">-button</b></b> <i class="arg">boolean</i></dt><dt><b class="option"><b class="option">-font</b></b> <i class="arg">fontName</i></dt><dt><b class="option"><b class="option">-image</b></b> <i class="arg">image</i></dt><dt><b class="option"><b class="option">-imagepadx</b></b> <i class="arg">amount</i></dt><dt><b class="option"><b class="option">-imagepady</b></b> <i class="arg">amount</i></dt><dt><b class="option"><b class="option">-justify</b></b> <i class="arg">justification</i></dt><dt><b class="option"><b class="option">-state</b></b> <i class="arg">state</i></dt><dt><b class="option"><b class="option">-text</b></b> <i class="arg">text</i></dt><dt><b class="option"><b class="option">-textcolor</b></b> <i class="arg">color</i></dt><dt><b class="option"><b class="option">-textlines</b></b> <i class="arg">count</i></dt><dt><b class="option"><b class="option">-textpadx</b></b> <i class="arg">amount</i></dt><dt><b class="option"><b class="option">-textpady</b></b> <i class="arg">amount</i></dt>
+      </dl>
+      </td>
+      <td colspan="1" rowspan="1" style="vertical-align: top;">All
+these options related to column headers are no longer a part of a
+column itself.&nbsp; Instead, these options were moved to the new
+column header api.<br>
+      <br>
+These options can still be accessed using <span style="font-weight: bold;">column cget</span> and <span style="font-weight: bold;">column configure</span>, but only for the top row of column headers.<br>
+      <br>
+To access these options in header-rows other than the top row, use the <span style="font-weight: bold;">header cget</span> and <span style="font-weight: bold;">header configure</span> command.<br>
+      </td>
+      
+    </tr>
+</tbody>
+</table>
+<h2>Element Command</h2>
+
+
+
+<table style="text-align: left; width: 100%;" border="1" cellpadding="2" cellspacing="2">
+
+
+<tbody><tr><th style="background-color: rgb(255, 255, 204); width: 50%;">Arguments Changed<br>
+</th><th style="background-color: rgb(204, 255, 255);">Comment</th></tr><tr>
+      <td style="vertical-align: top;">element create<br>
+element cget<br>
+      </td>
+      <td style="vertical-align: top;">The new option <span style="font-weight: bold;">-statedomain</span> accepts a value of <span style="font-weight: bold;">item</span> or <span style="font-weight: bold;">header</span>.&nbsp; The default value is <span style="font-weight: bold;">item</span>.&nbsp;
+This option is used to distinguish between elements used in items and
+elements used in column headers, since items and headers have a
+different
+set of state flags.&nbsp; The value of this option cannot&nbsp; be changed.<br>
+      </td>
+    </tr>
+</tbody>
+</table>
+
+
+<h2><span style="font-weight: bold;"></span></h2>
+
+
+
+<h2>Item Command</h2>
+
+
+<table style="text-align: left; width: 100%;" border="1" cellpadding="2" cellspacing="2">
+<tbody><tr><th style="background-color: rgb(255, 255, 204); width: 50%;">New<br>
+</th><th style="background-color: rgb(204, 255, 255);">Comment</th></tr><tr>
+      <td style="vertical-align: top;">item state define<br>
+item state linkage<br>
+item state names<br>
+item state undefine<br>
+
+      </td>
+      <td style="vertical-align: top;">All the old subcommands of the widget <span style="font-weight: bold;">state</span> command are now in the updated <span style="font-weight: bold;">item state</span>
+command.&nbsp; This was done because items and headers have a different
+set of states.&nbsp; Defining new header states is done using the new <span style="font-weight: bold;">header state</span> command.<br>
+</td></tr></tbody>
+</table>
+<h2>Style Command</h2>
+<table style="text-align: left; width: 100%;" border="1" cellpadding="2" cellspacing="2">
+<tbody><tr><th style="background-color: rgb(255, 255, 204); width: 50%;">Arguments Changed<br>
+</th><th style="background-color: rgb(204, 255, 255);">Comment</th></tr><tr>
+      <td style="vertical-align: top;">style create<br>
+style cget<br>
+      </td>
+      <td style="vertical-align: top;">The new option <span style="font-weight: bold;">-statedomain</span> accepts a value of <span style="font-weight: bold;">item</span> or <span style="font-weight: bold;">header</span>.&nbsp; The default value is <span style="font-weight: bold;">item</span>.&nbsp;
+This option is used to distinguish between styles used in items and
+styles used in column headers, since items and headers have a different
+set of state flags.&nbsp; The value of this option cannot&nbsp; be changed.<br>
+      </td>
+    </tr><tr>
+      <td style="vertical-align: top;">style layout<br>
+      </td>
+      <td style="vertical-align: top;">A new style layout option was added called <span style="font-weight: bold;">-center</span>.&nbsp; The -center option allows one or more elements to be centered within a style.<br>
+      </td>
+    </tr>
+
+</tbody>
+</table>
+<h2><span style="font-weight: bold;"></span></h2>
+<h2>TreeCtrl Command</h2>
+
+
+<table style="text-align: left; width: 100%;" border="1" cellpadding="2" cellspacing="2">
+<tbody><tr><th style="background-color: rgb(255, 255, 204); width: 50%;">Arguments/Result Changed<br>
+</th><th style="background-color: rgb(204, 255, 255);">Comment</th></tr><tr>
+      <td style="vertical-align: top;">bbox<br>
+</td>
+      <td style="vertical-align: top;">Three new areas are defined, <span style="font-weight: bold;">header.left</span>, <span style="font-weight: bold;">header.none</span>, and <span style="font-weight: bold;">header.right,</span>
+to get the bounds of the different groups of locked/unlocked column
+headers.&nbsp; The words after "header." are each possible value of the
+column option -lock.<br>
+</td></tr><tr>
+      <td style="vertical-align: top;">identify<br>
+      </td>
+      <td style="vertical-align: top;">To make the result of this
+command easier to use, especially with the new column header code, a
+new option was added that sets the elements of an array variable rather
+than returning the result as a list.<br>
+      <pre style="margin-left: 40px;">.t identify -array id $x $y</pre>
+The above call will alter the array variable named "id" with info about what is under the given coordinates.<br>
+      </td>
+    </tr>
+</tbody>
+</table>
+<h2>TreeCtrl Configuration Options</h2>
+
+
+
+
+
+  
+
+    
+<table style="text-align: left; width: 100%;" border="1" cellpadding="2" cellspacing="2">
+
+<tbody><tr>
+
+      <th style="background-color: rgb(255, 255, 204); width: 50%;">New</th>
+
+      <th style="background-color: rgb(204, 255, 255);">Comment</th>
+
+    </tr>
+
+    <tr>
+      <td style="vertical-align: top;">-headerfont<br>
+      </td>
+      <td style="vertical-align: top;">This
+is the font used for drawing text in column headers.&nbsp; The default
+value is TkHeadingFont where that font is defined (usually on Tk 8.5+),
+otherwise it is the default listbox font.&nbsp; On Mac OS X,
+TkHeadingFont is the small system font used for drawing text in the
+fixed-height headers.<br>
+      <span style="color: red;">This new option results in a different default look to column text on X11, where TkHeadingFont is a bold font</span>.<br>
+</td></tr><tr>
+      <td style="vertical-align: top;">-headerfg<br>
+-headerforeground<br>
+      </td>
+      <td style="vertical-align: top;">This is the foreground text
+color used when drawing text in column headers.&nbsp; On Gtk+, the
+system theme may override this color.<br>
+      </td>
+    </tr>
+</tbody>
+</table><h2>Headers</h2>
+
+
+The treectrl widget now supports multiple rows of column headers.&nbsp;
+In the documentation, an entire row of column headers is referred to as
+a header-row.<br>
+<ul>
+  <li>There is always one header-row with the unique ID "0".&nbsp; It may
+also be referred to using the header description "first". This top
+header-row cannot be deleted.</li>
+  <li>Configuring column header options (such as -image and -text) in the top header-row can be done using <span style="font-weight: bold;">column configure</span>, the same as in previous versions. To configure column header options in specific header-rows, the <span style="font-weight: bold;">header configure</span> command must be used.<br>
+  </li>
+  <li>Column spanning is supported using the <span style="font-weight: bold;">header span</span> command.</li>
+  <li>The appearance of column headers may be customized using styles.
+When creating elements and styles for use in column headers, the
+"-statedomain header" option must be used.<span style="font-family: monospace;"></span>
+<pre>.t element create MyHeaderElement text -statedomain header<br>.t style create MyHeaderStyle -statedomain header</pre>
+  </li>
+</ul>
+<h2>Element Changes</h2>
+<ul>
+  <li>There is a brand-new element type called <span style="font-weight: bold;">header</span> which displays a themed (or non-themed) column header background and sort arrow.<br>
+</li>
+  <li>To support the new column header code, which is implemented using
+styles, bitmap, image, and text elements are offset by 1,1 pixels
+when displayed in a column header that is in the "pressed" state.</li>
+
+  <li>The default color of text elements in column headers is -headerforeground, not -foreground.</li>
+  <li>The default font of text elements in column headers is -headerfont, not -font.<br>
+  </li>
+</ul>
+<h2>
+Event Changes
+</h2>
+<ul>
+  <li>The <span style="font-weight: bold;">&lt;ColumnDrag&gt;</span> and <span style="font-weight: bold;">&lt;Header&gt;</span> events have a new<span style="font-weight: bold;"></span> substitution character, <span style="font-weight: bold;">%H</span>, which is replaced by the unique ID of the header-row involved in drag-and-drop.</li>
+  <li>A new event, <span style="font-weight: bold;">&lt;ColumnDrag-indicator&gt;</span>, is generated whenever the place to drop a dragged column header is updated.</li>
+  <li>A new event, <span style="font-weight: bold;">&lt;Header-state&gt;</span>, is generated whenever the state of an individual column header is changed during mouse-pointer events.<br>
+  </li>
+</ul>
+<h2>Demo Changes</h2>
+<ul>
+  <li>A new demo called Headers was added to demonstrate multiple rows
+of column headers and customizing the appearance of column headers
+using styles.<br>
+  </li>
+</ul>
+<h2>Bug Fixes</h2>
+<ul>
+  <li>Fixed two uninitialized variables found by valgrind.</li>
+</ul>
+<hr style="width: 100%; height: 2px;"><h1>What's New in TkTreeCtrl 2.3.2</h1>
 <h2>Bug Fixes</h2>
 <ul>
   <li>Fixed a bug where elements could expand too much, due to not accounting for the padding of elements in a -union correctly.</li>
