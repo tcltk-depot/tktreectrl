@@ -533,6 +533,17 @@ test column-11.5 {column count: unknown tag} -body {
     .t column count {tag foo}
 } -result {0}
 
+test column-12.1 {column configure: passing args to header configure} -setup {
+    .t column create -tags column0
+} -body {
+    set opts {}
+    foreach info [.t column configure column0] {
+	lassign $info name x y default current
+	lappend opts $name $current
+    }
+    eval .t column configure column0 $opts
+} -result {}
+
 test column-99.1 {some needed cleanup} -body {
     destroy .t
 } -result {}
