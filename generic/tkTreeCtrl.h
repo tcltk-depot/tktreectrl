@@ -1098,7 +1098,6 @@ MODULE_SCOPE int Tree_WidthOfLeftColumns(TreeCtrl *tree);
 MODULE_SCOPE int Tree_WidthOfRightColumns(TreeCtrl *tree);
 MODULE_SCOPE void TreeColumns_UpdateCounts(TreeCtrl *tree);
 MODULE_SCOPE void TreeColumns_InvalidateCounts(TreeCtrl *tree);
-MODULE_SCOPE void TreeColumn_TreeChanged(TreeCtrl *tree, int flagT);
 MODULE_SCOPE void TreeColumn_SetDInfo(TreeColumn column, TreeColumnDInfo dInfo);
 MODULE_SCOPE TreeColumnDInfo TreeColumn_GetDInfo(TreeColumn column);
 
