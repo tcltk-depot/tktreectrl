@@ -334,9 +334,9 @@ DIST_ROOT	= /tmp/dist
 DIST_DIR	= $(DIST_ROOT)/$(DIST_NAME)
 
 DIST_DEMOS	= biglist bitmaps column-lock demo explorer firefox gradients \
-		  gradients2 gradients3 help imovie layout mailwasher mycomputer \
-		  outlook-folders outlook-newgroup random span style-editor \
-		  textvariable www-options
+		  gradients2 gradients3 headers help imovie layout \
+		  mailwasher mycomputer outlook-folders outlook-newgroup \
+		  random span style-editor textvariable www-options
 
 DIST_DOCS	= man.macros treectrl.html treectrl.man treectrl.n \
 		  What-is-New-in-TkTreeCtrl.html
