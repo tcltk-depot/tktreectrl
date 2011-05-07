@@ -1,6 +1,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<html><head>
-<!-- $Id$ -->
+<html><head><!-- $Id$ -->
+
+
 
 
 
@@ -117,7 +118,7 @@ a result, the following options are deprecated and have no effect:<br>
       <td colspan="1" rowspan="1" style="vertical-align: top;">All
 these options related to column headers are no longer a part of a
 column itself.&nbsp; Instead, these options were moved to the new
-column header api.<br>
+column header API.<br>
       <br>
 These options can still be accessed using <span style="font-weight: bold;">column cget</span> and <span style="font-weight: bold;">column configure</span>, but only for the top row of column headers.<br>
       <br>
@@ -280,8 +281,8 @@ When creating elements and styles for use in column headers, the
 <ul>
   <li>There is a brand-new element type called <span style="font-weight: bold;">header</span> which displays a themed (or non-themed) column header background and sort arrow.<br>
 </li>
-  <li>To support the new column header code, which is implemented using
-styles, bitmap, image, and text elements are offset by 1,1 pixels
+  <li>To support the new column header code - which is implemented using
+styles - bitmap, image, and text elements are offset by 1,1 pixels
 when displayed in a column header that is in the "pressed" state.</li>
 
   <li>The default color of text elements in column headers is -headerforeground, not -foreground.</li>
@@ -292,7 +293,7 @@ when displayed in a column header that is in the "pressed" state.</li>
 Event Changes
 </h2>
 <ul>
-  <li>The <span style="font-weight: bold;">&lt;ColumnDrag&gt;</span> and <span style="font-weight: bold;">&lt;Header&gt;</span> events have a new<span style="font-weight: bold;"></span> substitution character, <span style="font-weight: bold;">%H</span>, which is replaced by the unique ID of the header-row involved in drag-and-drop.</li>
+  <li>The <span style="font-weight: bold;">&lt;ColumnDrag&gt;</span> and <span style="font-weight: bold;">&lt;Header&gt;</span> events have a new<span style="font-weight: bold;"></span> substitution character, <span style="font-weight: bold;">%H</span>, which is replaced by the unique ID of the header-row involved.</li>
   <li>A new event, <span style="font-weight: bold;">&lt;ColumnDrag-indicator&gt;</span>, is generated whenever the place to drop a dragged column header is updated.</li>
   <li>A new event, <span style="font-weight: bold;">&lt;Header-state&gt;</span>, is generated whenever the state of an individual column header is changed during mouse-pointer events.<br>
   </li>
@@ -302,13 +303,8 @@ Event Changes
   <li>A new demo called Headers was added to demonstrate multiple rows
 of column headers and customizing the appearance of column headers
 using styles.<br>
-  </li>
-</ul>
-<h2>Bug Fixes</h2>
-<ul>
-  <li>Fixed two uninitialized variables found by valgrind.</li>
-</ul>
-<hr style="width: 100%; height: 2px;"><h1>What's New in TkTreeCtrl 2.3.2</h1>
+</li>
+</ul><hr style="width: 100%; height: 2px;"><h1>What's New in TkTreeCtrl 2.3.2</h1>
 <h2>Bug Fixes</h2>
 <ul>
   <li>Fixed a bug where elements could expand too much, due to not accounting for the padding of elements in a -union correctly.</li>
