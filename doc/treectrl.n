@@ -2526,7 +2526,7 @@ over the item's expand/collapse button
 .sp
 $varName(line) is the unique id of an ancestor of the item
 (but not the parent of the item) if the coordinates
-are over a line descending from that ancestor.  If the coordinate are not
+are over a line descending from that ancestor.  If the coordinates are not
 over such a line then $varName(line) is "".
 This is used to collapse the ancestor when the line is clicked on.
 .RE
@@ -3731,7 +3731,18 @@ i.e. independent from the other elements.  The default is false.
 \fBy\fR causes the element to be centered vertically.
 When more than one element has -center layout, all the elements between the
 first and last with -center layout in the style's list of elements are centered
-as a group.
+as a group.  Consider the following when there is another element to the right
+of MyElement:
+.nf
+
+.t style layout MyStyle MyElement -expand we
+.t style layout MyStyle MyElement -center x
+
+.fi
+With the first call, MyElement will be centered only within the space that
+is not occupied by the other element, so MyElement will appear off-center
+towards the left of the style.  With the second call, MyElement will be
+centered within the style so long as it doesn't overlap the other element.
 .TP
 \fB\fB-draw\fR\fR \fIboolean\fR
 This is a \fBper-state\fR option that determines whether
@@ -3766,10 +3777,16 @@ between the padding). Note that if the
 The default is an empty string.
 .TP
 \fB\fB-indent\fR\fR \fIboolean\fR
-Specifies whether the element should be positioned to the right of the
-button/line area in the tree column.  When false, the element is displayed
-beneath the buttons and lines in the tree column.
-This option is ignored unless the \fB-detach\fR option is true.
+For item styles, this option specifies whether the element should be
+positioned to the right of the button/line area in the tree column.  When
+false, the element is displayed beneath the buttons and lines in the tree
+column. This option is ignored unless the \fB-detach\fR option is true.
+.sp
+For header styles, this option specifies whether the element should be
+positioned to the right of the -canvaspadx padding.  This option is ignored
+unless the \fB-detach\fR option is true or the \fB-union\fR option is
+specified.
+.sp
 The default is true.
 .TP
 \fB\fB-ipadx\fR\fR \fIamount\fR
@@ -3778,7 +3795,9 @@ The default is true.
 \fIAmount\fR specifies how much internal padding to leave on the left and
 right (for \fB-ipadx\fR) or top and bottom (for \fB-ipady\fR) sides of
 the element. \fIAmount\fR may be a list of two values to specify padding for
-the two sides separately.  The default value is 0.
+the two sides separately.  The default value is 0.  This option is typically
+used with the \fB-union\fR layout option, to create space around the
+enclosed elements.
 .TP
 \fB\fB-minheight\fR\fR \fIpixels\fR
 .TP

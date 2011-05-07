@@ -1773,7 +1773,7 @@ to the edge of the column header, otherwise &quot;&quot;</p></li>
 over the item's expand/collapse button</p>
 <p>$varName(line) is the unique id of an ancestor of the item
 (but not the parent of the item) if the coordinates
-are over a line descending from that ancestor.  If the coordinate are not
+are over a line descending from that ancestor.  If the coordinates are not
 over such a line then $varName(line) is &quot;&quot;.
 This is used to collapse the ancestor when the line is clicked on.</p></li>
 </ol>
@@ -2775,7 +2775,16 @@ i.e. independent from the other elements.  The default is false.</p></dd>
 <b class="const">y</b> causes the element to be centered vertically.
 When more than one element has -center layout, all the elements between the
 first and last with -center layout in the style's list of elements are centered
-as a group.</p></dd>
+as a group.  Consider the following when there is another element to the right
+of MyElement:</p>
+<pre class="example">
+.t style layout MyStyle MyElement -expand we
+.t style layout MyStyle MyElement -center x
+</pre>
+<p>With the first call, MyElement will be centered only within the space that
+is not occupied by the other element, so MyElement will appear off-center
+towards the left of the style.  With the second call, MyElement will be
+centered within the style so long as it doesn't overlap the other element.</p></dd>
 <dt><b class="option"><b class="option">-draw</b></b> <i class="arg">boolean</i></dt>
 <dd><p>This is a <span class="sectref"><a href="#section12">per-state</a></span> option that determines whether
 an element should be drawn. If the value of the option evaluates to false for a given
@@ -2806,18 +2815,24 @@ between the padding). Note that if the
 <b class="option">-union</b> layout is determined by the elements it surrounds.
 The default is an empty string.</p></dd>
 <dt><b class="option"><b class="option">-indent</b></b> <i class="arg">boolean</i></dt>
-<dd><p>Specifies whether the element should be positioned to the right of the
-button/line area in the tree column.  When false, the element is displayed
-beneath the buttons and lines in the tree column.
-This option is ignored unless the <b class="option">-detach</b> option is true.
-The default is true.</p></dd>
+<dd><p>For item styles, this option specifies whether the element should be
+positioned to the right of the button/line area in the tree column.  When
+false, the element is displayed beneath the buttons and lines in the tree
+column. This option is ignored unless the <b class="option">-detach</b> option is true.</p>
+<p>For header styles, this option specifies whether the element should be
+positioned to the right of the -canvaspadx padding.  This option is ignored
+unless the <b class="option">-detach</b> option is true or the <b class="option">-union</b> option is
+specified.</p>
+<p>The default is true.</p></dd>
 <dt><b class="option"><b class="option">-ipadx</b></b> <i class="arg">amount</i></dt>
 <dd></dd>
 <dt><b class="option"><b class="option">-ipady</b></b> <i class="arg">amount</i></dt>
 <dd><p><i class="arg">Amount</i> specifies how much internal padding to leave on the left and
 right (for <b class="option">-ipadx</b>) or top and bottom (for <b class="option">-ipady</b>) sides of
 the element. <i class="arg">Amount</i> may be a list of two values to specify padding for
-the two sides separately.  The default value is 0.</p></dd>
+the two sides separately.  The default value is 0.  This option is typically
+used with the <b class="option">-union</b> layout option, to create space around the
+enclosed elements.</p></dd>
 <dt><b class="option"><b class="option">-minheight</b></b> <i class="arg">pixels</i></dt>
 <dd></dd>
 <dt><b class="option"><b class="option">-height</b></b> <i class="arg">pixels</i></dt>
