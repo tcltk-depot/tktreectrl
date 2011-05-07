@@ -620,7 +620,7 @@ test treectrl-14.1 {rename and change some columns} -body {
 } -result {}
 
 test treectrl-15.1 {identify: missing args} -body {
-	wm geometry . 400x200 ; update
+    wm geometry . 400x200 ; update
     .t identify
 } -returnCodes error -result {wrong # args: should be ".t identify ?switches? x y"}
 
@@ -634,10 +634,10 @@ test treectrl-15.2 {identify: negative coords} -body {
 } -result {}
 
 test treectrl-15.3 {identify: header left} -body {
-	# column 0 has width 0
-	# column 1 has width 0
-	# column 2 has width 40 + 40 + 150 = 230
-	# borders are 2 + 1 = 3
+    # column 0 has width 0
+    # column 1 has width 0
+    # column 2 has width 40 + 40 + 150 = 230
+    # borders are 2 + 1 = 3
     .t identify 3 4
 } -result {header 2 left}
 
@@ -675,10 +675,122 @@ test treectrl-15.10 {identify: over element} -body {
 test treectrl-15.11 {identify: item (to the right)} -body {
     # first make column wider, otherwise we can't get right of the item
     .t column configure column1 -width 250
-    update idletasks 
+    update idletasks
     scan [.t bbox header] "%d %d %d %d" left top right bottom
     .t identify 233 $bottom
 } -result {item 1 column 2}
+
+test treectrl-15.12 {identify: negative coords} -body {
+    .t column configure column1 -width ""
+    .t identify -array id -5 -5
+    parray id
+} -output {id(where) = 
+} -cleanup {array unset id}
+
+test treectrl-15.13 {identify: header left} -body {
+    # column 0 has width 0
+    # column 1 has width 0
+    # column 2 has width 40 + 40 + 150 = 230
+    # borders are 2 + 1 = 3
+    .t identify -array id 3 4
+    parray id
+} -output {id(column)  = 2
+id(element) = 
+id(header)  = 0
+id(side)    = left
+id(where)   = header
+} -cleanup {array unset id}
+
+test treectrl-15.14 {identify: header} -body {
+    .t identify -array id 40 4
+    parray id
+} -output {id(column)  = 2
+id(element) = 
+id(header)  = 0
+id(side)    = 
+id(where)   = header
+} -cleanup {array unset id}
+
+test treectrl-15.15 {identify: header right} -body {
+    .t identify -array id 232 4
+    parray id
+} -output {id(column)  = 2
+id(element) = 
+id(header)  = 0
+id(side)    = right
+id(where)   = header
+} -cleanup {array unset id}
+
+test treectrl-15.16 {identify: tail left} -body {
+    .t identify -array id 233 4
+    parray id
+} -output {id(column)  = tail
+id(element) = 
+id(header)  = 0
+id(side)    = left
+id(where)   = header
+} -cleanup {array unset id}
+
+test treectrl-15.17 {identify: tail} -body {
+    .t identify -array id 250 4
+    parray id
+} -output {id(column)  = tail
+id(element) = 
+id(header)  = 0
+id(side)    = 
+id(where)   = header
+} -cleanup {array unset id}
+
+test treectrl-15.18 {identify: item (to the left)} -body {
+    scan [.t bbox header] "%d %d %d %d" left top right bottom
+    .t identify -array id 4 $bottom
+    parray id
+} -output {id(button)  = no
+id(column)  = 2
+id(element) = 
+id(item)    = 1
+id(line)    = 
+id(where)   = item
+} -cleanup {array unset id}
+
+test treectrl-15.19 {identify: button} -body {
+    scan [.t bbox header] "%d %d %d %d" left top right bottom
+    .t identify -array id 60 $bottom
+    parray id
+} -output {id(button)  = yes
+id(column)  = 2
+id(element) = 
+id(item)    = 1
+id(line)    = 
+id(where)   = item
+} -cleanup {array unset id}
+
+test treectrl-15.20 {identify: over element} -body {
+    scan [.t bbox header] "%d %d %d %d" left top right bottom
+    .t identify -array id 150 $bottom
+    parray id
+} -output {id(button)  = no
+id(column)  = 2
+id(element) = eRect2
+id(item)    = 1
+id(line)    = 
+id(where)   = item
+} -cleanup {array unset id}
+
+test treectrl-15.21 {identify: item (to the right)} -body {
+    # first make column wider, otherwise we can't get right of the item
+    .t column configure column1 -width 250
+    update idletasks
+    scan [.t bbox header] "%d %d %d %d" left top right bottom
+    .t identify -array id 233 $bottom
+    parray id
+} -output {id(button)  = no
+id(column)  = 2
+id(element) = 
+id(item)    = 1
+id(line)    = 
+id(where)   = item
+} -cleanup {array unset id}
 
 test treectrl-16.1 {dragimage: missing args} -body {
     .t dragimage
