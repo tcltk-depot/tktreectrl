@@ -448,10 +448,11 @@ TreeHeaderColumn_ConfigureHeaderStyle(
     TreeCtrl *tree = header->tree;
     Tcl_Interp *interp = tree->interp;
     Tk_OptionSpec *specPtr = columnSpecs;
-    int i, infoObjC = 0, elemObjC[4], eMask, iMask = 0;
+    Tk_OptionSpec *staticSpecs[STATIC_SIZE], **specs = staticSpecs;
+    int i, j, infoObjC = 0, elemObjC[4], eMask, iMask = 0;
     Tcl_Obj *staticInfoObjV[STATIC_SIZE], **infoObjV = staticInfoObjV;
     Tcl_Obj *staticElemObjV[4][STATIC_SIZE], **elemObjV[4];
-    Tcl_Obj *textFillObj = NULL, *textLinesObj = NULL;
+    Tcl_Obj *textFillObj = NULL, *textLinesObj = NULL, *textFontObj = NULL;
     HeaderStyleParams params;
     int result;
 
@@ -541,7 +542,14 @@ TreeHeaderColumn_ConfigureHeaderStyle(
 			} else {
 			    elemObjV[2][elemObjC[2]++] = listObjV[0]; /* name */
 			}
-			elemObjV[2][elemObjC[2]++] = listObjV[4]; /* value */
+			/* Text element -font is per-state. */
+			if (!strcmp(specPtr->optionName, "-font")) {
+			    textFontObj = Tcl_NewListObj(1, &listObjV[4]);
+			    Tcl_IncrRefCount(textFontObj);
+			    elemObjV[2][elemObjC[2]++] = textFontObj; /* value */
+			} else {
+			    elemObjV[2][elemObjC[2]++] = listObjV[4]; /* value */
+			}
 		    }
 		}
 		if (specPtr->typeMask & ELEM_BITMAP) {
@@ -555,6 +563,7 @@ TreeHeaderColumn_ConfigureHeaderStyle(
 	    specPtr++;
 	}
 	Tcl_DecrRefCount(optionNameObj);
+	objc = 0;
 
     /* Some option/value pairs were given. */
     } else {
@@ -563,8 +572,21 @@ TreeHeaderColumn_ConfigureHeaderStyle(
 	    STATIC_ALLOC(elemObjV[i], Tcl_Obj *, objc);
 	    elemObjC[i] = 0;
 	}
+	/* Remove duplicate options (see use of textFontObj). */
+	STATIC_ALLOC(specs, Tk_OptionSpec *, objc);
 	for (i = 0; i < objc; i += 2) {
-	    specPtr = LookupOption(columnSpecs, Tcl_GetString(objv[i]));
+	    specs[i] = LookupOption(columnSpecs, Tcl_GetString(objv[i]));
+	    for (j = 0; j < i; j += 2) {
+		if (specs[j] == specs[i]) {
+		    specs[j] = NULL;
+		    break;
+		}
+	    }
+	}
+	for (i = 0; i < objc; i += 2) {
+	    specPtr = specs[i];
+	    if (specPtr == NULL)
+		continue;
 	    if (specPtr->typeMask & ELEM_HEADER) {
 		elemObjV[0][elemObjC[0]++] = objv[i]; /* name */
 		elemObjV[0][elemObjC[0]++] = objv[i + 1]; /* value */
@@ -592,7 +614,14 @@ TreeHeaderColumn_ConfigureHeaderStyle(
 		    } else {
 			elemObjV[2][elemObjC[2]++] = objv[i]; /* name */
 		    }
-		    elemObjV[2][elemObjC[2]++] = objv[i + 1]; /* value */
+		    /* Text element -font is per-state. */
+		    if (!strcmp(specPtr->optionName, "-font")) {
+			textFontObj = Tcl_NewListObj(1, &objv[i + 1]);
+			Tcl_IncrRefCount(textFontObj);
+			elemObjV[2][elemObjC[2]++] = textFontObj; /* value */
+		    } else {
+			elemObjV[2][elemObjC[2]++] = objv[i + 1]; /* value */
+		    }
 		}
 	    }
 	    if (specPtr->typeMask & ELEM_BITMAP) {
@@ -655,10 +684,13 @@ TreeHeaderColumn_ConfigureHeaderStyle(
 	Tcl_DecrRefCount(textFillObj);
     if (textLinesObj != NULL)
 	Tcl_DecrRefCount(textLinesObj);
+    if (textFontObj != NULL)
+	Tcl_DecrRefCount(textFontObj);
 
     for (i = 0; i < 4; i++)
 	STATIC_FREE(elemObjV[i], Tcl_Obj *, elemObjC[i]);
     STATIC_FREE(infoObjV, Tcl_Obj *, infoObjC);
+    STATIC_FREE(specs, Tk_OptionSpec *, objc);
 
     return TCL_OK;
 }

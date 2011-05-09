@@ -544,6 +544,11 @@ test column-12.1 {column configure: passing args to header configure} -setup {
     eval .t column configure column0 $opts
 } -result {}
 
+test column-12.2 {column configure: -font is per-state in text element} -setup {
+    .t column create -tags column1 -text "Column 1"
+    .t column configure column1 -font {Courier 10 bold}
+} -result {}
+
 test column-99.1 {some needed cleanup} -body {
     destroy .t
 } -result {}
