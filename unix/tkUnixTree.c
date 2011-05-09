@@ -1130,7 +1130,7 @@ TreeTheme_DrawButton(
     GtkWidget *widget;
     GtkStyle *style;
     GtkStateType state_type = GTK_STATE_NORMAL;
-    GdkRectangle area = {0, 0, width, height}; /* clip */
+    GdkRectangle area = {0, 0, width + 2, height + 2}; /* clip */
     const gchar *detail = "treeview";
     GtkExpanderStyle expander_style = open ? GTK_EXPANDER_EXPANDED : GTK_EXPANDER_COLLAPSED;
     GdkPixmap *gdkPixmap;
@@ -1141,7 +1141,7 @@ TreeTheme_DrawButton(
 	return TCL_ERROR;
 
     TreeRect_SetXYWH(trDrawable, 0, 0, td.width, td.height);
-    TreeRect_SetXYWH(trClipped, x, y, width, height);
+    TreeRect_SetXYWH(trClipped, x - 1, y - 1, width + 2, height + 2);
     if (TreeRect_Intersect(&trClipped, &trClipped, &trDrawable) == 0)
 	return TCL_OK;
 
@@ -1160,17 +1160,17 @@ TreeTheme_DrawButton(
     style = gtk_widget_get_style(widget);
 
     /* Copy background from Tk Pixmap -> GdkPixbuf */
-    pixbuf = gdk_pixbuf_new(GDK_COLORSPACE_RGB, 1, 8, width, height);
+    pixbuf = gdk_pixbuf_new(GDK_COLORSPACE_RGB, 1, 8, width + 2, height + 2);
     if (pixbuf == NULL)
 	goto ret_error;
     pixbuf = gdk_pixbuf_xlib_get_from_drawable(pixbuf, td.drawable,
 	Tk_Colormap(tree->tkwin), Tk_Visual(tree->tkwin), trClipped.x, trClipped.y,
-	x < 0 ? -x : 0, y < 0 ? -y : 0, trClipped.width, trClipped.height);
+	(x - 1) < 0 ? -(x - 1) : 0, (y - 1) < 0 ? -(y - 1) : 0, trClipped.width, trClipped.height);
     if (pixbuf == NULL)
 	goto ret_error;
 
     /* Allocate GdkPixmap to draw button in */
-    gdkPixmap = gdk_pixmap_new(appThemeData->gtkWindow->window, width, height, -1);
+    gdkPixmap = gdk_pixmap_new(appThemeData->gtkWindow->window, width + 2, height + 2, -1);
     if (gdkPixmap == NULL) {
 	gdk_pixbuf_unref(pixbuf);
 	goto ret_error;
@@ -1178,21 +1178,21 @@ TreeTheme_DrawButton(
 
     /* Copy GdkPixbuf containing background to GdkPixmap */
     gdk_pixbuf_render_to_drawable(pixbuf, gdkPixmap, NULL, 0, 0, 0, 0,
-	width, height, GDK_RGB_DITHER_NONE, 0, 0);
+	width + 2, height + 2, GDK_RGB_DITHER_NONE, 0, 0);
 
     /* Draw the button */
     gtk_paint_expander(style, gdkPixmap, state_type, &area, widget, detail,
-	width / 2, height / 2, expander_style);
+	width / 2 + 1, height / 2 + 1, expander_style);
 
     /* Copy GdkPixmap to Tk Pixmap */
     pixbuf = gdk_pixbuf_get_from_drawable(pixbuf, gdkPixmap, NULL, 0, 0, 0, 0,
-	width, height);
+	width + 2, height + 2);
     if (pixbuf == NULL) {
 	g_object_unref(gdkPixmap);
 	goto ret_error;
     }
     gdk_pixbuf_xlib_render_to_drawable(pixbuf, td.drawable, tree->copyGC,
-	0, 0, x, y, width, height, XLIB_RGB_DITHER_MAX, 0, 0);
+	0, 0, x - 1, y - 1, width + 2, height + 2, XLIB_RGB_DITHER_MAX, 0, 0);
 
     gdk_pixbuf_unref(pixbuf);
     g_object_unref(gdkPixmap);
