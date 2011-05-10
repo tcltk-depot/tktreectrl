@@ -1,11 +1,9 @@
-/* 
+/*
  * tkWinTree.c --
  *
  *	Platform-specific parts of TkTreeCtrl for Microsoft Windows.
  *
- * Copyright (c) 2010 Tim Baker
- *
- * RCS: @(#) $Id$
+ * Copyright (c) 2010-2011 Tim Baker
  */
 
 #define WINVER 0x0501 /* MingW32 */

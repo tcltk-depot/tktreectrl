@@ -1,4 +1,4 @@
-# RCS: @(#) $Id$
+# Copyright (c) 2002-2011 Tim Baker
 
 set RandomN 500
 set RandomDepth 5

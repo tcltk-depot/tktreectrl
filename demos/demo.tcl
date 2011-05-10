@@ -1,6 +1,6 @@
 #!/bin/wish84.exe
 
-# RCS: @(#) $Id$
+# Copyright (c) 2002-2011 Tim Baker
 
 set VERSION 2.4
 

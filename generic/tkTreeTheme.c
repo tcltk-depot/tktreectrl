@@ -3,9 +3,7 @@
  *
  *	This module implements visual themes.
  *
- * Copyright (c) 2010 Tim Baker
- *
- * RCS: @(#) $Id$
+ * Copyright (c) 2005-2011 Tim Baker
  */
 
 #ifdef USE_TTK

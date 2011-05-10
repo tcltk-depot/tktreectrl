@@ -3,9 +3,7 @@
  *
  *	Platform-specific parts of TkTreeCtrl for X11.
  *
- * Copyright (c) 2010 Tim Baker
- *
- * RCS: @(#) $Id$
+ * Copyright (c) 2011 Tim Baker
  */
 
 #include "tkTreeCtrl.h"

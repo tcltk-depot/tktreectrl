@@ -1,4 +1,4 @@
-# RCS: @(#) $Id$
+# Copyright (c) 2005-2011 Tim Baker
 
 namespace eval StyleEditor {
     variable Info

@@ -3,13 +3,13 @@
  *
  *	This module implements "qebind.c" events for treectrl widgets.
  *
- * Copyright (c) 2002-2010 Tim Baker
- *
- * RCS: @(#) $Id$
+ * Copyright (c) 2002-2011 Tim Baker
  */
 
 #include "tkTreeCtrl.h"
 
+/* Even though these are static globals and initialized for each new
+ * treectrl widget, the values are exactly the same for every widget. */
 static int EVENT_EXPAND,
     DETAIL_EXPAND_BEFORE,
     DETAIL_EXPAND_AFTER;

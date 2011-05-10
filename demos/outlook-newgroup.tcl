@@ -1,4 +1,4 @@
-# RCS: @(#) $Id$
+# Copyright (c) 2002-2011 Tim Baker
 
 #
 # Demo: Outlook Express newsgroup messages

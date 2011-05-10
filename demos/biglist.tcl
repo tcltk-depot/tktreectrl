@@ -1,4 +1,4 @@
-# RCS: @(#) $Id$
+# Copyright (c) 2005-2011 Tim Baker
 
 # A nice feature of the element type "window" is the -clip option.
 set ::clip 1

@@ -1,4 +1,4 @@
-# RCS: @(#) $Id$
+# Copyright (c) 2010-2011 Tim Baker
 
 proc DemoGradients3 {} {
 

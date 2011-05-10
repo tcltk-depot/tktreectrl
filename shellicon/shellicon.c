@@ -1,13 +1,11 @@
-/* 
+/*
  * shellicon.c --
  *
  *	This is a Tk extension that adds a new element type to TkTreeCtrl.
  *	The element type's name is "shellicon". A shellicon element can
  *	display the icon for a file or folder using Win32 Shell API calls.
  *
- * Copyright (c) 2005-2010 Tim Baker
- *
- * RCS: @(#) $Id$
+ * Copyright (c) 2005-2011 Tim Baker
  */
 
 #include "tkTreeCtrl.h"

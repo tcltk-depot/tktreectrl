@@ -1,4 +1,4 @@
-# RCS: @(#) $Id$
+# Copyright (c) 2006-2011 Tim Baker
 
 proc DemoMyComputer {} {
 
