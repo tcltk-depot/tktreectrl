@@ -5340,7 +5340,7 @@ NoStyleMsg(
     FormatResult(tree->interp,
 	    "%s %s%d column %s%d has no style",
 	    item->header ? "header" : "item",
-	    tree->itemPrefix, item->id,
+	    item->header ? "" : tree->itemPrefix, item->id,
 	    tree->columnPrefix,
 	    TreeColumn_GetID(Tree_FindColumn(tree, columnIndex)));
 }
@@ -5351,7 +5351,7 @@ NoStyleMsg(
  * StateDomainErrMsg --
  *
  *	Utility to set the interpreter result with a message indicating
- *	a Column has no assigned style.
+ *	a style's state-domain isn't compatible.
  *
  * Results:
  *	Interpreter result is changed.
@@ -5372,7 +5372,7 @@ StateDomainErrMsg(
     FormatResult(tree->interp,
 	    "state domain conflict between %s \"%s%d\" and style \"%s\"",
 	    item->header ? "header" : "item",
-	    tree->itemPrefix, item->id,
+	    item->header ? "" : tree->itemPrefix, item->id,
 	    TreeStyle_GetName(tree, style));
 }
 

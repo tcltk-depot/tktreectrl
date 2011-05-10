@@ -5516,7 +5516,7 @@ TreeStyle_ElementCget(
 	FormatResult(tree->interp,
 	    "element %s is not configured in %s %s%d column %s%d",
 	    elem->name, inHeader ? "header" : "item",
-	    tree->itemPrefix, TreeItem_GetID(tree, item),
+	    inHeader ? "" : tree->itemPrefix, TreeItem_GetID(tree, item),
 	    tree->columnPrefix, TreeColumn_GetID(treeColumn));
 	return TCL_ERROR;
     }
@@ -5582,7 +5582,7 @@ TreeStyle_ElementConfigure(
 	    FormatResult(tree->interp,
 		"element %s is not configured in %s %s%d column %s%d",
 		elem->name, inHeader ? "header" : "item",
-		tree->itemPrefix, TreeItem_GetID(tree, item),
+		inHeader ? "" : tree->itemPrefix, TreeItem_GetID(tree, item),
 		tree->columnPrefix, TreeColumn_GetID(treeColumn));
 	    return TCL_ERROR;
 	}

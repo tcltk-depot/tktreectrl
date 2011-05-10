@@ -1,5 +1,5 @@
 /*
- * tkTreeHeaders.c --
+ * tkTreeHeader.c --
  *
  *	This module implements treectrl widget's column headers.
  *
