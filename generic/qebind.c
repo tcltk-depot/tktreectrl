@@ -177,15 +177,8 @@ typedef struct PercentsData {
 static int DeleteBinding(BindingTable *bindPtr, BindValue *valuePtr);
 static EventInfo *FindEvent(BindingTable *bindPtr, int eventType);
 
-static int initialized = 0;
-
 int QE_BindInit(Tcl_Interp *interp)
 {
-	if (initialized)
-		return TCL_OK;
-
-	initialized = 1;
-
 	return TCL_OK;
 }
 
