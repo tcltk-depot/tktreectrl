@@ -419,6 +419,22 @@ TreeItemColumn_ForgetStyle(
     }
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeItemColumn_SetStyle --
+ *
+ *	Assign a style to a Column, freeing the old one if it exists.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
 void
 TreeItemColumn_SetStyle(
     TreeCtrl *tree,		/* Widget info. */
@@ -4227,16 +4243,12 @@ Item_GetSpans(
     while (treeColumn != NULL) {
 	if (TreeColumn_Lock(treeColumn) != TreeColumn_Lock(firstColumn))
 	    break;
-if (treeColumn == tree->columnTail) {
-    span = 1; /* End current span if it hits the tail */
-}
+	if (treeColumn == tree->columnTail) {
+	    span = 1; /* End the current span if it hits the tail. */
+	}
 	if (--span == 0) {
-#if 1
 	    /* Always create a span for the tail column in headers */
 	    if ((treeColumn == tree->columnTail) || TreeColumn_Visible(treeColumn)) {
-#else
-	    if (TreeColumn_Visible(treeColumn)) {
-#endif
 		span = column ? column->span : 1;
 		if (spanPtr == NULL)
 		    spanPtr = spans;
@@ -4246,9 +4258,10 @@ if (treeColumn == tree->columnTail) {
 		spanPtr->itemColumn = column;
 		spanPtr->span = 0;
 		spanPtr->width = 0;
-if (spanCount == 0 && item->header != NULL && TreeColumn_Lock(treeColumn) == COLUMN_LOCK_NONE) {
-    spanPtr->width += tree->canvasPadX[PAD_TOP_LEFT];
-}
+		if ((spanCount == 0) && (item->header != NULL) &&
+			(TreeColumn_Lock(treeColumn) == COLUMN_LOCK_NONE)) {
+		    spanPtr->width += tree->canvasPadX[PAD_TOP_LEFT];
+		}
 		spanPtr->visIndex = spanCount;
 		spanCount++;
 	    } else {
@@ -4257,19 +4270,19 @@ if (spanCount == 0 && item->header != NULL && TreeColumn_Lock(treeColumn) == COL
 	    }
 	}
 	spanPtr->span++;
-if (treeColumn == tree->columnTail) {
-    spanPtr->width = 100; /* TreeItem_WalkSpans will calculate the correct value */
-} else
-	spanPtr->width += TreeColumn_UseWidth(treeColumn);
+	if (treeColumn == tree->columnTail) {
+	    spanPtr->width = 100; /* TreeItem_WalkSpans will calculate the correct value */
+	} else {
+	    spanPtr->width += TreeColumn_UseWidth(treeColumn);
+	}
 next:
-/*	++columnIndex;*/
 	treeColumn = Tree_ColumnToTheRight(treeColumn, TRUE, item->header != NULL);
 	if (column != NULL)
 	    column = column->next;
-if (treeColumn == tree->columnTail) {
-    while (column != NULL && column->next != NULL)
-	column = column->next;
-}
+	if (treeColumn == tree->columnTail) {
+	    while (column != NULL && column->next != NULL)
+		column = column->next;
+	}
     }
 
     return spanCount;
@@ -4344,7 +4357,7 @@ TreeItem_WalkSpans(
 		area = TREE_AREA_HEADER_NONE;
 		if (treeColumn == NULL)
 		    treeColumn = tree->columnTail;
-		columnCount += 1; /* +1 for the treeColumn */
+		columnCount += 1; /* +1 for columnTail */
 		break;
 	    case COLUMN_LOCK_RIGHT:
 		area = TREE_AREA_HEADER_RIGHT;
@@ -4368,16 +4381,17 @@ TreeItem_WalkSpans(
 	treeColumn = spans[spanIndex].treeColumn;
 	itemColumn = spans[spanIndex].itemColumn;
 
-if (treeColumn == tree->columnTail) {
-    spans[spanIndex].width = MAX(0, MAX(Tree_ContentWidth(tree), Tree_FakeCanvasWidth(tree))
-	- totalWidth) + tree->tailExtend;
-}
-if (item->header != NULL)
-    columnWidth = spans[spanIndex].width;
-else
+	/* This is where the actual width of the tail column is determined. */
+	if (treeColumn == tree->columnTail) {
+	    spans[spanIndex].width = MAX(0, MAX(Tree_ContentWidth(tree),
+		Tree_FakeCanvasWidth(tree)) - totalWidth) + tree->tailExtend;
+	}
+	if (item->header != NULL) {
+	    columnWidth = spans[spanIndex].width;
+
 	/* If this is the single visible column, use the provided width which
 	 * may be different than the column's width. */
-	if ((tree->columnCountVis == 1) && (treeColumn == tree->columnVis)) {
+	} else if ((tree->columnCountVis == 1) && (treeColumn == tree->columnVis)) {
 	    columnWidth = width;
 
 	/* More than one column is visible, or this is not the visible
@@ -4401,10 +4415,11 @@ else
 	drawArgs.width = columnWidth;
 	drawArgs.height = height;
 	drawArgs.spanIndex = spanIndex;
-if (item->header != NULL) {
-    drawArgs.justify = TreeHeaderColumn_Justify(item->header, itemColumn->headerColumn);
-} else
-	drawArgs.justify = TreeColumn_ItemJustify(treeColumn);
+	if (item->header != NULL)
+	    drawArgs.justify = TreeHeaderColumn_Justify(item->header,
+		itemColumn->headerColumn);
+	else
+	    drawArgs.justify = TreeColumn_ItemJustify(treeColumn);
 	drawArgs.column = treeColumn; /* needed for gradients */
 	if ((*proc)(tree, item, &spans[spanIndex], &drawArgs, clientData))
 	    break;
@@ -4943,7 +4958,7 @@ SpanWalkProc_UpdateWindowPositions(
 	    itemColumn ? itemColumn->headerColumn : NULL, &drawArgsCopy,
 	    TRUE);
 
-	/* Draw nothing if the entire span is out-of-bounds. */
+	/* Do nothing if the entire span is out-of-bounds. */
 	if ((drawArgsCopy.x >= TreeRect_Right(drawArgs->bounds)) ||
 		(drawArgsCopy.x + drawArgsCopy.width <= TreeRect_Left(drawArgs->bounds)))
 	    return 0;
@@ -4953,7 +4968,7 @@ SpanWalkProc_UpdateWindowPositions(
 	if (TreeDisplay_WasThereTrouble(tree, requests))
 	    return 1;
 
-	/* Don't stop drawing if there are columns still to the right that
+	/* Don't stop if there are columns still to the right that
 	 * are drag or indicator columns. */
 	if (tree->columnDrag.column != NULL && tree->columnDrag.indColumn != NULL) {
 	    int index1min = TreeColumn_Index(tree->columnDrag.column);
@@ -9556,14 +9571,15 @@ SpanWalkProc_Identify(
 	TreeElement *elemPtr;
     } *data = clientData;
 
-if (item->header != NULL) {
-    if ((data->x < drawArgs->x /*+ drawArgs->indent*/) ||
-	    (data->x >= drawArgs->x + drawArgs->width))
-	return 0;
-} else
-    if ((data->x < drawArgs->x + drawArgs->indent) ||
-	    (data->x >= drawArgs->x + drawArgs->width))
-	return 0;
+    if (item->header != NULL) {
+	if ((data->x < drawArgs->x /*+ drawArgs->indent*/) ||
+		(data->x >= drawArgs->x + drawArgs->width))
+	    return 0;
+    } else {
+	if ((data->x < drawArgs->x + drawArgs->indent) ||
+		(data->x >= drawArgs->x + drawArgs->width))
+	    return 0;
+    }
 
     (*data->columnPtr) = spanPtr->treeColumn;
 
