@@ -695,6 +695,11 @@ Tree_FillRectangle(
     )
 {
     TreeClipStateGC clipState;
+    TreeRectangle tr2;
+
+    /* X11 coordinates are 16-bit. */
+    TreeRect_SetXYWH(tr2, 0, 0, td.width, td.height);
+    TreeRect_Intersect(&tr, &tr, &tr2);
 
     TreeClip_ToGC(tree, clip, gc, &clipState);
     XFillRectangle(tree->display, td.drawable, gc, tr.x, tr.y, tr.width, tr.height);

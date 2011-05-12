@@ -1102,6 +1102,7 @@ static void DisplayProcBorder(TreeElementArgs *args)
 #if USE_ITEM_PIXMAP == 0
     TreeClip clip;
 #endif
+    TreeRectangle tr1, tr2;
 
 #ifdef DEPRECATED
     BOOLEAN_FOR_STATE(draw, draw, state)
@@ -1142,6 +1143,13 @@ static void DisplayProcBorder(TreeElementArgs *args)
 	TRUE, TRUE,
 	&x, &y, &width, &height);
 
+    /* X11 coordinates are 16-bit. */
+    TreeRect_SetXYWH(tr1, x, y, width, height);
+    TreeRect_SetXYWH(tr2, -thickness, -thickness,
+	args->display.td.width + thickness * 2,
+	args->display.td.height + thickness * 2);
+    TreeRect_Intersect(&tr1, &tr1, &tr2);
+
 #if USE_ITEM_PIXMAP == 0
     /* Using a region instead of a rect because of how Tree_Fill3DRectangle
      * and Tree_Draw3DRectangle are implemented. */
@@ -1150,20 +1158,20 @@ static void DisplayProcBorder(TreeElementArgs *args)
 
     if (filled) {
 	Tree_Fill3DRectangle(tree, args->display.td, &clip, border,
-		x, y, width, height, thickness, relief);
+		tr1.x, tr1.y, tr1.width, tr1.height, thickness, relief);
     } else if (thickness > 0) {
 	Tree_Draw3DRectangle(tree, args->display.td, &clip, border,
-		x, y, width, height, thickness, relief);
+		tr1.x, tr1.y, tr1.width, tr1.height, thickness, relief);
     }
 
     Tree_FreeRegion(tree, clip.region);
 #else
     if (filled) {
 	Tk_Fill3DRectangle(tree->tkwin, args->display.drawable, border,
-		x, y, width, height, thickness, relief);
+		tr1.x, tr1.y, tr1.width, tr1.height, thickness, relief);
     } else if (thickness > 0) {
 	Tk_Draw3DRectangle(tree->tkwin, args->display.drawable, border,
-		x, y, width, height, thickness, relief);
+		tr1.x, tr1.y, tr1.width, tr1.height, thickness, relief);
     }
 #endif
 }
@@ -2140,6 +2148,7 @@ static void DisplayProcHeader(TreeElementArgs *args)
     int i, relief;
     int match, match2;
     struct HeaderParams params;
+    TreeRectangle tr1, tr2;
 
     if (tree->useTheme && (tree->themeHeaderHeight > 0)) {
 	height = tree->themeHeaderHeight;
@@ -2191,15 +2200,22 @@ static void DisplayProcHeader(TreeElementArgs *args)
 	border = borderDefault;
     }
 
+    /* X11 coordinates are 16-bit. */
+    TreeRect_SetXYWH(tr1, x, y, width, height);
+    TreeRect_SetXYWH(tr2, -params.borderWidth, -params.borderWidth,
+	args->display.td.width + params.borderWidth * 2,
+	args->display.td.height + params.borderWidth * 2);
+    TreeRect_Intersect(&tr1, &tr1, &tr2);
+
     Tk_Fill3DRectangle(tree->tkwin, args->display.drawable, border,
-	    x, y, width, height, params.borderWidth, TK_RELIEF_FLAT);
+	    tr1.x, tr1.y, tr1.width, tr1.height, params.borderWidth, TK_RELIEF_FLAT);
 
     HeaderDrawArrow(args, &params, x, y, width, height, arrowIndent);
 
     relief = (params.state == COLUMN_STATE_PRESSED) ?
 	TK_RELIEF_SUNKEN : TK_RELIEF_RAISED;
     Tk_Draw3DRectangle(tree->tkwin, args->display.drawable, border,
-	    x, y, width, height, params.borderWidth, relief);
+	   tr1. x, tr1.y, tr1.width, tr1.height, params.borderWidth, relief);
 
     if (borderDefault != NULL)
 	Tk_Free3DBorder(borderDefault);
