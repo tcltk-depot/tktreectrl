@@ -893,6 +893,8 @@ MODULE_SCOPE void Tree_DeselectHidden(TreeCtrl *tree);
 MODULE_SCOPE int TreeItemCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]);
 MODULE_SCOPE void TreeItem_UpdateWindowPositions(TreeCtrl *tree, TreeItem item_,
     int lock, int x, int y, int width, int height);
+MODULE_SCOPE void TreeItem_GetOnScreenColumns(TreeCtrl *tree, TreeItem item_,
+    int lock, int x, int y, int width, int height, TreeColumnList *columns);
 MODULE_SCOPE void TreeItem_OnScreen(TreeCtrl *tree, TreeItem item_, int onScreen);
 
 MODULE_SCOPE TreeItemColumn TreeItem_GetFirstColumn(TreeCtrl *tree, TreeItem item);

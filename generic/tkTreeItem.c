@@ -4081,7 +4081,8 @@ TreeItem_SpansRedo(
     int lock = TreeColumn_Lock(treeColumn);
 
     if (tree->debug.enable && tree->debug.span)
-	dbwin("TreeItem_SpansRedo item %d\n", item->id);
+	dbwin("TreeItem_SpansRedo %s %d\n", item->header ? "header" : "item",
+	    item->id);
 
     if (item->spans == NULL) {
 	item->spans = (int *) ckalloc(sizeof(int) * columnCount);
@@ -4321,6 +4322,12 @@ TreeItem_WalkSpans(
     int lock,			/* Which columns. */
     int x, int y,		/* Drawable coordinates of the item. */
     int width, int height,	/* Total size of the item. */
+#define DRAGPOS_IGNORE 0	/* Ignore header drag-and-drop positions. */
+#define DRAGPOS_DRAGGED 1	/* Calculate the bounds of the dragged headers
+				 * considering -imageoffset. */
+#define DRAGPOS_DROPPED 2	/* Calculate the bounds of headers in their
+				 * final positions after dropping. */
+    int dragPosition,
     TreeItemWalkSpansProc proc,	/* Callback routine. */
     ClientData clientData	/* Data passed to callback routine. */
     )
@@ -4421,6 +4428,13 @@ TreeItem_WalkSpans(
 	else
 	    drawArgs.justify = TreeColumn_ItemJustify(treeColumn);
 	drawArgs.column = treeColumn; /* needed for gradients */
+
+	if ((dragPosition != DRAGPOS_IGNORE) && (item->header != NULL)) {
+	    (void) TreeHeaderColumn_DragBounds(item->header,
+		itemColumn ? itemColumn->headerColumn : NULL, &drawArgs,
+		dragPosition == DRAGPOS_DRAGGED);
+	}
+
 	if ((*proc)(tree, item, &spans[spanIndex], &drawArgs, clientData))
 	    break;
 
@@ -4469,25 +4483,20 @@ SpanWalkProc_Draw(
 	int index;
     } *data = clientData;
 
+    /* Draw nothing if the entire span is out-of-bounds. */
+    if ((drawArgs->x >= data->maxX) ||
+	    (drawArgs->x + drawArgs->width <= data->minX))
+	return 0;
+
+    drawArgs->td = data->td;
+
     if (item->header != NULL) {
-	StyleDrawArgs drawArgsCopy = *drawArgs;
-
-	(void) TreeHeaderColumn_DragBounds(item->header,
-	    itemColumn ? itemColumn->headerColumn : NULL, &drawArgsCopy,
-	    FALSE);
-
-	/* Draw nothing if the entire span is out-of-bounds. */
-	if ((drawArgsCopy.x >= data->maxX) ||
-		(drawArgsCopy.x + drawArgsCopy.width <= data->minX))
-	    return 0;
-
-	drawArgsCopy.td = data->td;
 	TreeHeaderColumn_Draw(item->header,
 	    itemColumn ? itemColumn->headerColumn : NULL,
-	    spanPtr->visIndex, &drawArgsCopy);
+	    spanPtr->visIndex, drawArgs);
 
 	/* Don't stop drawing if there are columns still to the right that
-	 * are drag or indicator columns. */
+	 * are drag- or indicator-columns. */
 	if (tree->columnDrag.column != NULL && tree->columnDrag.indColumn != NULL) {
 	    int index1min = TreeColumn_Index(tree->columnDrag.column);
 	    int index1max = index1min + MAX(tree->columnDrag.span, 1);
@@ -4500,13 +4509,6 @@ SpanWalkProc_Draw(
 
 	return drawArgs->x + drawArgs->width >= data->maxX;
     }
-
-    /* Draw nothing if the entire span is out-of-bounds. */
-    if ((drawArgs->x >= data->maxX) ||
-	    (drawArgs->x + drawArgs->width <= data->minX))
-	return 0;
-
-    drawArgs->td = data->td;
 
     /* Draw background colors. */
     if (spanPtr->span == 1) {
@@ -4617,6 +4619,7 @@ TreeItem_Draw(
 
     TreeItem_WalkSpans(tree, item, lock,
 	    x, y, width, height,
+	    DRAGPOS_DROPPED,
 	    SpanWalkProc_Draw, (ClientData) &clientData);
 
     if (item->header != NULL)
@@ -4950,40 +4953,6 @@ SpanWalkProc_UpdateWindowPositions(
     StyleDrawArgs drawArgsCopy;
     int requests;
 
-    if (item->header != NULL && drawArgs->style != NULL) {
-	StyleDrawArgs drawArgsCopy = *drawArgs;
-	TreeItemColumn itemColumn = spanPtr->itemColumn;
-
-	(void) TreeHeaderColumn_DragBounds(item->header,
-	    itemColumn ? itemColumn->headerColumn : NULL, &drawArgsCopy,
-	    TRUE);
-
-	/* Do nothing if the entire span is out-of-bounds. */
-	if ((drawArgsCopy.x >= TreeRect_Right(drawArgs->bounds)) ||
-		(drawArgsCopy.x + drawArgsCopy.width <= TreeRect_Left(drawArgs->bounds)))
-	    return 0;
-
-	TreeDisplay_GetReadyForTrouble(tree, &requests);
-	TreeStyle_UpdateWindowPositions(&drawArgsCopy);
-	if (TreeDisplay_WasThereTrouble(tree, requests))
-	    return 1;
-
-	/* Don't stop if there are columns still to the right that
-	 * are drag or indicator columns. */
-	if (tree->columnDrag.column != NULL && tree->columnDrag.indColumn != NULL) {
-	    int index1min = TreeColumn_Index(tree->columnDrag.column);
-	    int index1max = index1min + MAX(tree->columnDrag.span, 1);
-	    int index2min = TreeColumn_Index(tree->columnDrag.indColumn);
-	    int index2max = index2min + MAX(tree->columnDrag.indSpan, 1);
-	    TreeColumn treeColumn = spanPtr->treeColumn;
-	    int index3 = TreeColumn_Index(treeColumn);
-	    if (index3 < MAX(index1max, index2max))
-		return 0;
-	}
-
-	return drawArgs->x + drawArgs->width >= TreeRect_Right(drawArgs->bounds);
-    }
-
     if ((drawArgs->x >= TreeRect_Right(drawArgs->bounds)) ||
 	    (drawArgs->x + drawArgs->width <= TreeRect_Left(drawArgs->bounds)) ||
 	    (drawArgs->style == NULL))
@@ -4996,6 +4965,21 @@ SpanWalkProc_UpdateWindowPositions(
 
     if (TreeDisplay_WasThereTrouble(tree, requests))
 	return 1;
+
+    if (item->header != NULL) {
+	/* Don't stop if there are columns still to the right that
+	 * are drag- or indicator-columns. */
+	if (tree->columnDrag.column != NULL && tree->columnDrag.indColumn != NULL) {
+	    int index1min = TreeColumn_Index(tree->columnDrag.column);
+	    int index1max = index1min + MAX(tree->columnDrag.span, 1);
+	    int index2min = TreeColumn_Index(tree->columnDrag.indColumn);
+	    int index2max = index2min + MAX(tree->columnDrag.indSpan, 1);
+	    TreeColumn treeColumn = spanPtr->treeColumn;
+	    int index3 = TreeColumn_Index(treeColumn);
+	    if (index3 < MAX(index1max, index2max))
+		return 0;
+	}
+    }
 
     /* Stop walking if we went past the right edge of the display area. */
     return drawArgs->x + drawArgs->width >= TreeRect_Right(drawArgs->bounds);
@@ -5029,7 +5013,91 @@ TreeItem_UpdateWindowPositions(
 {
     TreeItem_WalkSpans(tree, item, lock,
 	    x, y, width, height,
+	    DRAGPOS_DRAGGED,
 	    SpanWalkProc_UpdateWindowPositions, (ClientData) NULL);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SpanWalkProc_GetOnScreenColumns --
+ *
+ *	Callback routine to TreeItem_WalkSpans for
+ *	TreeItem_GetOnScreenColumns.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+SpanWalkProc_GetOnScreenColumns(
+    TreeCtrl *tree,
+    TreeItem item,
+    SpanInfo *spanPtr,
+    StyleDrawArgs *drawArgs,
+    ClientData clientData
+    )
+{
+    TreeColumnList *columns = clientData;
+
+    if ((drawArgs->x >= TreeRect_Right(drawArgs->bounds)) ||
+	    (drawArgs->x + drawArgs->width <= TreeRect_Left(drawArgs->bounds)))
+	return 0;
+
+    TreeColumnList_Append(columns, drawArgs->column);
+
+    /* Don't stop if there are columns still to the right that
+     * are drag- or indicator-columns. */
+    if (tree->columnDrag.column != NULL && tree->columnDrag.indColumn != NULL) {
+	int index1min = TreeColumn_Index(tree->columnDrag.column);
+	int index1max = index1min + MAX(tree->columnDrag.span, 1);
+	int index2min = TreeColumn_Index(tree->columnDrag.indColumn);
+	int index2max = index2min + MAX(tree->columnDrag.indSpan, 1);
+	TreeColumn treeColumn = spanPtr->treeColumn;
+	int index3 = TreeColumn_Index(treeColumn);
+	if (index3 < MAX(index1max, index2max))
+	    return 0;
+    }
+
+    /* Stop walking if we went past the right edge of the display area. */
+    return drawArgs->x + drawArgs->width >= TreeRect_Right(drawArgs->bounds);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeItem_GetOnScreenColumns --
+ *
+ *	Get a list of onscreen columns for an item.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TreeItem_GetOnScreenColumns(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeItem item,		/* Item token. */
+    int lock,			/* Which columns. */
+    int x, int y,		/* Drawable coordinates of the item. */
+    int width, int height,	/* Total size of the item. */
+    TreeColumnList *columns	/* Out: list of onscreen columns. */
+    )
+{
+    TreeItem_WalkSpans(tree, item, lock,
+	x, y, width, height,
+	DRAGPOS_DRAGGED,
+	SpanWalkProc_GetOnScreenColumns, (ClientData) columns);
 }
 
 /*
@@ -9643,6 +9711,7 @@ TreeItem_Identify(
 
     TreeItem_WalkSpans(tree, item, lock,
 	    0, 0, TreeRect_Width(tr), TreeRect_Height(tr),
+	    DRAGPOS_IGNORE,
 	    SpanWalkProc_Identify, (ClientData) &clientData);
 }
 
@@ -9743,6 +9812,7 @@ TreeItem_Identify2(
     TreeItem_WalkSpans(tree, item, COLUMN_LOCK_NONE,
 	    TreeRect_Left(tr), TreeRect_Top(tr),
 	    TreeRect_Width(tr), TreeRect_Height(tr),
+	    DRAGPOS_IGNORE,
 	    SpanWalkProc_Identify2, (ClientData) &clientData);
 }
 
@@ -9889,6 +9959,7 @@ TreeItem_GetRects(
     TreeItem_WalkSpans(tree, item, lock,
 	    TreeRect_Left(tr), TreeRect_Top(tr),
 	    TreeRect_Width(tr), TreeRect_Height(tr),
+	    DRAGPOS_IGNORE,
 	    SpanWalkProc_GetRects, (ClientData) &clientData);
 
     return clientData.result;

@@ -1332,7 +1332,7 @@ TreeHeaderColumn_Draw(
     TreeHeader header,		/* Header token. */
     TreeHeaderColumn column,	/* Column token. */
     int visIndex,		/* 0-based index in the list of spans. */
-    StyleDrawArgs *drawArgs	/* May be changed by this procedure. */
+    StyleDrawArgs *drawArgs	/* Various args. */
     )
 {
     TreeCtrl *tree = header->tree;
@@ -1364,7 +1364,8 @@ TreeHeaderColumn_Draw(
     Tree_FillRectangle(tree, td, NULL, gc, tr);
 
     if ((drawArgs->style != NULL) && !isDragColumn && !isHiddenTail) {
-	TreeStyle_Draw(drawArgs); /* may change drawArgs! */
+	StyleDrawArgs drawArgsCopy = *drawArgs;
+	TreeStyle_Draw(&drawArgsCopy);
     }
 }
 

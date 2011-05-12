@@ -2891,77 +2891,6 @@ Tree_ItemsInArea(
 /*
  *--------------------------------------------------------------
  *
- * GetOnScreenColumnsForItemAux --
- *
- *	Determine which columns of an item are onscreen.
- *
- * Results:
- *	Sets the column list.
- *
- * Side effects:
- *	Memory may be allocated.
- *
- *--------------------------------------------------------------
- */
-
-static void
-GetOnScreenColumnsForItemAux(
-    TreeCtrl *tree,		/* Widget info. */
-    DItem *dItem,		/* Display info for an item. */
-    DItemArea *area,		/* Layout info. */
-    TreeRectangle bounds,	/* TREE_AREA_xxx bounds. */
-    int lock,			/* Set of columns we care about. */
-    TreeColumnList *columns	/* Initialized list to append to. */
-    )
-{
-    int minX, maxX, columnIndex = 0, x = 0, i, width;
-    TreeColumn column = NULL, column2, column3;
-    int tailOK = TreeItem_GetHeader(tree, dItem->item) != NULL;
-
-    minX = MAX(area->x, TreeRect_Left(bounds));
-    maxX = MIN(area->x + area->width, TreeRect_Right(bounds));
-
-    minX -= area->x;
-    maxX -= area->x;
-
-    /* FIXME: Perhaps call TreeItem_WalkSpans instead. */
-    if (TreeItem_GetHeader(tree, dItem->item) != NULL)
-	x += tree->canvasPadX[PAD_TOP_LEFT];
-    for (column = Tree_FirstColumn(tree, lock, TRUE);
-	    column != NULL;
-	    column = Tree_ColumnToTheRight(column, TRUE, tailOK)) {
-	if (TreeColumn_Lock(column) != lock)
-	    break;
-	width = TreeColumn_GetDInfo(column)->width;
-	if (width == 0) /* also handles hidden columns */
-	    continue;
-	column3 = column;
-	if (dItem->spans != NULL) {
-	    columnIndex = TreeColumn_Index(column);
-	    /* FIXME: not possible since I skip over the entire span. */
-	    if (dItem->spans[columnIndex] != columnIndex)
-		continue;
-	    /* Calculate the width of the span. */
-	    for (i = columnIndex + 1, column2 = Tree_ColumnToTheRight(column, TRUE, tailOK);
-		    column2 != NULL && dItem->spans[i] == columnIndex;
-		    i++, column2 = Tree_ColumnToTheRight(column2, TRUE, tailOK)) {
-		width += TreeColumn_GetDInfo(column2)->width;
-		column3 = column2;
-	    }
-	}
-	if (x < maxX && x + width > minX) {
-	    TreeColumnList_Append(columns, column);
-	}
-	x += width;
-	if (x >= maxX)
-	    break;
-	column = column3;
-    }
-}
-
-/*
- *--------------------------------------------------------------
- *
  * GetOnScreenColumnsForItem --
  *
  *	Determine which columns of an item are onscreen.
@@ -2987,31 +2916,36 @@ GetOnScreenColumnsForItem(
     if (TreeItem_GetHeader(tree, dItem->item) != NULL) {
 	TreeRectangle bounds;
 	if (Tree_AreaBbox(tree, TREE_AREA_HEADER_LEFT, &bounds)) {
-	    GetOnScreenColumnsForItemAux(tree, dItem, &dItem->left,
-		    bounds, COLUMN_LOCK_LEFT, columns);
+	    TreeItem_GetOnScreenColumns(tree, dItem->item, COLUMN_LOCK_LEFT,
+		dItem->left.x, dItem->y, dItem->left.width, dItem->height,
+		columns);
 	}
 	if (Tree_AreaBbox(tree, TREE_AREA_HEADER_NONE, &bounds)) {
-	    GetOnScreenColumnsForItemAux(tree, dItem, &dItem->area,
-		    bounds, COLUMN_LOCK_NONE, columns);
+	    TreeItem_GetOnScreenColumns(tree, dItem->item, COLUMN_LOCK_NONE,
+		dItem->area.x, dItem->y, dItem->area.width, dItem->height,
+		columns);
 	}
 	if (Tree_AreaBbox(tree, TREE_AREA_HEADER_RIGHT, &bounds)) {
-	    GetOnScreenColumnsForItemAux(tree, dItem, &dItem->right,
-		    bounds, COLUMN_LOCK_RIGHT, columns);
+	    TreeItem_GetOnScreenColumns(tree, dItem->item, COLUMN_LOCK_RIGHT,
+		dItem->right.x, dItem->y, dItem->right.width, dItem->height,
+		columns);
 	}
-	return TreeColumnList_Count(columns);
-    }
-
-    if (!dInfo->emptyL) {
-	GetOnScreenColumnsForItemAux(tree, dItem, &dItem->left,
-		dInfo->boundsL, COLUMN_LOCK_LEFT, columns);
-    }
-    if (!dInfo->empty && dInfo->rangeFirstD != NULL) {
-	GetOnScreenColumnsForItemAux(tree, dItem, &dItem->area,
-		dInfo->bounds, COLUMN_LOCK_NONE, columns);
-    }
-    if (!dInfo->emptyR) {
-	GetOnScreenColumnsForItemAux(tree, dItem, &dItem->right,
-		dInfo->boundsR, COLUMN_LOCK_RIGHT, columns);
+    } else {
+	if (!dInfo->emptyL) {
+	    TreeItem_GetOnScreenColumns(tree, dItem->item, COLUMN_LOCK_LEFT,
+		dItem->left.x, dItem->y, dItem->left.width, dItem->height,
+		columns);
+	}
+	if (!dInfo->empty && dInfo->rangeFirstD != NULL) {
+	    TreeItem_GetOnScreenColumns(tree, dItem->item, COLUMN_LOCK_NONE,
+		dItem->area.x, dItem->y, dItem->area.width, dItem->height,
+		columns);
+	}
+	if (!dInfo->emptyR) {
+	    TreeItem_GetOnScreenColumns(tree, dItem->item, COLUMN_LOCK_RIGHT,
+		dItem->right.x, dItem->y, dItem->right.width, dItem->height,
+		columns);
+	}
     }
     return TreeColumnList_Count(columns);
 }
