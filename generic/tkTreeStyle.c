@@ -41,6 +41,7 @@ struct MStyle
     int buttonY;		/* -buttony */
     Tcl_Obj *buttonYObj;	/* -buttony */
     int stateDomain;		/* STATE_DOMAIN_XXX index. */
+    int hasWindowElem;		/* TRUE if style has any window elements. */
     int hidden;			/* Hackish flag for hidden header styles. */
     int hasHeaderElem;		/* Hackish flag to remember if the style has
 				 * any elements of type 'header'.  Headers
@@ -3230,13 +3231,7 @@ TreeStyle_UpdateWindowPositions(
     struct Layout staticLayouts[STATIC_SIZE], *layouts = staticLayouts;
     int numElements = masterStyle->numElements;
 
-    /* FIXME: Perhaps remember whether this style has any window
-     * elements */
-    for (i = 0; i < numElements; i++) {
-	if (ELEMENT_TYPE_MATCHES(masterStyle->elements[i].elem->typePtr, &treeElemTypeWindow))
-	    break;
-    }
-    if (i == numElements)
+    if (!masterStyle->hasWindowElem)
 	return;
 
     Style_CheckNeededSize(tree, style, drawArgs->state);
@@ -4314,11 +4309,15 @@ MStyle_ChangeElementsAux(
     style->elements = eLinks;
     style->numElements = count;
 
-    /* Hack - Remember if any of the elements are of type 'header'. */
+    /* Hack - Remember if any of the elements are of type 'header' or
+     * 'window'. */
     style->hasHeaderElem = FALSE;
+    style->hasWindowElem = FALSE;
     for (i = 0; i < count; i++) {
 	if (ELEMENT_TYPE_MATCHES(eLinks[i].elem->typePtr, &treeElemTypeHeader))
 	    style->hasHeaderElem = TRUE;
+	if (ELEMENT_TYPE_MATCHES(eLinks[i].elem->typePtr, &treeElemTypeWindow))
+	    style->hasWindowElem = TRUE;
     }
 }
 
