@@ -461,6 +461,8 @@ struct TreeCtrl
     int widthOfColumnsRight;	/* Sum of right-locked column widths */
     int columnCountVisLeft;	/* Number of visible left-locked columns */
     int columnCountVisRight;	/* Number of visible right-locked columns */
+    int displayLockedColumns;	/* Last seen value of
+				 * Tree_ShouldDisplayLockedColumns() */
 
 #define UNIFORM_GROUP
 #ifdef UNIFORM_GROUP

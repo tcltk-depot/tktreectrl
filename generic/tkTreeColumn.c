@@ -4196,13 +4196,20 @@ TreeColumns_UpdateCounts(
     TreeCtrl *tree		/* Widget info. */
     )
 {
+    int displayLockedColumns = Tree_ShouldDisplayLockedColumns(tree);
+
+    if (tree->displayLockedColumns != displayLockedColumns) {
+	tree->columnCountVis = -1;
+	tree->displayLockedColumns = displayLockedColumns;
+    }
+
     if (tree->columnCountVis >= 0)
 	return;
 
     UpdateColumnCounts(tree, tree->columnLockNone,
 	&tree->columnVis, &tree->columnCountVis);
 
-    if (Tree_ShouldDisplayLockedColumns(tree)) {
+    if (displayLockedColumns) {
 	UpdateColumnCounts(tree, tree->columnLockLeft,
 	    NULL, &tree->columnCountVisLeft);
 	UpdateColumnCounts(tree, tree->columnLockRight,
@@ -4223,8 +4230,9 @@ TreeColumns_UpdateCounts(
  *	1) creating a column
  *	2) deleting a column
  *	3) moving a column (affects tree->columnVis anyway)
- *	4) -visible changes
- *	5) -lock changes
+ *	4) column option -visible changes
+ *	5) column option -lock changes
+ *	6) Tree_ShouldDisplayLockedColumns() changes
  *
  * Results:
  *	None.
