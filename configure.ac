@@ -144,11 +144,11 @@ if test "${TEA_PLATFORM}" = "windows" ; then
     TEA_ADD_LIBS([gdi32.lib user32.lib])
 
     AC_ARG_ENABLE(shellicon,
-        AC_HELP_STRING([--enable-shellicon],
-        [build the shellicon extension (default: no)]),
-        [tcl_ok=$enableval], [tcl_ok=no])
+	AC_HELP_STRING([--enable-shellicon],
+	[build the shellicon extension (default: no)]),
+	[tcl_ok=$enableval], [tcl_ok=no])
     if test "$tcl_ok" = "yes" ; then
-        AC_CONFIG_SUBDIRS(shellicon)
+	AC_CONFIG_SUBDIRS(shellicon)
     fi
 
     # Find rc.exe or windres.exe.
@@ -173,35 +173,34 @@ if test "${TEA_PLATFORM}" = "windows" ; then
 fi
 
 if test "${TEA_WINDOWINGSYSTEM}" = "aqua"; then
-
-	AC_MSG_CHECKING([whether to use Cocoa or Carbon])
-	case ${TK_LIBS} in
-		*Cocoa*)
-            AC_MSG_RESULT([Cocoa])
-            TEA_ADD_CFLAGS([-DMAC_TK_COCOA -std=gnu99 -x objective-c -fobjc-gc])
-            TEA_ADD_SOURCES([tkMacOSXTree.c])
-            TEA_ADD_LIBS([-framework Cocoa -framework Carbon])
-            ;;
-		*)
-            AC_MSG_RESULT([Carbon])
-            TEA_ADD_CFLAGS([-DMAC_TK_CARBON])
-            TEA_ADD_SOURCES([tkMacOSXTree.c])
-            TEA_ADD_LIBS([-framework Carbon])
-            ;;
-	esac
+    AC_MSG_CHECKING([whether to use Cocoa or Carbon])
+    case ${TK_LIBS} in
+	*Cocoa*)
+	    AC_MSG_RESULT([Cocoa])
+	    TEA_ADD_CFLAGS([-DMAC_TK_COCOA -std=gnu99 -x objective-c -fobjc-gc])
+	    TEA_ADD_SOURCES([tkMacOSXTree.c])
+	    TEA_ADD_LIBS([-framework Cocoa -framework Carbon])
+	    ;;
+	*)
+	    AC_MSG_RESULT([Carbon])
+	    TEA_ADD_CFLAGS([-DMAC_TK_CARBON])
+	    TEA_ADD_SOURCES([tkMacOSXTree.c])
+	    TEA_ADD_LIBS([-framework Carbon])
+	    ;;
+    esac
 fi
 
 if test "${TEA_WINDOWINGSYSTEM}" = "x11"; then
     TEA_ADD_SOURCES([tkUnixTree.c])
 
     AC_ARG_ENABLE(gtk,
-        AC_HELP_STRING([--enable-gtk],
-        [build GTK+ theme-aware treectrl (default: no)]),
-        [tcl_ok=$enableval], [tcl_ok=no])
+	AC_HELP_STRING([--enable-gtk],
+	[build GTK+ theme-aware treectrl (default: no)]),
+	[tcl_ok=$enableval], [tcl_ok=no])
     if test "$tcl_ok" = "yes" ; then
 		PKG_CHECK_MODULES([GTK], [gtk+-2.0 gdk-pixbuf-xlib-2.0])
-        TEA_ADD_CFLAGS([-DTREECTRL_GTK $GTK_CFLAGS])
-        TEA_ADD_LIBS([$GTK_LIBS])
+	TEA_ADD_CFLAGS([-DTREECTRL_GTK $GTK_CFLAGS])
+	TEA_ADD_LIBS([$GTK_LIBS])
     fi
 
     TEA_ADD_LIBS([${MATH_LIBS}])
