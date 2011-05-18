@@ -1253,7 +1253,20 @@ TreeHeaderColumn_DragBounds(
 	int indent2 = TreeItem_Indent(tree, column2min, item);
 	TreeRectangle bbox1, bbox2, bbox3, bbox4;
 
-	x = 0 - tree->drawableXOrigin;
+	/* Get the canvas coord of the leftmost column. */
+	switch (TreeColumn_Lock(drawArgs->column)) {
+	    case COLUMN_LOCK_LEFT:
+		x = Tree_BorderLeft(tree) + tree->xOrigin;
+		break;
+	    case COLUMN_LOCK_NONE:
+		x = 0;
+		break;
+	    case COLUMN_LOCK_RIGHT:
+		x = Tree_ContentRight(tree) + tree->xOrigin;
+		break;
+	}
+	/* Canvas -> drawable */
+	x -= tree->drawableXOrigin;
 
 	bbox1.x = x + TreeColumn_Offset(column1min) - indent1;
 	bbox1.width = TreeColumn_UseWidth(column1min);
