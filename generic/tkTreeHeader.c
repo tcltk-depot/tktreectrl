@@ -2069,12 +2069,14 @@ Tree_HeaderUnderPoint(
 	item = TreeItem_NextSiblingVisible(tree, item);
     while (item != NULL) {
 	if (*y_ < y + TreeItem_Height(tree, item)) {
-	    if (*x_ < Tree_ContentLeft(tree)) {
-		(*x_) -= Tree_BorderLeft(tree);
-		(*lock) = COLUMN_LOCK_LEFT;
-	    } else if (*x_ >= Tree_ContentRight(tree)) {
+	    /* Right-locked columns are drawn over left-locked ones. */
+	    /* Left-locked columns are drawn over unlocked ones. */
+	    if (*x_ >= Tree_ContentRight(tree)) {
 		(*x_) -= Tree_ContentRight(tree);
 		(*lock) = COLUMN_LOCK_RIGHT;
+	    } else if (*x_ < Tree_ContentLeft(tree)) {
+		(*x_) -= Tree_BorderLeft(tree);
+		(*lock) = COLUMN_LOCK_LEFT;
 	    } else {
 		(*x_) += tree->xOrigin /*- tree->canvasPadX[PAD_TOP_LEFT]*/;
 		(*lock) = COLUMN_LOCK_NONE;
