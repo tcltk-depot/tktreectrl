@@ -315,7 +315,8 @@ proc ::TreeCtrl::ColumnDragFindBefore {w x y dragColumn indColumn_ indSide_} {
 	variable Priv
 	scan [$w header bbox $Priv(header) $indColumn] "%d %d %d %d" x1 y1 x2 y2
 	# Hack - ignore canvaspadx
-	if {[$w column compare $indColumn == "first visible lock none"]} {
+	if {[$w column cget $indColumn -lock] eq "none" &&
+		[$w column compare $indColumn == "first visible lock none"]} {
 	    incr x1 [lindex [$w cget -canvaspadx] 0]
 	}
 	if {[$w column compare $dragColumn < $indColumn]} {
