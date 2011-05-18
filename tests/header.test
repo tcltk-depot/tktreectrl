@@ -4,8 +4,6 @@
 # the tktreectrl extension.  Sourcing this file into Tcl runs the tests and
 # generates output for errors.  No output means no errors were found.
 #
-# Copyright (c) 2000 by Scriptics Corporation.
-# Copyright (c) 2002 by Christian Krone.
 # Copyright (c) 2011 by Tim Baker.
 #
 # See the file "license.terms" for information on usage and redistribution
@@ -21,6 +19,8 @@ package require treectrl
 
 test header-0.1 {some needed preparations} -body {
     pack [treectrl .t -usetheme no]
+    # The default borderwidth in Tk 8.4 is "2" while in Tk 8.5 it is "1"
+    .t configure -borderwidth 1
     # If a treectrl has never been mapped then Tk_Width and Tk_Height return 1
     update
 } -result {}

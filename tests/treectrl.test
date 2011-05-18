@@ -27,11 +27,12 @@ test treectrl-1.2 {Unknown option} -body {
 } -returnCodes error -result {unknown option "-foo"}
 
 test treectrl-1.3 {Create a tree} -body {
-    treectrl .t
+    # The default borderwidth in Tk 8.4 is "2" while in Tk 8.5 it is "1"
+    treectrl .t -borderwidth 1
 } -result {.t}
 
 test treectrl-1.4 {configure: List all options} -body {
-	.t configure
+    .t configure
 } -result {{-background background Background white *}*} -match glob
 
 test treectrl-1.5 {configure -background with totally empty visible tree} -body {

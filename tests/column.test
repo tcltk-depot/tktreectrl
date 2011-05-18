@@ -20,6 +20,8 @@ package require treectrl
 
 test column-0.1 {some needed preparations} -body {
     pack [treectrl .t -usetheme no]
+    # The default borderwidth in Tk 8.4 is "2" while in Tk 8.5 it is "1"
+    .t configure -borderwidth 1
 } -result {}
 
 test column-0.2 {create an image} -body {
@@ -536,7 +538,7 @@ test column-12.1 {column configure: passing args to header configure} -setup {
 } -body {
     set opts {}
     foreach info [.t column configure column0] {
-	lassign $info name x y default current
+	foreach {name x y default current} $info {}
 	lappend opts $name $current
     }
     eval .t column configure column0 $opts
