@@ -858,7 +858,9 @@ Tree_CanvasHeight(
 	return tree->totalHeight;
 
     tree->totalHeight = tree->canvasPadY[PAD_TOP_LEFT];
-    range = dInfo->rangeFirst;
+    /* If dInfo->rangeLock is not NULL, then we are displaying some items
+     * in locked columns but no non-locked columns. */
+    range = dInfo->rangeFirst ? dInfo->rangeFirst : dInfo->rangeLock;
     while (range != NULL) {
 	rangeHeight = Range_TotalHeight(tree, range);
 	if (tree->vertical) {
@@ -875,13 +877,6 @@ Tree_CanvasHeight(
 	range = range->next;
     }
     tree->totalHeight += tree->canvasPadY[PAD_BOTTOM_RIGHT];
-
-    /* If dInfo->rangeLock is not NULL, then we are displaying some items
-     * in locked columns but no non-locked columns. */
-    if (dInfo->rangeLock != NULL) {
-	if (dInfo->rangeLock->totalHeight > tree->totalHeight)
-	    tree->totalHeight = dInfo->rangeLock->totalHeight;
-    }
 
     return tree->totalHeight;
 }
@@ -9721,7 +9716,7 @@ Tree_DumpDInfo(
     if (index == DUMP_RANGE) {
 	DStringAppendf(&dString, "  dInfo.rangeFirstD %p dInfo.rangeLastD %p dInfo.rangeLock %p\n",
 		dInfo->rangeFirstD, dInfo->rangeLastD, dInfo->rangeLock);
-	for (range = dInfo->rangeFirstD;
+	for (range = dInfo->rangeFirstD ? dInfo->rangeFirstD : dInfo->rangeLock;
 	    range != NULL;
 	    range = range->next) {
 	    DStringAppendf(&dString, "  Range: x,y,w,h %d,%d,%d,%d\n",
