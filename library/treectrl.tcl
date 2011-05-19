@@ -1046,8 +1046,8 @@ proc ::TreeCtrl::Motion1 {w x y} {
 		    scan [$w column bbox $Priv(column)] "%d %d %d %d" x1 y1 x2 y2
 		    if {[ColumnCanResizeLeft $w $Priv(column)]} {
 			# Use "ne" because -columnproxy could be ""
-			if {$x ne [$w cget -columnproxy]} {
-			    $w configure -columnproxy $x
+			if {$x2 - $width ne [$w cget -columnproxy]} {
+			    $w configure -columnproxy [expr {$x2 - $width}]
 			}
 		    } else {
 			if {($x1 + $width - 1) ne [$w cget -columnproxy]} {
