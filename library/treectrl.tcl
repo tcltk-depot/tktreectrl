@@ -238,12 +238,7 @@ source [file join [file dirname [info script]] filelist-bindings.tcl]
 
 proc ::TreeCtrl::ColumnCanResizeLeft {w column} {
     if {[$w column cget $column -lock] eq "right"} {
-	if {[$w column compare $column == "first visible lock right"]} {
-	    return 1
-	}
-	if {[$w column compare $column == "last visible lock right"]} {
-	    return 1
-	}
+	return 1
     }
     return 0
 }
@@ -341,8 +336,8 @@ proc ::TreeCtrl::ColumnDragFindBefore {w x y dragColumn indColumn_ indSide_} {
     set next [$w column id "$dragColumn next visible"]
     if {[$w column compare $indColumn == "tail"]} {
 	set indSide left
-set indColumn [$w column id "last lock none visible"]
-set indSide right
+	set indColumn [$w column id "last lock none visible"]
+	set indSide right
     } elseif {$prev ne "" && [$w column compare $prev == $indColumn]} {
 	set indSide left
     } elseif {$next ne "" && [$w column compare $next == $indColumn]} {
@@ -363,6 +358,15 @@ set indSide right
     return [ColumnCanMoveHere $w $dragColumn $before]
 }
 
+# ::TreeCtrl::ListElementWindows --
+#
+# Return a list of Tk windows in window elements in a column header.
+#
+# Arguments:
+# T		The treectrl widget.
+# H		Header id
+# C		Column id
+
 proc ::TreeCtrl::ListElementWindows {T H C} {
     set S [$T header style set $H $C]
     if {$S eq ""} return
@@ -377,12 +381,22 @@ proc ::TreeCtrl::ListElementWindows {T H C} {
     }
     return $result
 }
+
+# ::TreeCtrl::ColumnDragRestackWindows --
+#
+# Restack windows in window elements so that windows in dragged headers
+# are above all other windows in undragged headers.
+#
+# Arguments:
+# T		The treectrl widget.
+
 proc ::TreeCtrl::ColumnDragRestackWindows {T} {
     variable Priv
     set C [$T header dragcget -imagecolumn]
     set lock [$T column cget $C -lock]
     set span [$T header dragcget -imagespan]
-    set dragged [$T column id [list range $C [list $C span $span]]]
+    set last [$T column id [list $C span $span]]
+    set dragged [$T column id [list range $C $last]]
     foreach H [$T header id all] {
 	set prev ""
 	set lowest ""
@@ -429,16 +443,21 @@ proc ::TreeCtrl::CursorAction {w x y var_} {
 	set var(header) $id(header)
 	set column $id(column)
 	set side $id(side)
-	if {$side eq "left"} {
-	    if {[$w column compare $column == tail]} {
-		set column2 [$w column id "last visible lock none"]
-		if {$column2 ne "" && [$w column cget $column2 -resize]} {
-		    array set var [list action "header-resize" column $column2]
-		    return
+	if {$side eq ""} {
+	    if {[scan [$w bbox header.left] "%d %d %d %d" x1 y1 x2 y2] == 4} {
+		if {$x < $x2 + 4 && $x >= $x2} {
+		    set column [$w column id "last visible lock left"]
+		    set side right
 		}
-		# Can't -resize or -button the tail column
-		return
 	    }
+	    if {[scan [$w bbox header.right] "%d %d %d %d" x1 y1 x2 y2] == 4} {
+		if {$x >= $x1 - 4 && $x < $x1} {
+		    set column [$w column id "first visible lock right"]
+		    set side left
+		}
+	    }
+	}
+	if {$side eq "left"} {
 	    if {[ColumnCanResizeLeft $w $column]} {
 		if {[$w column cget $column -resize]} {
 		    array set var [list action "header-resize" column $column]
@@ -446,36 +465,41 @@ proc ::TreeCtrl::CursorAction {w x y var_} {
 		}
 	    } else {
 		# Resize the previous column
-		set lock [$w column cget $column -lock]
-		if {[$w column compare $column != "first visible lock $lock"]} {
-		    set column2 [$w column id "$column prev visible"]
-		    if {[$w column cget $column2 -resize]} {
-			array set var [list action "header-resize" column $column2]
-			return
+		if {[$w column compare $column == tail]} {
+		    set prev [$w column id "last visible lock none"]
+		    if {$prev eq ""} {
+			set prev [$w column id "last visible lock left"]
 		    }
+		} else {
+		    set prev [$w column id "$column prev visible"]
+		}
+		if {$prev ne "" && [$w column cget $prev -resize]} {
+		    array set var [list action "header-resize" column $prev]
+		    return
 		}
 	    }
 	} elseif {$side eq "right"} {
+	    # Get the last visible column in the span
 	    set span [$w header span $id(header) $column]
-	    for {set index [$w column order $column]} {
-		    $index + 1 < [$w column count] && $span > 1} {incr span -1} {
-		if {[$w column cget "order $index next" -lock] ne
-		    [$w column cget $column -lock]} break
-		if {[$w column cget "order $index next" -visible]} {
-		    incr index
+	    set last [$w column id "$column span $span"]
+	    set columns [$w column id [list range $column $last visible]]
+	    set column2 [lindex $columns end]
+	    if {[ColumnCanResizeLeft $w $column2]} {
+		# Resize the next column
+		set next [$w column id "$column2 next visible !tail"]
+		if {$next ne "" && [$w column cget $next -resize]} {
+		    array set var [list action "header-resize" column $next]
+		    return
 		}
-	    }
-	    set column [$w column id "order $index"]
-
-	    if {![ColumnCanResizeLeft $w $column]} {
-		if {[$w column cget $column -resize]} {
-		    array set var [list action "header-resize" column $column]
+	    } else {
+		if {[$w column cget $column2 -resize]} {
+		    array set var [list action "header-resize" column $column2]
 		    return
 		}
 	    }
 	}
 	if {[$w column compare $column == "tail"]} {
-	    # nothing
+	    # Can't -resize or -button the tail column
 	} elseif {[$w header cget $id(header) $column -button]} {
 	    array set var [list action "header-button" column $column]
 	    return
@@ -666,8 +690,8 @@ proc ::TreeCtrl::ClearHeaderState {T} {
 
 # ::TreeCtrl::MotionInHeader --
 #
-# This procedure updates the active/normal states of columns as the pointer
-# moves in and out of column headers. Typically this results in visual
+# This procedure updates the active/normal states of column headers as the
+# mouse pointer moves in and out of them. Typically this results in visual
 # feedback by changing the appearance of the headers.
 #
 # Arguments:
