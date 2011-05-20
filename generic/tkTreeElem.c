@@ -4101,7 +4101,7 @@ static void DisplayProcText(TreeElementArgs *args)
      * system theme color.  If no theme color is provided then use the default
      * header text color. */
     if ((color == NULL) && inHeader) {
-	if (!tree->useTheme || TreeTheme_GetColumnTextColor(tree, columnState,
+	if (!tree->useTheme || TreeTheme_GetHeaderTextColor(tree, columnState,
 		&color) != TCL_OK) {
 	    color = tree->defHeaderTextColor;
 	}

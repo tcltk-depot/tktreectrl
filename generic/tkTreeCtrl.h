@@ -1245,7 +1245,7 @@ MODULE_SCOPE int TreeTheme_GetButtonSize(TreeCtrl *tree, Drawable drawable, int 
 MODULE_SCOPE int TreeTheme_GetArrowSize(TreeCtrl *tree, Drawable drawable, int up, int *widthPtr, int *heightPtr);
 MODULE_SCOPE int TreeTheme_SetBorders(TreeCtrl *tree);
 MODULE_SCOPE int TreeTheme_DrawBorders(TreeCtrl *tree, Drawable drawable);
-MODULE_SCOPE int TreeTheme_GetColumnTextColor(TreeCtrl *tree, int state, XColor **xColorPtr);
+MODULE_SCOPE int TreeTheme_GetHeaderTextColor(TreeCtrl *tree, int state, XColor **xColorPtr);
 MODULE_SCOPE int TreeTheme_AnimateButtonStart(TreeCtrl *tree, TreeItem item);
 MODULE_SCOPE int TreeTheme_ItemDeleted(TreeCtrl *tree, TreeItem item);
 MODULE_SCOPE void TreeTheme_Relayout(TreeCtrl *tree);

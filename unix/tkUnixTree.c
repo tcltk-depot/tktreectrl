@@ -1377,7 +1377,7 @@ TreeTheme_DrawBorders(
 /*
  *----------------------------------------------------------------------
  *
- * TreeTheme_GetColumnTextColor --
+ * TreeTheme_GetHeaderTextColor --
  *
  *	Returns the text fill color to display a column title with.
  *
@@ -1392,7 +1392,7 @@ TreeTheme_DrawBorders(
  */
 
 int
-TreeTheme_GetColumnTextColor(
+TreeTheme_GetHeaderTextColor(
     TreeCtrl *tree,		/* Widget info. */
     int columnState,		/* COLUMN_STATE_xxx flags. */
     XColor **colorPtrPtr	/* Returned text color. */
@@ -2174,7 +2174,7 @@ TreeTheme_DrawBorders(
 /*
  *----------------------------------------------------------------------
  *
- * TreeTheme_GetColumnTextColor --
+ * TreeTheme_GetHeaderTextColor --
  *
  *	Returns the text fill color to display a column title with.
  *
@@ -2189,7 +2189,7 @@ TreeTheme_DrawBorders(
  */
 
 int
-TreeTheme_GetColumnTextColor(
+TreeTheme_GetHeaderTextColor(
     TreeCtrl *tree,		/* Widget info. */
     int columnState,		/* COLUMN_STATE_xxx flags. */
     XColor **colorPtrPtr	/* Returned text color. */
