@@ -852,17 +852,17 @@ test header-30.1 {library: CursorAction} -setup {
     .t header configure 0 -tags header0
     .t header create -tags header1
     .t header configure all -height 20
-    foreach tag {l1 l2} {
+    foreach tag {left1 left2} {
         .t column create -tags $tag  -lock left
     }
-    foreach tag {n1 n2 n3 n4} {
+    foreach tag {none1 none2 none3 none4} {
         .t column create -tags $tag -lock none
     }
-    foreach tag {r1 r2} {
+    foreach tag {right1 right2} {
         .t column create -tags $tag -lock right
     }
     .t column configure all -width 50
-    .t header span header0 l1 2 n1 2 n3 2 r1 2
+    .t header span header0 left1 2 none1 2 none3 2 right1 2
     # 50-pixel gap between last non-locked column and first right-locked column
     .t configure -width [expr {[.t column count] * 50 + 50}]
     update
@@ -947,6 +947,65 @@ v(column) = 4
 v(header) = 0
 }
 
+#----------------------------------------------------------------------
+#
+# Procedures needed by this test file
+#
+#----------------------------------------------------------------------
+
+proc HeaderXY {H C xpos ypos _x _y} {
+    upvar $_x x $_y y
+    scan [.t header bbox $H $C] "%d %d %d %d" x1 y1 x2 y2
+    if {[string match "left*" $xpos]} {
+        set dx [string range $xpos 4 end]
+        set x $x1
+    } elseif {[string match "right*" $xpos]} {
+        set dx [string range $xpos 5 end]
+        set x $x2
+    } else {
+        set dx $xpos
+        set x $x1
+    }
+    if {[string match "top*" $xpos]} {
+        set dy [string range $ypos 4 end]
+        set y $y1
+    } elseif {[string match "bottom*" $ypos]} {
+        set dy [string range $ypos 5 end]
+        set y $y2
+    } else {
+        set dy $ypos
+        set y $y1
+    }
+    incr x $dx
+    incr y $dy
+    return
+}
+
+proc Motion {H C xpos ypos} {
+    HeaderXY $H $C $xpos $ypos x y
+    event generate .t <Motion> -x $x -y $y
+    set ::gx $x
+    set ::gy $y
+    return
+}
+
+proc Press1 {} {
+    event generate .t <ButtonPress-1> -x $::gx -y $::gy
+    return
+}
+
+proc Release1 {} {
+    event generate .t <ButtonRelease-1> -x $::gx -y $::gy
+    return
+}
+
+proc Drag1 {dx dy} {
+    incr ::gx $dx
+    incr ::gy $dy
+    event generate .t <Button1-Motion> -x $::gx -y $::gy
+    return
+}
+
 test header-40.1 {bindings: enter + invoke 0,0} -setup {
     .t notify install <Header-state>
     .t notify install <Header-invoke>
@@ -955,139 +1014,193 @@ test header-40.1 {bindings: enter + invoke 0,0} -setup {
 } -body {
     array unset v
     set v {}
-    event generate .t <Motion> -x 0 -y 0
+    Motion header0 left1 0 0
     lappend v |
-    event generate .t <ButtonPress-1> -x 0 -y 0
+    Press1
     lappend v |
-    event generate .t <ButtonRelease-1> -x 0 -y 0
+    Release1
     lappend v | [.t cget -cursor]
     set v
 } -result {state 0 0 active | state 0 0 pressed | state 0 0 active invoke 0 0 | {}}
 
 test header-40.2 {bindings: hover left side of 1,0} -body {
     set v {}
-    event generate .t <Motion> -x 0 -y 20
+    Motion header1 left1 0 0
     lappend v | [.t cget -cursor]
     set v
 } -result {state 0 0 normal state 1 0 active | {}}
 
 test header-40.3 {bindings: hover 1 pixel left of right side of 1,0} -body {
     set v {}
-    event generate .t <Motion> -x 45 -y 20
+    Motion header1 left1 right-5 0
     lappend v | [.t cget -cursor]
 } -result {| {}}
 
 test header-40.4 {bindings: hover right side of 1,0} -body {
     set v {}
-    event generate .t <Motion> -x 46 -y 20
+    Motion header1 left1 right-4 0
     lappend v | [.t cget -cursor]
 } -result {| sb_h_double_arrow}
 
 test header-40.5 {bindings: hover left side of 1,1} -body {
     set v {}
-    event generate .t <Motion> -x 53 -y 20
+    Motion header1 left2 3 0
     lappend v | [.t cget -cursor]
     set v
 } -result {| sb_h_double_arrow}
 
 test header-40.6 {bindings: hover 1 pixel right of left side of 1,1} -body {
     set v {}
-    event generate .t <Motion> -x 54 -y 20
+    Motion header1 left2 4 0
     lappend v | [.t cget -cursor]
     set v
 } -result {state 1 0 normal state 1 1 active | {}}
 
 test header-40.7 {bindings: hover right side of 1,1} -body {
     set v {}
-    event generate .t <Motion> -x 99 -y 20
+    Motion header1 left2 right-1 0
     lappend v | [.t cget -cursor]
     set v
 } -result {| sb_h_double_arrow}
 
 test header-40.8 {bindings: hover left side of 1,2} -body {
     set v {}
-    event generate .t <Motion> -x 100 -y 20
+    Motion header1 none1 0 0
     lappend v | [.t cget -cursor]
     set v
 } -result {| sb_h_double_arrow}
 
 test header-40.9 {bindings: hover right side of 1,5} -body {
     set v {}
-    event generate .t <Motion> -x 299 -y 20
+    Motion header1 none4 right-1 0
     lappend v | [.t cget -cursor]
     set v
 } -result {state 1 1 normal state 1 5 active | sb_h_double_arrow}
 
 test header-40.10 {bindings: hover left side of 1,tail} -body {
     set v {}
-    event generate .t <Motion> -x 300 -y 20
+    Motion header1 none4 right+0 0
     lappend v | [.t cget -cursor]
     set v
 } -result {| sb_h_double_arrow}
 
 test header-40.11 {bindings: hover 1 pixel right of left side of 1,tail} -body {
     set v {}
-    event generate .t <Motion> -x 304 -y 20
+    Motion header1 none4 right+4 0
     lappend v | [.t cget -cursor]
     set v
 } -result {state 1 5 normal | {}}
 
-test header-40.12 {bindings: hover 5 pixels left of right side of 1,6} -body {
+test header-40.12 {bindings: hover 5 pixels left of left side of 1,6} -body {
     set v {}
-    event generate .t <Motion> -x 345 -y 20
+    Motion header1 right1 -5 0
     lappend v | [.t cget -cursor]
     set v
 } -result {| {}}
 
-test header-40.13 {bindings: hover 4 pixels left of right side of 1,6} -body {
+test header-40.13 {bindings: hover 4 pixels left of left side of 1,6} -body {
     set v {}
-    event generate .t <Motion> -x 346 -y 20
+    Motion header1 right1 -4 0
     lappend v | [.t cget -cursor]
     set v
 } -result {state 1 6 active | sb_h_double_arrow}
 
 test header-40.14 {bindings: hover left side of 1,6} -body {
     set v {}
-    event generate .t <Motion> -x 350 -y 20
+    Motion header1 right1 0 0
     lappend v | [.t cget -cursor]
     set v
 } -result {| sb_h_double_arrow}
 
 test header-40.15 {bindings: hover left side of 1,6} -body {
     set v {}
-    event generate .t <Motion> -x 353 -y 20
+    Motion header1 right1 3 0
     lappend v | [.t cget -cursor]
     set v
 } -result {| sb_h_double_arrow}
 
 test header-40.16 {bindings: hover 1 pixel right of left side of 1,6} -body {
     set v {}
-    # Point is over tail column
-    event generate .t <Motion> -x 354 -y 20
+    Motion header1 right1 4 0
     lappend v | [.t cget -cursor]
     set v
 } -result {| {}}
 
 test header-40.17 {bindings: hover right side of 1,6} -body {
     set v {}
-    event generate .t <Motion> -x 399 -y 20
+    Motion header1 right1 right-1 0
     lappend v | [.t cget -cursor]
     set v
 } -result {state 1 6 normal state 1 7 active | sb_h_double_arrow}
 
 test header-40.18 {bindings: hover left side of 1,7} -body {
     set v {}
-    event generate .t <Motion> -x 400 -y 20
+    Motion header1 right2 0 0
     lappend v | [.t cget -cursor]
     set v
 } -result {| sb_h_double_arrow}
 
 test header-40.19 {bindings: hover right side of 1,7} -body {
     set v {}
-    event generate .t <Motion> -x 449 -y 20
+    Motion header1 right2 right-1 0
     lappend v | [.t cget -cursor]
     set v
 } -result {| {}}
+
+test header-41.1 {bindings: resize -lock=left span=2} -body {
+    Motion header0 left1 right-1 0
+    Press1
+    Drag1 -25 0
+    Release1
+    .t column cget left2 -width
+} -result {25}
+
+test header-41.2 {bindings: resize -lock=none span=2} -body {
+    Motion header0 none1 right-1 0
+    Press1
+    Drag1 -25 0
+    Release1
+    .t column cget none2 -width
+} -result {25}
+
+test header-41.3 {bindings: resize -lock=none span=2} -body {
+    Motion header0 none3 right-1 0
+    Press1
+    Drag1 -25 0
+    Release1
+    .t column cget none4 -width
+} -result {25}
+
+test header-41.4 {bindings: resize -lock=right span=2} -body {
+    Motion header0 right1 0 0
+    Press1
+    Drag1 +25 0
+    Release1
+    .t column cget right1 -width
+} -result {25}
+
+test header-41.5 {bindings: resize span with hidden column} -setup {
+    .t column configure all -width 50
+    .t column configure none2 -visible no
+} -body {
+    Motion header0 none1 right-1 0
+    Press1
+    Drag1 +25 0
+    Release1
+    .t column cget none1 -width ; # not none2
+} -result {75}
+
+test header-41.6 {bindings: resize too-large span} -setup {
+    .t column configure all -width 50
+    .t column configure none2 -visible yes
+    .t header span header0 none3 20
+} -body {
+    Motion header0 none3 right-1 0
+    Press1
+    Drag1 +25 0
+    Release1
+    .t column cget none4 -width
+} -result {75}
 
 test header-99.1 {some needed cleanup} -body {
     destroy .t
