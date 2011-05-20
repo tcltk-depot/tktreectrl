@@ -2268,6 +2268,7 @@ Tree_ItemBbox(
 
     Range_RedoIfNeeded(tree);
     rItem = (RItem *) TreeItem_GetRInfo(tree, item);
+    range = rItem->range;
 
     switch (lock) {
 	case COLUMN_LOCK_LEFT:
@@ -2275,7 +2276,7 @@ Tree_ItemBbox(
 		return -1;
 	    TreeRect_SetXYWH(*tr,
 		W2Cx(Tree_BorderLeft(tree)),
-		rItem->offset,
+		range->offset.y + rItem->offset,
 		Tree_WidthOfLeftColumns(tree),
 		rItem->size);
 	    return 0;
@@ -2286,7 +2287,7 @@ Tree_ItemBbox(
 		return -1;
 	    TreeRect_SetXYWH(*tr,
 		W2Cx(Tree_ContentRight(tree)),
-		rItem->offset,
+		range->offset.y + rItem->offset,
 		Tree_WidthOfRightColumns(tree),
 		rItem->size);
 	    return 0;
@@ -2295,7 +2296,6 @@ Tree_ItemBbox(
     if (tree->columnCountVis < 1)
 	return -1;
 
-    range = rItem->range;
     if (tree->vertical) {
 	TreeRect_SetXYWH(*tr,
 	    range->offset.x,
@@ -6818,8 +6818,8 @@ enum {
 
 static int
 TrackItemVisibility(
-    TreeCtrl *tree,
-    DItem *dItemHead,
+    TreeCtrl *tree,		/* Widget info. */
+    DItem *dItemHead,		/* Linked list of onscreen item info. */
     int doHeaders		/* TRUE to operate on headers, FALSE
 				 * to operate on items. */
     )
@@ -7160,7 +7160,7 @@ displayRetry:
     if (TreeDisplay_WasThereTrouble(tree, requests)) {
 	goto displayRetry;
     }
-UpdateDItemsForHeaders(tree, dInfo->dItemHeader, tree->headerItems);
+    UpdateDItemsForHeaders(tree, dInfo->dItemHeader, tree->headerItems);
     if (dInfo->flags & DINFO_OUT_OF_DATE) {
 	Tree_UpdateDInfo(tree);
 	dInfo->flags &= ~DINFO_OUT_OF_DATE;
@@ -7219,7 +7219,6 @@ UpdateDItemsForHeaders(tree, dInfo->dItemHeader, tree->headerItems);
     Tree_SetEmptyRegion(dInfo->redrawRgn);
 #endif /* REDRAW_RGN */
 
-    /* FIXME: only redraw header items if needed. */
     if ((dInfo->flags & DINFO_DRAW_HEADER) && (dInfo->dItemHeader != NULL)) {
 	TreeDrawable tpixmap = tdrawable;
 
@@ -7234,7 +7233,7 @@ UpdateDItemsForHeaders(tree, dInfo->dItemHeader, tree->headerItems);
 	    TreeRectangle bounds;
 
 #if USE_ITEM_PIXMAP == 1
-	    /* Allocate pixmap for largest item */
+	    /* Allocate pixmap for largest header */
 	    tpixmap.width = /*MIN(*/Tk_Width(tkwin)/*, dItem->width)*/;
 	    tpixmap.height = MIN(Tk_Height(tkwin), dItem->height);
 	    tpixmap.drawable = DisplayGetPixmap(tree, &dInfo->pixmapI,
