@@ -4185,6 +4185,7 @@ Style_Changed(
     int columnIndex, layout;
     int updateDInfo = FALSE;
     IStyle *style;
+    int tailOK;
 
     hPtr = Tcl_FirstHashEntry(tablePtr, &search);
     if (hPtr == NULL) {
@@ -4193,6 +4194,7 @@ Style_Changed(
     }
     while (hPtr != NULL) {
 	item = (TreeItem) Tcl_GetHashValue(hPtr);
+	tailOK = TreeItem_GetHeader(tree, item) != NULL;
 	treeColumn = Tree_FirstColumn(tree, -1, TreeItem_GetHeader(tree, item) != NULL);
 	column = TreeItem_GetFirstColumn(tree, item);
 	columnIndex = 0;
@@ -4215,7 +4217,7 @@ Style_Changed(
 	    }
 	    columnIndex++;
 	    column = TreeItemColumn_GetNext(tree, column);
-	    treeColumn = Tree_ColumnToTheRight(treeColumn, FALSE, TreeItem_GetHeader(tree, item) != NULL);
+	    treeColumn = Tree_ColumnToTheRight(treeColumn, FALSE, tailOK);
 	}
 	if (layout) {
 	    TreeItem_InvalidateHeight(tree, item);
@@ -4443,6 +4445,7 @@ Style_ChangeElements(
     int updateDInfo = FALSE;
     IStyle *style;
     int i, j, k, oldCount;
+    int tailOK;
 
     /* Update -union lists */
     for (i = 0; i < masterStyle->numElements; i++) {
@@ -4502,6 +4505,7 @@ Style_ChangeElements(
     }
     while (hPtr != NULL) {
 	item = (TreeItem) Tcl_GetHashValue(hPtr);
+	tailOK = TreeItem_GetHeader(tree, item) != NULL;
 	treeColumn = Tree_FirstColumn(tree, -1, TreeItem_GetHeader(tree, item) != NULL);
 	column = TreeItem_GetFirstColumn(tree, item);
 	columnIndex = 0;
@@ -4517,7 +4521,7 @@ Style_ChangeElements(
 	    }
 	    columnIndex++;
 	    column = TreeItemColumn_GetNext(tree, column);
-	    treeColumn = Tree_ColumnToTheRight(treeColumn, FALSE, TreeItem_GetHeader(tree, item) != NULL);
+	    treeColumn = Tree_ColumnToTheRight(treeColumn, FALSE, tailOK);
 	}
 	if (layout) {
 	    TreeItem_InvalidateHeight(tree, item);
