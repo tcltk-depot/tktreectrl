@@ -3860,7 +3860,8 @@ static char *VarTraceProc_Text(ClientData clientData, Tcl_Interp *interp,
 
     elemX->textLen = STRINGREP_INVALID;
     Tree_ElementChangedItself(etv->tree, etv->item, etv->column,
-	(TreeElement) elemX, TEXT_CONF_TEXTVAR, CS_LAYOUT | CS_DISPLAY);
+	(TreeElement) elemX, TEXT_CONF_LAYOUT | TEXT_CONF_TEXTVAR,
+	CS_LAYOUT | CS_DISPLAY);
     return (char *) NULL;
 }
 #endif /* TEXTVAR */
@@ -5607,11 +5608,13 @@ TreeElement_InitInterp(
 	Tk_Offset(PerStateInfo, obj),
 	0, PerStateCO_Alloc("-font", &pstFont, TreeStateFromObj),
 	(DynamicOptionInitProc *) NULL);
+#ifdef TEXTVAR
     DynamicCO_Init(treeElemTypeText.optionSpecs, "-textvariable",
 	DOID_TEXT_VAR, sizeof(ElementTextVar),
 	Tk_Offset(struct ElementTextVar, varNameObj),
 	-1, &TreeCtrlCO_string,
 	(DynamicOptionInitProc *) NULL);
+#endif
 
 #ifdef TEXT_STYLE
     DynamicCO_Init(treeElemTypeText.optionSpecs, "-underline",
