@@ -20,8 +20,9 @@ package require treectrl
 
 test column-0.1 {some needed preparations} -body {
     pack [treectrl .t -usetheme no]
-    # The default borderwidth in Tk 8.4 is "2" while in Tk 8.5 it is "1"
-    .t configure -borderwidth 1
+    # The default borderwidth in Tk 8.4 is "2" while in Tk 8.5 it is "1".
+    # The default highlightthickness is "0" Mac OS X but "1" on other platforms.
+    .t configure -borderwidth 1 -highlightthickness 1
 } -result {}
 
 test column-0.2 {create an image} -body {
