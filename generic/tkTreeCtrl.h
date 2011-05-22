@@ -102,33 +102,45 @@ typedef struct PerStateInfo PerStateInfo;
 typedef struct PerStateData PerStateData;
 typedef struct PerStateType PerStateType;
 
-/* There is one of these for each XColor, Tk_Font, Tk_Image etc */
+/* A structure of the following type is kept for each {value stateList} pair
+ * for a single per-state option. */
 struct PerStateData
 {
-    int stateOff;
-    int stateOn;
-    /* Type-specific fields go here */
+    int stateOff;		/* States that must be off. */
+    int stateOn;		/* States that must be on. */
+    /* Type-specific fields go here. */
+    /* See PerStateDataBorder, PerStateDataFont, etc. */
 };
 
+/* A structure of the following type represents the value of a per-state
+ * option. */
 struct PerStateInfo
 {
 #ifdef TREECTRL_DEBUG
     PerStateType *type;
 #endif
-    Tcl_Obj *obj;
-    int count;
-    PerStateData *data;
+    Tcl_Obj *obj;		/* The configured option value, a list object
+				 * of the form {value stateList ...}.
+				 * Each 'value' is a font, color etc.
+				 * Each 'stateList' is a list of state names
+				 * possibly preceded by "!". */
+    int count;			/* The number of entries in 'data'. */
+    PerStateData *data;		/* malloc'd array parsed from 'obj'. */
 };
 
 typedef int (*PerStateType_FromObjProc)(TreeCtrl *, Tcl_Obj *, PerStateData *);
 typedef void (*PerStateType_FreeProc)(TreeCtrl *, PerStateData *);
 
+/* A structure of the following type is kept for each per-state data type. */
 struct PerStateType
 {
-    CONST char *name;
-    int size;
-    PerStateType_FromObjProc fromObjProc;
-    PerStateType_FreeProc freeProc;
+    CONST char *name;		/* Name for debugging purposes. */
+    int size;			/* Size of PerStateData + type-specific
+				 * fields. */
+    PerStateType_FromObjProc fromObjProc; /* Convert a Tcl_Obj to this type's
+				 * PerStateData internal representation,
+				 * a Tk_Font, XColor, etc. */
+    PerStateType_FreeProc freeProc; /* Free the internal representation. */
 };
 
 /*****/
@@ -145,6 +157,9 @@ typedef struct
 #define TREECOLOR_CMP2(a,b) (((a)->color!=(b)->color)||((a)->gradient!=(b)->gradient))
 #define TREECOLOR_CMP(a,b) ((!(a)!=!(b))||(((a)&&(b))&&TREECOLOR_CMP2(a,b)))
 
+/* A structure of the following type is used to remember a drawable and its
+ * dimensions.  Some drawing operations must be clipped to the actual bounds
+ * of a drawable (on X11 only?). */
 typedef struct
 {
     Drawable drawable;
@@ -152,6 +167,8 @@ typedef struct
     int height;
 } TreeDrawable;
 
+/* A structure of the following type represents a rectangle.  XRectangle
+ * uses short integers which often aren't large enough. */
 typedef struct
 {
     int x, y;
@@ -218,6 +235,8 @@ struct TreePtrList {
 
 enum { LEFT, TOP, RIGHT, BOTTOM };
 
+/* A structure of the following type is kept for each TreeCtrl to hold the
+ * values of debug-related configuration options and other related fields. */
 struct TreeCtrlDebug
 {
     Tk_OptionTable optionTable;
@@ -233,6 +252,9 @@ struct TreeCtrlDebug
     GC gcDraw;			/* for eraseColor */
 };
 
+/* A structure of the following type is kept for each TreeCtrl to hold the
+ * values of header drag-and-drop configuration options and other related
+ * fields. */
 struct TreeCtrlColumnDrag
 {
     Tk_OptionTable optionTable;
@@ -250,6 +272,8 @@ struct TreeCtrlColumnDrag
     int imageEpoch;
 };
 
+/* A structure of the following type is kept for each TreeCtrl to hold the
+ * names of static and dynamic states in each STATE_DOMAIN_XXX. */
 typedef struct TreeStateDomain TreeStateDomain;
 struct TreeStateDomain
 {
@@ -258,6 +282,8 @@ struct TreeStateDomain
     int staticCount;		/* Number of static states. */
 };
 
+/* A structure of the following type represents a unique signature for each
+ * TreeStyle that is managed privately for use in column headers. */
 typedef struct HeaderStyleParams HeaderStyleParams;
 struct HeaderStyleParams
 {
@@ -271,14 +297,18 @@ struct HeaderStyleParams
     int textPadY[2];
 };
 
+/* A structure of the following type is kept for each TreeStyle that is
+ * managed privately for use in column headers. */
 typedef struct HeaderStyle HeaderStyle;
 struct HeaderStyle
 {
-    TreeStyle style;
-    HeaderStyleParams params;
-    HeaderStyle *next;
+    TreeStyle style;		/* A master style for use in a column
+				 * header. */
+    HeaderStyleParams params;	/* Unique signature for this style. */
+    HeaderStyle *next;		/* Linked list of all header styles. */
 };
 
+/* A structure of the following type is kept for each treectrl widget. */
 struct TreeCtrl
 {
     /* Standard stuff */
