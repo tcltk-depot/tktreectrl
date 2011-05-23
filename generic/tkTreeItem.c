@@ -3667,6 +3667,8 @@ Item_HeightOfStyles(
 	    if ((TreeColumn_FixedWidth(treeColumn) != -1) ||
 		    TreeColumn_Squeeze(treeColumn)) {
 		drawArgs.width = TreeColumn_UseWidth(treeColumn);
+		if (item->header != NULL)
+		    drawArgs.width += drawArgs.indent;
 	    } else
 		drawArgs.width = -1;
 	    height = MAX(height, TreeStyle_UseHeight(&drawArgs));

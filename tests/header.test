@@ -722,6 +722,17 @@ test header-22.2 {squeezing columns invalidates needed height of headers} -body 
     expr {$bottom1 >= $bottom + $fh}
 } -result {1}
 
+test header-22.3 {-canvaspadx is added to width of leftmost unlocked column when calculating needed height} -body {
+    .t column configure column0 -width "" -squeeze no
+    scan [.t header bbox 0 column0] "%d %d %d %d" left top right bottom
+    .t column configure column0 -width [.t column neededwidth column0]
+    .t configure -canvaspadx 50
+    scan [.t header bbox 0 column0] "%d %d %d %d" left1 top1 right1 bottom1
+    expr {$bottom1 == $bottom}
+} -cleanup {
+    .t configure -canvaspadx 0
+} -result {1}
+
 test header-23.1 {layout: no bitmap/image/text/arrow, as tall as borders} -setup {
     .t header delete all
     .t column delete all
