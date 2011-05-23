@@ -630,6 +630,8 @@ struct TreeCtrl
     Tcl_Obj *stringFormatObj;	/* format */
     Tcl_Obj *optionFormatObj;	/* -format */
 
+    ClientData itemSpanPriv;
+
 #ifdef TREECTRL_DEBUG
     struct {
 	int inLayoutColumns;
@@ -724,8 +726,12 @@ MODULE_SCOPE int TreeHeaderCmd(ClientData clientData, Tcl_Interp *interp,
     int objc, Tcl_Obj *CONST objv[]);
 MODULE_SCOPE int TreeHeaderList_FromObj(TreeCtrl *tree, Tcl_Obj *objPtr, TreeItemList *items, int flags);
 MODULE_SCOPE void TreeHeader_TreeChanged(TreeCtrl *tree, int flagT);
-MODULE_SCOPE void TreeHeader_DrawDragImagery(TreeHeader header, int lock,
-    TreeDrawable td, int x, int y, int width, int height);
+MODULE_SCOPE int TreeHeader_ColumnDragOrder(TreeHeader header,
+    TreeColumn column, int index);
+MODULE_SCOPE int TreeHeader_IsDraggedColumn(TreeHeader header,
+    TreeColumn column);
+MODULE_SCOPE int TreeHeader_GetDraggedColumns(TreeHeader header, int lock,
+    TreeColumn *first, TreeColumn *last);
 MODULE_SCOPE int TreeHeaderColumn_NeededHeight(TreeHeader header, TreeHeaderColumn column, int fixedWidth);
 MODULE_SCOPE int TreeHeaders_NeededWidthOfColumn(TreeCtrl *tree, TreeColumn treeColumn);
 MODULE_SCOPE int Tree_HeaderHeight(TreeCtrl *tree);
@@ -758,7 +764,8 @@ MODULE_SCOPE int TreeHeaderColumn_StateChanged(TreeHeader header,
 MODULE_SCOPE int TreeHeaderColumn_DragBounds(TreeHeader header,
     TreeHeaderColumn column, StyleDrawArgs *drawArgs, int dragPosition);
 MODULE_SCOPE void TreeHeaderColumn_Draw(TreeHeader header,
-    TreeHeaderColumn column, int visIndex, StyleDrawArgs *drawArgs);
+    TreeHeaderColumn column, int visIndex, StyleDrawArgs *drawArgs,
+    int dragPosition);
 MODULE_SCOPE int TreeHeaderColumn_NeededWidth(TreeHeader header,
     TreeHeaderColumn column);
 MODULE_SCOPE TreeItem Tree_HeaderUnderPoint(TreeCtrl *tree, int *x_, int *y_, int *lock);
@@ -807,6 +814,7 @@ MODULE_SCOPE void DStringAppendf(Tcl_DString *dString, char *fmt, ...);
 MODULE_SCOPE void Tree_Debug(TreeCtrl *tree);
 
 MODULE_SCOPE int TreeItem_InitWidget(TreeCtrl *tree);
+MODULE_SCOPE void TreeItem_FreeWidget(TreeCtrl *tree);
 MODULE_SCOPE int TreeItem_Debug(TreeCtrl *tree, TreeItem item);
 MODULE_SCOPE void TreeItem_OpenClose(TreeCtrl *tree, TreeItem item, int mode);
 MODULE_SCOPE void TreeItem_Delete(TreeCtrl *tree, TreeItem item);

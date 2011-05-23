@@ -1803,6 +1803,7 @@ TreeDestroy(
 	TreeItem_Release(tree, item);
     }
     TreeItemList_Free(&tree->preserveItemList);
+    TreeItem_FreeWidget(tree);
 
     TreeStyle_FreeWidget(tree);
     TreeElement_FreeWidget(tree);

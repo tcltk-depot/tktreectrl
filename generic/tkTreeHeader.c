@@ -1173,13 +1173,15 @@ GetFollowingColumn(
 /*
  *----------------------------------------------------------------------
  *
- * TreeHeaderColumn_DragBounds --
+ * TreeHeader_ColumnDragOrder --
  *
- *	Calculates the apparent bounds of a column header during
- *	column header drag-and-drop.
+ *	Calculates the display order of a column during drag-and-drop.
+ *	If no column headers are being dragged, or there is no indicator
+ *	column, or this header isn't displaying drag-and-drop feedback,
+ *	then the column order is unchanged.
  *
  * Results:
- *	None.
+ *	The possibly-updated display order for the column.
  *
  * Side effects:
  *	None.
@@ -1188,25 +1190,143 @@ GetFollowingColumn(
  */
 
 int
-TreeHeaderColumn_DragBounds(
+TreeHeader_ColumnDragOrder(
     TreeHeader header,		/* Header token. */
-    TreeHeaderColumn column,	/* Column token. */
-    StyleDrawArgs *drawArgs,	/* May be changed by this procedure. */
-    int dragPosition		/* TRUE to calculate the bounds of the
-				 * dragged columns considering -imageoffset,
-				 * FALSE to calculate the area the dragged
-				 * columns will be dropped. */
+    TreeColumn column,		/* Column to get updated index for. */
+    int index			/* Zero-based index of this column in
+				 * the list of all columns with the same
+				 * -lock value. */
     )
 {
     TreeCtrl *tree = header->tree;
-    TreeItem item = header->item;
     TreeColumn column1min, column1max;
     TreeColumn column2min, column2max;
     int index1min, index1max;
     int index2min, index2max;
     int index3;
-    int isDragColumn;
-    int x = drawArgs->x;
+
+    if (!header->columnDrag.draw)
+	return index;
+
+    if (tree->columnDrag.column == NULL)
+	return index;
+
+    if (tree->columnDrag.indColumn == NULL)
+	return index;
+
+    column1min = tree->columnDrag.column;
+    column1max = GetFollowingColumn(column1min, tree->columnDrag.span, NULL);
+    index1min = TreeColumn_Index(column1min);
+    index1max = TreeColumn_Index(column1max);
+
+    column2min = tree->columnDrag.indColumn;
+    column2max = GetFollowingColumn(column2min, tree->columnDrag.indSpan, column1min);
+    index2min = TreeColumn_Index(column2min);
+    index2max = TreeColumn_Index(column2max);
+
+    /* The library scripts shouldn't pass an indicator column that is
+     * one of the columns being dragged. */
+    if (index2min >= index1min && index2min <= index1max)
+	return index;
+
+    index3 = TreeColumn_Index(column);
+
+    /* D D D D D C C C I I I I I I I I */
+    if (index1min < index2min) {
+	if (index3 > index1max && index3 <= index2max)
+	    return index - (index1max - index1min + 1);
+	if (index3 >= index1min && index3 <= index1max)
+	    return index + (index2max - index1max);
+
+    /* I I I I I I I I C C C D D D D D */
+    } else {
+	if (index3 >= index2min && index3 < index1min)
+	    return index + (index1max - index1min + 1);
+	if (index3 >= index1min && index3 <= index1max)
+	    return index - (index1min - index2min);
+    }
+
+    return index;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeHeader_GetDraggedColumns --
+ *
+ *	Returns the first and last columns in the range of columns
+ *	whose headers are being dragged.
+ *	If the header isn't displaying drag-and-drop feedback, the
+ *	result is always zero.
+ *
+ * Results:
+ *	The number of columns which may be zero.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TreeHeader_GetDraggedColumns(
+    TreeHeader header,		/* Header token. */
+    int lock,			/* COLUMN_LOCK_XXX. */
+    TreeColumn *first,		/* Out: First dragged column, or NULL. */
+    TreeColumn *last		/* Out: Last dragged column, or NULL */
+    )
+{
+    TreeCtrl *tree = header->tree;
+    TreeColumn column1min, column1max;
+    int index1min, index1max;
+
+    if (tree->columnDrag.column == NULL)
+	return 0;
+
+    if (TreeColumn_Lock(tree->columnDrag.column) != lock)
+	return 0;
+
+    if (!header->columnDrag.draw)
+	return 0;
+
+    column1min = tree->columnDrag.column;
+    column1max = GetFollowingColumn(column1min, tree->columnDrag.span, NULL);
+    index1min = TreeColumn_Index(column1min);
+    index1max = TreeColumn_Index(column1max);
+
+    *first = column1min;
+    *last = column1max;
+
+    return index1max - index1min + 1;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeHeader_IsDraggedColumn --
+ *
+ *	Returns TRUE if the header for a column is being dragged.
+ *	If the header isn't displaying drag-and-drop feedback, the
+ *	result is always FALSE.
+ *
+ * Results:
+ *	TRUE or FALSE.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TreeHeader_IsDraggedColumn(
+    TreeHeader header,		/* Header token. */
+    TreeColumn treeColumn	/* Column to test. */
+    )
+{
+    TreeCtrl *tree = header->tree;
+    TreeColumn column1min, column1max;
+    int index1min, index1max, index3;
 
     if (tree->columnDrag.column == NULL)
 	return 0;
@@ -1218,168 +1338,10 @@ TreeHeaderColumn_DragBounds(
     column1max = GetFollowingColumn(column1min, tree->columnDrag.span, NULL);
     index1min = TreeColumn_Index(column1min);
     index1max = TreeColumn_Index(column1max);
-    index3 = TreeColumn_Index(drawArgs->column);
 
-    isDragColumn = index3 >= index1min && index3 <= index1max;
+    index3 = TreeColumn_Index(treeColumn);
 
-    if (isDragColumn && dragPosition) {
-	drawArgs->x += drawArgs->indent + tree->columnDrag.offset;
-	drawArgs->width -= drawArgs->indent;
-	drawArgs->indent = 0;
-	return 1;
-    }
-
-    if (tree->columnDrag.indColumn == NULL)
-	return 0;
-
-    /* The library scripts shouldn't pass an indicator column that is
-     * one of the columns being dragged. */
-    index3 = TreeColumn_Index(tree->columnDrag.indColumn);
-    if (index3 >= index1min && index3 <= index1max)
-	return 0;
-
-    /* FIXME: If -indicatorspan==2 but the actual header span==4 I should
-     * calculate the new apparent size of -indicatorcolumn's header.
-     * In that case the 2 extra column headers need to be drawn, but they
-     * don't get considered by TreeItem_WalkSpans. */
-
-    column2min = tree->columnDrag.indColumn;
-    column2max = GetFollowingColumn(column2min, tree->columnDrag.indSpan, column1min);
-    index2min = TreeColumn_Index(column2min);
-    index2max = TreeColumn_Index(column2max);
-
-    if (isDragColumn) {
-	int indent1 = TreeItem_Indent(tree, column1min, item);
-	int indent2 = TreeItem_Indent(tree, column2min, item);
-	TreeRectangle bbox1, bbox2, bbox3, bbox4;
-
-	/* Get the canvas coord of the leftmost column. */
-	switch (TreeColumn_Lock(drawArgs->column)) {
-	    case COLUMN_LOCK_LEFT:
-		x = Tree_BorderLeft(tree) + tree->xOrigin;
-		break;
-	    case COLUMN_LOCK_NONE:
-		x = 0;
-		break;
-	    case COLUMN_LOCK_RIGHT:
-		x = Tree_ContentRight(tree) + tree->xOrigin;
-		break;
-	}
-	/* Canvas -> drawable */
-	x -= tree->drawableXOrigin;
-
-	bbox1.x = x + TreeColumn_Offset(column1min) - indent1;
-	bbox1.width = TreeColumn_UseWidth(column1min);
-	bbox2.x = x + TreeColumn_Offset(column2min) - indent2;
-	bbox2.width = TreeColumn_UseWidth(column2min);
-	bbox3.x = x + TreeColumn_Offset(column1max);
-	bbox3.width = TreeColumn_UseWidth(column1max);
-	bbox4.x = x + TreeColumn_Offset(column2max);
-	bbox4.width = TreeColumn_UseWidth(column2max);
-
-	bbox1.width = bbox3.x + bbox3.width - bbox1.x;
-	bbox2.width = bbox4.x + bbox4.width - bbox2.x;
-
-	bbox1.width -= indent1;
-	if (index1min > index2min)
-	    bbox1.x = bbox2.x;
-	else
-	    bbox1.x = bbox2.x + bbox2.width - bbox1.width;
-	bbox1.width += indent2;
-
-	drawArgs->x = bbox1.x;
-	drawArgs->width = bbox1.width;
-	return 1;
-    }
-
-    index3 = TreeColumn_Index(drawArgs->column);
-
-    if (index3 >= MIN(index1max, index2min) && index3 <= MAX(index1min, index2max)) {
-	TreeRectangle bbox, bbox2;
-	int indent1 = TreeItem_Indent(tree, column1min, header->item);
-
-	bbox.x = TreeColumn_Offset(column1min) - tree->drawableXOrigin - indent1;
-	bbox.width = TreeColumn_UseWidth(column1min);
-	bbox2.x = TreeColumn_Offset(column1max) - tree->drawableXOrigin;
-	bbox2.width = TreeColumn_UseWidth(column1max);
-
-	bbox.width = TreeRect_Right(bbox2) - TreeRect_Left(bbox);
-	if (index1min < index2min)
-	    x -= bbox.width - indent1;
-	else
-	    x += bbox.width + drawArgs->indent;
-	if (x == bbox.x + indent1) {
-	    drawArgs->x = bbox.x;
-	    drawArgs->width -= drawArgs->indent - indent1;
-	    drawArgs->indent = indent1;
-	} else {
-	    drawArgs->x = x;
-	    drawArgs->width -= drawArgs->indent;
-	    drawArgs->indent = 0;
-	}
-    }
-
-    return 1;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TreeHeaderColumn_Draw --
- *
- *	Draws a single header-column.  The background is erased to the
- *	treectrl's -background color.  The style is drawn if this column
- *	header isn't part of the drag image (or the hidden tail column).
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Stuff is drawn in a drawable.
- *
- *----------------------------------------------------------------------
- */
-
-void
-TreeHeaderColumn_Draw(
-    TreeHeader header,		/* Header token. */
-    TreeHeaderColumn column,	/* Column token. */
-    int visIndex,		/* 0-based index in the list of spans. */
-    StyleDrawArgs *drawArgs	/* Various args. */
-    )
-{
-    TreeCtrl *tree = header->tree;
-    TreeDrawable td = drawArgs->td;
-    TreeColumn column1min, column1max;
-    int index1min, index1max, index3;
-    int x = drawArgs->x, y = drawArgs->y,
-	width = drawArgs->width, height = drawArgs->height;
-    int isDragColumn = 0, isHiddenTail;
-    GC gc;
-    TreeRectangle tr;
-
-    if (header->columnDrag.draw == TRUE && tree->columnDrag.column != NULL) {
-	column1min = tree->columnDrag.column;
-	column1max = GetFollowingColumn(column1min, tree->columnDrag.span, NULL);
-	index1min = TreeColumn_Index(column1min);
-	index1max = TreeColumn_Index(column1max);
-	index3 = TreeColumn_Index(drawArgs->column);
-
-	isDragColumn = index3 >= index1min && index3 <= index1max;
-    }
-
-    /* Don't draw the tail column if it isn't visible.
-     * Currently a span is always created for the tail column. */
-    isHiddenTail = (drawArgs->column == tree->columnTail) && !TreeColumn_Visible(drawArgs->column);
-
-    gc = Tk_3DBorderGC(tree->tkwin, tree->border, TK_3D_FLAT_GC);
-    TreeRect_SetXYWH(tr, x, y, width, height);
-    Tree_FillRectangle(tree, td, NULL, gc, tr);
-
-    if ((drawArgs->style != NULL) && !isDragColumn && !isHiddenTail) {
-	StyleDrawArgs drawArgsCopy = *drawArgs;
-	TreeStyle_Draw(&drawArgsCopy);
-    }
+    return index3 >= index1min && index3 <= index1max;
 }
 
 static void
@@ -1509,80 +1471,77 @@ SetImageForColumn(
 /*
  *----------------------------------------------------------------------
  *
- * TreeHeader_DrawDragImagery --
+ * TreeHeaderColumn_Draw --
  *
- *	Draws the drag-and-drop feedback for a single TreeHeader.
- *	This is called after all the column headers have been drawn.  It
- *	renders the transparent drag image(s) on top of what was already
- *	drawn.
+ *	Draws a single header-column.  If the column header is being
+ *	drawn at its drag position, a transparent image of the header
+ *	is rendered overtop whatever is in the drawable.  Otherwise,
+ *	the background is erased to the treectrl's -background color,
+ *	then the style is drawn if the column header isn't part of
+ *	the drag image (or the hidden tail column).
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	Stuff may be drawn in a drawable.
+ *	Stuff is drawn in a drawable.
  *
  *----------------------------------------------------------------------
  */
 
 void
-TreeHeader_DrawDragImagery(
+TreeHeaderColumn_Draw(
     TreeHeader header,		/* Header token. */
-    int lock,			/* COLUMN_LOCK_XXX */
-    TreeDrawable td,		/* Where to draw. */
-    int x, int y,		/* Item bbox. */
-    int width, int height	/* ^ */
+    TreeHeaderColumn column,	/* Column token. */
+    int visIndex,		/* 0-based index in the list of spans. */
+    StyleDrawArgs *drawArgs,	/* Various args. */
+    int dragPosition		/* TRUE if this header is being drawn at
+				 * its drag position (i.e., offset by
+				 * -imageoffset). */
     )
 {
     TreeCtrl *tree = header->tree;
-    TreeItem item = header->item;
-    TreeRectangle bbox1, bounds;
-    Tk_Image image;
-    TreeColumn treeColumn, column1min, column1max;
-    TreeItemColumn itemColumn;
-    TreeHeaderColumn column;
-    int area = TREE_AREA_HEADER_NONE;
+    TreeDrawable td = drawArgs->td;
+    TreeColumn column1min, column1max;
+    int index1min, index1max, index3;
+    int x = drawArgs->x, y = drawArgs->y,
+	width = drawArgs->width, height = drawArgs->height;
+    int isDragColumn = 0, isHiddenTail;
+    GC gc;
+    TreeRectangle tr;
 
-    if (tree->columnDrag.column == NULL)
-	return;
+    if (header->columnDrag.draw == TRUE && tree->columnDrag.column != NULL) {
+	column1min = tree->columnDrag.column;
+	column1max = GetFollowingColumn(column1min, tree->columnDrag.span, NULL);
+	index1min = TreeColumn_Index(column1min);
+	index1max = TreeColumn_Index(column1max);
+	index3 = TreeColumn_Index(drawArgs->column);
 
-    if (!header->columnDrag.draw)
-	return;
-
-    if (lock != TreeColumn_Lock(tree->columnDrag.column))
-	return;
-
-    switch (lock) {
-	case COLUMN_LOCK_LEFT:  area = TREE_AREA_HEADER_LEFT; break;
-	case COLUMN_LOCK_RIGHT: area = TREE_AREA_HEADER_RIGHT; break;
+	isDragColumn = index3 >= index1min && index3 <= index1max;
     }
-    if (!Tree_AreaBbox(tree, area, &bounds))
-	return; /* never happens */
-    /* Window -> drawable */
-    bounds.x += tree->xOrigin - tree->drawableXOrigin;
-    bounds.y += tree->yOrigin - tree->drawableYOrigin;
 
-    x += tree->columnDrag.offset;
-    column1min = tree->columnDrag.column;
-    column1max = GetFollowingColumn(column1min, tree->columnDrag.span, NULL);
+    /* Don't draw the tail column if it isn't visible.
+     * Currently a span is always created for the tail column. */
+    isHiddenTail = (drawArgs->column == tree->columnTail) && !TreeColumn_Visible(drawArgs->column);
 
-    for (treeColumn = column1min; ; treeColumn = TreeColumn_Next(treeColumn)) {
-	int destX = x + TreeColumn_Offset(treeColumn);
-	if (TreeItem_GetRects(tree, item, treeColumn, 0, NULL, &bbox1) == 1 &&
-		destX < TreeRect_Right(bounds) &&
-		destX + bbox1.width /*- indent1*/ > TreeRect_Left(bounds)) {
-	    int indent1 = TreeItem_Indent(tree, treeColumn, item);
-	    int ix = 0, iy = 0, iw = bbox1.width - indent1, ih = bbox1.height;
+    if (!isDragColumn || !dragPosition) {
+	gc = Tk_3DBorderGC(tree->tkwin, tree->border, TK_3D_FLAT_GC);
+	TreeRect_SetXYWH(tr, x, y, width, height);
+	Tree_FillRectangle(tree, td, NULL, gc, tr);
+    }
 
-	    itemColumn = TreeItem_FindColumn(tree, item, TreeColumn_Index(treeColumn));
-	    column = TreeItemColumn_GetHeaderColumn(tree, itemColumn);
-	    image = SetImageForColumn(header, column, treeColumn, 0, iw, ih);
-	    if (image != NULL) {
-		Tree_RedrawImage(image, ix, iy, iw, ih, td, destX, y);
-	    }
+    if ((drawArgs->style != NULL) && !isDragColumn && !isHiddenTail) {
+	StyleDrawArgs drawArgsCopy = *drawArgs;
+	TreeStyle_Draw(&drawArgsCopy);
+    }
+
+    if (isDragColumn && dragPosition) {
+	Tk_Image image;
+	image = SetImageForColumn(header, column, drawArgs->column, 0,
+	    width, height);
+	if (image != NULL) {
+	    Tree_RedrawImage(image, 0, 0, width, height, td, x, y);
 	}
-	if (treeColumn == column1max)
-	    break;
     }
 }
 
