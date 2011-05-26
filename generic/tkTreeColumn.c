@@ -55,10 +55,15 @@ struct TreeColumn_
     int offset;			/* Total width of preceding columns */
     int useWidth;		/* -width, -minwidth, or required+expansion */
     int widthOfItems;		/* width of all TreeItemColumns */
+    int widthOfHeaders;		/* width of all TreeItemColumns in headers */
     int itemBgCount;		/* -itembackground colors */
     TreeColor **itemBgColor;	/* -itembackground colors */
     TreeColumn prev;
     TreeColumn next;
+    TreeColumn spanMin;		/* Any span that includes this column */
+    TreeColumn spanMax;		/* begins on or after spanMin and ends on */
+				/* or before spanMax.  This includes spans */
+				/* in headers and items. */
 #ifdef UNIFORM_GROUP
     UniformGroup *uniform;	/* -uniform */
     int weight;			/* -weight */
@@ -219,7 +224,9 @@ static CONST char *justifyStrings[] = {
 #define COLU_CONF_DISPLAY	0x0040
 #define COLU_CONF_JUSTIFY	0x0080
 #define COLU_CONF_TAGS		0x0100
+#ifdef DEPRECATED
 #define COLU_CONF_RANGES	0x0800
+#endif
 #if COLUMNGRID == 1
 #define COLU_CONF_GRIDLINES	0x1000
 #endif
@@ -2055,12 +2062,18 @@ Column_Config(
     if (mask & COLU_CONF_JUSTIFY)
 	Tree_DInfoChanged(tree, DINFO_INVALIDATE);
 
+#ifdef DEPRECATED
     /* -stepwidth and -widthhack */
     if (mask & COLU_CONF_RANGES)
 	Tree_DInfoChanged(tree, DINFO_REDO_RANGES);
+#endif
 
     /* Redraw everything */
     if (mask & COLU_CONF_TWIDTH) {
+if (column->spanMin != NULL && /* if it's NULL, then it's hidden or tree->columnSpansInvalid=TRUE */
+	column->spanMin != column->spanMax) { /* spans of 1 don't require item-width recalc */
+    TreeColumns_InvalidateWidthOfItems(tree, column);
+}
 	TreeColumns_InvalidateWidth(tree);
 	Tree_DInfoChanged(tree, DINFO_DRAW_HEADER);
     }
@@ -2900,6 +2913,38 @@ ColumnTagCmd(
     return result;
 }
 
+static void
+InitColumnReqData(
+    TreeCtrl *tree,
+    TreeColumn first
+    )
+{
+    ColumnReqData *cd;
+    TreeColumn column;
+
+/*dbwin("InitColumnReqData %s\n", Tk_PathName(tree->tkwin));*/
+
+    if (tree->columnReqSize < tree->columnCount) {
+	tree->columnReqData = (ColumnReqData *) ckrealloc((char *) tree->columnReqData, sizeof(ColumnReqData) * tree->columnCount);
+	tree->columnReqSize = tree->columnCount;
+    }
+
+    cd = tree->columnReqData;
+    for (column = first;
+	    column != NULL && column->lock == first->lock;
+	    column = column->next) {
+	cd->column = column;
+	cd->vis = TreeColumn_Visible(column);
+	cd->min = TreeColumn_MinWidth(column);
+	cd->fixed = TreeColumn_FixedWidth(column);
+	cd->max = TreeColumn_MaxWidth(column);
+	cd->req = 0;
+	if (cd->max >= 0 && cd->min > cd->max)
+	    cd->min = cd->max;
+	++cd;
+    }
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -3505,7 +3550,7 @@ doneDELETE:
 	    /* Update layout if needed */
 	    (void) Tree_CanvasWidth(tree);
 	    width = TreeColumn_WidthOfItems(column);
-	    width = MAX(width, TreeHeaders_NeededWidthOfColumn(tree, column));
+	    width = MAX(width, TreeColumn_WidthOfHeaders(column));
 	    Tcl_SetObjResult(interp, Tcl_NewIntObj(width));
 	    break;
 	}
@@ -3568,6 +3613,50 @@ errorExit:
 /*
  *----------------------------------------------------------------------
  *
+ * TreeColumn_RequestWidth --
+ *
+ *	Description.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TreeColumn_RequestWidth(
+    TreeColumn column,
+    int width,
+    TreeColumn spanMin,
+    TreeColumn spanMax,
+    int doHeaders
+    )
+{
+    TreeCtrl *tree = column->tree;
+
+    if (tree->columnSpansInvalid == FALSE) {
+#if defined(TREECTRL_DEBUG) && defined(WIN32)
+	if (spanMin->index < column->spanMin->index) DebugBreak();
+	if (spanMax->index > column->spanMax->index) DebugBreak();
+#endif
+    } else {
+	if (spanMin->index < column->spanMin->index)
+	    column->spanMin = spanMin;
+	if (spanMax->index > column->spanMax->index)
+	    column->spanMax = spanMax;
+    }
+    if (doHeaders)
+	column->widthOfHeaders = MAX(column->widthOfHeaders, width);
+    else
+	column->widthOfItems = MAX(column->widthOfItems, width);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TreeColumn_WidthOfItems --
  *
  *	Calculate the maximum needed width of the styles in every
@@ -3590,33 +3679,86 @@ TreeColumn_WidthOfItems(
     )
 {
     TreeCtrl *tree = column->tree;
-    TreeItem item;
-    TreeItemColumn itemColumn;
-    int width;
 
-    if (column->widthOfItems >= 0)
-	return column->widthOfItems;
-
-    column->widthOfItems = 0;
-    item = tree->root;
-    if (!TreeItem_ReallyVisible(tree, item))
-	item = TreeItem_NextVisible(tree, item);
-    while (item != NULL) {
-#ifdef EXPENSIVE_SPAN_WIDTH /* NOT USED */
-	width = TreeItem_NeededWidthOfColumn(tree, item, column->index);
-	width += TreeItem_Indent(tree, column, item);
-	column->widthOfItems = MAX(column->widthOfItems, width);
-#else
-	itemColumn = TreeItem_FindColumn(tree, item, column->index);
-	if (itemColumn != NULL) {
-	    width = TreeItemColumn_NeededWidth(tree, item, itemColumn);
-	    width += TreeItem_Indent(tree, column, item);
-	    column->widthOfItems = MAX(column->widthOfItems, width);
+    if (tree->columnSpansInvalid) {
+	TreeColumn column2 = tree->columns;
+	while (column2 != NULL) {
+	    column2->spanMin = column2->spanMax = column2;
+	    column2->widthOfItems = 0;
+	    column2 = column2->next;
 	}
-#endif
-	item = TreeItem_NextVisible(tree, item);
+	TreeItems_RequestWidthInColumns(tree, tree->columns, tree->columnLast);
+	tree->columnSpansInvalid = FALSE; /* Clear this after the above call. */
+tree->widthOfHeadersInvalid = TRUE; /* Must update spanMin/Max for spans in headers. */
+    } else if (!IS_TAIL(column) && (column->spanMin->widthOfItems < 0)) {
+	TreeColumn columnMin = column->spanMin;
+	TreeColumn columnMax = column->spanMax;
+	TreeColumn column2;
+	/* Gather all adjacent out-of-date columns into one group. */
+	/* Must also get any spans that overlap any spans that overlap this
+	 * column. */
+	while ((columnMin->prev != NULL) &&
+		((columnMin->prev->spanMax->index >= columnMin->index) ||
+		(columnMin->prev->spanMin->widthOfItems < 0))) {
+	    columnMin = columnMin->prev->spanMin;
+	}
+	while ((columnMax->next != NULL) &&
+		((columnMax->next->spanMin->index <= columnMax->index) ||
+		(columnMax->next->widthOfItems < 0))) {
+	    columnMax = columnMax->next->spanMax;
+	}
+	column2 = columnMin;
+	while (column2 != NULL) {
+	    column2->widthOfItems = 0;
+	    if (column2 == columnMax)
+		break;
+	    column2 = column2->next;
+	}
+/*dbwin("TreeItems_RequestWidthInColumns %d -> %d\n", columnMin->index, columnMax->index);*/
+	TreeItems_RequestWidthInColumns(tree, columnMin, columnMax);
+tree->widthOfHeadersInvalid = TRUE; /* Must update spanMin/Max for spans in headers. */
     }
+
     return column->widthOfItems;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeColumn_WidthOfHeaders --
+ *
+ *	Description.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TreeColumn_WidthOfHeaders(
+    TreeColumn column		/* Column token. */
+    )
+{
+    TreeCtrl *tree = column->tree;
+    TreeColumn column2 = tree->columns;
+
+    TreeColumn_WidthOfItems(column); /* Ensure spanMin/spanMax are up-to-date. */
+
+    if (tree->widthOfHeadersInvalid) {
+	while (column2 != NULL) {
+	    column2->widthOfHeaders = 0;
+	    column2 = column2->next;
+	}
+	tree->columnSpansInvalid = TRUE; /* header spans may further modify spanMin/spanMax */
+	TreeHeaders_RequestWidthInColumns(tree);
+	tree->columnSpansInvalid = FALSE;
+	tree->widthOfHeadersInvalid = FALSE;
+    }
+    return column->widthOfHeaders;
 }
 
 /*
@@ -3624,9 +3766,8 @@ TreeColumn_WidthOfItems(
  *
  * TreeColumns_InvalidateWidthOfItems --
  *
- *	Marks the width of zero or more columns as out-of-date.
- *	Schedules a redisplay to check the widths of columns which
- *	will perform any relayout necessary.
+ *	Marks the width requested by items in zero or more columns
+ *	as out-of-date.
  *
  * Results:
  *	None.
@@ -3644,11 +3785,12 @@ TreeColumns_InvalidateWidthOfItems(
 				 * modify every column. */
     )
 {
-#ifdef COLUMN_SPANxxx
-    /* It may be necessary to recalculate the width of other columns as
-     * well when column-spanning is in effect. */
-    column = NULL;
-#endif
+    /* FIXME: There is no need to invalidate widthOfHeaders in every column. */
+    tree->widthOfHeadersInvalid = TRUE;
+
+    /* FIXME: This gets called for both items and headers.  If invalidating
+     * header width, there is no need to invalidate widthOfItems unless the
+     * column is covered by a span > 1 in one or more items. */
 
     if (column == NULL) {
 	column = tree->columns;
@@ -3656,8 +3798,25 @@ TreeColumns_InvalidateWidthOfItems(
 	    column->widthOfItems = -1;
 	    column = column->next;
 	}
-    } else {
-	column->widthOfItems = -1;
+    } else if (!tree->columnSpansInvalid &&
+	    column->spanMin != NULL) { /* spanMin/Max can be NULL during creation when columnSpansInvalid hasn't been set TRUE yet */
+	TreeColumn columnMin = column->spanMin;
+	TreeColumn columnMax = column->spanMax;
+	columnMin->widthOfItems = -1;
+
+	/* Must recalculate the width of items in every span that overlaps
+	 * any of the spans that include this column. */
+	while ((columnMin->prev != NULL) &&
+		(columnMin->prev->spanMax->index >= columnMin->index)) {
+	    columnMin = columnMin->prev->spanMin;
+	    columnMin->widthOfItems = -1;
+	}
+	while ((columnMax->next != NULL) &&
+		(columnMax->next->spanMin->index <= columnMax->index)) {
+	    columnMax = columnMax->next->spanMax;
+	    columnMax->spanMin->widthOfItems = -1;
+	}
+
     }
     TreeColumns_InvalidateWidth(tree);
 }
@@ -3668,6 +3827,8 @@ TreeColumns_InvalidateWidthOfItems(
  * TreeColumns_InvalidateWidth --
  *
  *	Marks the width of columns as out-of-date.
+ *	Schedules a redisplay to check the widths of columns which
+ *	will perform any relayout necessary.
  *
  * Results:
  *	None.
@@ -3694,7 +3855,9 @@ TreeColumns_InvalidateWidth(
  *
  * TreeColumn_Bbox --
  *
- *	Return the bounding box for a column header.
+ *	Return the bounding box for a column.
+ *	This used to be the function to call to get the bounding
+ *	box of a column header.
  *
  * Results:
  *	Return value is -1 if the column is not visible.
@@ -3823,7 +3986,7 @@ LayoutColumns(
 		width = column->width;
 	    else {
 		width = TreeColumn_WidthOfItems(column);
-		width = MAX(width, TreeHeaders_NeededWidthOfColumn(tree, column));
+		width = MAX(width, TreeColumn_WidthOfHeaders(column));
 		width = MAX(width, TreeColumn_MinWidth(column));
 		if (TreeColumn_MaxWidth(column) != -1)
 		    width = MIN(width, TreeColumn_MaxWidth(column));
@@ -4023,6 +4186,8 @@ Tree_WidthOfColumns(
     if (tree->widthOfColumns >= 0)
 	return tree->widthOfColumns;
 
+    InitColumnReqData(tree, tree->columnLockNone);
+
     tree->widthOfColumns = LayoutColumns(tree, tree->columnLockNone);
 
     if (tree->columnTree != NULL && TreeColumn_Visible(tree->columnTree)) {
@@ -4070,6 +4235,8 @@ Tree_WidthOfLeftColumns(
     if (tree->widthOfColumnsLeft >= 0)
 	return tree->widthOfColumnsLeft;
 
+    InitColumnReqData(tree, tree->columnLockLeft);
+
     if (!Tree_ShouldDisplayLockedColumns(tree)) {
 	TreeColumn column = tree->columnLockLeft;
 	while (column != NULL && column->lock == COLUMN_LOCK_LEFT) {
@@ -4113,6 +4280,8 @@ Tree_WidthOfRightColumns(
 {
     if (tree->widthOfColumnsRight >= 0)
 	return tree->widthOfColumnsRight;
+
+    InitColumnReqData(tree, tree->columnLockRight);
 
     if (!Tree_ShouldDisplayLockedColumns(tree)) {
 	TreeColumn column = tree->columnLockRight;
@@ -4279,6 +4448,7 @@ TreeColumn_InitWidget(
 
     column = Column_Alloc(tree);
     column->id = -1;
+    column->spanMin = column->spanMax = column;
     tree->columnTail = column;
     tree->nextColumnId = 0;
     tree->columnCount = 0;
@@ -4327,6 +4497,9 @@ TreeColumn_FreeWidget(
 #ifdef UNIFORM_GROUP
     Tcl_DeleteHashTable(&tree->uniformGroupHash);
 #endif
+
+    if (tree->columnReqData != NULL)
+	ckfree((char *) tree->columnReqData);
 }
 
 /*

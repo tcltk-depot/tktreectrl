@@ -228,6 +228,7 @@ TreeItemColumn_NeededWidth(
  * processing involved, and this routine is called for each column in
  * a span separately (it would be better to calculate the width of all
  * the columns in a span at the same time).
+ *----------------------------------------------------------------------
  */
 
 int
@@ -328,6 +329,287 @@ if (0)
 }
 
 #endif /* EXPENSIVE_SPAN_WIDTH */
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeItem_RequestWidthInColumns --
+ *
+ *	Description.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TreeItem_RequestWidthInColumns(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeItem item,
+    TreeColumn columnMin,
+    TreeColumn columnMax
+    )
+{
+    int doHeaders = item->header != NULL;
+    int columnIndexMin = TreeColumn_Index(columnMin);
+    int columnIndexMax = TreeColumn_Index(columnMax);
+    int *spans = TreeItem_GetSpans(tree, item);
+    TreeItemColumn column;
+    TreeColumn treeColumn;
+    int columnIndex, width;
+    ColumnReqData *cd;
+#ifdef TREECTRL_DEBUG
+    int maxLoops = 0;
+#endif
+
+#ifdef TREECTRL_DEBUG
+    if (columnMax == tree->columnTail)
+	panic("TreeItem_RequestWidthInColumns called with tail");
+#endif
+
+    treeColumn = columnMin;
+    column = TreeItem_FindColumn(tree, item, columnIndexMin);
+    if (spans == NULL) {
+	for (columnIndex = columnIndexMin;
+		(column != NULL) && (columnIndex <= columnIndexMax);
+		++columnIndex) {
+	    if (column->style != NULL)
+		width = TreeStyle_NeededWidth(tree, column->style,
+		    item->state | column->cstate);
+	    else
+		width = 0;
+	    if (!doHeaders)
+		width += TreeItem_Indent(tree, treeColumn, item);
+	    TreeColumn_RequestWidth(treeColumn, width, treeColumn, treeColumn,
+		doHeaders);
+	    treeColumn = TreeColumn_Next(treeColumn);
+	    column = column->next;
+	}
+	return;
+    }
+
+#if defined(TREECTRL_DEBUG) && defined(WIN32)
+    /* It must be true that a span starts at columnMin. */
+    if (spans[columnIndexMin] != columnIndexMin) DebugBreak();
+#endif
+
+    for (columnIndex = columnIndexMin;
+	    (column != NULL) && (columnIndex <= columnIndexMax);
+	    /*++columnIndex*/) {
+	int numVisibleColumns = 0, spaceRemaining;
+	int numMinWidth = 0, minMinWidth = -1, varWidth = 0;
+	int columnIndex2 = columnIndex;
+	TreeColumn treeColumn2 = treeColumn;
+	TreeColumn lastColumnInSpan = treeColumn;
+#ifdef TREECTRL_DEBUG
+	int loops = 0;
+#endif
+
+#if defined(TREECTRL_DEBUG) && defined(WIN32)
+	if (TreeColumn_Index(treeColumn) != columnIndex) DebugBreak();
+	if (TreeItemColumn_Index(tree, item, column) != columnIndex) DebugBreak();
+	/* It must be true that a span starts at treeColumn. */
+	if (spans[columnIndex] != columnIndex) DebugBreak();
+#endif
+
+	while ((columnIndex2 <= columnIndexMax) &&
+		(spans[columnIndex2] == columnIndex)) {
+	    cd = &tree->columnReqData[columnIndex2];
+	    cd->req = 0;
+	    if (cd->vis)
+		numVisibleColumns++;
+	    lastColumnInSpan = treeColumn2;
+	    treeColumn2 = TreeColumn_Next(treeColumn2);
+	    columnIndex2++;
+	}
+#ifdef TREECTRL_DEBUG
+	loops++;
+#endif
+#if defined(TREECTRL_DEBUG) && defined(WIN32)
+	/* It must be true that a span starts at treeColumn. */
+	if (spans[TreeColumn_Index(lastColumnInSpan)] != columnIndex) DebugBreak();
+#endif
+
+	if (column->style != NULL)
+	    width = TreeStyle_NeededWidth(tree, column->style,
+		item->state | column->cstate);
+	else
+	    width = 0;
+
+	/* If there's no style, request indent width and update the range
+	 * of columns in the span. */
+	if (width <= 0) {
+	    columnIndex2 = columnIndex;
+	    treeColumn2 = treeColumn;
+	    while ((columnIndex2 <= columnIndexMax) &&
+		    (spans[columnIndex2] == columnIndex)) {
+		width = doHeaders ? 0 : TreeItem_Indent(tree, treeColumn2, item);
+/* FIXME: check TreeColumn_Visible? */
+		TreeColumn_RequestWidth(treeColumn2, width, treeColumn,
+		    lastColumnInSpan, doHeaders);
+		treeColumn2 = TreeColumn_Next(treeColumn2);
+		columnIndex2++;
+	    }
+#ifdef TREECTRL_DEBUG
+	    loops++;
+#endif
+	    goto next;
+	}
+
+	if (!numVisibleColumns)
+	    goto next;
+
+	spaceRemaining = width;
+
+	/* Dump space into fixed-width and minwidth */
+	for (columnIndex2 = columnIndex;
+		spaceRemaining > 0 &&
+		columnIndex2 <= TreeColumn_Index(lastColumnInSpan);
+		columnIndex2++) {
+	    int spaceUsed;
+	    cd = &tree->columnReqData[columnIndex2];
+	    if (!cd->vis) continue;
+	    if (cd->fixed >= 0) {
+		spaceUsed = cd->fixed;
+		numVisibleColumns--;
+	    } else if (cd->min >= 0) {
+		spaceUsed = cd->min;
+		++numMinWidth;
+		if (minMinWidth == -1)
+		    minMinWidth = cd->min;
+		else
+		    minMinWidth = MIN(minMinWidth, cd->min);
+	    } else
+		continue;
+	    spaceUsed = MIN(spaceUsed, spaceRemaining);
+	    cd->req += spaceUsed;
+	    spaceRemaining -= spaceUsed;
+	}
+#ifdef TREECTRL_DEBUG
+	loops++;
+#endif
+
+	/* Distribute width to visible columns in the span. */
+	while (spaceRemaining > 0 && numVisibleColumns > 0) {
+	    int each;
+	    int origSpaceRemaining = spaceRemaining;
+
+	    /* This is the amount to give to each column. Some columns
+	     * may get one extra pixel (starting from the leftmost column). */
+	    each = MAX(1, spaceRemaining / numVisibleColumns);
+	    varWidth += each;
+
+	    /* If all the columns have -minwidth, there will be a lot of
+	     * useless looping until varWidth exceeds the smallest -minwidth. */
+	    if (numMinWidth == numVisibleColumns)
+		while (varWidth <= minMinWidth)
+		    varWidth += each;
+
+	    for (columnIndex2 = columnIndex;
+		    columnIndex2 <= TreeColumn_Index(lastColumnInSpan);
+		    columnIndex2++) {
+		int spaceUsed = each;
+		cd = &tree->columnReqData[columnIndex2];
+		if (!cd->vis) continue;
+		if (cd->fixed >= 0)
+		    continue;
+		if (cd->max >= 0 && cd->req >= cd->max)
+		    continue;
+		/* Don't grow minwidth columns until the space of variable-width
+		 * columns exceeds that of minwidth. */
+		if (cd->min >= 0 && cd->req >= varWidth)
+		    continue;
+		if (cd->min >= 0) {
+		    spaceUsed = MIN(varWidth - cd->req, spaceUsed);
+		}
+		if (cd->max >= 0) {
+		    spaceUsed = MIN(cd->max - cd->req, spaceUsed);
+		    if (cd->req + MIN(spaceUsed, spaceRemaining) >= cd->max) {
+			spaceUsed = cd->max - cd->req;
+			numVisibleColumns--;
+		    }
+		}
+		spaceUsed = MIN(spaceUsed, spaceRemaining);
+		cd->req += spaceUsed;
+#if defined(TREECTRL_DEBUG) && defined(WIN32)
+		if (cd->fixed >= 0 && cd->req > cd->fixed) DebugBreak();
+		if (cd->fixed < 0 && cd->max >= 0 && cd->req > cd->max) DebugBreak();
+#endif
+		spaceRemaining -= spaceUsed;
+		if (spaceRemaining <= 0)
+		    break;
+	    }
+#ifdef TREECTRL_DEBUG
+	    loops++;
+#endif
+
+	    if (spaceRemaining == origSpaceRemaining)
+		break;
+	}
+	for (columnIndex2 = columnIndex;
+		columnIndex2 <= TreeColumn_Index(lastColumnInSpan);
+		columnIndex2++) {
+	    int indent;
+	    cd = &tree->columnReqData[columnIndex2];
+	    if (!cd->vis) continue;
+	    indent = doHeaders ? 0 : TreeItem_Indent(tree, cd->column, item);
+	    TreeColumn_RequestWidth(cd->column, cd->req + indent,
+		treeColumn, lastColumnInSpan, doHeaders);
+	}
+#ifdef TREECTRL_DEBUG
+	loops++;
+	maxLoops = MAX(maxLoops, loops);
+#endif
+next:
+	treeColumn = TreeColumn_Next(lastColumnInSpan);
+	if (treeColumn == NULL)
+	    break;
+	while ((column != NULL) && (columnIndex < TreeColumn_Index(treeColumn))) {
+	    column = column->next;
+	    ++columnIndex;
+	}
+    }
+#ifdef TREECTRL_DEBUGxxx
+    dbwin("max loops = %d\n", maxLoops);
+#endif
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeItems_RequestWidthInColumns --
+ *
+ *	Description.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TreeItems_RequestWidthInColumns(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeColumn columnMin,
+    TreeColumn columnMax
+    )
+{
+    TreeItem item = tree->root;
+
+    if (!TreeItem_ReallyVisible(tree, item))
+	item = TreeItem_NextVisible(tree, item);
+    while (item != NULL) {
+	TreeItem_RequestWidthInColumns(tree, item, columnMin, columnMax);
+	item = TreeItem_NextVisible(tree, item);
+    }
+}
 
 /*
  *----------------------------------------------------------------------
@@ -830,7 +1112,7 @@ TreeItemColumn_ChangeState(
 	sMask = TreeStyle_ChangeState(tree, column->style,
 		item->state | column->cstate, state);
 	if (sMask) {
-	    if ((sMask & CS_LAYOUT) && (item->header == NULL))
+	    if ((sMask & CS_LAYOUT) /*&& (item->header == NULL)*/)
 		TreeColumns_InvalidateWidthOfItems(tree, treeColumn);
 	    iMask |= sMask;
 	}
@@ -846,7 +1128,7 @@ TreeItemColumn_ChangeState(
 	}
     }
 
-    if ((iMask & CS_LAYOUT) && (item->header != NULL))
+    if ((iMask & CS_LAYOUT) /*&& (item->header != NULL)*/)
 	TreeColumns_InvalidateWidth(tree);
 
     column->cstate = cstate;
@@ -3652,6 +3934,7 @@ Item_HeightOfStyles(
     )
 {
     TreeItemColumn column = item->columns;
+    int *spans = TreeItem_GetSpans(tree, item);
     int tailOK = item->header != NULL;
     TreeColumn treeColumn = Tree_FirstColumn(tree, -1, tailOK);
     StyleDrawArgs drawArgs;
@@ -3659,28 +3942,91 @@ Item_HeightOfStyles(
 
     drawArgs.tree = tree;
 
-    while (column != NULL) {
-	if (TreeColumn_Visible(treeColumn) && (column->style != NULL)) {
-	    drawArgs.state = item->state | column->cstate;
-	    drawArgs.style = column->style;
-	    drawArgs.indent = TreeItem_Indent(tree, treeColumn, item);
-	    if ((TreeColumn_FixedWidth(treeColumn) != -1) ||
-		    TreeColumn_Squeeze(treeColumn)) {
-		drawArgs.width = TreeColumn_UseWidth(treeColumn);
-		if (item->header != NULL)
-		    drawArgs.width += drawArgs.indent;
-	    } else
-		drawArgs.width = -1;
-	    height = MAX(height, TreeStyle_UseHeight(&drawArgs));
-	    if (!hasHeaderElem && (item->header != NULL) &&
-		    TreeStyle_HasHeaderElement(tree, column->style))
-		hasHeaderElem = TRUE;
+    if (spans == NULL) {
+	while (column != NULL) {
+	    if (TreeColumn_Visible(treeColumn) && (column->style != NULL)) {
+		drawArgs.state = item->state | column->cstate;
+		drawArgs.style = column->style;
+		drawArgs.indent = TreeItem_Indent(tree, treeColumn, item);
+		if ((treeColumn != tree->columnTail) &&
+			((TreeColumn_FixedWidth(treeColumn) != -1) ||
+			(TreeColumn_MaxWidth(treeColumn) != -1) ||
+			TreeColumn_Squeeze(treeColumn))) {
+		    drawArgs.width = TreeColumn_UseWidth(treeColumn);
+		    if (item->header != NULL)
+			drawArgs.width += drawArgs.indent;
+		} else
+		    drawArgs.width = -1;
+		height = MAX(height, TreeStyle_UseHeight(&drawArgs));
+		if (!hasHeaderElem && (item->header != NULL) &&
+			TreeStyle_HasHeaderElement(tree, column->style))
+		    hasHeaderElem = TRUE;
+	    }
+	    treeColumn = Tree_ColumnToTheRight(treeColumn, FALSE, tailOK);
+	    column = column->next;
 	}
-	treeColumn = Tree_ColumnToTheRight(treeColumn, FALSE, tailOK);
-	column = column->next;
+    } else {
+	while (column != NULL) {
+	    if (TreeColumn_Visible(treeColumn)) {
+		int columnIndex = TreeColumn_Index(treeColumn);
+		int columnIndex2 = columnIndex;
+		TreeColumn treeColumn2 = treeColumn;
+		drawArgs.indent = TreeItem_Indent(tree, treeColumn, item);
+		drawArgs.width = 0;
+#if defined(TREECTRL_DEBUG) && defined(WIN32)
+		if (TreeColumn_Index(treeColumn) != columnIndex) DebugBreak();
+		if (TreeItemColumn_Index(tree, item, column) != columnIndex) DebugBreak();
+		if (spans[columnIndex] != columnIndex) DebugBreak();
+#endif
+		while (spans[columnIndex2] == columnIndex) {
+		    if (!TreeColumn_Visible(treeColumn2)) {
+			/* nothing */
+		    } else if ((treeColumn2 != tree->columnTail) &&
+			    ((TreeColumn_FixedWidth(treeColumn2) != -1) ||
+			    (TreeColumn_MaxWidth(treeColumn2) != -1) ||
+			    TreeColumn_Squeeze(treeColumn2))) {
+			drawArgs.width += TreeColumn_UseWidth(treeColumn2);
+			if (item->header != NULL)
+			    drawArgs.width += drawArgs.indent;
+		    } else {
+			drawArgs.width = -1; /* as much width as the style needs */
+			while (spans[columnIndex2] == columnIndex) {
+			    treeColumn2 = Tree_ColumnToTheRight(treeColumn2, FALSE, tailOK);
+			    if (treeColumn2 == NULL)
+				break;
+			    columnIndex2++;
+			}
+			break;
+		    }
+		    treeColumn2 = Tree_ColumnToTheRight(treeColumn2, FALSE, tailOK);
+		    if (treeColumn2 == NULL)
+			break;
+		    columnIndex2++;
+		}
+		if (column->style != NULL) {
+		    drawArgs.state = item->state | column->cstate;
+		    drawArgs.style = column->style;
+		    height = MAX(height, TreeStyle_UseHeight(&drawArgs));
+		    if (!hasHeaderElem && (item->header != NULL) &&
+			    TreeStyle_HasHeaderElement(tree, column->style))
+			hasHeaderElem = TRUE;
+		}
+		treeColumn = treeColumn2;
+		if (treeColumn == NULL)
+		    break;
+		while ((column != NULL) && (columnIndex < columnIndex2)) {
+		    column = column->next;
+		    columnIndex++;
+		}
+		continue;
+	    }
+	    treeColumn = Tree_ColumnToTheRight(treeColumn, FALSE, tailOK);
+	    column = column->next;
+	}
     }
 
-    /* List headers are a fixed height on Aqua */
+    /* List headers are a fixed height on Aqua. */
+    /* FIXME: all that work above just to ignore the result here! */
     if (hasHeaderElem && tree->useTheme) {
 	if (tree->themeHeaderHeight > 0)
 	    return tree->themeHeaderHeight;
@@ -4048,6 +4394,8 @@ TreeItem_SpansInvalidate(
 
     if (count && tree->debug.enable && tree->debug.span)
 	dbwin("TreeItem_SpansInvalidate forgot %d items\n", count);
+
+    tree->columnSpansInvalid = TRUE; /* FIXME: only if item visible */
 }
 
 /*
@@ -5483,6 +5831,8 @@ Item_Configure(
 	 * any column. This is due to column expansion (this item may
 	 * be the widest item in the column) and spans > 1. */
 	TreeColumns_InvalidateWidthOfItems(tree, NULL);
+
+tree->columnSpansInvalid = TRUE;
 
 	/* If this is the last child, redraw the lines of the previous
 	 * sibling and all of its descendants because the line from

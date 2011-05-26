@@ -301,7 +301,7 @@ proc StyleEditor::SetPropertyList {} {
 	set S [$T style create s1]
 	$T style elements $S {e2 e1}
 	$T style layout $S e2 -detach yes -indent no -iexpand xy
-	$T style layout $S e1 -expand ns -padx {4 0}
+	$T style layout $S e1 -expand ns -padx 4
 
 	set S [$T style create sWindow]
 	$T style elements $S {e2 eWindow}
@@ -311,7 +311,7 @@ proc StyleEditor::SetPropertyList {} {
 	set S [$T style create sHeader]
 	$T style elements $S {e2 e1}
 	$T style layout $S e2 -detach yes -iexpand xy
-	$T style layout $S e1 -expand ns -padx {4 0}
+	$T style layout $S e1 -expand ns -padx 4
 
 	Info editor,pad [MakePadEditor $T]
 	Info editor,expand [MakeExpandEditor $T]

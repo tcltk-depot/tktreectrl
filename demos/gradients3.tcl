@@ -26,8 +26,8 @@ proc DemoGradients3 {} {
     # Create elements
     #
 
-    $T element create elemBox rect -width 100 -height 30 -fill gray95
-    $T element create elemText text -width [expr {300 - 4 * 2}]
+    $T element create elemBox rect -height 30 -fill gray95
+    $T element create elemText text
 
     #
     # Create styles using the elements
@@ -35,11 +35,11 @@ proc DemoGradients3 {} {
 
     $T style create styleText
     $T style elements styleText elemText
-    $T style layout styleText elemText -padx 4 -pady 6
+    $T style layout styleText elemText -padx 4 -pady 6 -squeeze x
 
     $T style create styleBox
     $T style elements styleBox elemBox
-    $T style layout styleBox elemBox -padx {5 5}
+    $T style layout styleBox elemBox -padx 5 -iexpand x
 
     $T column configure {all !tail} -itemstyle styleBox
 
@@ -142,7 +142,7 @@ proc DemoGradients3 {} {
 	-stops {{0 #00680a} {0.05 #00680a} {0.1 #197622} {0.45 #197622} {0.5 #00680a} {0.6 #00680a} {1 #00c82c}}
     set I [$T item create -parent root]
     $T item span $I C0 3
-    $T item element configure $I C0 elemBox -fill G_green -width [expr {110 * 3 - 10}]
+    $T item element configure $I C0 elemBox -fill G_green
 
     #####
 
@@ -154,11 +154,12 @@ proc DemoGradients3 {} {
     set height 40
 
     $T element create elemOrangeOutline rect -outline #ffb700 -outlinewidth 1 -rx 1
-    $T element create elemOrangeBox rect -fill {G_orange1 mouseover G_orange2 {}} -width [expr {110 * 3 - 2 * 2 - 10}] \
+    $T element create elemOrangeBox rect -fill {G_orange1 mouseover G_orange2 {}} \
 	-height [expr {$height - 2 * 2}]
 
     set S [$T style create styleOrange]
     $T style elements $S {elemOrangeOutline elemOrangeBox}
+    $T style layout $S elemOrangeBox -iexpand x
     $T style layout $S elemOrangeOutline -union elemOrangeBox -ipadx 2 -ipady 2 -padx 5
 
     set I [$T item create -parent root]
@@ -172,16 +173,14 @@ proc DemoGradients3 {} {
     $T gradient create G_progressBG -orient vertical -steps 2 \
 	-stops {{0 white} {0.45 #dbdbdb} {0.5 #cacaca} {1.0 #cacaca}}
 
-    set width [expr {110 * 3 - 2 * 1 - 10}]
-    set percent 0.33
     $T element create elemProgressOutline rect -rx 1 -outline gray -outlinewidth 1
     $T element create elemProgressBG rect -fill G_progressBG -height 12 \
-	-width $width -outline #eaeaea -outlinewidth 1
-    $T element create elemProgressFG rect -fill G_progressFG -height 12 \
-	-width [expr {$width * $percent}]
+	-outline #eaeaea -outlinewidth 1
+    $T element create elemProgressFG rect -fill G_progressFG -height 12
 
     set S [$T style create styleProgress]
     $T style elements $S {elemProgressOutline elemProgressBG elemProgressFG}
+    $T style layout $S elemProgressBG -iexpand x
     $T style layout $S elemProgressOutline -union elemProgressBG -padx 5 -ipadx 1 -ipady 1
     $T style layout $S elemProgressFG -detach yes -padx 6 -pady 1
 
@@ -189,6 +188,7 @@ proc DemoGradients3 {} {
     $T item span $I C0 3
     $T item style set $I C0 $S C1 "" C2 ""
 
+    set ::Gradients(progressItem) $I
     set ::Gradients3(percent) 0.0
     set ::Gradients3(afterId) ""
 
@@ -252,7 +252,8 @@ proc Gradients3Progress {T} {
     } else {
 	set ::Gradients3(percent) [expr {$percent + 0.025}]
     }
-    set width [expr {110 * 3 - 2 * 1 - 10}]
+    scan [$T item bbox $::Gradients(progressItem)] "%d %d %d %d" x1 y1 x2 y2
+    set width [expr {($x2 - $x1) - 2 * 1 - 10}]
     $T element configure elemProgressFG -width [expr {$width * $percent}]
     set ::Gradients3(afterId) [after 100 [list Gradients3Progress $T]]
 }

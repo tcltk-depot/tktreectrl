@@ -308,6 +308,16 @@ struct HeaderStyle
     HeaderStyle *next;		/* Linked list of all header styles. */
 };
 
+typedef struct ColumnReqData ColumnReqData;
+struct ColumnReqData {
+    TreeColumn column;
+    int vis;
+    int min;
+    int fixed;
+    int max;
+    int req;
+};
+
 /* A structure of the following type is kept for each treectrl widget. */
 struct TreeCtrl
 {
@@ -505,6 +515,10 @@ struct TreeCtrl
     				 * is not specified and the system theme
     				 * doesn't specify a color. */
 
+    int columnSpansInvalid;
+    ColumnReqData *columnReqData;
+    int columnReqSize;
+
     TreeItem root;
     TreeItem activeItem;
     TreeItem anchorItem;
@@ -520,6 +534,7 @@ struct TreeCtrl
     int itemCount;		/* Total number of items */
     int itemVisCount;		/* Total number of ReallyVisible() items */
     int itemWrapCount;		/* ReallyVisible() items with -wrap=true */
+    int widthOfHeadersInvalid;
     QE_BindingTable bindingTable;
     TreeDragImage dragImage;
     TreeMarquee marquee;
@@ -733,7 +748,7 @@ MODULE_SCOPE int TreeHeader_IsDraggedColumn(TreeHeader header,
 MODULE_SCOPE int TreeHeader_GetDraggedColumns(TreeHeader header, int lock,
     TreeColumn *first, TreeColumn *last);
 MODULE_SCOPE int TreeHeaderColumn_NeededHeight(TreeHeader header, TreeHeaderColumn column, int fixedWidth);
-MODULE_SCOPE int TreeHeaders_NeededWidthOfColumn(TreeCtrl *tree, TreeColumn treeColumn);
+MODULE_SCOPE void TreeHeaders_RequestWidthInColumns(TreeCtrl *tree);
 MODULE_SCOPE int Tree_HeaderHeight(TreeCtrl *tree);
 MODULE_SCOPE TreeItem TreeHeader_GetItem(TreeHeader header);
 MODULE_SCOPE void TreeHeader_ColumnDeleted(TreeCtrl *tree, TreeColumn treeColumn);
@@ -951,6 +966,11 @@ MODULE_SCOPE void TreeItem_RemoveColumns(TreeCtrl *tree, TreeItem item_, int fir
 MODULE_SCOPE void TreeItem_RemoveAllColumns(TreeCtrl *tree, TreeItem item_);
 MODULE_SCOPE void TreeItem_MoveColumn(TreeCtrl *tree, TreeItem item_, int columnIndex, int beforeIndex);
 
+MODULE_SCOPE void TreeItem_RequestWidthInColumns(TreeCtrl *tree,
+    TreeItem item, TreeColumn columnMin, TreeColumn columnMax);
+MODULE_SCOPE void TreeItems_RequestWidthInColumns(TreeCtrl *tree,
+    TreeColumn columnMin, TreeColumn columnMax);
+
 /* tkTreeElem.c */
 MODULE_SCOPE int TreeElement_InitInterp(Tcl_Interp *interp);
 MODULE_SCOPE int TreeElement_InitWidget(TreeCtrl *tree);
@@ -1127,6 +1147,9 @@ MODULE_SCOPE int TreeColumn_GridColors(TreeColumn column, TreeColor **leftColorP
 #endif
 MODULE_SCOPE void Tree_DrawHeader(TreeCtrl *tree, TreeDrawable td, int x, int y);
 MODULE_SCOPE int TreeColumn_WidthOfItems(TreeColumn column_);
+MODULE_SCOPE int TreeColumn_WidthOfHeaders(TreeColumn column_);
+MODULE_SCOPE void TreeColumn_RequestWidth(TreeColumn column, int width,
+    TreeColumn spanMin, TreeColumn spanMax, int doHeaders);
 MODULE_SCOPE void TreeColumn_InvalidateWidth(TreeColumn column_);
 MODULE_SCOPE void TreeColumn_FreeWidget(TreeCtrl *tree);
 MODULE_SCOPE void TreeColumns_InvalidateWidthOfItems(TreeCtrl *tree, TreeColumn column);

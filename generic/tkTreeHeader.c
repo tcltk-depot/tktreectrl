@@ -674,6 +674,7 @@ TreeHeaderColumn_ConfigureHeaderStyle(
 	TreeItem_InvalidateHeight(tree, header->item);
 	TreeItemColumn_InvalidateSize(tree, column->itemColumn);
 	Tree_FreeItemDInfo(tree, header->item, NULL);
+TreeColumns_InvalidateWidthOfItems(tree, treeColumn); /* widthOfHeadersInvalid */
 	TreeColumns_InvalidateWidth(tree);
     } else if (iMask & CS_DISPLAY)
 	Tree_InvalidateItemDInfo(tree, treeColumn, header->item, NULL);
@@ -1917,13 +1918,12 @@ TreeHeader_FreeResources(
 /*
  *----------------------------------------------------------------------
  *
- * TreeHeaders_NeededWidthOfColumn --
+ * TreeHeaders_RequestWidthInColumns --
  *
- *	Returns the maximum needed width of a column's header in every
- *	header-row.
+ *	Description.
  *
  * Results:
- *	Pixel width. Will be zero if there are no visible headers.
+ *	None.
  *
  * Side effects:
  *	None.
@@ -1931,25 +1931,19 @@ TreeHeader_FreeResources(
  *----------------------------------------------------------------------
  */
 
-int
-TreeHeaders_NeededWidthOfColumn(
-    TreeCtrl *tree,		/* Widget info. */
-    TreeColumn treeColumn	/* Column to consider. */
+void
+TreeHeaders_RequestWidthInColumns(
+    TreeCtrl *tree		/* Widget info. */
     )
 {
     TreeItem item = tree->headerItems;
-    int maxWidth = 0, width;
 
     while (item != NULL) {
 	if (TreeItem_ReallyVisible(tree, item)) {
-	    TreeItemColumn itemColumn = TreeItem_FindColumn(tree, item, TreeColumn_Index(treeColumn));
-	    width = TreeItemColumn_NeededWidth(tree, item, itemColumn);
-	    maxWidth = MAX(maxWidth, width);
+	    TreeItem_RequestWidthInColumns(tree, item, tree->columns, tree->columnLast);
 	}
 	item = TreeItem_GetNextSibling(tree, item);
     }
-
-    return maxWidth;
 }
 
 /*

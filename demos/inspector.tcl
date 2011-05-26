@@ -232,7 +232,7 @@ proc Inspector::InspectItems {inspectMe} {
     foreach iI [$inspectMe item range first last] {
 	set I [$T item create -parent root]
 	$T item style set $I CID s1
-	$T item text $I CID $I
+	$T item text $I CID $iI
 	foreach title {-button -height -tags} {
 	    $T item style set $I C$title s1
 	    $T item text $I C$title [$inspectMe item cget $iI $title]

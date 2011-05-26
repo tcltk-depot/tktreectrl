@@ -26,7 +26,7 @@ proc DemoSpan {} {
 
     for {set i 0} {$i < 100} {incr i} {
 	$T column create -itemjustify left -justify center -text "$i" \
-	    -width $width -tags C$i
+	    -tags C$i
     }
 
     #
@@ -61,7 +61,7 @@ proc DemoSpan {} {
 	    $T element configure e$i -fill {white mouseover} \
 		-fill [list white mouseover g$i {}]
 	}
-	$T element create t$i text -text "Span $i"
+	$T element create t$i text -text "Span $i" -lines 1
     }
 
     #
@@ -71,8 +71,8 @@ proc DemoSpan {} {
     for {set i 1} {$i <= 20} {incr i} {
 	set S [$T style create s$i]
 	$T style elements $S [list e$i t$i]
-	$T style layout $S e$i -detach yes
-	$T style layout $S t$i -expand ns -padx 2
+	$T style layout $S e$i -detach yes -iexpand x -squeeze x
+	$T style layout $S t$i -expand ns -padx 2 -squeeze x
     }
 
     #

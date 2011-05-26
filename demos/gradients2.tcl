@@ -58,10 +58,9 @@ proc DemoGradients2 {} {
     # Create elements
     #
 
-    $T element create elemTextIntro text -width [expr {600 - 4 * 2}]
-    $T element create elemText text -width [expr {600 - 4 * 2}]
+    $T element create elemTextIntro text
 
-    $T element create elemBox rect -width 100 -height 50 \
+    $T element create elemBox rect -height 50 \
 	-outline gray -outlinewidth 1 -open {wn {openW openN} w openW n openN}
 
     #
@@ -70,10 +69,11 @@ proc DemoGradients2 {} {
 
     $T style create styleIntro
     $T style elements styleIntro elemTextIntro
-    $T style layout styleIntro elemTextIntro -padx 4 -pady {3 0}
+    $T style layout styleIntro elemTextIntro -padx 4 -pady {3 0} -squeeze x
 
     $T style create styleBox
     $T style elements styleBox elemBox
+    $T style layout styleBox elemBox -iexpand x
 
     #
     # Create items and assign styles
