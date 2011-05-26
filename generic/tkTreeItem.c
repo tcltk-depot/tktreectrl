@@ -215,121 +215,6 @@ TreeItemColumn_NeededWidth(
     return 0;
 }
 
-#ifdef EXPENSIVE_SPAN_WIDTH /* NOT USED */
-
-/*
- * When a style spans 2 or more columns, all of the requested width goes
- * to the first column in the span. Ideally the width needed by the style
- * would be distributed over each column in the span. To be done properly,
- * the visibility and fixed-width of each column needs to be considered.
- *
- * This routine does an okay job of calculating the requested width of a
- * column in an item when spans are involved; however there is a lot of
- * processing involved, and this routine is called for each column in
- * a span separately (it would be better to calculate the width of all
- * the columns in a span at the same time).
- *----------------------------------------------------------------------
- */
-
-int
-TreeItem_NeededWidthOfColumn(
-    TreeCtrl *tree,		/* Widget info. */
-    TreeItem item,		/* Item token. */
-    int _columnIndex		/* Column index. */
-    )
-{
-    TreeColumn treeColumn = tree->columns;
-    TreeItemColumn column = item->columns;
-    int columnIndex = 0, itemColumnIndex = 0, span = 1;
-    int selfIndex = _columnIndex, fixedWidth = 0, width = 0;
-    int spanStart, spanEnd;
-    struct span {
-	TreeItemColumn itemColumn;
-	int itemColumnIndex;
-	int fixedWidth;
-	int spanWidth;
-	int visible;
-    } staticSpans[STATIC_SIZE], *spans = staticSpans;
-
-    STATIC_ALLOC(spans, struct span, tree->columnCount);
-
-    while (treeColumn != NULL) {
-	spans[columnIndex].visible = TreeColumn_Visible(treeColumn);
-	if (--span == 0) {
-	    if (spans[columnIndex].visible)
-		span = column ? column->span : 1;
-	    else
-		span = 1;
-	    itemColumnIndex = columnIndex;
-	}
-	spans[columnIndex].itemColumn = column;
-	spans[columnIndex].itemColumnIndex = itemColumnIndex;
-	spans[columnIndex].spanWidth = 0;
-	spans[columnIndex].fixedWidth = TreeColumn_FixedWidth(treeColumn);
-	++columnIndex;
-	treeColumn = TreeColumn_Next(treeColumn);
-	if (column != NULL)
-	    column = column->next;
-    }
-
-    span = 0;
-    columnIndex = spanStart = spanEnd = spans[selfIndex].itemColumnIndex;
-    while (spans[columnIndex].itemColumnIndex == spanStart) {
-	if (spans[columnIndex].visible) {
-	    if (spans[columnIndex].fixedWidth >= 0) {
-		fixedWidth += spans[columnIndex].fixedWidth;
-		spans[columnIndex].spanWidth = spans[columnIndex].fixedWidth;
-	    } else
-		++span; /* number of visible columns in the span with no
-			 * fixed width */
-	}
-	spanEnd = columnIndex;
-	++columnIndex;
-	if (columnIndex == tree->columnCount)
-	    break;
-    }
-
-    column = spans[spanStart].itemColumn;
-    if (column != NULL && column->style != NULL) {
-	width = TreeStyle_NeededWidth(tree, column->style,
-		item->state | column->cstate);
-	if (width > fixedWidth && span > 0) {
-	    width -= fixedWidth;
-	    while (width > 0) {
-		int each = (width > span) ? width / span : 1;
-		columnIndex = spanStart;
-		while (columnIndex <= spanEnd) {
-		    if (spans[columnIndex].visible) {
-			if (spans[columnIndex].fixedWidth < 0) {
-			    spans[columnIndex].spanWidth += each;
-			    width -= each;
-			    if (width <= 0)
-				break;
-			}
-		    }
-		    ++columnIndex;
-		}
-	    }
-	};
-    }
-
-if (0)
-{
-    int i;
-    for (i = 0; i < tree->columnCount; i++) {
-	dbwin("%d,%d: itemColumn %p itemColumnIndex %d fixedWidth %d spanWidth %d\n",
-	    item->id, i, spans[i].itemColumn, spans[i].itemColumnIndex, spans[i].fixedWidth,
-	    spans[i].spanWidth);
-    }
-}
-    width = spans[selfIndex].spanWidth;
-    STATIC_FREE(spans, struct span, tree->columnCount);
-
-    return width;
-}
-
-#endif /* EXPENSIVE_SPAN_WIDTH */
-
 /*
  *----------------------------------------------------------------------
  *
@@ -4454,10 +4339,10 @@ TreeItem_SpansRedo(
 		span = itemColumn ? itemColumn->span : 1;
 	    else
 		span = 1;
-	    if (span > 1)
-		simple = FALSE;
 	    spanner = columnIndex;
 	}
+	if ((itemColumn != NULL) && (itemColumn->span > 1))
+	    simple = FALSE;
 	item->spans[columnIndex] = spanner;
 	columnIndex++;
 	treeColumn = TreeColumn_Next(treeColumn);
