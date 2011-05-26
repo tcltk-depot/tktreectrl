@@ -2915,14 +2915,16 @@ ColumnTagCmd(
 
 static void
 InitColumnReqData(
-    TreeCtrl *tree,
-    TreeColumn first
+    TreeCtrl *tree
     )
 {
     ColumnReqData *cd;
     TreeColumn column;
 
-/*dbwin("InitColumnReqData %s\n", Tk_PathName(tree->tkwin));*/
+    if (!tree->columnReqInvalid || tree->columnCount == 0)
+	return;
+
+dbwin("InitColumnReqData %s\n", Tk_PathName(tree->tkwin));
 
     if (tree->columnReqSize < tree->columnCount) {
 	tree->columnReqData = (ColumnReqData *) ckrealloc((char *) tree->columnReqData, sizeof(ColumnReqData) * tree->columnCount);
@@ -2930,8 +2932,8 @@ InitColumnReqData(
     }
 
     cd = tree->columnReqData;
-    for (column = first;
-	    column != NULL && column->lock == first->lock;
+    for (column = tree->columns;
+	    column != NULL;
 	    column = column->next) {
 	cd->column = column;
 	cd->vis = TreeColumn_Visible(column);
@@ -2943,6 +2945,8 @@ InitColumnReqData(
 	    cd->min = cd->max;
 	++cd;
     }
+
+    tree->columnReqInvalid = FALSE;
 }
 
 /*
@@ -3373,6 +3377,7 @@ doneDELETE:
 	    TreeColumns_InvalidateCounts(tree);
 	    tree->widthOfColumns = tree->headerHeight = -1;
 	    tree->widthOfColumnsLeft = tree->widthOfColumnsRight = -1;
+	    tree->columnReqInvalid = TRUE;
 	    Tree_DInfoChanged(tree, DINFO_REDO_COLUMN_WIDTH);
 
 	    /* Indicate that all items must recalculate their list of spans. */
@@ -3680,6 +3685,8 @@ TreeColumn_WidthOfItems(
 {
     TreeCtrl *tree = column->tree;
 
+    InitColumnReqData(tree);
+
     if (tree->columnSpansInvalid) {
 	TreeColumn column2 = tree->columns;
 	while (column2 != NULL) {
@@ -3847,6 +3854,7 @@ TreeColumns_InvalidateWidth(
     tree->widthOfColumns = -1;
     tree->widthOfColumnsLeft = -1;
     tree->widthOfColumnsRight = -1;
+    tree->columnReqInvalid = TRUE;
     Tree_DInfoChanged(tree, DINFO_CHECK_COLUMN_WIDTH);
 }
 
@@ -4186,8 +4194,6 @@ Tree_WidthOfColumns(
     if (tree->widthOfColumns >= 0)
 	return tree->widthOfColumns;
 
-    InitColumnReqData(tree, tree->columnLockNone);
-
     tree->widthOfColumns = LayoutColumns(tree, tree->columnLockNone);
 
     if (tree->columnTree != NULL && TreeColumn_Visible(tree->columnTree)) {
@@ -4235,8 +4241,6 @@ Tree_WidthOfLeftColumns(
     if (tree->widthOfColumnsLeft >= 0)
 	return tree->widthOfColumnsLeft;
 
-    InitColumnReqData(tree, tree->columnLockLeft);
-
     if (!Tree_ShouldDisplayLockedColumns(tree)) {
 	TreeColumn column = tree->columnLockLeft;
 	while (column != NULL && column->lock == COLUMN_LOCK_LEFT) {
@@ -4280,8 +4284,6 @@ Tree_WidthOfRightColumns(
 {
     if (tree->widthOfColumnsRight >= 0)
 	return tree->widthOfColumnsRight;
-
-    InitColumnReqData(tree, tree->columnLockRight);
 
     if (!Tree_ShouldDisplayLockedColumns(tree)) {
 	TreeColumn column = tree->columnLockRight;

@@ -518,6 +518,7 @@ struct TreeCtrl
     int columnSpansInvalid;
     ColumnReqData *columnReqData;
     int columnReqSize;
+    int columnReqInvalid;
 
     TreeItem root;
     TreeItem activeItem;
