@@ -220,7 +220,8 @@ TreeItemColumn_NeededWidth(
  *
  * TreeItem_RequestWidthInColumns --
  *
- *	Description.
+ *	Calculates the width needed by styles in a range of columns
+ *	for a single header or item.
  *
  * Results:
  *	None.
@@ -476,7 +477,8 @@ next:
  *
  * TreeItems_RequestWidthInColumns --
  *
- *	Description.
+ *	Calculates the width needed by styles in a range of columns
+ *	for every visible item.
  *
  * Results:
  *	None.

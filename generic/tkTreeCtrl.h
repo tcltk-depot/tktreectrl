@@ -283,18 +283,22 @@ struct TreeStateDomain
 };
 
 /* A structure of the following type represents a unique signature for each
- * TreeStyle that is managed privately for use in column headers. */
+ * TreeStyle that is managed privately for use in column headers. A different
+ * header style is needed to for some header configuration options, such as
+ * -justify, but not for others, such as -arrow which are handled by the
+ * 'header' element type. */
 typedef struct HeaderStyleParams HeaderStyleParams;
 struct HeaderStyleParams
 {
-    Tk_Justify justify;
-    int bitmap;
-    int image;
-    int imagePadX[2];
-    int imagePadY[2];
-    int text;
-    int textPadX[2];
-    int textPadY[2];
+    Tk_Justify justify;		/* -justify */
+    int bitmap;			/* 1 if -bitmap is specified, 0 if -bitmap
+				 * is unspecified or -image is specified. */
+    int image;			/* 1 if -image is specified. */
+    int imagePadX[2];		/* -imagepadx */
+    int imagePadY[2];		/* -imagepady */
+    int text;			/* 1 if -text is specified, 0 otherwise. */
+    int textPadX[2];		/* -textpadx */
+    int textPadY[2];		/* -textpady */
 };
 
 /* A structure of the following type is kept for each TreeStyle that is
@@ -308,14 +312,17 @@ struct HeaderStyle
     HeaderStyle *next;		/* Linked list of all header styles. */
 };
 
+/* A structure of the following type is kept for each TreeColumn in a
+ * TreeCtrl.  This is used when calculating the requested width of styles. */
 typedef struct ColumnReqData ColumnReqData;
 struct ColumnReqData {
     TreeColumn column;
-    int vis;
-    int min;
-    int fixed;
-    int max;
-    int req;
+    int vis;		/* TRUE if the column is visible, otherwise FALSE. */
+    int min;		/* -minwidth or -1, no greater than -maxwidth. */
+    int fixed;		/* -width, or -1. */
+    int max;		/* -maxwidth or -1. */
+    int req;		/* The width requested by a all or part of a style
+			 * in a single item in this column. */
 };
 
 /* A structure of the following type is kept for each treectrl widget. */
@@ -515,10 +522,13 @@ struct TreeCtrl
     				 * is not specified and the system theme
     				 * doesn't specify a color. */
 
-    int columnSpansInvalid;
-    ColumnReqData *columnReqData;
-    int columnReqSize;
-    int columnReqInvalid;
+    int columnSpansInvalid;	/* TRUE if the TreeColumn.spanMin and
+				 * TreeColumn.spanMax fields are
+				 * out-of-date, otherwise FALSE. */
+    ColumnReqData *columnReqData; /* Array, one element per column. */
+    int columnReqSize;		/* Size of columnReqData, >= columnCount. */
+    int columnReqInvalid;	/* TRUE if columnReqData is out-of-date,
+				 * otherwise FALSE. */
 
     TreeItem root;
     TreeItem activeItem;

@@ -964,7 +964,8 @@ TreeHeader_ConsumeColumnCget(
     if (tree->headerItems == NULL)
 	panic("the default header was deleted!");
 #endif
-    itemColumn = TreeItem_FindColumn(tree, tree->headerItems, TreeColumn_Index(treeColumn));
+    itemColumn = TreeItem_FindColumn(tree, tree->headerItems,
+	TreeColumn_Index(treeColumn));
 #ifdef TREECTRL_DEBUG
     if (itemColumn == NULL)
 	panic("the default header is missing column %s%d!",
@@ -1020,7 +1021,8 @@ TreeHeader_ConsumeColumnConfig(
     if (tree->headerItems == NULL)
 	panic("the default header was deleted!");
 #endif
-    itemColumn = TreeItem_FindColumn(tree, tree->headerItems, TreeColumn_Index(treeColumn));
+    itemColumn = TreeItem_FindColumn(tree, tree->headerItems,
+	TreeColumn_Index(treeColumn));
 #ifdef TREECTRL_DEBUG
     if (itemColumn == NULL)
 	panic("the default header is missing column %s%d!",
@@ -1066,7 +1068,8 @@ TreeHeader_ConsumeColumnOptionInfo(
     if (tree->headerItems == NULL)
 	panic("the default header was deleted!");
 #endif
-    itemColumn = TreeItem_FindColumn(tree, tree->headerItems, TreeColumn_Index(treeColumn));
+    itemColumn = TreeItem_FindColumn(tree, tree->headerItems,
+	TreeColumn_Index(treeColumn));
 #ifdef TREECTRL_DEBUG
     if (itemColumn == NULL)
 	panic("the default header is missing column %s%d!",
@@ -1221,7 +1224,8 @@ TreeHeader_ColumnDragOrder(
     index1max = TreeColumn_Index(column1max);
 
     column2min = tree->columnDrag.indColumn;
-    column2max = GetFollowingColumn(column2min, tree->columnDrag.indSpan, column1min);
+    column2max = GetFollowingColumn(column2min, tree->columnDrag.indSpan,
+	column1min);
     index2min = TreeColumn_Index(column2min);
     index2max = TreeColumn_Index(column2max);
 
@@ -1395,7 +1399,8 @@ SetImageForColumn(
     XImage *ximage;
     char imageName[128];
 
-    if ((column->dragImage != NULL) && (column->imageEpoch == tree->columnDrag.imageEpoch))
+    if ((column->dragImage != NULL) &&
+	    (column->imageEpoch == tree->columnDrag.imageEpoch))
 	return column->dragImage;
 
     sprintf(imageName, "::TreeCtrl::ImageColumnH%dC%d",
@@ -1523,7 +1528,8 @@ TreeHeaderColumn_Draw(
 
     /* Don't draw the tail column if it isn't visible.
      * Currently a span is always created for the tail column. */
-    isHiddenTail = (drawArgs->column == tree->columnTail) && !TreeColumn_Visible(drawArgs->column);
+    isHiddenTail = (drawArgs->column == tree->columnTail) &&
+	!TreeColumn_Visible(drawArgs->column);
 
     if (!isDragColumn || !dragPosition) {
 	gc = Tk_3DBorderGC(tree->tkwin, tree->border, TK_3D_FLAT_GC);
@@ -1774,7 +1780,8 @@ TreeHeader_CreateWithItem(
     }
     if (Tk_InitOptions(tree->interp, (char *) header,
 	    tree->headerDragOptionTable, tree->tkwin) != TCL_OK) {
-	Tk_FreeConfigOptions((char *) header, tree->headerOptionTable, tree->tkwin);
+	Tk_FreeConfigOptions((char *) header, tree->headerOptionTable,
+	    tree->tkwin);
 	WFREE(header, TreeHeader_);
 	return NULL;
     }
@@ -1814,7 +1821,8 @@ FreeDragImages(
 	for (itemColumn = TreeItem_GetFirstColumn(tree, item);
 		itemColumn != NULL;
 		itemColumn = TreeItemColumn_GetNext(tree, itemColumn)) {
-	    TreeHeaderColumn column = TreeItemColumn_GetHeaderColumn(tree, itemColumn);
+	    TreeHeaderColumn column = TreeItemColumn_GetHeaderColumn(tree,
+		itemColumn);
 	    if (column->dragImage != NULL) {
 		Tk_FreeImage(column->dragImage);
 		Tk_DeleteImage(tree->interp, column->dragImageName);
@@ -1883,7 +1891,8 @@ TreeHeaderColumn_FreeResources(
 	Tk_DeleteImage(tree->interp, column->dragImageName);
     }
 
-    Tk_FreeConfigOptions((char *) column, tree->headerColumnOptionTable, tree->tkwin);
+    Tk_FreeConfigOptions((char *) column, tree->headerColumnOptionTable,
+	tree->tkwin);
     WFREE(column, HeaderColumn);
 }
 
@@ -1910,8 +1919,10 @@ TreeHeader_FreeResources(
 {
     TreeCtrl *tree = header->tree;
 
-    Tk_FreeConfigOptions((char *) header, tree->headerOptionTable, tree->tkwin);
-    Tk_FreeConfigOptions((char *) header, tree->headerDragOptionTable, tree->tkwin);
+    Tk_FreeConfigOptions((char *) header, tree->headerOptionTable,
+	tree->tkwin);
+    Tk_FreeConfigOptions((char *) header, tree->headerDragOptionTable,
+	tree->tkwin);
     WFREE(header, TreeHeader_);
 }
 
@@ -1920,7 +1931,8 @@ TreeHeader_FreeResources(
  *
  * TreeHeaders_RequestWidthInColumns --
  *
- *	Description.
+ *	Calculates the width needed by styles in every column
+ *	for every visible header-row.
  *
  * Results:
  *	None.
@@ -1940,7 +1952,8 @@ TreeHeaders_RequestWidthInColumns(
 
     while (item != NULL) {
 	if (TreeItem_ReallyVisible(tree, item)) {
-	    TreeItem_RequestWidthInColumns(tree, item, tree->columns, tree->columnLast);
+	    TreeItem_RequestWidthInColumns(tree, item, tree->columns,
+		tree->columnLast);
 	}
 	item = TreeItem_GetNextSibling(tree, item);
     }
@@ -2419,7 +2432,8 @@ TreeHeaderList_FromObj(
 		goto errorExit;
 	    item = tree->headerItems;
 	    while (item != NULL) {
-		if (TagExpr_Eval(&expr, TreeItem_GetTagInfo(tree, item)) && Qualifies(&q, item)) {
+		if (TagExpr_Eval(&expr, TreeItem_GetTagInfo(tree, item)) &&
+			Qualifies(&q, item)) {
 		    TreeItemList_Append(items, item);
 		}
 		item = TreeItem_GetNextSibling(tree, item);
@@ -2723,7 +2737,8 @@ TreeHeaderCmd_Configure(
     ColumnForEach citer;
 
     if (objc < 4) {
-	Tcl_WrongNumArgs(interp, 3, objv, "header ?column? ?option? ?value? ?option value ...?");
+	Tcl_WrongNumArgs(interp, 3, objv,
+	    "header ?column? ?option? ?value? ?option value ...?");
 	return TCL_ERROR;
     }
 
@@ -2736,7 +2751,8 @@ TreeHeaderCmd_Configure(
 	    tree->headerOptionTable,(Tcl_Obj *) NULL, tree->tkwin);
 	if (resultObjPtr == NULL)
 	    return TCL_ERROR;
-	if (TreeItem_GetHeaderOptionInfo(tree, header, NULL, resultObjPtr) != TCL_OK)
+	if (TreeItem_GetHeaderOptionInfo(tree, header, NULL, resultObjPtr)
+		!= TCL_OK)
 	    return TCL_ERROR;
 	Tcl_SetObjResult(interp, resultObjPtr);
 	return TCL_OK;
@@ -2749,7 +2765,8 @@ TreeHeaderCmd_Configure(
 	if (objc == 5) {
 	    if (TreeHeader_FromObj(tree, objv[3], &header) != TCL_OK)
 		return TCL_ERROR;
-	    if (TreeItem_GetHeaderOptionInfo(tree, header, objv[4], NULL) == TCL_OK)
+	    if (TreeItem_GetHeaderOptionInfo(tree, header, objv[4], NULL)
+		    == TCL_OK)
 		return TCL_OK;
 	    Tcl_ResetResult(interp);
 	    resultObjPtr = Tk_GetOptionInfo(interp, (char *) header,
@@ -2764,7 +2781,8 @@ TreeHeaderCmd_Configure(
 		return TCL_ERROR;
 	    ITEM_FOR_EACH(item, &items, NULL, &iter) {
 		header = TreeItem_GetHeader(tree, item);
-		if (Header_Configure(header, objc - 4, objv + 4, FALSE) != TCL_OK) {
+		if (Header_Configure(header, objc - 4, objv + 4, FALSE)
+			!= TCL_OK) {
 		    TreeItemList_Free(&items);
 		    return TCL_ERROR;
 		}
@@ -2798,9 +2816,11 @@ TreeHeaderCmd_Configure(
 	ITEM_FOR_EACH(item, &items, NULL, &iter) {
 	    header = TreeItem_GetHeader(tree, item);
 	    COLUMN_FOR_EACH(treeColumn, &columns, NULL, &citer) {
-		TreeItemColumn itemColumn = TreeItem_FindColumn(tree, item, TreeColumn_Index(treeColumn));
+		TreeItemColumn itemColumn = TreeItem_FindColumn(tree, item,
+		    TreeColumn_Index(treeColumn));
 		column = TreeItemColumn_GetHeaderColumn(tree, itemColumn);
-		if (Column_Configure(header, column, treeColumn, objc - 5, objv + 5, FALSE) != TCL_OK) {
+		if (Column_Configure(header, column, treeColumn, objc - 5,
+			objv + 5, FALSE) != TCL_OK) {
 		    TreeItemList_Free(&items);
 		    TreeColumnList_Free(&columns);
 		    return TCL_ERROR;
@@ -2884,7 +2904,8 @@ TreeHeaderCmd(
 
 	/* T header compare H op H */
 	case COMMAND_COMPARE: {
-	    static CONST char *opName[] = { "<", "<=", "==", ">=", ">", "!=", NULL };
+	    static CONST char *opName[] = { "<", "<=", "==", ">=", ">", "!=",
+		NULL };
 	    enum { COP_LT, COP_LE, COP_EQ, COP_GE, COP_GT, COP_NE };
 	    int op, compare = 0, index1 = 0, index2 = 0;
 	    TreeHeader header1, header2;
@@ -2897,8 +2918,8 @@ TreeHeaderCmd(
 	    if (TreeHeader_FromObj(tree, objv[3], &header1) != TCL_OK)
 		return TCL_ERROR;
 
-	    if (Tcl_GetIndexFromObj(interp, objv[4], opName, "comparison operator", 0,
-		    &op) != TCL_OK) {
+	    if (Tcl_GetIndexFromObj(interp, objv[4], opName,
+		    "comparison operator", 0, &op) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 
@@ -3052,8 +3073,8 @@ TreeHeaderCmd(
 		    break;
 		}
 		result = Tk_SetOptions(interp, (char *) tree,
-			tree->columnDrag.optionTable, objc - 3, objv + 3, tree->tkwin,
-			&savedOptions, &mask);
+			tree->columnDrag.optionTable, objc - 3, objv + 3,
+			tree->tkwin, &savedOptions, &mask);
 		if (result != TCL_OK) {
 		    Tk_RestoreSavedOptions(&savedOptions);
 		    return TCL_ERROR;
@@ -3101,8 +3122,8 @@ TreeHeaderCmd(
 	    ITEM_FOR_EACH(item, &items, NULL, &iter) {
 		header = TreeItem_GetHeader(tree, item);
 		result = Tk_SetOptions(interp, (char *) header,
-			tree->headerDragOptionTable, objc - 4, objv + 4, tree->tkwin,
-			&savedOptions, &mask);
+			tree->headerDragOptionTable, objc - 4, objv + 4,
+			tree->tkwin, &savedOptions, &mask);
 		if (result != TCL_OK) {
 		    Tk_RestoreSavedOptions(&savedOptions);
 		    TreeItemList_Free(&items);
@@ -3246,9 +3267,9 @@ TreeHeader_InitWidget(
     tree->headerItems = TreeItem_CreateHeader(tree);
 
     /* Create the style for the tail column. */
-    TreeHeaderColumn_EnsureStyleExists(TreeItem_GetHeader(tree, tree->headerItems),
-	TreeItemColumn_GetHeaderColumn(tree, TreeItem_GetFirstColumn(tree, tree->headerItems)),
-	tree->columnTail);
+    TreeHeaderColumn_EnsureStyleExists(TreeItem_GetHeader(tree,
+	tree->headerItems), TreeItemColumn_GetHeaderColumn(tree,
+	TreeItem_GetFirstColumn(tree, tree->headerItems)), tree->columnTail);
 
     return TCL_OK;
 }

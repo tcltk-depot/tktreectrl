@@ -279,7 +279,7 @@ TreeDotRect_Draw(
     rect.bottom = y + height;
     DrawFocusRect(dotState->dc, &rect);
 #else
-    HDC dc = dotState->dc; 
+    HDC dc = dotState->dc;
     int i;
     int wx = x + dotState->tree->drawableXOrigin;
     int wy = y + dotState->tree->drawableYOrigin;
@@ -1025,7 +1025,7 @@ FastFillRect(
     ExtTextOut(dc, 0, 0, ETO_OPAQUE, &rect, NULL, 0, NULL);
     SetBkColor(dc, oldColor);
 }
-    
+
 static void
 _3DVerticalBevel(
     HDC dc,
@@ -1413,7 +1413,7 @@ typedef struct TreeThemeData_
 } TreeThemeData_;
 
 static XPThemeProcs *procs = NULL;
-static XPThemeData *appThemeData = NULL; 
+static XPThemeData *appThemeData = NULL;
 TCL_DECLARE_MUTEX(themeMutex)
 
 /* Functions imported from kernel32.dll requiring windows XP or greater. */
@@ -1451,7 +1451,7 @@ GetActCtxProcs(void)
 	    return procs;
 	}
 
-#undef LOADPROC    
+#undef LOADPROC
     }
 
     ckfree((char*)procs);
@@ -1893,7 +1893,7 @@ TreeTheme_DrawHeaderArrow(
     int up,			/* TRUE if up arrow, FALSE otherwise. */
     int x, int y,		/* Bounds of arrow.  Width and */
     int width, int height	/* height are the same as that returned */
-				/* by TreeTheme_GetArrowSize(). */ 
+				/* by TreeTheme_GetArrowSize(). */
     )
 {
 #define THEME_ARROW 0
@@ -2508,7 +2508,7 @@ RegisterThemeMonitorWindowClass(
     HINSTANCE hinst)
 {
     WNDCLASSEX wc;
-    
+
     wc.cbSize        = sizeof(WNDCLASSEX);
     wc.style         = CS_HREDRAW | CS_VREDRAW;
     wc.lpfnWndProc   = (WNDPROC) ThemeMonitorWndProc;
@@ -2521,7 +2521,7 @@ RegisterThemeMonitorWindowClass(
     wc.hbrBackground = (HBRUSH) COLOR_WINDOW;
     wc.lpszMenuName  = windowClassName;
     wc.lpszClassName = windowClassName;
-    
+
     return RegisterClassEx(&wc);
 }
 
@@ -2787,7 +2787,7 @@ TreeTheme_SetOptionDefault(
 #endif
 }
 
-int 
+int
 TreeThemeCmd(
     TreeCtrl *tree,		/* Widget info. */
     int objc,			/* Number of arguments. */
@@ -3248,7 +3248,7 @@ MakeLinearGradientBrush(
     (*lgPtr) = lineGradient;
     return Ok;
 }
-    
+
 /*
  *----------------------------------------------------------------------
  *
@@ -3601,7 +3601,7 @@ Tree_DrawRoundRect(
 	DllExports._GdipResetPath(path);
 	GetRoundRectPath_Outline(path, tr, rx, ry, open, i, i-1, 0);
 	DllExports._GdipDrawPath(graphics, pen, path);
-    
+
 	tr.y += 1, tr.height -= 2;
 	DllExports._GdipResetPath(path);
 	GetRoundRectPath_Outline(path, tr, rx, ry, open, i, i, 0);
@@ -3695,7 +3695,7 @@ TreeGradient_DrawRoundRect(
 	    DllExports._GdipResetPath(path);
 	    GetRoundRectPath_Outline(path, tr, rx, ry, open, i, i-1, 0);
 	    DllExports._GdipDrawPath(graphics, pen, path);
-	
+
 	    tr.y += 1, tr.height -= 2;
 	    DllExports._GdipResetPath(path);
 	    GetRoundRectPath_Outline(path, tr, rx, ry, open, i, i, 0);
