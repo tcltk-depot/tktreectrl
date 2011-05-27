@@ -384,6 +384,123 @@ test display-6.5 {no unlocked columns: -canvaspadx ignored, -canvaspady used} -b
     .t identify 10 20
 } -result {item 0 column 0}
 
+proc colWid {args} {
+    foreach c $args {
+        lappend result [.t column width $c]
+    }
+    return $result
+}
+
+test display-7.0 {column spanning: span=1} -setup {
+    destroy .t
+    pack [treectrl .t]
+    .t configure -showheader no -borderwidth 0 -highlightthickness 0
+    .t column create -tags C0
+    .t element create e1 rect -width 100 -height 20
+    .t style create s1 -orient horizontal
+    .t style elements s1 e1
+    .t item style set root C0 s1
+} -body {
+    colWid C0
+} -result {100}
+
+test display-7.1 {column spanning: span=2} -setup {
+    .t column create -tags C1
+    .t item span root C0 2
+} -body {
+    colWid C0 C1
+} -result {50 50}
+
+test display-7.2 {column spanning: span=3} -setup {
+    .t column create -tags C2
+    .t item span root C0 3
+} -body {
+    colWid C0 C1 C2
+} -result {34 33 33}
+
+test display-7.3 {column spanning: span=4} -setup {
+    .t column create -tags C3
+    .t item span root C0 4
+} -body {
+    colWid C0 C1 C2 C3
+} -result {25 25 25 25}
+
+test display-7.4 {column spanning: span=5} -setup {
+    .t column create -tags C4
+    .t item span root C0 5
+} -body {
+    colWid C0 C1 C2 C3 C4
+} -result {20 20 20 20 20}
+
+test display-7.5 {column spanning: minwidth > 0} -setup {
+    .t column configure all -minwidth 10
+} -body {
+    colWid C0 C1 C2 C3 C4
+} -result {20 20 20 20 20}
+
+test display-7.6 {column spanning: minwidth > 0} -setup {
+    .t column configure C0 -minwidth 30
+} -body {
+    colWid C0 C1 C2 C3 C4
+} -result {30 18 18 17 17}
+
+test display-7.7 {column spanning: minwidth > 0} -setup {
+    .t column configure C2 -minwidth 30
+} -body {
+    colWid C0 C1 C2 C3 C4
+} -result {30 14 30 13 13}
+
+test display-7.8 {column spanning: minwidth > 0} -setup {
+    .t column configure all -minwidth 30
+} -body {
+    colWid C0 C1 C2 C3 C4
+} -result {30 30 30 30 30}
+
+test display-7.20 {column spanning: maxwidth > 0} -setup {
+    .t column configure all -minwidth ""
+    .t column configure C1 -maxwidth 15
+} -body {
+    colWid C0 C1 C2 C3 C4
+} -result {22 15 21 21 21}
+
+test display-7.21 {column spanning: maxwidth > 0} -setup {
+    .t column configure C0 -maxwidth 15
+} -body {
+    colWid C0 C1 C2 C3 C4
+} -result {15 15 24 23 23}
+
+test display-7.30 {column spanning: width > 0} -setup {
+    .t column configure all -maxwidth ""
+    .t column configure C3 -width 50
+} -body {
+    colWid C0 C1 C2 C3 C4
+} -result {13 13 12 50 12}
+
+test display-7.31 {column spanning: width > 0} -setup {
+    .t column configure C0 -width 20
+} -body {
+    colWid C0 C1 C2 C3 C4
+} -result {20 10 10 50 10}
+
+test display-7.40 {column spanning: hidden columns} -setup {
+    .t column configure all -width ""
+    .t column configure C2 -visible no
+} -body {
+    colWid C0 C1 C2 C3 C4
+} -result {25 25 0 25 25}
+
+test display-7.41 {column spanning: hidden columns} -setup {
+    .t column configure C4 -visible no
+} -body {
+    colWid C0 C1 C2 C3 C4
+} -result {34 33 0 33 0}
+
+test display-7.42 {column spanning: hidden columns} -setup {
+    .t column configure all -visible no
+} -body {
+    colWid C0 C1 C2 C3 C4
+} -result {0 0 0 0 0}
+
 test style-99.1 {some needed cleanup} -body {
     destroy .t
 } -result {}
