@@ -2980,6 +2980,7 @@ TreeHeaderCmd(
 
 		if (TreeItem_ReallyVisible(tree, item)) {
 		    TreeColumns_InvalidateWidth(tree);
+		    TreeColumns_InvalidateSpans(tree);
 		    /* TreeItem_Delete will call TreeItem_FreeResources which
 		     * will call Tree_FreeItemDInfo will will set tree->headerHeight=-1
 		     * and set DINFO_DRAW_HEADER. */

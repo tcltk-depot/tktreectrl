@@ -3771,6 +3771,39 @@ TreeColumn_WidthOfHeaders(
 /*
  *----------------------------------------------------------------------
  *
+ * TreeColumns_InvalidateSpans --
+ *
+ *	Marks the spanMin & spanMax fields of every column as
+ *	out-of-date.
+ *	Called when anything affects the spans of items or headers,
+ *	such as:
+ *	a) header and item deletion
+ *	b) header and item visibility changes, including expanding,
+ *	   collapsing, or reparenting
+ *	d) [item span] or [header span] changed spans
+ *	e) column creation, deletion, reordering, or visibility
+ *	   changes (handled by TreeItem_SpansInvalidate).
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TreeColumns_InvalidateSpans(
+    TreeCtrl *tree		/* Widget info. */
+    )
+{
+    tree->columnSpansInvalid = TRUE;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TreeColumns_InvalidateWidthOfItems --
  *
  *	Marks the width requested by items in zero or more columns

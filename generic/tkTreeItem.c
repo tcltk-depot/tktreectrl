@@ -3060,6 +3060,7 @@ Item_ToggleOpen(
 
 	/* Hiding/showing children may change the width of any column */
 	TreeColumns_InvalidateWidthOfItems(tree, NULL);
+	TreeColumns_InvalidateSpans(tree);
     }
 
     /* If this item was previously onscreen, this call is repetitive. */
@@ -3141,9 +3142,6 @@ TreeItem_Delete(
     TreeItem item		/* Item token. */
     )
 {
-    if (TreeItem_ReallyVisible(tree, item) && (item->header == NULL))
-	TreeColumns_InvalidateWidthOfItems(tree, NULL);
-
     while (item->numChildren > 0)
 	TreeItem_Delete(tree, item->firstChild);
 
@@ -3385,6 +3383,7 @@ TreeItem_AddToParent(
     TreeItem_UpdateDepth(tree, item);
 
     TreeColumns_InvalidateWidthOfItems(tree, NULL);
+    TreeColumns_InvalidateSpans(tree);
 
     if (tree->debug.enable && tree->debug.data)
 	Tree_Debug(tree);
@@ -4288,7 +4287,7 @@ TreeItem_SpansInvalidate(
     if (count && tree->debug.enable && tree->debug.span)
 	dbwin("TreeItem_SpansInvalidate forgot %d items\n", count);
 
-    tree->columnSpansInvalid = TRUE; /* FIXME: only if item visible */
+    TreeColumns_InvalidateSpans(tree); /* FIXME: only if item visible? */
 }
 
 /*
@@ -5721,11 +5720,10 @@ Item_Configure(
     if ((mask & ITEM_CONF_VISIBLE) && (IS_VISIBLE(item) != lastVisible)) {
 
 	/* Changing the visibility of an item can change the width of
-	 * any column. This is due to column expansion (this item may
-	 * be the widest item in the column) and spans > 1. */
+	 * any column. This is due to column expansion (a style may
+	 * be the widest in a column) or when any span > 1. */
 	TreeColumns_InvalidateWidthOfItems(tree, NULL);
-
-tree->columnSpansInvalid = TRUE;
+	TreeColumns_InvalidateSpans(tree);
 
 	/* If this is the last child, redraw the lines of the previous
 	 * sibling and all of its descendants because the line from
@@ -9529,8 +9527,10 @@ reqSameRoot:
 		    TreeItem_Delete(tree, item);
 		}
 
-		if (redoColumns)
+		if (redoColumns) {
 		    TreeColumns_InvalidateWidthOfItems(tree, NULL);
+		    TreeColumns_InvalidateSpans(tree);
+		}
 	    }
 
 	    TreeItemList_Free(&selected);
@@ -9769,6 +9769,7 @@ reqSameRoot:
 	    if (tree->debug.enable && tree->debug.data)
 		Tree_Debug(tree);
 	    TreeColumns_InvalidateWidthOfItems(tree, NULL);
+	    TreeColumns_InvalidateSpans(tree);
 #ifdef SELECTION_VISIBLE
 	    Tree_DeselectHidden(tree);
 #endif
