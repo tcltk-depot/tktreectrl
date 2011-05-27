@@ -3643,9 +3643,9 @@ TreeColumn_RequestWidth(
     TreeCtrl *tree = column->tree;
 
     if (tree->columnSpansInvalid == FALSE) {
-#if defined(TREECTRL_DEBUG) && defined(WIN32)
-	if (spanMin->index < column->spanMin->index) DebugBreak();
-	if (spanMax->index > column->spanMax->index) DebugBreak();
+#ifdef TREECTRL_DEBUG
+	if (spanMin->index < column->spanMin->index) Debugger();
+	if (spanMax->index > column->spanMax->index) Debugger();
 #endif
     } else {
 	if (spanMin->index < column->spanMin->index)

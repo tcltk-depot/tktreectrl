@@ -254,6 +254,7 @@ TreeItem_RequestWidthInColumns(
 #ifdef TREECTRL_DEBUG
     if (columnMax == tree->columnTail)
 	panic("TreeItem_RequestWidthInColumns called with tail");
+    if (tree->columnReqInvalid || tree->columnReqSize < tree->columnCount) Debugger();
 #endif
 
     treeColumn = columnMin;
@@ -277,9 +278,9 @@ TreeItem_RequestWidthInColumns(
 	return;
     }
 
-#if defined(TREECTRL_DEBUG) && defined(WIN32)
+#if defined(TREECTRL_DEBUG)
     /* It must be true that a span starts at columnMin. */
-    if (spans[columnIndexMin] != columnIndexMin) DebugBreak();
+    if (spans[columnIndexMin] != columnIndexMin) Debugger();
 #endif
 
     for (columnIndex = columnIndexMin;
@@ -294,16 +295,23 @@ TreeItem_RequestWidthInColumns(
 	int loops = 0;
 #endif
 
-#if defined(TREECTRL_DEBUG) && defined(WIN32)
-	if (TreeColumn_Index(treeColumn) != columnIndex) DebugBreak();
-	if (TreeItemColumn_Index(tree, item, column) != columnIndex) DebugBreak();
+#if defined(TREECTRL_DEBUG)
+	if (TreeColumn_Index(treeColumn) != columnIndex) Debugger();
+	if (TreeItemColumn_Index(tree, item, column) != columnIndex) Debugger();
 	/* It must be true that a span starts at treeColumn. */
-	if (spans[columnIndex] != columnIndex) DebugBreak();
+	if (spans[columnIndex] != columnIndex) Debugger();
 #endif
 
 	while ((columnIndex2 <= columnIndexMax) &&
 		(spans[columnIndex2] == columnIndex)) {
 	    cd = &tree->columnReqData[columnIndex2];
+#if defined(TREECTRL_DEBUG)
+	    if (cd->column != treeColumn2) Debugger();
+	    if (cd->vis != TreeColumn_Visible(treeColumn2)) Debugger();
+	    if (TreeColumn_MaxWidth(treeColumn2) >= 0 && cd->min > TreeColumn_MaxWidth(treeColumn2)) Debugger();
+	    if (cd->max != TreeColumn_MaxWidth(treeColumn2)) Debugger();
+	    if (cd->fixed != TreeColumn_FixedWidth(treeColumn2)) Debugger();
+#endif
 	    cd->req = 0;
 	    if (cd->vis)
 		numVisibleColumns++;
@@ -314,9 +322,9 @@ TreeItem_RequestWidthInColumns(
 #ifdef TREECTRL_DEBUG
 	loops++;
 #endif
-#if defined(TREECTRL_DEBUG) && defined(WIN32)
+#if defined(TREECTRL_DEBUG)
 	/* It must be true that a span starts at treeColumn. */
-	if (spans[TreeColumn_Index(lastColumnInSpan)] != columnIndex) DebugBreak();
+	if (spans[TreeColumn_Index(lastColumnInSpan)] != columnIndex) Debugger();
 #endif
 
 	if (column->style != NULL)
@@ -420,9 +428,9 @@ TreeItem_RequestWidthInColumns(
 		}
 		spaceUsed = MIN(spaceUsed, spaceRemaining);
 		cd->req += spaceUsed;
-#if defined(TREECTRL_DEBUG) && defined(WIN32)
-		if (cd->fixed >= 0 && cd->req > cd->fixed) DebugBreak();
-		if (cd->fixed < 0 && cd->max >= 0 && cd->req > cd->max) DebugBreak();
+#if defined(TREECTRL_DEBUG)
+		if (cd->fixed >= 0 && cd->req > cd->fixed) Debugger();
+		if (cd->fixed < 0 && cd->max >= 0 && cd->req > cd->max) Debugger();
 #endif
 		spaceRemaining -= spaceUsed;
 		if (spaceRemaining <= 0)
@@ -3858,10 +3866,10 @@ Item_HeightOfStyles(
 		TreeColumn treeColumn2 = treeColumn;
 		drawArgs.indent = TreeItem_Indent(tree, treeColumn, item);
 		drawArgs.width = 0;
-#if defined(TREECTRL_DEBUG) && defined(WIN32)
-		if (TreeColumn_Index(treeColumn) != columnIndex) DebugBreak();
-		if (TreeItemColumn_Index(tree, item, column) != columnIndex) DebugBreak();
-		if (spans[columnIndex] != columnIndex) DebugBreak();
+#if defined(TREECTRL_DEBUG)
+		if (TreeColumn_Index(treeColumn) != columnIndex) Debugger();
+		if (TreeItemColumn_Index(tree, item, column) != columnIndex) Debugger();
+		if (spans[columnIndex] != columnIndex) Debugger();
 #endif
 		while (spans[columnIndex2] == columnIndex) {
 		    if (!TreeColumn_Visible(treeColumn2)) {

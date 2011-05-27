@@ -76,6 +76,39 @@ void dbwin(char *fmt, ...)
     }
 }
 
+#if defined(TREECTRL_DEBUG)
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeCtrl_BreakIntoDebugger --
+ *
+ *	If running in a debugger, call DebugBreak(), otherwise
+ *	panic().
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TreeCtrl_BreakIntoDebugger(
+    const char *file,
+    int line
+    )
+{
+#if defined(WIN32)
+    if (IsDebuggerPresent())
+	DebugBreak();
+    else
+#endif
+    panic("Debugger call at %s:%d", file, line);
+}
+#endif /* TREECTRL_DEBUG */
+
 /*
  * Forward declarations for procedures defined later in this file:
  */

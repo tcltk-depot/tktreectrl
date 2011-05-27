@@ -823,6 +823,11 @@ MODULE_SCOPE TreeItem TreeItemForEach_Next(ItemForEach *iter);
 	 item != NULL; \
 	 item = TreeItemForEach_Next(iter))
 
+#ifdef TREECTRL_DEBUG
+#define Debugger() TreeCtrl_BreakIntoDebugger(__FILE__, __LINE__)
+MODULE_SCOPE void TreeCtrl_BreakIntoDebugger(const char *file, int line);
+#endif
+
 #define FormatResult TreeCtrl_FormatResult
 MODULE_SCOPE void FormatResult(Tcl_Interp *interp, char *fmt, ...);
 #define DStringAppendf TreeCtrl_DStringAppendf
