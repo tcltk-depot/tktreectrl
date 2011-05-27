@@ -43,7 +43,7 @@ proc DemoHelpContents {} {
     $T element create elemImgPage image -image help-page
     $T element create elemImgBook image -image {help-book-open {open} help-book-closed {}}
     $T element create elemTxt text -fill [list $::SystemHighlightText {selected focus} blue {mouseover}] \
-	-font [list DemoFontUnderline {mouseover}]
+	-font [list DemoFontUnderline {mouseover}] -lines 1
     $T element create elemRectSel rect -fill [list $::SystemHighlight {selected focus}] -showfocus yes
 
     #
@@ -54,14 +54,14 @@ proc DemoHelpContents {} {
     set S [$T style create styBook]
     $T style elements $S {elemRectSel elemImgBook elemTxt}
     $T style layout $S elemImgBook -padx {0 4} -expand ns
-    $T style layout $S elemTxt -expand ns
+    $T style layout $S elemTxt -expand ns -squeeze x
     $T style layout $S elemRectSel -union [list elemTxt] -iexpand ns -ipadx 2
 
     # page
     set S [$T style create styPage]
     $T style elements $S {elemRectSel elemImgPage elemTxt}
     $T style layout $S elemImgPage -padx {0 4} -expand ns
-    $T style layout $S elemTxt -expand ns
+    $T style layout $S elemTxt -expand ns -squeeze x
     $T style layout $S elemRectSel -union [list elemTxt] -iexpand ns -ipadx 2
 
     #

@@ -44,8 +44,10 @@ proc DemoInternetOptions {} {
 	internet-radio-on {radio on}
 	internet-radio-off {radio}
     }
-    $T element create elemTxt text -fill [list $::SystemHighlightText {selected focus}]
-    $T element create elemRectSel rect -fill [list $::SystemHighlight {selected focus}] -showfocus yes
+    $T element create elemTxt text \
+	-fill [list $::SystemHighlightText {selected focus}] -lines 1
+    $T element create elemRectSel rect \
+	-fill [list $::SystemHighlight {selected focus}] -showfocus yes
 
     #
     # Create styles using the elements
@@ -54,7 +56,7 @@ proc DemoInternetOptions {} {
     set S [$T style create STYLE]
     $T style elements $S {elemRectSel elemImg elemTxt}
     $T style layout $S elemImg -padx {0 4} -expand ns
-    $T style layout $S elemTxt -expand ns
+    $T style layout $S elemTxt -expand ns -squeeze x
     $T style layout $S elemRectSel -union [list elemTxt] -iexpand ns -ipadx 2
 
     #
