@@ -1,8 +1,32 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html><head>
+
   <meta content="text/html; charset=ISO-8859-1" http-equiv="content-type"><title>What's New in TkTreeCtrl</title>
   <meta content="Tim Baker" name="author"></head><body>
-<h1>What's New in TkTreeCtrl 2.4</h1>
+<h1>What's New in TkTreeCtrl 2.4</h1><span style="font-weight: bold;">Changes since 2.4b1:</span><br>
+<ul>
+  <li>Fixed the header config option <span style="font-weight: bold;">-text</span> being treated like a per-state option.</li>
+  <li>Fixed rectangle and 3D border drawing on X11 due to 16-bit
+coordinates.&nbsp; When items or headers were very wide, rectangles and
+borders wouldn't be drawn correctly.</li>
+  <li>Fixed dragging headers in locked columns not displaying correctly.</li>
+  <li>Fixed [identify] when right-locked headers were drawn over
+left-locked headers, the point was reported as being in the left-locked
+headers.</li>
+  <li>Fixed a library-script error when dragging headers when only locked columns were visible.</li>
+  <li>Fixed <span style="font-weight: bold;">-canvaspady</span> being ignored when only locked columns were visible.</li>
+  <li>Fixed the column-resize proxy line going past the right edge of a column when resizing right-locked columns.</li>
+  <li>Right-locked columns are always resized by their left edge
+now.&nbsp; Previously, only the leftmost and rightmost right-locked
+columns were resized by their left edge, which was inconsistent and
+weird.</li>
+  <li>If an instance element was displaying its master's <span style="font-weight: bold;">-textvariable</span> string, the instance element would not be redisplayed when that <span style="font-weight: bold;">-textvariable</span> variable was modified.</li>
+  <li>The spans of dragged headers are restricted to the range of
+dragged columns, and the spans of non-dragged headers are terminated if
+they reach the first dragged column.</li>
+  <li>Improved column-spanning behavior.&nbsp; See "Column Spanning" below.<br>
+  </li>
+</ul>
 <h2>Header Command</h2>
 
 
@@ -265,12 +289,34 @@ Event Changes
   <li>A new event, <span style="font-weight: bold;">&lt;Header-state&gt;</span>, is generated whenever the state of an individual column header is changed during mouse-pointer events.<br>
   </li>
 </ul>
+<h2>Column Spanning</h2>Previously, a style spanning more than one
+column would request all of its width in the first column of the span.
+Now, a style distributes its width across all the visible columns in a
+span, taking into account the <span style="font-weight: bold;">-minwidth</span>, <span style="font-weight: bold;">-width</span>, and <span style="font-weight: bold;">-maxwidth</span> column options.<br>
+<br>
+Also, when calculating the needed height of an item or header, spans
+were ignored.&nbsp; Only the width of the first column in a span was
+considered when calculating the needed height of a style.&nbsp; As a
+result, an item might appear much taller than it needed when lines of
+text were wrapping.<br>
 <h2>Demo Changes</h2>
+
 <ul>
-  <li>A new demo called Headers was added to demonstrate multiple rows
+  <li>A new demo called "Headers" was added to demonstrate multiple rows
 of column headers and customizing the appearance of column headers
-using styles.<br>
-</li>
+using styles.</li>
+  <li>The "Column Spanning" demo was updated to take advantage of the new column-spanning algorithm.&nbsp; Previously, the <span style="font-weight: bold;">-width</span>
+option of each column needed to be set to the width of the "Span 1"
+style, otherwise the columns would have been as wide as the widest
+style in that column, and resizing columns caused gaps to appear
+between styles.</li>
+  <li>The three "Gradients" demos were updated to take advantage of the new column-spanning algorithm.&nbsp; Previously, the <span style="font-weight: bold;">-width</span>
+of the text elements displaying long lines of descriptive text was set
+to the total width of the columns.&nbsp; If the text was allowed to
+wrap, the height of the items would be wrong since spans were
+ignored.&nbsp; Now the text wraps nicely when columns are resized.<br>
+  </li>
+
 </ul><hr style="width: 100%; height: 2px;"><h1>What's New in TkTreeCtrl 2.3.2</h1>
 <h2>Bug Fixes</h2>
 <ul>
