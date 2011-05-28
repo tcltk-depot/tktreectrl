@@ -246,7 +246,7 @@ TreeItem_RequestWidthInColumns(
     int *spans = TreeItem_GetSpans(tree, item);
     TreeItemColumn column;
     TreeColumn treeColumn;
-    int columnIndex, width;
+    int columnIndex, width, indent;
     ColumnReqData *cd;
 #ifdef TREECTRL_DEBUG
     int maxLoops = 0;
@@ -269,8 +269,8 @@ TreeItem_RequestWidthInColumns(
 		    item->state | column->cstate);
 	    else
 		width = 0;
-	    if (!doHeaders)
-		width += TreeItem_Indent(tree, treeColumn, item);
+	    indent = doHeaders ? 0 : TreeItem_Indent(tree, treeColumn, item);
+	    width += indent;
 	    TreeColumn_RequestWidth(treeColumn, width, treeColumn, treeColumn,
 		doHeaders);
 	    treeColumn = TreeColumn_Next(treeColumn);
@@ -310,6 +310,7 @@ TreeItem_RequestWidthInColumns(
 	    if (cd->column != treeColumn2) Debugger();
 	    if (cd->vis != TreeColumn_Visible(treeColumn2)) Debugger();
 	    if (TreeColumn_MaxWidth(treeColumn2) >= 0 && cd->min > TreeColumn_MaxWidth(treeColumn2)) Debugger();
+	    if (TreeColumn_MaxWidth(treeColumn2) < 0 && cd->min != TreeColumn_MinWidth(treeColumn2)) Debugger();
 	    if (cd->max != TreeColumn_MaxWidth(treeColumn2)) Debugger();
 	    if (cd->fixed != TreeColumn_FixedWidth(treeColumn2)) Debugger();
 #endif
@@ -334,16 +335,20 @@ TreeItem_RequestWidthInColumns(
 	else
 	    width = 0;
 
-	/* If there's no style, request indent width and update the range
-	 * of columns in the span. */
+	/* Indentation is spread amongst the visible columns as well, and
+	 * is only used if the -treecolumn is the first column in the span. */
+	indent = doHeaders ? 0 : TreeItem_Indent(tree, treeColumn, item);
+	width += indent;
+
+	/* If the there's no style, or the style has no width, and there's no
+	 * indentation, just update the range of columns in the span. */
 	if (width <= 0) {
 	    columnIndex2 = columnIndex;
 	    treeColumn2 = treeColumn;
 	    while ((columnIndex2 <= columnIndexMax) &&
 		    (spans[columnIndex2] == columnIndex)) {
-		width = doHeaders ? 0 : TreeItem_Indent(tree, treeColumn2, item);
 /* FIXME: check TreeColumn_Visible? */
-		TreeColumn_RequestWidth(treeColumn2, width, treeColumn,
+		TreeColumn_RequestWidth(treeColumn2, 0, treeColumn,
 		    lastColumnInSpan, doHeaders);
 		treeColumn2 = TreeColumn_Next(treeColumn2);
 		columnIndex2++;
@@ -447,12 +452,10 @@ TreeItem_RequestWidthInColumns(
 	for (columnIndex2 = columnIndex;
 		columnIndex2 <= TreeColumn_Index(lastColumnInSpan);
 		columnIndex2++) {
-	    int indent;
 	    cd = &tree->columnReqData[columnIndex2];
 	    if (!cd->vis) continue;
-	    indent = doHeaders ? 0 : TreeItem_Indent(tree, cd->column, item);
-	    TreeColumn_RequestWidth(cd->column, cd->req + indent,
-		treeColumn, lastColumnInSpan, doHeaders);
+	    TreeColumn_RequestWidth(cd->column, cd->req, treeColumn,
+		lastColumnInSpan, doHeaders);
 	}
 #ifdef TREECTRL_DEBUG
 	loops++;
