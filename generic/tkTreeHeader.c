@@ -674,8 +674,7 @@ TreeHeaderColumn_ConfigureHeaderStyle(
 	TreeItem_InvalidateHeight(tree, header->item);
 	TreeItemColumn_InvalidateSize(tree, column->itemColumn);
 	Tree_FreeItemDInfo(tree, header->item, NULL);
-TreeColumns_InvalidateWidthOfItems(tree, treeColumn); /* widthOfHeadersInvalid */
-	TreeColumns_InvalidateWidth(tree);
+	TreeColumns_InvalidateWidthOfItems(tree, treeColumn);
     } else if (iMask & CS_DISPLAY)
 	Tree_InvalidateItemDInfo(tree, treeColumn, header->item, NULL);
 
@@ -1931,7 +1930,7 @@ TreeHeader_FreeResources(
  *
  * TreeHeaders_RequestWidthInColumns --
  *
- *	Calculates the width needed by styles in every column
+ *	Calculates the width needed by styles in a range of columns
  *	for every visible header-row.
  *
  * Results:
@@ -1945,15 +1944,16 @@ TreeHeader_FreeResources(
 
 void
 TreeHeaders_RequestWidthInColumns(
-    TreeCtrl *tree		/* Widget info. */
+    TreeCtrl *tree,		/* Widget info. */
+    TreeColumn columnMin,
+    TreeColumn columnMax
     )
 {
     TreeItem item = tree->headerItems;
 
     while (item != NULL) {
 	if (TreeItem_ReallyVisible(tree, item)) {
-	    TreeItem_RequestWidthInColumns(tree, item, tree->columns,
-		tree->columnLast);
+	    TreeItem_RequestWidthInColumns(tree, item, columnMin, columnMax);
 	}
 	item = TreeItem_GetNextSibling(tree, item);
     }

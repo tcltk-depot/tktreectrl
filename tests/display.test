@@ -501,6 +501,21 @@ test display-7.42 {column spanning: hidden columns} -setup {
     colWid C0 C1 C2 C3 C4
 } -result {0 0 0 0 0}
 
+test display-7.50 {column spanning: trim the fat} -setup {
+    .t column configure all -visible yes
+    .t item span root all 1
+    .t item style set root C1 s1
+    .t item element configure root C0 e1 -width 75
+    .t item element configure root C1 e1 -width 25
+
+    .t item create -tags item1
+    .t item style set item1 C0 s1
+    .t item element configure item1 C0 e1 -width 100
+    .t item span item1 C0 2
+} -body {
+    colWid C0 C1 C2 C3 C4
+} -result {75 25 0 0 0}
+
 test style-99.1 {some needed cleanup} -body {
     destroy .t
 } -result {}

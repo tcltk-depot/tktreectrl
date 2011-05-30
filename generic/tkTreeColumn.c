@@ -12,6 +12,56 @@
 
 typedef struct TreeColumn_ TreeColumn_;
 
+/* A structure of the following type is kept for each span in an item or
+ * header that covers a unique range of columns. */
+typedef struct ColumnSpan ColumnSpan;
+struct ColumnSpan
+{
+    TreeColumn start;		/* First column in the span. */
+    TreeColumn end;		/* Last column in the span. */
+    int maxNeededWidth;		/* Width of the widest style in any item
+				 * or header. */
+    int widthOfColumns;		/* Sum of the calculated display widths of
+				 * the columns. */
+    ColumnSpan *next;		/* Linked list for each TreeCtrl. */
+};
+
+/* A structure of the following type is kept for each TreeColumn in a
+ * TreeCtrl.  This is used when calculating the requested width of styles. */
+typedef struct ColumnReqData ColumnReqData;
+struct ColumnReqData
+{
+    int vis;		/* TRUE if the column is visible, otherwise FALSE. */
+    int min;		/* -minwidth or -1, no greater than -maxwidth. */
+    int fixed;		/* -width, or -1. */
+    int max;		/* -maxwidth or -1. */
+    int req;		/* The width requested by a all or part of a style
+			 * in a single item in this column. */
+    int maxSingleSpanWidth; /* The widest span of 1. */
+    ColumnSpan **spans; /* Array of span record pointers touching this column.
+			 * This does NOT use ColumnSpan.next. */
+    int spanCount;	/* Number of useful elements in spans[]. */
+    int spanAlloc;	/* Number of elements allocated in spans[]. */
+    TreeColumn spanMin;		/* Any span that includes this column */
+    TreeColumn spanMax;		/* begins on or after spanMin and ends on */
+				/* or before spanMax.  This includes spans */
+				/* in headers and items. */
+};
+
+/* A structure of the following type is kept for each TreeCtrl to hold
+ * private data used by this file. */
+struct TreeColumnPriv_
+{
+    int spansInvalid;		/* TRUE if the TreeColumn.spanMin and
+				 * TreeColumn.spanMax fields are
+				 * out-of-date, otherwise FALSE. */
+    int reqInvalid;		/* TRUE if TreeColumn.reqData is out-of-date,
+				 * otherwise FALSE. */
+    ColumnSpan *spans;
+    ColumnSpan *freeSpans;
+    int maxSumOfSpanWidths;
+};
+
 #ifdef UNIFORM_GROUP
 typedef struct UniformGroup {
     Tcl_HashEntry *hPtr;	/* Entry in TreeCtrl.uniformGroupHash */
@@ -60,10 +110,6 @@ struct TreeColumn_
     TreeColor **itemBgColor;	/* -itembackground colors */
     TreeColumn prev;
     TreeColumn next;
-    TreeColumn spanMin;		/* Any span that includes this column */
-    TreeColumn spanMax;		/* begins on or after spanMin and ends on */
-				/* or before spanMax.  This includes spans */
-				/* in headers and items. */
 #ifdef UNIFORM_GROUP
     UniformGroup *uniform;	/* -uniform */
     int weight;			/* -weight */
@@ -75,6 +121,7 @@ struct TreeColumn_
     TreeColor *gridLeftColor;	/* -gridleftcolor */
     TreeColor *gridRightColor;	/* -gridrightcolor */
 #endif
+    ColumnReqData reqData;
 };
 
 #ifdef UNIFORM_GROUP
@@ -2070,8 +2117,8 @@ Column_Config(
 
     /* Redraw everything */
     if (mask & COLU_CONF_TWIDTH) {
-	if ((column->spanMin != NULL) && /* if it's NULL, then it's hidden or tree->columnSpansInvalid=TRUE */
-		(column->spanMin != column->spanMax)) { /* spans of 1 don't require item-width recalc */
+	if ((column->reqData.spanMin != NULL) && /* if it's NULL, then it's hidden or tree->spansInvalid=TRUE */
+		(column->reqData.spanMin != column->reqData.spanMax)) { /* spans of 1 don't require item-width recalc */
 	    TreeColumns_InvalidateWidthOfItems(tree, column);
 	}
 	TreeColumns_InvalidateWidth(tree);
@@ -2180,6 +2227,8 @@ Column_Free(
     Column_FreeColors(column, column->itemBgColor, column->itemBgCount);
     TreeDisplay_FreeColumnDInfo(tree, column);
     Tk_FreeConfigOptions((char *) column, column->optionTable, tree->tkwin);
+    if (column->reqData.spans != NULL)
+	ckfree((char *) column->reqData.spans);
     WFREE(column, TreeColumn_);
     tree->columnCount--;
     if (tree->columnCount == 0)
@@ -3341,7 +3390,7 @@ doneDELETE:
 	    TreeColumns_InvalidateCounts(tree);
 	    tree->widthOfColumns = tree->headerHeight = -1;
 	    tree->widthOfColumnsLeft = tree->widthOfColumnsRight = -1;
-	    tree->columnReqInvalid = TRUE;
+	    tree->columnPriv->reqInvalid = TRUE;
 	    Tree_DInfoChanged(tree, DINFO_REDO_COLUMN_WIDTH);
 
 	    /* Indicate that all items must recalculate their list of spans. */
@@ -3582,54 +3631,9 @@ errorExit:
 /*
  *----------------------------------------------------------------------
  *
- * TreeColumn_RequestWidth --
- *
- *	Request some width in a single column.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-void
-TreeColumn_RequestWidth(
-    TreeColumn column,		/* Column to request width in. */
-    int width,			/* Width to request in the column. */
-    TreeColumn spanMin,		/* The column at the start of a span. */
-    TreeColumn spanMax,		/* The column at the end of a span. */
-    int doHeaders		/* TRUE if requesting space in headers,
-				 * FALSE if requesting space in items. */
-    )
-{
-    TreeCtrl *tree = column->tree;
-
-    if (tree->columnSpansInvalid == FALSE) {
-#ifdef TREECTRL_DEBUG
-	if (spanMin->index < column->spanMin->index) Debugger();
-	if (spanMax->index > column->spanMax->index) Debugger();
-#endif
-    } else {
-	if (spanMin->index < column->spanMin->index)
-	    column->spanMin = spanMin;
-	if (spanMax->index > column->spanMax->index)
-	    column->spanMax = spanMax;
-    }
-    if (doHeaders)
-	column->widthOfHeaders = MAX(column->widthOfHeaders, width);
-    else
-	column->widthOfItems = MAX(column->widthOfItems, width);
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * InitColumnReqData --
  *
- *	Initialize an array used by the column-spanning code.
+ *	Initialize the ColumnReqData structure in every column.
  *
  * Results:
  *	None.
@@ -3645,37 +3649,469 @@ InitColumnReqData(
     TreeCtrl *tree
     )
 {
+    TreeColumnPriv priv = tree->columnPriv;
     ColumnReqData *cd;
     TreeColumn column;
 
-    if (!tree->columnReqInvalid || tree->columnCount == 0)
+    if (!priv->reqInvalid || tree->columnCount == 0)
 	return;
 
 /*dbwin("InitColumnReqData %s\n", Tk_PathName(tree->tkwin));*/
 
-    if (tree->columnReqSize < tree->columnCount) {
-	tree->columnReqData = (ColumnReqData *) ckrealloc(
-	    (char *) tree->columnReqData, sizeof(ColumnReqData) *
-	    tree->columnCount);
-	tree->columnReqSize = tree->columnCount;
-    }
-
-    cd = tree->columnReqData;
     for (column = tree->columns;
 	    column != NULL;
 	    column = column->next) {
-	cd->column = column;
+	cd = &column->reqData;
 	cd->vis = TreeColumn_Visible(column);
 	cd->min = TreeColumn_MinWidth(column);
 	cd->fixed = TreeColumn_FixedWidth(column);
 	cd->max = TreeColumn_MaxWidth(column);
-	cd->req = 0;
+/*	cd->req = 0;*/
 	if ((cd->max >= 0) && (cd->min > cd->max))
 	    cd->min = cd->max;
-	++cd;
     }
 
-    tree->columnReqInvalid = FALSE;
+    priv->reqInvalid = FALSE;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * AddColumnSpan --
+ *
+ *	Adds or updates a span record for a range of columns
+ *	covered by a span.  For every unique range of columns covered
+ *	by a span, there exists exactly one ColumnSpan record.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Memory may be allocated.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+AddColumnSpan(
+    TreeColumn spanMin,		/* First column in the span. */
+    TreeColumn spanMax,		/* Last column in the span. */
+    int neededWidth		/* Width needed by the span. */
+    )
+{
+    TreeCtrl *tree = spanMin->tree;
+    TreeColumnPriv priv = tree->columnPriv;
+    ColumnSpan *cs = priv->spans;
+    ColumnReqData *cd = &spanMin->reqData;
+    TreeColumn column;
+    int i;
+
+    for (i = 0; i < cd->spanCount; i++) {
+	cs = cd->spans[i];
+	if ((cs->start == spanMin) && (cs->end == spanMax))
+	    break;
+    }
+    if (i < cd->spanCount) {
+	cs->maxNeededWidth = MAX(cs->maxNeededWidth, neededWidth);
+	return;
+    }
+
+    if (priv->freeSpans == NULL)
+	cs = (ColumnSpan *) ckalloc(sizeof(ColumnSpan));
+    else {
+	cs = priv->freeSpans;
+	priv->freeSpans = cs->next;
+    }
+    cs->start = spanMin;
+    cs->end = spanMax;
+    cs->maxNeededWidth = neededWidth;
+    cs->next = priv->spans;
+    priv->spans = cs;
+
+    for (column = spanMin; column != spanMax->next; column = column->next) {
+	cd = &column->reqData;
+	/* Add this new span record to the list of span records touching
+	*  this column. */
+	if (cd->spanAlloc < cd->spanCount + 10) {
+	    cd->spans = (ColumnSpan **) ckrealloc((char *) cd->spans, sizeof(ColumnSpan *) * (cd->spanCount + 10));
+	    cd->spanAlloc = cd->spanCount + 10;
+	}
+	cd->spans[cd->spanCount++] = cs;
+
+	/* Track the minimum and maximum columns of any span touching this
+	 * column.*/
+	if (priv->spansInvalid == FALSE) {
+#ifdef TREECTRL_DEBUG
+	    if (spanMin->index < cd->spanMin->index) Debugger();
+	    if (spanMax->index > cd->spanMax->index) Debugger();
+#endif
+	} else {
+	    if (spanMin->index < cd->spanMin->index)
+		cd->spanMin = spanMin;
+	    if (spanMax->index > cd->spanMax->index)
+		cd->spanMax = spanMax;
+	}
+
+	/* Remember the widest span of 1 in this column. */
+	if (spanMin == spanMax) {
+	    cd->maxSingleSpanWidth = MAX(cd->maxSingleSpanWidth, neededWidth);
+	}
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TrimTheFat --
+ *
+ *	Removes excess width from columns that may have been added by
+ *	DistributeSpanWidthToColumns(). In the scenario below, where
+ *	two items and the width needed by each span is shown,
+ *	Column0 will have a requested width of 75, and Column1 will
+ *	have a requested width of 100/2=50, for a total width of
+ *	75+50=125, which is wider than any item needs.  At the end of
+ *	this procedure, the requested width of Column1 will be 25.
+ *
+ *	       Column0 Column1
+ *	item1: 75----- 25----
+ *	item2: 100-----------
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+TrimTheFat(
+    TreeColumn start,
+    TreeColumn end
+    )
+{
+    TreeCtrl *tree = start->tree;
+    TreeColumnPriv priv = tree->columnPriv;
+    TreeColumn column;
+    int sumOfColumnWidths = 0, fat, fatPerCol;
+    int numColsThatCanShrink = 0, csn;
+int numSpanRecords = 0;
+    ColumnReqData *cd;
+    ColumnSpan *cs;
+
+    if (priv->maxSumOfSpanWidths <= 0)
+	return;
+
+    for (column = start; column != end->next; column = column->next) {
+	cd = &column->reqData;
+	sumOfColumnWidths += (cd->fixed >= 0) ? cd->fixed : column->widthOfItems;
+	if ((cd->fixed < 0) && (column->widthOfItems > MAX(cd->maxSingleSpanWidth, cd->min)))
+	    numColsThatCanShrink++;
+    }
+
+    if (!numColsThatCanShrink)
+	return;
+    fat = sumOfColumnWidths - priv->maxSumOfSpanWidths;
+    if (fat <= 0)
+	return;
+    fatPerCol = MAX(1, fat / numColsThatCanShrink);
+
+    /* Sum the current widths of columns in each span record. */
+    for (cs = priv->spans; cs != NULL; cs = cs->next) {
+	cs->widthOfColumns = 0;
+	for (column = cs->start; column != cs->end->next; column = column->next) {
+	    cd = &column->reqData;
+	    cs->widthOfColumns += (cd->fixed >= 0) ? cd->fixed : column->widthOfItems;
+	}
+numSpanRecords++;
+    }
+/*dbwin("start=%d end=%d maxSumOfSpanWidths=%d numColsThatCanShrink=%d numSpanRecords=%d fat=%d\n", start->index, end->index, priv->maxSumOfSpanWidths, numColsThatCanShrink, numSpanRecords, fat);*/
+
+    while (fat > 0) {
+	int origFat = fat;
+	for (column = start; column != end->next; column = column->next) {
+	    int minSpanFat = -1;
+	    cd = &column->reqData;
+	    if ((cd->fixed >= 0) || (column->widthOfItems <= cd->min) ||
+		    (column->widthOfItems <= cd->maxSingleSpanWidth))
+		continue;
+	    for (csn = 0; csn < cd->spanCount; csn++) {
+		cs = cd->spans[csn];
+		if (cs->widthOfColumns > cs->maxNeededWidth) {
+		    if (minSpanFat == -1)
+			minSpanFat = cs->widthOfColumns - cs->maxNeededWidth;
+		    else
+			minSpanFat = MIN(minSpanFat, cs->widthOfColumns - cs->maxNeededWidth);
+		} else {
+		    minSpanFat = 0; /* no span touching this column can get smaller */
+		    break;
+		}
+	    }
+	    if (minSpanFat > 0) {
+		int trim = MIN(minSpanFat, fatPerCol);
+		if (column->widthOfItems - trim < cd->min)
+		    trim = column->widthOfItems - cd->min;
+		if (column->widthOfItems - trim < cd->maxSingleSpanWidth)
+		    trim = column->widthOfItems - cd->maxSingleSpanWidth;
+		column->widthOfItems -= trim;
+/*dbwin("trimmed column %d by %d\n", column->index, trim);*/
+		fat -= trim;
+		if (fat <= 0) break;
+		for (csn = 0; csn < cd->spanCount; csn++) {
+		    cs = cd->spans[csn];
+		    cs->widthOfColumns -= trim;
+		}
+	    }
+	}
+	if (fat == origFat)
+	    break;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TreeItem_RequestWidthInColumns --
+ *
+ *	Calculates the width needed by styles in a range of columns
+ *	for a single header or item.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TreeItem_RequestWidthInColumns(
+    TreeCtrl *tree,		/* Widget info. */
+    TreeItem item,
+    TreeColumn columnMin,
+    TreeColumn columnMax
+    )
+{
+    TreeColumnPriv priv = tree->columnPriv;
+    int doHeaders = TreeItem_GetHeader(tree, item) != NULL;
+    int columnIndexMin = TreeColumn_Index(columnMin);
+    int columnIndexMax = TreeColumn_Index(columnMax);
+    int *spans = TreeItem_GetSpans(tree, item);
+    TreeItemColumn column;
+    TreeColumn treeColumn;
+    int columnIndex, width, indent, sumOfSpanWidths = 0;
+
+#ifdef TREECTRL_DEBUG
+    if (columnMax == tree->columnTail) Debugger();
+    if (priv->reqInvalid) Debugger();
+#endif
+
+    treeColumn = columnMin;
+    column = TreeItem_FindColumn(tree, item, columnIndexMin);
+    if (spans == NULL) {
+	for (columnIndex = columnIndexMin;
+		columnIndex <= columnIndexMax;
+		++columnIndex) {
+	    width = (column != NULL) ?
+		TreeItemColumn_NeededWidth(tree, item, column) : 0;
+	    /* FIXME? Previous version did not request width from -indent
+	     * if there was no style. */
+	    indent = doHeaders ? 0 : TreeItem_Indent(tree, treeColumn, item);
+	    width += indent;
+	    AddColumnSpan(treeColumn, treeColumn, width);
+	    sumOfSpanWidths += width;
+	    treeColumn = TreeColumn_Next(treeColumn);
+	    if (column != NULL)
+		column = TreeItemColumn_GetNext(tree, column);
+	}
+	priv->maxSumOfSpanWidths = MAX(priv->maxSumOfSpanWidths, sumOfSpanWidths);
+	return;
+    }
+
+#if defined(TREECTRL_DEBUG)
+    /* It must be true that a span starts at columnMin. */
+    if (spans[columnIndexMin] != columnIndexMin) Debugger();
+#endif
+
+    for (columnIndex = columnIndexMin;
+	    columnIndex <= columnIndexMax;
+	    /*++columnIndex*/) {
+	int columnIndex2 = columnIndex;
+	TreeColumn treeColumn2 = treeColumn;
+	TreeColumn lastColumnInSpan = treeColumn;
+#if defined(TREECTRL_DEBUG)
+	if (TreeColumn_Index(treeColumn) != columnIndex) Debugger();
+	if (TreeItemColumn_Index(tree, item, column) != columnIndex) Debugger();
+	if (spans[columnIndex] != columnIndex) Debugger();
+#endif
+	while ((columnIndex2 <= columnIndexMax) &&
+		(spans[columnIndex2] == columnIndex)) {
+	    lastColumnInSpan = treeColumn2;
+	    treeColumn2 = TreeColumn_Next(treeColumn2);
+	    columnIndex2++;
+	}
+	width = (column != NULL) ?
+	    TreeItemColumn_NeededWidth(tree, item, column) : 0;
+
+	/* Indentation is spread amongst the visible columns as well, and
+	 * is only used if the -treecolumn is the first column in the span. */
+	/* FIXME? Previous version did not request width from -indent
+	* if there was no style. */
+	indent = doHeaders ? 0 : TreeItem_Indent(tree, treeColumn, item);
+	width += indent;
+	sumOfSpanWidths += width;
+	AddColumnSpan(treeColumn, lastColumnInSpan, width);
+
+	treeColumn = TreeColumn_Next(lastColumnInSpan);
+	if (treeColumn == NULL)
+	    break;
+	while ((column != NULL) && (columnIndex < TreeColumn_Index(treeColumn))) {
+	    column = TreeItemColumn_GetNext(tree, column);
+	    ++columnIndex;
+	}
+    }
+
+    priv->maxSumOfSpanWidths = MAX(priv->maxSumOfSpanWidths, sumOfSpanWidths);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DistributeSpanWidthToColumns --
+ *
+ *	Ensures that each range of columns covered by a span is wide
+ *	enough to contain that span.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+DistributeSpanWidthToColumns(
+    TreeCtrl *tree
+    )
+{
+    TreeColumnPriv priv = tree->columnPriv;
+    ColumnSpan *cs;
+    ColumnReqData *cd;
+    TreeColumn column;
+
+    for (cs = priv->spans; cs != NULL; cs = cs->next) {
+	int numVisibleColumns = 0, spaceRemaining = cs->maxNeededWidth;
+	int numMinWidth = 0, minMinWidth = -1, varWidth = 0;
+
+	if (cs->maxNeededWidth <= 0)
+	    continue;
+
+	for (column = cs->start;
+		column != cs->end->next;
+		column = column->next) {
+	    cd = &column->reqData;
+#if defined(TREECTRL_DEBUG)
+	    if (cd->vis != TreeColumn_Visible(column)) Debugger();
+	    if (TreeColumn_MaxWidth(column) >= 0 && cd->min > TreeColumn_MaxWidth(column)) Debugger();
+	    if (TreeColumn_MaxWidth(column) < 0 && cd->min != TreeColumn_MinWidth(column)) Debugger();
+	    if (cd->max != TreeColumn_MaxWidth(column)) Debugger();
+	    if (cd->fixed != TreeColumn_FixedWidth(column)) Debugger();
+#endif
+	    cd->req = 0;
+	    if (cd->vis)
+		numVisibleColumns++;
+	}
+
+	/* Dump space into fixed-width and minwidth */
+	for (column = cs->start;
+		(spaceRemaining > 0) &&
+		(column != cs->end->next);
+		column = column->next) {
+	    int spaceUsed;
+	    cd = &column->reqData;
+	    if (!cd->vis) continue;
+	    if (cd->fixed >= 0) {
+		spaceUsed = cd->fixed;
+		numVisibleColumns--;
+	    } else if (cd->min >= 0) {
+		spaceUsed = cd->min;
+		++numMinWidth;
+		if (minMinWidth == -1)
+		    minMinWidth = cd->min;
+		else
+		    minMinWidth = MIN(minMinWidth, cd->min);
+	    } else
+		continue;
+	    spaceUsed = MIN(spaceUsed, spaceRemaining);
+	    cd->req += spaceUsed;
+	    spaceRemaining -= spaceUsed;
+	}
+
+	/* Distribute width to visible columns in the span. */
+	while ((spaceRemaining > 0) && (numVisibleColumns > 0)) {
+	    int each;
+	    int origSpaceRemaining = spaceRemaining;
+
+	    /* This is the amount to give to each column. Some columns
+	     * may get one extra pixel (starting from the leftmost column). */
+	    each = MAX(1, spaceRemaining / numVisibleColumns);
+	    varWidth += each;
+
+	    /* If all the columns have -minwidth, there will be a lot of
+	     * useless looping until varWidth exceeds the smallest -minwidth. */
+	    if (numMinWidth == numVisibleColumns)
+		while (varWidth <= minMinWidth)
+		    varWidth += each;
+
+	    for (column = cs->start;
+		    (spaceRemaining > 0) &&
+		    (column != cs->end->next);
+		    column = column->next) {
+		int spaceUsed = each;
+		cd = &column->reqData;
+		if (!cd->vis) continue;
+		if (cd->fixed >= 0)
+		    continue;
+		if ((cd->max >= 0) && (cd->req >= cd->max))
+		    continue;
+		/* Don't grow minwidth columns until the space of variable-width
+		 * columns exceeds that of minwidth. */
+		if ((cd->min >= 0) && (cd->req >= varWidth))
+		    continue;
+		if (cd->min >= 0) {
+		    spaceUsed = MIN(varWidth - cd->req, spaceUsed);
+		}
+		if (cd->max >= 0) {
+		    spaceUsed = MIN(cd->max - cd->req, spaceUsed);
+		    if (cd->req + MIN(spaceUsed, spaceRemaining) >= cd->max) {
+			spaceUsed = cd->max - cd->req;
+			numVisibleColumns--;
+		    }
+		}
+		spaceUsed = MIN(spaceUsed, spaceRemaining);
+		cd->req += spaceUsed;
+#if defined(TREECTRL_DEBUG)
+		if (cd->fixed >= 0 && cd->req > cd->fixed) Debugger();
+		if (cd->fixed < 0 && cd->max >= 0 && cd->req > cd->max) Debugger();
+#endif
+		spaceRemaining -= spaceUsed;
+	    }
+
+	    if (spaceRemaining == origSpaceRemaining)
+		break;
+	}
+	for (column = cs->start;
+		(column != cs->end->next);
+		column = column->next) {
+	    cd = &column->reqData;
+	    if (!cd->vis) continue;
+	    column->widthOfItems = MAX(column->widthOfItems, cd->req);
+	}
+    }
 }
 
 /*
@@ -3703,50 +4139,65 @@ TreeColumn_WidthOfItems(
     )
 {
     TreeCtrl *tree = column->tree;
+    TreeColumnPriv priv = tree->columnPriv;
+
+    if (IS_TAIL(column))
+	return 0;
 
     InitColumnReqData(tree);
 
-    if (tree->columnSpansInvalid) {
+    if (priv->spansInvalid) {
 	TreeColumn column2 = tree->columns;
 	while (column2 != NULL) {
-	    column2->spanMin = column2->spanMax = column2;
 	    column2->widthOfItems = 0;
+	    column2->reqData.spanMin = column2->reqData.spanMax = column2;
+	    column2->reqData.maxSingleSpanWidth = 0;
+	    column2->reqData.spanCount = 0;
 	    column2 = column2->next;
 	}
+	priv->maxSumOfSpanWidths = 0;
+	priv->freeSpans = priv->spans;
+	priv->spans = NULL;
+	TreeHeaders_RequestWidthInColumns(tree, tree->columns, tree->columnLast);
 	TreeItems_RequestWidthInColumns(tree, tree->columns, tree->columnLast);
-	tree->columnSpansInvalid = FALSE; /* Clear this *after* the above call. */
+	priv->spansInvalid = FALSE; /* Clear this *after* the above call. */
+	DistributeSpanWidthToColumns(tree);
+	TrimTheFat(tree->columns, tree->columnLast);
 
-	/* Must update spanMin/Max for spans in headers. */
-	tree->widthOfHeadersInvalid = TRUE;
-    } else if (!IS_TAIL(column) && (column->spanMin->widthOfItems < 0)) {
-	TreeColumn columnMin = column->spanMin;
-	TreeColumn columnMax = column->spanMax;
+    } else if (column->reqData.spanMin->widthOfItems < 0) {
+	TreeColumn columnMin = column->reqData.spanMin;
+	TreeColumn columnMax = column->reqData.spanMax;
 	TreeColumn column2;
 	/* Gather all adjacent out-of-date columns into one group. */
 	/* Must also get any spans that overlap any spans that overlap this
 	 * column. */
 	while ((columnMin->prev != NULL) &&
-		((columnMin->prev->spanMax->index >= columnMin->index) ||
-		(columnMin->prev->spanMin->widthOfItems < 0))) {
-	    columnMin = columnMin->prev->spanMin;
+		((columnMin->prev->reqData.spanMax->index >= columnMin->index) ||
+		(columnMin->prev->reqData.spanMin->widthOfItems < 0))) {
+	    columnMin = columnMin->prev->reqData.spanMin;
 	}
 	while ((columnMax->next != NULL) &&
-		((columnMax->next->spanMin->index <= columnMax->index) ||
+		((columnMax->next->reqData.spanMin->index <= columnMax->index) ||
 		(columnMax->next->widthOfItems < 0))) {
-	    columnMax = columnMax->next->spanMax;
+	    columnMax = columnMax->next->reqData.spanMax;
 	}
 	column2 = columnMin;
 	while (column2 != NULL) {
 	    column2->widthOfItems = 0;
+	    column2->reqData.maxSingleSpanWidth = 0;
+	    column2->reqData.spanCount = 0;
 	    if (column2 == columnMax)
 		break;
 	    column2 = column2->next;
 	}
 /*dbwin("TreeItems_RequestWidthInColumns %d -> %d\n", columnMin->index, columnMax->index);*/
+	priv->maxSumOfSpanWidths = 0;
+	priv->freeSpans = priv->spans;
+	priv->spans = NULL;
+	TreeHeaders_RequestWidthInColumns(tree, columnMin, columnMax);
 	TreeItems_RequestWidthInColumns(tree, columnMin, columnMax);
-
-	/* Must update spanMin/Max for spans in headers. */
-	tree->widthOfHeadersInvalid = TRUE;
+	DistributeSpanWidthToColumns(tree);
+	TrimTheFat(columnMin, columnMax);
     }
 
     return column->widthOfItems;
@@ -3774,24 +4225,7 @@ TreeColumn_WidthOfHeaders(
     TreeColumn column		/* Column token. */
     )
 {
-    TreeCtrl *tree = column->tree;
-    TreeColumn column2 = tree->columns;
-
-    /* Ensure spanMin/spanMax are up-to-date for items. */
-    TreeColumn_WidthOfItems(column);
-
-    if (tree->widthOfHeadersInvalid) {
-	while (column2 != NULL) {
-	    column2->widthOfHeaders = 0;
-	    column2 = column2->next;
-	}
-	/* header spans may further modify spanMin/spanMax */
-	tree->columnSpansInvalid = TRUE;
-	TreeHeaders_RequestWidthInColumns(tree);
-	tree->columnSpansInvalid = FALSE;
-	tree->widthOfHeadersInvalid = FALSE;
-    }
-    return column->widthOfHeaders;
+    return TreeColumn_WidthOfItems(column);
 }
 
 /*
@@ -3824,7 +4258,7 @@ TreeColumns_InvalidateSpans(
     TreeCtrl *tree		/* Widget info. */
     )
 {
-    tree->columnSpansInvalid = TRUE;
+    tree->columnPriv->spansInvalid = TRUE;
 }
 
 /*
@@ -3851,8 +4285,7 @@ TreeColumns_InvalidateWidthOfItems(
 				 * modify every column. */
     )
 {
-    /* FIXME: There is no need to invalidate widthOfHeaders in every column. */
-    tree->widthOfHeadersInvalid = TRUE;
+    TreeColumnPriv priv = tree->columnPriv;
 
     /* FIXME: This gets called for both items and headers.  If invalidating
      * header width, there is no need to invalidate widthOfItems unless the
@@ -3864,23 +4297,23 @@ TreeColumns_InvalidateWidthOfItems(
 	    column->widthOfItems = -1;
 	    column = column->next;
 	}
-    } else if (!tree->columnSpansInvalid &&
-	    column->spanMin != NULL) { /* spanMin/Max can be NULL during creation when columnSpansInvalid hasn't been set TRUE yet */
-	TreeColumn columnMin = column->spanMin;
-	TreeColumn columnMax = column->spanMax;
+    } else if (!priv->spansInvalid &&
+	    column->reqData.spanMin != NULL) { /* spanMin/Max can be NULL during creation when spansInvalid hasn't been set TRUE yet */
+	TreeColumn columnMin = column->reqData.spanMin;
+	TreeColumn columnMax = column->reqData.spanMax;
 	columnMin->widthOfItems = -1;
 
 	/* Must recalculate the width of items in every span that overlaps
 	 * any of the spans that include this column. */
 	while ((columnMin->prev != NULL) &&
-		(columnMin->prev->spanMax->index >= columnMin->index)) {
-	    columnMin = columnMin->prev->spanMin;
+		(columnMin->prev->reqData.spanMax->index >= columnMin->index)) {
+	    columnMin = columnMin->prev->reqData.spanMin;
 	    columnMin->widthOfItems = -1;
 	}
 	while ((columnMax->next != NULL) &&
-		(columnMax->next->spanMin->index <= columnMax->index)) {
-	    columnMax = columnMax->next->spanMax;
-	    columnMax->spanMin->widthOfItems = -1;
+		(columnMax->next->reqData.spanMin->index <= columnMax->index)) {
+	    columnMax = columnMax->next->reqData.spanMax;
+	    columnMax->reqData.spanMin->widthOfItems = -1;
 	}
 
     }
@@ -3913,7 +4346,7 @@ TreeColumns_InvalidateWidth(
     tree->widthOfColumns = -1;
     tree->widthOfColumnsLeft = -1;
     tree->widthOfColumnsRight = -1;
-    tree->columnReqInvalid = TRUE;
+    tree->columnPriv->reqInvalid = TRUE;
     Tree_DInfoChanged(tree, DINFO_CHECK_COLUMN_WIDTH);
 }
 
@@ -4509,7 +4942,7 @@ TreeColumn_InitWidget(
 
     column = Column_Alloc(tree);
     column->id = -1;
-    column->spanMin = column->spanMax = column;
+    column->reqData.spanMin = column->reqData.spanMax = column;
     tree->columnTail = column;
     tree->nextColumnId = 0;
     tree->columnCount = 0;
@@ -4523,6 +4956,9 @@ TreeColumn_InitWidget(
 #ifdef UNIFORM_GROUP
     Tcl_InitHashTable(&tree->uniformGroupHash, TCL_STRING_KEYS);
 #endif
+
+    tree->columnPriv = (TreeColumnPriv) ckalloc(sizeof(struct TreeColumnPriv_));
+    memset((char *) tree->columnPriv, 0, sizeof(struct TreeColumnPriv_));
 }
 
 /*
@@ -4547,6 +4983,7 @@ TreeColumn_FreeWidget(
     )
 {
     TreeColumn column = tree->columns;
+    struct TreeColumnPriv_ *priv = tree->columnPriv;
 
     while (column != NULL) {
 	column = Column_Free(column);
@@ -4559,8 +4996,17 @@ TreeColumn_FreeWidget(
     Tcl_DeleteHashTable(&tree->uniformGroupHash);
 #endif
 
-    if (tree->columnReqData != NULL)
-	ckfree((char *) tree->columnReqData);
+    while (priv->spans != NULL) {
+	ColumnSpan *cs = priv->spans;
+	priv->spans = cs->next;
+	ckfree((char *) cs);
+    }
+    while (priv->freeSpans != NULL) {
+	ColumnSpan *cs = priv->freeSpans;
+	priv->freeSpans = cs->next;
+	ckfree((char *) cs);
+    }
+    ckfree((char *) priv);
 }
 
 /*

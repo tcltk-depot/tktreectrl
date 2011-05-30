@@ -78,6 +78,7 @@ MODULE_SCOPE void dbwin_add_interp(Tcl_Interp *interp);
 
 typedef struct TreeCtrl TreeCtrl;
 typedef struct TreeColumn_ *TreeColumn;
+typedef struct TreeColumnPriv_ *TreeColumnPriv;
 typedef struct TreeColumnDInfo_ *TreeColumnDInfo;
 typedef struct TreeDInfo_ *TreeDInfo;
 typedef struct TreeDragImage_ *TreeDragImage;
@@ -312,19 +313,6 @@ struct HeaderStyle
     HeaderStyle *next;		/* Linked list of all header styles. */
 };
 
-/* A structure of the following type is kept for each TreeColumn in a
- * TreeCtrl.  This is used when calculating the requested width of styles. */
-typedef struct ColumnReqData ColumnReqData;
-struct ColumnReqData {
-    TreeColumn column;
-    int vis;		/* TRUE if the column is visible, otherwise FALSE. */
-    int min;		/* -minwidth or -1, no greater than -maxwidth. */
-    int fixed;		/* -width, or -1. */
-    int max;		/* -maxwidth or -1. */
-    int req;		/* The width requested by a all or part of a style
-			 * in a single item in this column. */
-};
-
 /* A structure of the following type is kept for each treectrl widget. */
 struct TreeCtrl
 {
@@ -522,14 +510,6 @@ struct TreeCtrl
     				 * is not specified and the system theme
     				 * doesn't specify a color. */
 
-    int columnSpansInvalid;	/* TRUE if the TreeColumn.spanMin and
-				 * TreeColumn.spanMax fields are
-				 * out-of-date, otherwise FALSE. */
-    ColumnReqData *columnReqData; /* Array, one element per column. */
-    int columnReqSize;		/* Size of columnReqData, >= columnCount. */
-    int columnReqInvalid;	/* TRUE if columnReqData is out-of-date,
-				 * otherwise FALSE. */
-
     TreeItem root;
     TreeItem activeItem;
     TreeItem anchorItem;
@@ -545,7 +525,6 @@ struct TreeCtrl
     int itemCount;		/* Total number of items */
     int itemVisCount;		/* Total number of ReallyVisible() items */
     int itemWrapCount;		/* ReallyVisible() items with -wrap=true */
-    int widthOfHeadersInvalid;
     QE_BindingTable bindingTable;
     TreeDragImage dragImage;
     TreeMarquee marquee;
@@ -656,6 +635,7 @@ struct TreeCtrl
     Tcl_Obj *stringFormatObj;	/* format */
     Tcl_Obj *optionFormatObj;	/* -format */
 
+    TreeColumnPriv columnPriv;
     ClientData itemSpanPriv;
 
 #ifdef TREECTRL_DEBUG
@@ -759,7 +739,8 @@ MODULE_SCOPE int TreeHeader_IsDraggedColumn(TreeHeader header,
 MODULE_SCOPE int TreeHeader_GetDraggedColumns(TreeHeader header, int lock,
     TreeColumn *first, TreeColumn *last);
 MODULE_SCOPE int TreeHeaderColumn_NeededHeight(TreeHeader header, TreeHeaderColumn column, int fixedWidth);
-MODULE_SCOPE void TreeHeaders_RequestWidthInColumns(TreeCtrl *tree);
+MODULE_SCOPE void TreeHeaders_RequestWidthInColumns(TreeCtrl *tree,
+    TreeColumn columnMin, TreeColumn columnMax);
 MODULE_SCOPE int Tree_HeaderHeight(TreeCtrl *tree);
 MODULE_SCOPE TreeItem TreeHeader_GetItem(TreeHeader header);
 MODULE_SCOPE void TreeHeader_ColumnDeleted(TreeCtrl *tree, TreeColumn treeColumn);
@@ -1164,8 +1145,6 @@ MODULE_SCOPE int TreeColumn_GridColors(TreeColumn column, TreeColor **leftColorP
 MODULE_SCOPE void Tree_DrawHeader(TreeCtrl *tree, TreeDrawable td, int x, int y);
 MODULE_SCOPE int TreeColumn_WidthOfItems(TreeColumn column_);
 MODULE_SCOPE int TreeColumn_WidthOfHeaders(TreeColumn column_);
-MODULE_SCOPE void TreeColumn_RequestWidth(TreeColumn column, int width,
-    TreeColumn spanMin, TreeColumn spanMax, int doHeaders);
 MODULE_SCOPE void TreeColumn_InvalidateWidth(TreeColumn column_);
 MODULE_SCOPE void TreeColumn_FreeWidget(TreeCtrl *tree);
 MODULE_SCOPE void TreeColumns_InvalidateWidthOfItems(TreeCtrl *tree, TreeColumn column);
