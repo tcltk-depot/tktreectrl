@@ -516,6 +516,127 @@ test display-7.50 {column spanning: trim the fat} -setup {
     colWid C0 C1 C2 C3 C4
 } -result {75 25 0 0 0}
 
+proc itemWid {args} {
+    foreach i $args {
+        scan [.t item bbox $i] "%d %d %d %d" x1 y1 x2 y2
+        lappend result [expr {$x2 - $x1}]
+    }
+    return $result
+}
+
+test display-8.1 {item width} -setup {
+    destroy .t
+    pack [treectrl .t]
+    .t column create -tags C0
+    .t element create e rect -width 55 -height 20
+    .t style create s
+    .t style elements s e
+    .t item style set root C0 s
+} -body {
+    itemWid root
+} -result {55}
+
+test display-8.2 {-itemwidth ignored without wrapping} -body {
+    .t configure -itemwidth 100
+    itemWid root
+} -result {55}
+
+test display-8.3 {-itemwidth plus -wrap} -body {
+    .t configure -itemwidth 100 -wrap {1 items}
+    itemWid root
+} -result {100}
+
+test display-8.4 {-itemwidth overrides -itemwidthmultiple} -body {
+    .t configure -itemwidth 100 -itemwidthmultiple 55
+    itemWid root
+} -result {100}
+
+test display-8.5 {-itemwidthmultiple} -body {
+    .t configure -itemwidth "" -itemwidthmultiple 55
+    itemWid root
+} -result {55}
+
+test display-8.6 {-itemwidthmultiple} -body {
+    .t configure -itemwidth "" -itemwidthmultiple 60
+    itemWid root
+} -result {60}
+
+test display-8.7 {-itemwidthmultiple} -body {
+    .t configure -itemwidth "" -itemwidthmultiple 50
+    itemWid root
+} -result {100}
+
+test display-8.20 {item width} -setup {
+    .t item create -tags item1 -parent root
+    .t item style set item1 C0 s
+    .t item element configure item1 C0 e -width 40
+    .t configure -itemwidth "" -itemwidthmultiple ""
+} -body {
+    itemWid root item1
+} -result {55 40}
+
+test display-8.21 {-itemwidthmultiple} -body {
+    .t configure -itemwidth "" -itemwidthmultiple 55
+    itemWid root item1
+} -result {55 55}
+
+test display-8.22 {-itemwidthmultiple} -body {
+    .t configure -itemwidth "" -itemwidthmultiple 40
+    itemWid root item1
+} -result {80 40}
+
+test display-8.23 {-itemwidth} -body {
+    .t configure -itemwidth 100 -itemwidthmultiple 40
+    itemWid root item1
+} -result {100 100}
+
+test display-8.24 {-itemwidthequal} -body {
+    .t configure -itemwidth "" -itemwidthmultiple "" -itemwidthequal yes
+    itemWid root item1
+} -result {55 55}
+
+test display-8.25 {-itemwidthequal with -itemwidthmultiple} -body {
+    .t configure -itemwidth "" -itemwidthmultiple 40 -itemwidthequal yes
+    itemWid root item1
+} -result {80 80}
+
+test display-8.30 {column width} -body {
+    colWid C0
+} -result {55}
+
+test display-8.31 {column -width overrides -itemwidth} -body {
+    .t column configure C0 -width 123
+    itemWid root item1
+} -result {123 123}
+
+test display-8.32 {header width doesn't affect item width with -wrap} -setup {
+    image create photo headerImage -width 175 -height 20
+} -body {
+    .t column configure C0 -width "" -image headerImage -imagepadx 0
+    .t configure -itemwidth "" -itemwidthmultiple "" -itemwidthequal no
+    concat [colWid C0] [itemWid root item1]
+} -result {175 55 40}
+
+test display-8.33 {header width doesn't affect item width with -wrap} -body {
+    .t configure -itemwidth "" -itemwidthmultiple "" -itemwidthequal yes
+    concat [colWid C0] [itemWid root item1]
+} -result {175 55 55}
+
+test display-8.34 {header width does affect item width without -wrap} -body {
+    .t configure -itemwidth "" -itemwidthmultiple "" -itemwidthequal yes -wrap {}
+    concat [colWid C0] [itemWid root item1]
+} -result {175 175 175}
+
+test display-8.35 {horizontal layout, item width unaffected by -wrap} -body {
+    .t configure -orient horizontal
+    concat [colWid C0] [itemWid root item1]
+} -result {175 55 55}
+
+test display-8.36 {horizontal layout, item width unaffected by -wrap} -body {
+    .t configure -itemwidthequal no
+    concat [colWid C0] [itemWid root item1]
+} -result {175 55 40}
+
 test style-99.1 {some needed cleanup} -body {
     destroy .t
 } -result {}
