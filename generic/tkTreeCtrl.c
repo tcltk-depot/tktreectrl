@@ -2679,6 +2679,9 @@ TreeSeeCmd(
 	}
     }
 
+    if (visWidth < 1 || visHeight < 1)
+	return TCL_OK;
+
     /* Get the item bounds in canvas coords. */
     if (Tree_ItemBbox(tree, item, COLUMN_LOCK_NONE, &tr) < 0)
 	return TCL_OK;
