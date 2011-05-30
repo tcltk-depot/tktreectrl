@@ -26,8 +26,8 @@ struct ColumnSpan
     ColumnSpan *next;		/* Linked list for each TreeCtrl. */
 };
 
-/* A structure of the following type is kept for each TreeColumn in a
- * TreeCtrl.  This is used when calculating the requested width of styles. */
+/* A structure of the following type is kept for each TreeColumn.
+ * This is used when calculating the requested width of styles. */
 typedef struct ColumnReqData ColumnReqData;
 struct ColumnReqData
 {
@@ -38,6 +38,8 @@ struct ColumnReqData
     int req;		/* The width requested by a all or part of a style
 			 * in a single item in this column. */
     int maxSingleSpanWidth; /* The widest span of 1. */
+    int maxSingleItemWidth; /* The widest span of 1 in items. */
+    int maxSingleHeaderWidth; /* The widest span of 1 in headers. */
     ColumnSpan **spans; /* Array of span record pointers touching this column.
 			 * This does NOT use ColumnSpan.next. */
     int spanCount;	/* Number of useful elements in spans[]. */
@@ -105,7 +107,6 @@ struct TreeColumn_
     int offset;			/* Total width of preceding columns */
     int useWidth;		/* -width, -minwidth, or required+expansion */
     int widthOfItems;		/* width of all TreeItemColumns */
-    int widthOfHeaders;		/* width of all TreeItemColumns in headers */
     int itemBgCount;		/* -itembackground colors */
     TreeColor **itemBgColor;	/* -itembackground colors */
     TreeColumn prev;
@@ -3696,7 +3697,8 @@ static void
 AddColumnSpan(
     TreeColumn spanMin,		/* First column in the span. */
     TreeColumn spanMax,		/* Last column in the span. */
-    int neededWidth		/* Width needed by the span. */
+    int neededWidth,		/* Width needed by the span. */
+    int doHeaders
     )
 {
     TreeCtrl *tree = spanMin->tree;
@@ -3713,6 +3715,15 @@ AddColumnSpan(
     }
     if (i < cd->spanCount) {
 	cs->maxNeededWidth = MAX(cs->maxNeededWidth, neededWidth);
+
+	/* Remember the widest span of 1 in this column. */
+	if (spanMin == spanMax) {
+	    cd->maxSingleSpanWidth = MAX(cd->maxSingleSpanWidth, neededWidth);
+	    if (doHeaders)
+		cd->maxSingleHeaderWidth = MAX(cd->maxSingleHeaderWidth, neededWidth);
+	    else
+		cd->maxSingleItemWidth = MAX(cd->maxSingleItemWidth, neededWidth);
+	}
 	return;
     }
 
@@ -3755,6 +3766,10 @@ AddColumnSpan(
 	/* Remember the widest span of 1 in this column. */
 	if (spanMin == spanMax) {
 	    cd->maxSingleSpanWidth = MAX(cd->maxSingleSpanWidth, neededWidth);
+	    if (doHeaders)
+		cd->maxSingleHeaderWidth = MAX(cd->maxSingleHeaderWidth, neededWidth);
+	    else
+		cd->maxSingleItemWidth = MAX(cd->maxSingleItemWidth, neededWidth);
 	}
     }
 }
@@ -3796,7 +3811,6 @@ TrimTheFat(
     TreeColumn column;
     int sumOfColumnWidths = 0, fat, fatPerCol;
     int numColsThatCanShrink = 0, csn;
-int numSpanRecords = 0;
     ColumnReqData *cd;
     ColumnSpan *cs;
 
@@ -3805,6 +3819,7 @@ int numSpanRecords = 0;
 
     for (column = start; column != end->next; column = column->next) {
 	cd = &column->reqData;
+	if (!cd->vis) continue;
 	sumOfColumnWidths += (cd->fixed >= 0) ? cd->fixed : column->widthOfItems;
 	if ((cd->fixed < 0) && (column->widthOfItems > MAX(cd->maxSingleSpanWidth, cd->min)))
 	    numColsThatCanShrink++;
@@ -3822,17 +3837,17 @@ int numSpanRecords = 0;
 	cs->widthOfColumns = 0;
 	for (column = cs->start; column != cs->end->next; column = column->next) {
 	    cd = &column->reqData;
+	    if (!cd->vis) continue;
 	    cs->widthOfColumns += (cd->fixed >= 0) ? cd->fixed : column->widthOfItems;
 	}
-numSpanRecords++;
     }
-/*dbwin("start=%d end=%d maxSumOfSpanWidths=%d numColsThatCanShrink=%d numSpanRecords=%d fat=%d\n", start->index, end->index, priv->maxSumOfSpanWidths, numColsThatCanShrink, numSpanRecords, fat);*/
 
     while (fat > 0) {
 	int origFat = fat;
 	for (column = start; column != end->next; column = column->next) {
 	    int minSpanFat = -1;
 	    cd = &column->reqData;
+	    if (!cd->vis) continue;
 	    if ((cd->fixed >= 0) || (column->widthOfItems <= cd->min) ||
 		    (column->widthOfItems <= cd->maxSingleSpanWidth))
 		continue;
@@ -3855,7 +3870,6 @@ numSpanRecords++;
 		if (column->widthOfItems - trim < cd->maxSingleSpanWidth)
 		    trim = column->widthOfItems - cd->maxSingleSpanWidth;
 		column->widthOfItems -= trim;
-/*dbwin("trimmed column %d by %d\n", column->index, trim);*/
 		fat -= trim;
 		if (fat <= 0) break;
 		for (csn = 0; csn < cd->spanCount; csn++) {
@@ -3899,7 +3913,7 @@ TreeItem_RequestWidthInColumns(
     int columnIndexMin = TreeColumn_Index(columnMin);
     int columnIndexMax = TreeColumn_Index(columnMax);
     int *spans = TreeItem_GetSpans(tree, item);
-    TreeItemColumn column;
+    TreeItemColumn itemColumn;
     TreeColumn treeColumn;
     int columnIndex, width, indent, sumOfSpanWidths = 0;
 
@@ -3909,22 +3923,27 @@ TreeItem_RequestWidthInColumns(
 #endif
 
     treeColumn = columnMin;
-    column = TreeItem_FindColumn(tree, item, columnIndexMin);
+    itemColumn = TreeItem_FindColumn(tree, item, columnIndexMin);
     if (spans == NULL) {
 	for (columnIndex = columnIndexMin;
 		columnIndex <= columnIndexMax;
 		++columnIndex) {
-	    width = (column != NULL) ?
-		TreeItemColumn_NeededWidth(tree, item, column) : 0;
-	    /* FIXME? Previous version did not request width from -indent
-	     * if there was no style. */
-	    indent = doHeaders ? 0 : TreeItem_Indent(tree, treeColumn, item);
-	    width += indent;
-	    AddColumnSpan(treeColumn, treeColumn, width);
-	    sumOfSpanWidths += width;
+	    ColumnReqData *cd = &treeColumn->reqData;
+	    if (cd->vis) {
+		width = (itemColumn != NULL) ?
+		    TreeItemColumn_NeededWidth(tree, item, itemColumn) : 0;
+		/* FOR COMPATIBILITY ONLY. Don't request width from -indent
+		 * if there is no item column. */
+		if (itemColumn != NULL) {
+		    indent = doHeaders ? 0 : TreeItem_Indent(tree, treeColumn, item);
+		    width += indent;
+		}
+		AddColumnSpan(treeColumn, treeColumn, width, doHeaders);
+		sumOfSpanWidths += width;
+	    }
 	    treeColumn = TreeColumn_Next(treeColumn);
-	    if (column != NULL)
-		column = TreeItemColumn_GetNext(tree, column);
+	    if (itemColumn != NULL)
+		itemColumn = TreeItemColumn_GetNext(tree, itemColumn);
 	}
 	priv->maxSumOfSpanWidths = MAX(priv->maxSumOfSpanWidths, sumOfSpanWidths);
 	return;
@@ -3938,12 +3957,13 @@ TreeItem_RequestWidthInColumns(
     for (columnIndex = columnIndexMin;
 	    columnIndex <= columnIndexMax;
 	    /*++columnIndex*/) {
+	ColumnReqData *cd = &treeColumn->reqData;
 	int columnIndex2 = columnIndex;
 	TreeColumn treeColumn2 = treeColumn;
 	TreeColumn lastColumnInSpan = treeColumn;
 #if defined(TREECTRL_DEBUG)
 	if (TreeColumn_Index(treeColumn) != columnIndex) Debugger();
-	if (TreeItemColumn_Index(tree, item, column) != columnIndex) Debugger();
+	if (TreeItemColumn_Index(tree, item, itemColumn) != columnIndex) Debugger();
 	if (spans[columnIndex] != columnIndex) Debugger();
 #endif
 	while ((columnIndex2 <= columnIndexMax) &&
@@ -3952,23 +3972,28 @@ TreeItem_RequestWidthInColumns(
 	    treeColumn2 = TreeColumn_Next(treeColumn2);
 	    columnIndex2++;
 	}
-	width = (column != NULL) ?
-	    TreeItemColumn_NeededWidth(tree, item, column) : 0;
 
-	/* Indentation is spread amongst the visible columns as well, and
-	 * is only used if the -treecolumn is the first column in the span. */
-	/* FIXME? Previous version did not request width from -indent
-	* if there was no style. */
-	indent = doHeaders ? 0 : TreeItem_Indent(tree, treeColumn, item);
-	width += indent;
-	sumOfSpanWidths += width;
-	AddColumnSpan(treeColumn, lastColumnInSpan, width);
+	if (cd->vis) {
+	    width = (itemColumn != NULL) ?
+		TreeItemColumn_NeededWidth(tree, item, itemColumn) : 0;
+
+	    /* Indentation is spread amongst the visible columns as well, and
+	     * is only used if the -treecolumn is the first column in the span. */
+	    /* FOR COMPATIBILITY ONLY. Don't request width from -indent
+	     * if there is no item column. */
+	    if (itemColumn != NULL) {
+		indent = doHeaders ? 0 : TreeItem_Indent(tree, treeColumn, item);
+		width += indent;
+	    }
+	    sumOfSpanWidths += width;
+	    AddColumnSpan(treeColumn, lastColumnInSpan, width, doHeaders);
+	}
 
 	treeColumn = TreeColumn_Next(lastColumnInSpan);
 	if (treeColumn == NULL)
 	    break;
-	while ((column != NULL) && (columnIndex < TreeColumn_Index(treeColumn))) {
-	    column = TreeItemColumn_GetNext(tree, column);
+	while ((itemColumn != NULL) && (columnIndex < TreeColumn_Index(treeColumn))) {
+	    itemColumn = TreeItemColumn_GetNext(tree, itemColumn);
 	    ++columnIndex;
 	}
     }
@@ -3982,7 +4007,8 @@ TreeItem_RequestWidthInColumns(
  * DistributeSpanWidthToColumns --
  *
  *	Ensures that each range of columns covered by a span is wide
- *	enough to contain that span.
+ *	enough to contain that span, without violating the -width and
+ *	-maxwidth column options.
  *
  * Results:
  *	None.
@@ -4152,6 +4178,8 @@ TreeColumn_WidthOfItems(
 	    column2->widthOfItems = 0;
 	    column2->reqData.spanMin = column2->reqData.spanMax = column2;
 	    column2->reqData.maxSingleSpanWidth = 0;
+	    column2->reqData.maxSingleHeaderWidth = 0;
+	    column2->reqData.maxSingleItemWidth = 0;
 	    column2->reqData.spanCount = 0;
 	    column2 = column2->next;
 	}
@@ -4185,6 +4213,8 @@ TreeColumn_WidthOfItems(
 	while (column2 != NULL) {
 	    column2->widthOfItems = 0;
 	    column2->reqData.maxSingleSpanWidth = 0;
+	    column2->reqData.maxSingleHeaderWidth = 0;
+	    column2->reqData.maxSingleItemWidth = 0;
 	    column2->reqData.spanCount = 0;
 	    if (column2 == columnMax)
 		break;
@@ -4199,6 +4229,12 @@ TreeColumn_WidthOfItems(
 	DistributeSpanWidthToColumns(tree);
 	TrimTheFat(columnMin, columnMax);
     }
+
+    /* FOR COMPATIBILITY ONLY */
+    /* See the use of TreeColumn_WidthOfItems() by tkTreeDisplay.c. */
+    TreeColumns_UpdateCounts(tree);
+    if (tree->columnCountVis == 1 && tree->columnVis == column)
+	return column->reqData.maxSingleItemWidth;
 
     return column->widthOfItems;
 }
@@ -4225,7 +4261,15 @@ TreeColumn_WidthOfHeaders(
     TreeColumn column		/* Column token. */
     )
 {
-    return TreeColumn_WidthOfItems(column);
+    TreeCtrl *tree = column->tree;
+    int width = TreeColumn_WidthOfItems(column);
+
+    /* FOR COMPATIBILITY ONLY */
+    /* See the use of TreeColumn_WidthOfItems() by tkTreeDisplay.c. */
+    if (tree->columnCountVis == 1 && tree->columnVis == column)
+	return column->reqData.maxSingleHeaderWidth;
+
+    return width;
 }
 
 /*
@@ -4700,7 +4744,7 @@ Tree_WidthOfColumns(
      * depends on Tree_FakeCanvasWidth which calls this function. */
     tree->columnTail->offset = tree->canvasPadX[PAD_TOP_LEFT] +
 	tree->widthOfColumns;
-    tree->columnTail->useWidth = 1; /* hack */
+    tree->columnTail->useWidth = 0; /* hack */
 
     return tree->widthOfColumns;
 }
