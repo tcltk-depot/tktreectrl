@@ -38,7 +38,7 @@ test treectrl-1.4 {configure: List all options} -body {
 
 test treectrl-1.5 {configure -background with totally empty visible tree} -body {
     pack .t -expand yes -fill both
-    update idletasks
+    update
     .t configure -background white
     update idletasks
 } -result {}
