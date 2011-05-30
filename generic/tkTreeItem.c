@@ -3585,15 +3585,13 @@ Item_HeightOfStyles(
 		drawArgs.state = item->state | column->cstate;
 		drawArgs.style = column->style;
 		drawArgs.indent = TreeItem_Indent(tree, treeColumn, item);
-		if ((treeColumn != tree->columnTail) &&
-			((TreeColumn_FixedWidth(treeColumn) != -1) ||
-			(TreeColumn_MaxWidth(treeColumn) != -1) ||
-			TreeColumn_Squeeze(treeColumn))) {
+		if (treeColumn == tree->columnTail) {
+		    drawArgs.width = -1; /* as much width as the style needs */
+		} else {
 		    drawArgs.width = TreeColumn_UseWidth(treeColumn);
 		    if (item->header != NULL)
 			drawArgs.width += drawArgs.indent;
-		} else
-		    drawArgs.width = -1;
+		}
 		height = MAX(height, TreeStyle_UseHeight(&drawArgs));
 		if (!hasHeaderElem && (item->header != NULL) &&
 			TreeStyle_HasHeaderElement(tree, column->style))
@@ -3608,7 +3606,6 @@ Item_HeightOfStyles(
 		int columnIndex = TreeColumn_Index(treeColumn);
 		int columnIndex2 = columnIndex;
 		TreeColumn treeColumn2 = treeColumn;
-		drawArgs.indent = TreeItem_Indent(tree, treeColumn, item);
 		drawArgs.width = 0;
 #if defined(TREECTRL_DEBUG)
 		if (TreeColumn_Index(treeColumn) != columnIndex) Debugger();
@@ -3618,22 +3615,10 @@ Item_HeightOfStyles(
 		while (spans[columnIndex2] == columnIndex) {
 		    if (!TreeColumn_Visible(treeColumn2)) {
 			/* nothing */
-		    } else if ((treeColumn2 != tree->columnTail) &&
-			    ((TreeColumn_FixedWidth(treeColumn2) != -1) ||
-			    (TreeColumn_MaxWidth(treeColumn2) != -1) ||
-			    TreeColumn_Squeeze(treeColumn2))) {
-			drawArgs.width += TreeColumn_UseWidth(treeColumn2);
-			if (item->header != NULL)
-			    drawArgs.width += drawArgs.indent;
-		    } else {
+		    } else if (treeColumn2 == tree->columnTail) {
 			drawArgs.width = -1; /* as much width as the style needs */
-			while (spans[columnIndex2] == columnIndex) {
-			    treeColumn2 = Tree_ColumnToTheRight(treeColumn2, FALSE, tailOK);
-			    if (treeColumn2 == NULL)
-				break;
-			    columnIndex2++;
-			}
-			break;
+		    } else {
+			drawArgs.width += TreeColumn_UseWidth(treeColumn2);
 		    }
 		    treeColumn2 = Tree_ColumnToTheRight(treeColumn2, FALSE, tailOK);
 		    if (treeColumn2 == NULL)
@@ -3641,6 +3626,9 @@ Item_HeightOfStyles(
 		    columnIndex2++;
 		}
 		if (column->style != NULL) {
+		    drawArgs.indent = TreeItem_Indent(tree, treeColumn, item);
+		    if (item->header != NULL)
+			drawArgs.width += drawArgs.indent;
 		    drawArgs.state = item->state | column->cstate;
 		    drawArgs.style = column->style;
 		    height = MAX(height, TreeStyle_UseHeight(&drawArgs));
