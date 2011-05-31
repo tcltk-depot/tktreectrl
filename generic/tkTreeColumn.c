@@ -48,6 +48,10 @@ struct ColumnReqData
     TreeColumn spanMax;		/* begins on or after spanMin and ends on */
 				/* or before spanMax.  This includes spans */
 				/* in headers and items. */
+    int maxSumOfSpanWidths; /* The max total span width from whatever start column
+			     * was passed to TreeItem_RequestWidthInColumns
+			     * to the right side of this column. */
+    int fat;
 };
 
 /* A structure of the following type is kept for each TreeCtrl to hold
@@ -61,7 +65,6 @@ struct TreeColumnPriv_
 				 * otherwise FALSE. */
     ColumnSpan *spans;
     ColumnSpan *freeSpans;
-    int maxSumOfSpanWidths;
 };
 
 #ifdef UNIFORM_GROUP
@@ -3801,7 +3804,7 @@ AddColumnSpan(
  */
 
 static void
-TrimTheFat(
+TrimTheFatAux(
     TreeColumn start,
     TreeColumn end
     )
@@ -3809,45 +3812,40 @@ TrimTheFat(
     TreeCtrl *tree = start->tree;
     TreeColumnPriv priv = tree->columnPriv;
     TreeColumn column;
+    int sumOfSpanWidths = 0;
     int sumOfColumnWidths = 0, fat, fatPerCol;
     int numColsThatCanShrink = 0, csn;
     ColumnReqData *cd;
     ColumnSpan *cs;
 
-    if (priv->maxSumOfSpanWidths <= 0)
+    sumOfSpanWidths = end->reqData.maxSumOfSpanWidths;
+dbwin("%d-%d end.maxSumOfSpanWidths %d\n", start->index, end->index, sumOfSpanWidths);
+    if (start->prev != NULL) /* end of previous non-overlapping group */
+	sumOfSpanWidths -= start->prev->reqData.maxSumOfSpanWidths;
+    if (sumOfSpanWidths <= 0)
 	return;
 
     for (column = start; column != end->next; column = column->next) {
 	cd = &column->reqData;
 	if (!cd->vis) continue;
 	sumOfColumnWidths += (cd->fixed >= 0) ? cd->fixed : column->widthOfItems;
-	if ((cd->fixed < 0) && (column->widthOfItems > MAX(cd->maxSingleSpanWidth, cd->min)))
+	if (cd->fat && (cd->fixed < 0) && (column->widthOfItems > MAX(cd->maxSingleSpanWidth, cd->min)))
 	    numColsThatCanShrink++;
     }
-
+dbwin("%d-%d sumOfColumnWidths %d sumOfSpanWidths %d\n", start->index, end->index, sumOfColumnWidths, sumOfSpanWidths);
     if (!numColsThatCanShrink)
 	return;
-    fat = sumOfColumnWidths - priv->maxSumOfSpanWidths;
+    fat = sumOfColumnWidths - sumOfSpanWidths;
     if (fat <= 0)
 	return;
-    fatPerCol = MAX(1, fat / numColsThatCanShrink);
-
-    /* Sum the current widths of columns in each span record. */
-    for (cs = priv->spans; cs != NULL; cs = cs->next) {
-	cs->widthOfColumns = 0;
-	for (column = cs->start; column != cs->end->next; column = column->next) {
-	    cd = &column->reqData;
-	    if (!cd->vis) continue;
-	    cs->widthOfColumns += (cd->fixed >= 0) ? cd->fixed : column->widthOfItems;
-	}
-    }
 
     while (fat > 0) {
 	int origFat = fat;
+	fatPerCol = MAX(1, fat / numColsThatCanShrink);
 	for (column = start; column != end->next; column = column->next) {
 	    int minSpanFat = -1;
 	    cd = &column->reqData;
-	    if (!cd->vis) continue;
+	    if (!cd->vis || !cd->fat) continue;
 	    if ((cd->fixed >= 0) || (column->widthOfItems <= cd->min) ||
 		    (column->widthOfItems <= cd->maxSingleSpanWidth))
 		continue;
@@ -3860,6 +3858,7 @@ TrimTheFat(
 			minSpanFat = MIN(minSpanFat, cs->widthOfColumns - cs->maxNeededWidth);
 		} else {
 		    minSpanFat = 0; /* no span touching this column can get smaller */
+		    cd->fat = FALSE;
 		    break;
 		}
 	    }
@@ -3869,6 +3868,7 @@ TrimTheFat(
 		    trim = column->widthOfItems - cd->min;
 		if (column->widthOfItems - trim < cd->maxSingleSpanWidth)
 		    trim = column->widthOfItems - cd->maxSingleSpanWidth;
+dbwin("trimmed %d from %d (numColsThatCanShrink=%d fat=%d)\n", trim, column->index, numColsThatCanShrink, fat);
 		column->widthOfItems -= trim;
 		fat -= trim;
 		if (fat <= 0) break;
@@ -3876,10 +3876,61 @@ TrimTheFat(
 		    cs = cd->spans[csn];
 		    cs->widthOfColumns -= trim;
 		}
+		if (column->widthOfItems <= MAX(cd->maxSingleSpanWidth, cd->min))
+		    --numColsThatCanShrink;
+		if (numColsThatCanShrink == 0)
+		    break;
 	    }
 	}
-	if (fat == origFat)
+	if (fat == origFat || numColsThatCanShrink == 0)
 	    break;
+    }
+}
+
+static void
+TrimTheFat(
+    TreeColumn start,
+    TreeColumn end
+    )
+{
+    TreeColumnPriv priv = start->tree->columnPriv;
+    TreeColumn column;
+    ColumnReqData *cd;
+    ColumnSpan *cs;
+
+    for (cs = priv->spans; cs != NULL; cs = cs->next) {
+	/* Sum the current widths of columns in each span record. */
+	cs->widthOfColumns = 0;
+	for (column = cs->start; column != cs->end->next; column = column->next) {
+	    cd = &column->reqData;
+	    if (!cd->vis) continue;
+	    cs->widthOfColumns += (cd->fixed >= 0) ? cd->fixed : column->widthOfItems;
+	}
+	/* Mark columns that cannot get smaller. */
+	if (cs->widthOfColumns <= cs->maxNeededWidth) {
+	    for (column = cs->start; column != cs->end->next; column = column->next) {
+		cd = &column->reqData;
+		cd->fat = FALSE;
+	    }
+	}
+    }
+
+    if (start->prev != NULL)
+	start->prev->reqData.maxSumOfSpanWidths = 0;
+
+    column = start;
+    while (column != end->next) {
+	TreeColumn columnMin, columnMax;
+	/* Operate on the narrowest range of columns whose spans do not
+	 * overlap another such range of columns. */
+	columnMin = column->reqData.spanMin;
+	columnMax = column->reqData.spanMax;
+	while ((columnMax->next != NULL) &&
+		(columnMax->next->reqData.spanMin->index <= columnMax->index)) {
+	    columnMax = columnMax->next->reqData.spanMax;
+	}
+	TrimTheFatAux(columnMin, columnMax);
+	column = columnMax->next;
     }
 }
 
@@ -3941,11 +3992,11 @@ TreeItem_RequestWidthInColumns(
 		AddColumnSpan(treeColumn, treeColumn, width, doHeaders);
 		sumOfSpanWidths += width;
 	    }
+	    cd->maxSumOfSpanWidths = MAX(cd->maxSumOfSpanWidths, sumOfSpanWidths);
 	    treeColumn = TreeColumn_Next(treeColumn);
 	    if (itemColumn != NULL)
 		itemColumn = TreeItemColumn_GetNext(tree, itemColumn);
 	}
-	priv->maxSumOfSpanWidths = MAX(priv->maxSumOfSpanWidths, sumOfSpanWidths);
 	return;
     }
 
@@ -3963,7 +4014,7 @@ TreeItem_RequestWidthInColumns(
 	TreeColumn lastColumnInSpan = treeColumn;
 #if defined(TREECTRL_DEBUG)
 	if (TreeColumn_Index(treeColumn) != columnIndex) Debugger();
-	if (TreeItemColumn_Index(tree, item, itemColumn) != columnIndex) Debugger();
+	if (itemColumn != NULL && TreeItemColumn_Index(tree, item, itemColumn) != columnIndex) Debugger();
 	if (spans[columnIndex] != columnIndex) Debugger();
 #endif
 	while ((columnIndex2 <= columnIndexMax) &&
@@ -3988,17 +4039,17 @@ TreeItem_RequestWidthInColumns(
 	    sumOfSpanWidths += width;
 	    AddColumnSpan(treeColumn, lastColumnInSpan, width, doHeaders);
 	}
+	lastColumnInSpan->reqData.maxSumOfSpanWidths = MAX(lastColumnInSpan->reqData.maxSumOfSpanWidths, sumOfSpanWidths);
 
 	treeColumn = TreeColumn_Next(lastColumnInSpan);
 	if (treeColumn == NULL)
 	    break;
-	while ((itemColumn != NULL) && (columnIndex < TreeColumn_Index(treeColumn))) {
+	while (/*(itemColumn != NULL) && */(columnIndex < TreeColumn_Index(treeColumn))) {
+	    if (itemColumn != NULL)
 	    itemColumn = TreeItemColumn_GetNext(tree, itemColumn);
 	    ++columnIndex;
 	}
     }
-
-    priv->maxSumOfSpanWidths = MAX(priv->maxSumOfSpanWidths, sumOfSpanWidths);
 }
 
 /*
@@ -4181,9 +4232,10 @@ TreeColumn_WidthOfItems(
 	    column2->reqData.maxSingleHeaderWidth = 0;
 	    column2->reqData.maxSingleItemWidth = 0;
 	    column2->reqData.spanCount = 0;
+	    column2->reqData.maxSumOfSpanWidths = 0;
+	    column2->reqData.fat = TRUE;
 	    column2 = column2->next;
 	}
-	priv->maxSumOfSpanWidths = 0;
 	priv->freeSpans = priv->spans;
 	priv->spans = NULL;
 	TreeHeaders_RequestWidthInColumns(tree, tree->columns, tree->columnLast);
@@ -4216,12 +4268,13 @@ TreeColumn_WidthOfItems(
 	    column2->reqData.maxSingleHeaderWidth = 0;
 	    column2->reqData.maxSingleItemWidth = 0;
 	    column2->reqData.spanCount = 0;
+	    column2->reqData.maxSumOfSpanWidths = 0;
+	    column2->reqData.fat = TRUE;
 	    if (column2 == columnMax)
 		break;
 	    column2 = column2->next;
 	}
-/*dbwin("TreeItems_RequestWidthInColumns %d -> %d\n", columnMin->index, columnMax->index);*/
-	priv->maxSumOfSpanWidths = 0;
+dbwin("TreeItems_RequestWidthInColumns %d -> %d\n", columnMin->index, columnMax->index);
 	priv->freeSpans = priv->spans;
 	priv->spans = NULL;
 	TreeHeaders_RequestWidthInColumns(tree, columnMin, columnMax);
