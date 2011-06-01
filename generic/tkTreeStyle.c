@@ -8113,5 +8113,11 @@ TreeStyle_FreeWidget(
 
     Tcl_DecrRefCount(tree->imageOptionNameObj);
     Tcl_DecrRefCount(tree->textOptionNameObj);
+
+    while (tree->headerStyle.first != NULL) {
+	HeaderStyle *next = tree->headerStyle.first->next;
+	ckfree((char *) tree->headerStyle.first);
+	tree->headerStyle.first = next;
+    }
 }
 
