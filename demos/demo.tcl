@@ -274,6 +274,7 @@ foreach file {
     outlook-newgroup
     random
     span
+    table
     textvariable
     www-options
 } {
@@ -1525,6 +1526,7 @@ proc InitDemoList {} {
 	"Gradients II" DemoGradients2 gradients2.tcl \
 	"Gradients III" DemoGradients3 gradients3.tcl \
 	"Headers" DemoHeaders headers.tcl \
+	"Table" DemoTable table.tcl \
 	] {
 	set item [$t item create]
 	$t item lastchild root $item
