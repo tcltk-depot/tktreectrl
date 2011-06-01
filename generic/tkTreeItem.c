@@ -8434,7 +8434,7 @@ TreeItemCmd_Tag(
 	case COMMAND_NAMES: {
 	    Tcl_Obj *listObj;
 	    Tk_Uid *tags = NULL;
-	    int i, tagSpace, numTags = 0;
+	    int i, tagSpace = 0, numTags = 0;
 
 	    if (objc != 5) {
 		Tcl_WrongNumArgs(interp, 4, objv, doHeaders ? "header" : "item");
