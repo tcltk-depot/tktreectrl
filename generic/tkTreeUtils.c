@@ -77,6 +77,9 @@ void dbwin(char *fmt, ...)
 }
 
 #if defined(TREECTRL_DEBUG)
+#ifdef WIN32
+#include <windows.h>
+#endif
 /*
  *----------------------------------------------------------------------
  *
