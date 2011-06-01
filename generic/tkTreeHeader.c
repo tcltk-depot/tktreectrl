@@ -453,6 +453,7 @@ TreeHeaderColumn_ConfigureHeaderStyle(
     Tcl_Obj *staticInfoObjV[STATIC_SIZE], **infoObjV = staticInfoObjV;
     Tcl_Obj *staticElemObjV[4][STATIC_SIZE], **elemObjV[4];
     Tcl_Obj *textFillObj = NULL, *textLinesObj = NULL, *textFontObj = NULL;
+    int allocSpecs = 0, allocInfoObjV = 0, allocElemObjV[4];
     HeaderStyleParams params;
     int result;
 
@@ -498,10 +499,12 @@ TreeHeaderColumn_ConfigureHeaderStyle(
 	    }
 	    specPtr++;
 	}
-	STATIC_ALLOC(infoObjV, Tcl_Obj *, objc / 2);
+	allocInfoObjV = objc / 2;
+	STATIC_ALLOC(infoObjV, Tcl_Obj *, allocInfoObjV);
 	for (i = 0; i < 4; i++) {
 	    elemObjV[i] = staticElemObjV[i];
-	    STATIC_ALLOC(elemObjV[i], Tcl_Obj *, elemObjC[i]);
+	    allocElemObjV[i] = elemObjC[i];
+	    STATIC_ALLOC(elemObjV[i], Tcl_Obj *, allocElemObjV[i]);
 	    elemObjC[i] = 0;
 	}
 	specPtr = columnSpecs;
@@ -569,11 +572,13 @@ TreeHeaderColumn_ConfigureHeaderStyle(
     } else {
 	for (i = 0; i < 4; i++) {
 	    elemObjV[i] = staticElemObjV[i];
-	    STATIC_ALLOC(elemObjV[i], Tcl_Obj *, objc);
+	    allocElemObjV[i] = objc;
+	    STATIC_ALLOC(elemObjV[i], Tcl_Obj *, allocElemObjV[i]);
 	    elemObjC[i] = 0;
 	}
 	/* Remove duplicate options (see use of textFontObj). */
-	STATIC_ALLOC(specs, Tk_OptionSpec *, objc);
+	allocSpecs = objc;
+	STATIC_ALLOC(specs, Tk_OptionSpec *, allocSpecs);
 	for (i = 0; i < objc; i += 2) {
 	    specs[i] = LookupOption(columnSpecs, Tcl_GetString(objv[i]));
 	    for (j = 0; j < i; j += 2) {
@@ -688,9 +693,9 @@ TreeHeaderColumn_ConfigureHeaderStyle(
 	Tcl_DecrRefCount(textFontObj);
 
     for (i = 0; i < 4; i++)
-	STATIC_FREE(elemObjV[i], Tcl_Obj *, elemObjC[i]);
-    STATIC_FREE(infoObjV, Tcl_Obj *, infoObjC);
-    STATIC_FREE(specs, Tk_OptionSpec *, objc);
+	STATIC_FREE(elemObjV[i], Tcl_Obj *, allocElemObjV[i]);
+    STATIC_FREE(infoObjV, Tcl_Obj *, allocInfoObjV);
+    STATIC_FREE(specs, Tk_OptionSpec *, allocSpecs);
 
     return TCL_OK;
 }
