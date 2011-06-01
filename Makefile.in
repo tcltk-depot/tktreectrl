@@ -245,7 +245,10 @@ valgrind: binaries libraries
 	$(TCLSH_ENV) valgrind $(VALGRINDARGS) $(TCLSH_PROG) `@CYGPATH@ $(srcdir)/tests/all.tcl` $(TESTFLAGS) | cat
 
 valgrindshell: binaries libraries
-	$(TCLSH_ENV) valgrind $(VALGRINDARGS) $(TCLSH_PROG) $(SCRIPT)
+	$(TCLSH_ENV) valgrind $(VALGRINDARGS) $(WISH_PROG) $(SCRIPT)
+
+valgrinddemo: binaries libraries
+	$(TCLSH_ENV) valgrind $(VALGRINDARGS) $(WISH_PROG) $(srcdir)/demos/demo.tcl
 
 # Type 'make vcexpress' from MSYS to launch the proper wish.exe in the Visual C++
 # 2008 Express Edition debugger.  Start the debugger then type 'source $env(DEMO)'
