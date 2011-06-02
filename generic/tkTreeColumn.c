@@ -12,9 +12,17 @@
 
 typedef struct TreeColumn_ TreeColumn_;
 
+typedef struct ColumnSpan ColumnSpan;
+typedef struct SpanArray SpanArray;
+struct SpanArray
+{
+    ColumnSpan **spans;
+    int count;			/* Number of useful elements in spans[]. */
+    int alloc;			/* Number of elements allocated in spans[]. */
+};
+
 /* A structure of the following type is kept for each span in an item or
  * header that covers a unique range of columns. */
-typedef struct ColumnSpan ColumnSpan;
 struct ColumnSpan
 {
     TreeColumn start;		/* First column in the span. */
@@ -23,8 +31,10 @@ struct ColumnSpan
 				 * or header. */
     int widthOfColumns;		/* Sum of the calculated display widths of
 				 * the columns. */
-    ColumnSpan *next;		/* Linked list, head is TreeColumnPriv_.spans. */
-    ColumnSpan *nextCur;	/* Linked list, head is TreeColumnPriv_.spansCur. */
+    SpanArray spansToRight;	/* List of spans following this one. */
+    ColumnSpan *next;		/* Head is TreeColumnPriv_.spans. */
+    ColumnSpan *nextCur;	/* Head is TreeColumnPriv_.spansCur. */
+    int sumOfSpans;
 };
 
 /* A structure of the following type is kept for each TreeColumn.
@@ -41,17 +51,11 @@ struct ColumnReqData
     int maxSingleSpanWidth; /* The widest span of 1. */
     int maxSingleItemWidth; /* The widest span of 1 in items. */
     int maxSingleHeaderWidth; /* The widest span of 1 in headers. */
-    ColumnSpan **spans; /* Array of span record pointers touching this column.
-			 * This does NOT use ColumnSpan.next. */
-    int spanCount;	/* Number of useful elements in spans[]. */
-    int spanAlloc;	/* Number of elements allocated in spans[]. */
+    SpanArray spans;	/* Array of span pointers touching this column.*/
     TreeColumn spanMin;		/* Any span that includes this column */
     TreeColumn spanMax;		/* begins on or after spanMin and ends on */
 				/* or before spanMax.  This includes spans */
 				/* in headers and items. */
-    int maxSumOfSpanWidths; /* The max total span width from whatever start column
-			     * was passed to TreeItem_RequestWidthInColumns
-			     * to the right side of this column. */
     int fat;		/* TRUE when every spans[].widthOfColumns is greater
 			 * than spans[].maxNeededWidth, indicating the column
 			 * is wider than needed. */
@@ -2238,8 +2242,8 @@ Column_Free(
     Column_FreeColors(column, column->itemBgColor, column->itemBgCount);
     TreeDisplay_FreeColumnDInfo(tree, column);
     Tk_FreeConfigOptions((char *) column, column->optionTable, tree->tkwin);
-    if (column->reqData.spans != NULL)
-	ckfree((char *) column->reqData.spans);
+    if (column->reqData.spans.spans != NULL)
+	ckfree((char *) column->reqData.spans.spans);
     WFREE(column, TreeColumn_);
     tree->columnCount--;
     if (tree->columnCount == 0)
@@ -2916,7 +2920,7 @@ ColumnTagCmd(
 	case COMMAND_NAMES: {
 	    Tcl_Obj *listObj;
 	    Tk_Uid *tags = NULL;
-	    int i, tagSpace, numTags = 0;
+	    int i, tagSpace = 0, numTags = 0;
 
 	    if (objc != 5) {
 		Tcl_WrongNumArgs(interp, 4, objv, "column");
@@ -3688,11 +3692,10 @@ InitColumnReqData(
 /*
  *----------------------------------------------------------------------
  *
- * AddColumnSpan --
+ * SpanArray_Add --
  *
- *	Adds or updates a span record for a range of columns
- *	covered by a span.  For every unique range of columns covered
- *	by a span, there exists exactly one ColumnSpan record.
+ *	Adds a ColumnSpan pointer to an array if it isn't already in
+ *	the array.
  *
  * Results:
  *	None.
@@ -3704,11 +3707,54 @@ InitColumnReqData(
  */
 
 static void
+SpanArray_Add(
+    SpanArray *sa,
+    ColumnSpan *cs
+    )
+{
+    int i;
+
+    for (i = 0; i < sa->count; i++) {
+	if (sa->spans[i] == cs)
+	    return;
+    }
+    if (sa->alloc < sa->count + 1) {
+	sa->spans = (ColumnSpan **) ckrealloc((char *) sa->spans,
+	    sizeof(ColumnSpan *) * (sa->count + 10));
+	sa->alloc = sa->count + 10;
+    }
+    sa->spans[sa->count++] = cs;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * AddColumnSpan --
+ *
+ *	Adds or updates a span record for a range of columns
+ *	covered by a span.  For every unique range of columns covered
+ *	by a span, there exists exactly one ColumnSpan record.
+ *
+ * Results:
+ *	Pointer to a new or updated ColumnSpan.
+ *
+ * Side effects:
+ *	Memory may be allocated.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static ColumnSpan *
 AddColumnSpan(
+    ColumnSpan *spanPrev,	/* The span to the left.  The span returned
+				 * by this function will be added to the
+				 * spanToTheRight array of spanPrev if it
+				 * wasn't already. */
     TreeColumn spanMin,		/* First column in the span. */
     TreeColumn spanMax,		/* Last column in the span. */
     int neededWidth,		/* Width needed by the span. */
-    int doHeaders
+    int doHeaders		/* TRUE if this span is in a header, FALSE
+				 * if the span is in an item. */
     )
 {
     TreeCtrl *tree = spanMin->tree;
@@ -3718,12 +3764,18 @@ AddColumnSpan(
     TreeColumn column;
     int i;
 
-    for (i = 0; i < cd->spanCount; i++) {
-	cs = cd->spans[i];
+    /* See if a span record exists by checking the list of spans touching
+     * the first column. */
+    for (i = 0; i < cd->spans.count; i++) {
+	cs = cd->spans.spans[i];
 	if ((cs->start == spanMin) && (cs->end == spanMax))
 	    break;
     }
-    if (i < cd->spanCount) {
+    if (i < cd->spans.count) {
+	/* Add this span to the list of spans following spanPrev. */
+	if (spanPrev != NULL && priv->spansInvalid == TRUE)
+	    SpanArray_Add(&spanPrev->spansToRight, cs);
+
 	cs->maxNeededWidth = MAX(cs->maxNeededWidth, neededWidth);
 
 	/* Remember the widest span of 1 in this column. */
@@ -3734,37 +3786,41 @@ AddColumnSpan(
 	    else
 		cd->maxSingleItemWidth = MAX(cd->maxSingleItemWidth, neededWidth);
 	}
-	return;
+	return cs;
     }
 
 #ifdef TREECTRL_DEBUG
     if (priv->spansInvalid == FALSE) Debugger();
 #endif
 
-    if (priv->freeSpans == NULL)
+    if (priv->freeSpans == NULL) {
 	cs = (ColumnSpan *) ckalloc(sizeof(ColumnSpan));
-    else {
+	cs->spansToRight.alloc = 0;
+	cs->spansToRight.spans = NULL;
+    } else {
 	cs = priv->freeSpans;
 	priv->freeSpans = cs->next;
     }
     cs->start = spanMin;
     cs->end = spanMax;
     cs->maxNeededWidth = neededWidth;
+    cs->spansToRight.count = 0;
+
     cs->next = priv->spans;
     priv->spans = cs;
 
     cs->nextCur = priv->spansCur;
     priv->spansCur = cs;
 
+    /* Add this span to the list of spans following spanPrev. */
+    if (spanPrev != NULL)
+	SpanArray_Add(&spanPrev->spansToRight, cs);
+
     for (column = spanMin; column != spanMax->next; column = column->next) {
 	cd = &column->reqData;
 	/* Add this new span record to the list of span records touching
-	*  this column. */
-	if (cd->spanAlloc < cd->spanCount + 10) {
-	    cd->spans = (ColumnSpan **) ckrealloc((char *) cd->spans, sizeof(ColumnSpan *) * (cd->spanCount + 10));
-	    cd->spanAlloc = cd->spanCount + 10;
-	}
-	cd->spans[cd->spanCount++] = cs;
+	 *  this column. */
+	SpanArray_Add(&cd->spans, cs);
 
 	/* Track the minimum and maximum columns of any span touching this
 	 * column.*/
@@ -3790,6 +3846,40 @@ AddColumnSpan(
 	} else
 	    priv->allSpansAreOne = FALSE;
     }
+    return cs;
+}
+/*
+s1 -> s2 -> s3
+   |_ s4 -> s5
+s6 -> s7 -> s8
+*/
+static int
+SumSpanWidths(
+    int *sum,			/* The current total span width. */
+    SpanArray *sa,		/* For each span in this array, the
+				 * maximum width of each chain of spans
+				 * starting with that span is found and
+				 * added to *sum. */
+    TreeColumn end		/* The column up to and including which the
+				 * sum of spans should be found. */
+    )
+{
+    int i, max = 0;
+    int visited = 0;
+
+    for (i = 0; i < sa->count; i++) {
+	ColumnSpan *cs = sa->spans[i];
+	if (cs->end->index <= end->index) {
+	    visited++;
+	    if (cs->sumOfSpans == -1) {
+		cs->sumOfSpans = cs->maxNeededWidth;
+		visited += SumSpanWidths(&cs->sumOfSpans, &cs->spansToRight, end);
+	    }
+	    max = MAX(max, cs->sumOfSpans);
+	}
+    }
+    *sum += max;
+    return visited;
 }
 
 /*
@@ -3833,6 +3923,7 @@ TrimTheFatAux(
     int numColsThatCanShrink = 0, csn;
     ColumnReqData *cd;
     ColumnSpan *cs;
+    int visited;
 
 #ifdef TREECTRL_DEBUG
     if (start->prev != NULL &&
@@ -3841,15 +3932,9 @@ TrimTheFatAux(
 	end->next->reqData.spanMin->index <= end->index) Debugger();
 #endif
 
-    sumOfSpanWidths = end->reqData.maxSumOfSpanWidths;
-
-#ifdef TREECTRL_DEBUG
-    if (tree->debug.enable && tree->debug.span)
-	dbwin("%d-%d end.maxSumOfSpanWidths %d\n", start->index, end->index, sumOfSpanWidths);
-#endif
-
-    if (start->prev != NULL) /* end of previous non-overlapping group */
-	sumOfSpanWidths -= start->prev->reqData.maxSumOfSpanWidths;
+    /* Sum the widths of spans across the range of columns. */
+    sumOfSpanWidths = 0;
+    visited = SumSpanWidths(&sumOfSpanWidths, &start->reqData.spans, end);
     if (sumOfSpanWidths <= 0)
 	return;
 
@@ -3865,7 +3950,7 @@ TrimTheFatAux(
 
 #ifdef TREECTRL_DEBUG
     if (tree->debug.enable && tree->debug.span)
-	dbwin("%d-%d sumOfColumnWidths %d sumOfSpanWidths %d\n", start->index, end->index, sumOfColumnWidths, sumOfSpanWidths);
+	dbwin("%d-%d sumOfColumnWidths %d sumOfSpanWidths %d (visited %d)\n", start->index, end->index, sumOfColumnWidths, sumOfSpanWidths, visited);
 #endif
 
     if (!numColsThatCanShrink)
@@ -3885,8 +3970,8 @@ TrimTheFatAux(
 	    if ((cd->fixed >= 0) || (column->widthOfItems <= cd->min) ||
 		    (column->widthOfItems <= cd->maxSingleSpanWidth))
 		continue;
-	    for (csn = 0; csn < cd->spanCount; csn++) {
-		cs = cd->spans[csn];
+	    for (csn = 0; csn < cd->spans.count; csn++) {
+		cs = cd->spans.spans[csn];
 		if (cs->widthOfColumns > cs->maxNeededWidth) {
 		    if (minSpanFat == -1)
 			minSpanFat = cs->widthOfColumns - cs->maxNeededWidth;
@@ -3912,8 +3997,8 @@ TrimTheFatAux(
 		column->widthOfItems -= trim;
 		fat -= trim;
 		if (fat <= 0) break;
-		for (csn = 0; csn < cd->spanCount; csn++) {
-		    cs = cd->spans[csn];
+		for (csn = 0; csn < cd->spans.count; csn++) {
+		    cs = cd->spans.spans[csn];
 		    cs->widthOfColumns -= trim;
 		}
 		if (column->widthOfItems <= MAX(cd->maxSingleSpanWidth, cd->min))
@@ -3967,6 +4052,7 @@ TrimTheFat(
 	    priv->minPositiveFatOfAllSpans = MIN(priv->minPositiveFatOfAllSpans, cs->widthOfColumns - cs->maxNeededWidth);
 #endif
 	}
+	cs->sumOfSpans = -1;
     }
 
     column = start;
@@ -4010,14 +4096,17 @@ TreeItem_RequestWidthInColumns(
     TreeColumn columnMax
     )
 {
+#ifdef TREECTRL_DEBUG
     TreeColumnPriv priv = tree->columnPriv;
+#endif
     int doHeaders = TreeItem_GetHeader(tree, item) != NULL;
     int columnIndexMin = TreeColumn_Index(columnMin);
     int columnIndexMax = TreeColumn_Index(columnMax);
     int *spans = TreeItem_GetSpans(tree, item);
     TreeItemColumn itemColumn;
     TreeColumn treeColumn;
-    int columnIndex, width, indent, sumOfSpanWidths = 0;
+    int columnIndex, width, indent;
+    ColumnSpan *csPrev = NULL;
 
 #ifdef TREECTRL_DEBUG
     if (columnMax == tree->columnTail) Debugger();
@@ -4027,9 +4116,6 @@ TreeItem_RequestWidthInColumns(
     if (columnMax->next != NULL &&
 	columnMax->next->reqData.spanMin->index <= columnMax->index) Debugger();
 #endif
-
-    if (columnMin->prev != NULL)
-	sumOfSpanWidths = columnMin->prev->reqData.maxSumOfSpanWidths;
 
     treeColumn = columnMin;
     itemColumn = TreeItem_FindColumn(tree, item, columnIndexMin);
@@ -4047,10 +4133,8 @@ TreeItem_RequestWidthInColumns(
 		    indent = doHeaders ? 0 : TreeItem_Indent(tree, treeColumn, item);
 		    width += indent;
 		}
-		AddColumnSpan(treeColumn, treeColumn, width, doHeaders);
-		sumOfSpanWidths += width;
+		csPrev = AddColumnSpan(csPrev, treeColumn, treeColumn, width, doHeaders);
 	    }
-	    cd->maxSumOfSpanWidths = MAX(cd->maxSumOfSpanWidths, sumOfSpanWidths);
 	    treeColumn = TreeColumn_Next(treeColumn);
 	    if (itemColumn != NULL)
 		itemColumn = TreeItemColumn_GetNext(tree, itemColumn);
@@ -4094,10 +4178,8 @@ TreeItem_RequestWidthInColumns(
 		indent = doHeaders ? 0 : TreeItem_Indent(tree, treeColumn, item);
 		width += indent;
 	    }
-	    sumOfSpanWidths += width;
-	    AddColumnSpan(treeColumn, lastColumnInSpan, width, doHeaders);
+	    csPrev = AddColumnSpan(csPrev, treeColumn, lastColumnInSpan, width, doHeaders);
 	}
-	lastColumnInSpan->reqData.maxSumOfSpanWidths = MAX(lastColumnInSpan->reqData.maxSumOfSpanWidths, sumOfSpanWidths);
 
 	treeColumn = TreeColumn_Next(lastColumnInSpan);
 	if (treeColumn == NULL)
@@ -4283,9 +4365,7 @@ TreeColumn_WidthOfItems(
 {
     TreeCtrl *tree = column->tree;
     TreeColumnPriv priv = tree->columnPriv;
-#if 1
     TreeColumn columnMin = NULL, columnMax = NULL;
-#endif
 
     if (IS_TAIL(column))
 	return 0;
@@ -4293,7 +4373,10 @@ TreeColumn_WidthOfItems(
     if (priv->spansInvalid) {
 	columnMin = tree->columns;
 	columnMax = tree->columnLast;
-	priv->freeSpans = priv->spans;
+	if (priv->freeSpans != NULL)
+	    priv->freeSpans->next = priv->spans;
+	else
+	    priv->freeSpans = priv->spans;
 	priv->spans = NULL;
 	priv->spansCur = NULL;
 	priv->allSpansAreOne = TRUE;
@@ -4315,6 +4398,7 @@ TreeColumn_WidthOfItems(
 		(columnMax->next->widthOfItems < 0))) {
 	    columnMax = columnMax->next->reqData.spanMax;
 	}
+	/* Build the list of span records touching the range of columns. */
 	priv->spansCur = NULL;
 	for (cs = priv->spans; cs != NULL; cs = cs->next) {
 	    if (cs->start->index < columnMin->index ||
@@ -4335,11 +4419,10 @@ TreeColumn_WidthOfItems(
 	    column2->reqData.maxSingleSpanWidth = 0;
 	    column2->reqData.maxSingleHeaderWidth = 0;
 	    column2->reqData.maxSingleItemWidth = 0;
-	    column2->reqData.maxSumOfSpanWidths = 0;
 	    column2->reqData.fat = TRUE;
 	    if (priv->spansInvalid) {
 		column2->reqData.spanMin = column2->reqData.spanMax = column2;
-		column2->reqData.spanCount = 0;
+		column2->reqData.spans.count = 0;
 	    }
 	}
 #ifdef TREECTRL_DEBUG
@@ -5169,13 +5252,18 @@ TreeColumn_FreeWidget(
     while (priv->spans != NULL) {
 	ColumnSpan *cs = priv->spans;
 	priv->spans = cs->next;
+	if (cs->spansToRight.spans != NULL)
+	    ckfree((char *) cs->spansToRight.spans);
 	ckfree((char *) cs);
     }
     while (priv->freeSpans != NULL) {
 	ColumnSpan *cs = priv->freeSpans;
 	priv->freeSpans = cs->next;
+	if (cs->spansToRight.spans != NULL)
+	    ckfree((char *) cs->spansToRight.spans);
 	ckfree((char *) cs);
     }
+
     ckfree((char *) priv);
 }
 
