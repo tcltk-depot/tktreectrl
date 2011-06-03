@@ -9456,6 +9456,7 @@ Tree_ExposeArea(
 		(y2 > Tree_BorderBottom(tree))) {
 	    dInfo->flags |= DINFO_DRAW_HIGHLIGHT;
 	    dInfo->flags |= DINFO_DRAW_BORDER;
+	    Tree_EventuallyRedraw(tree);
 	}
 	if (x1 < Tree_BorderLeft(tree))
 	    x1 = Tree_BorderLeft(tree);
