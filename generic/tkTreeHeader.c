@@ -11,6 +11,8 @@
 typedef struct TreeHeader_ TreeHeader_;
 typedef struct TreeHeaderColumn_ HeaderColumn;
 
+#define IS_TAIL(C) (C == tree->columnTail)
+
 /*
  * The following structure holds information about a single column header
  * of a TreeHeader.
@@ -100,6 +102,7 @@ static CONST char *stateST[] = { "normal", "active", "pressed", (char *) NULL };
 #define COLU_CONF_JUSTIFY	0x0080
 #define COLU_CONF_TEXT		0x0200
 #define COLU_CONF_BITMAP	0x0400
+#define COLU_CONF_TAIL		0x0800 /* options affecting tail's HeaderStyle */
 
 #define ELEM_HEADER		0x00010000
 #define ELEM_BITMAP		0x00020000
@@ -135,14 +138,15 @@ static Tk_OptionSpec columnSpecs[] = {
     {TK_OPTION_CUSTOM, "-background", (char *) NULL, (char *) NULL,
      (char *) NULL, /* DEFAULT VALUE IS INITIALIZED LATER */
      Tk_Offset(HeaderColumn, border.obj), Tk_Offset(HeaderColumn, border),
-     0, (ClientData) NULL, COLU_CONF_DISPLAY | ELEM_HEADER},
+     0, (ClientData) NULL, COLU_CONF_DISPLAY | COLU_CONF_TAIL | ELEM_HEADER},
     {TK_OPTION_BITMAP, "-bitmap", (char *) NULL, (char *) NULL,
      (char *) NULL, -1, Tk_Offset(HeaderColumn, bitmap),
      TK_OPTION_NULL_OK, (ClientData) NULL,
      COLU_CONF_BITMAP | COLU_CONF_NWIDTH | COLU_CONF_NHEIGHT | COLU_CONF_DISPLAY | ELEM_BITMAP},
     {TK_OPTION_PIXELS, "-borderwidth", (char *) NULL, (char *) NULL,
      "2", Tk_Offset(HeaderColumn, borderWidthObj), Tk_Offset(HeaderColumn, borderWidth),
-     0, (ClientData) NULL, COLU_CONF_NWIDTH | COLU_CONF_NHEIGHT | COLU_CONF_DISPLAY | ELEM_HEADER},
+     0, (ClientData) NULL, COLU_CONF_NWIDTH | COLU_CONF_NHEIGHT |
+     COLU_CONF_DISPLAY | COLU_CONF_TAIL | ELEM_HEADER},
     {TK_OPTION_BOOLEAN, "-button", (char *) NULL, (char *) NULL,
      "1", -1, Tk_Offset(HeaderColumn, button),
      0, (ClientData) NULL, 0},
@@ -463,9 +467,6 @@ TreeHeaderColumn_ConfigureHeaderStyle(
 	    TreeItemColumn_GetStyle(tree, column->itemColumn)))
 	return TCL_OK;
 
-    if (treeColumn == tree->columnTail)
-	return TCL_OK;
-
     params.text = column->textLen > 0;
     params.image = column->image != NULL;
     params.bitmap = !params.image && (column->bitmap != None);
@@ -478,6 +479,10 @@ TreeHeaderColumn_ConfigureHeaderStyle(
 	for (i = 0; i < 4; i++)
 	    elemObjC[i] = 0;
 	while (specPtr->type != TK_OPTION_END) {
+	    if (IS_TAIL(treeColumn) && !(specPtr->typeMask & COLU_CONF_TAIL)) {
+		specPtr++;
+		continue;
+	    }
 	    if (specPtr->typeMask & ELEM_HEADER) {
 		elemObjC[0] += 2;
 		objc += 2;
@@ -509,6 +514,10 @@ TreeHeaderColumn_ConfigureHeaderStyle(
 	}
 	specPtr = columnSpecs;
 	while (specPtr->type != TK_OPTION_END) {
+	    if (IS_TAIL(treeColumn) && !(specPtr->typeMask & COLU_CONF_TAIL)) {
+		specPtr++;
+		continue;
+	    }
 	    if (specPtr->typeMask & (ELEM_HEADER | ELEM_IMAGE | ELEM_TEXT | ELEM_BITMAP)) {
 		int listC;
 		Tcl_Obj *infoObj, **listObjV;
@@ -591,6 +600,8 @@ TreeHeaderColumn_ConfigureHeaderStyle(
 	for (i = 0; i < objc; i += 2) {
 	    specPtr = specs[i];
 	    if (specPtr == NULL)
+		continue;
+	    if (IS_TAIL(treeColumn) && !(specPtr->typeMask & COLU_CONF_TAIL))
 		continue;
 	    if (specPtr->typeMask & ELEM_HEADER) {
 		elemObjV[0][elemObjC[0]++] = objv[i]; /* name */
