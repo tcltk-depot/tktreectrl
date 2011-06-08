@@ -1,6 +1,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html><head>
 
+
   <meta content="text/html; charset=ISO-8859-1" http-equiv="content-type"><title>What's New in TkTreeCtrl</title>
   <meta content="Tim Baker" name="author"></head><body>
 <h1>What's New in TkTreeCtrl 2.4</h1><span style="font-weight: bold;">Changes since 2.4b1:</span><br>
@@ -24,8 +25,12 @@ weird.</li>
   <li>The spans of dragged headers are restricted to the range of
 dragged columns, and the spans of non-dragged headers are terminated if
 they reach the first dragged column.</li>
-  <li>Improved column-spanning behavior.&nbsp; See "Column Spanning" below.<br>
+  <li>Improved column-spanning behavior.&nbsp; See "Column Spanning" below.</li>
+  <li>Fixed widget borders not being redrawn if an &lt;Expose&gt; event didn't also overlap the content area.</li>
+  <li>Fixed the <span style="font-weight: bold;">-background</span> and <span style="font-weight: bold;">-borderwidth</span> header options being ignored in the tail column.</li>
+  <li>Fixed a few memory leaks with the new column header code.<br>
   </li>
+
 </ul>
 <h2>Header Command</h2>
 
