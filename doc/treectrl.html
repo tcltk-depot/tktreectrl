@@ -1124,7 +1124,10 @@ the column <i class="arg">columnDesc</i> will become the last column.</p></dd>
 of the column specified by the <span class="sectref"><a href="#section10">column description</a></span>
 <i class="arg">columnDesc</i>.
 The needed width is the maximum of the width of the column header
-and the width of the widest style in any visible item.</p></dd>
+and the width of the widest style in any visible item.</p>
+<p>When an item style or column header spans multiple columns, the needed width
+of a column is affected by the widths of other columns in the span, in which
+case the result of this command isn't particularly useful.</p></dd>
 <dt><a name="23"><i class="arg">pathName</i> <b class="cmd">column order</b> <i class="arg">columnDesc</i> <span class="opt">?<i class="arg">-visible</i>?</span></a></dt>
 <dd><p>This command returns a decimal string giving the position of the column
 specified by the <span class="sectref"><a href="#section10">column description</a></span>

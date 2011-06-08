@@ -718,6 +718,10 @@ of the column specified by the [sectref {COLUMN DESCRIPTION} {column description
 [arg columnDesc].
 The needed width is the maximum of the width of the column header
 and the width of the widest style in any visible item.
+[para]
+When an item style or column header spans multiple columns, the needed width
+of a column is affected by the widths of other columns in the span, in which
+case the result of this command isn't particularly useful.
 
 [call [arg pathName] [cmd {column order}] [arg columnDesc] [opt [arg -visible]]]
 This command returns a decimal string giving the position of the column

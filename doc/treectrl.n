@@ -1758,6 +1758,10 @@ of the column specified by the \fBcolumn description\fR
 \fIcolumnDesc\fR.
 The needed width is the maximum of the width of the column header
 and the width of the widest style in any visible item.
+.sp
+When an item style or column header spans multiple columns, the needed width
+of a column is affected by the widths of other columns in the span, in which
+case the result of this command isn't particularly useful.
 .TP
 \fIpathName\fR \fBcolumn order\fR \fIcolumnDesc\fR ?\fI-visible\fR?
 This command returns a decimal string giving the position of the column
