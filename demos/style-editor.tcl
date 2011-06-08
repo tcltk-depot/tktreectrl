@@ -280,7 +280,7 @@ proc StyleEditor::SetPropertyList {} {
 
     # Create elements and styles the first time this is called
     if {[llength [$T style names]] == 0} {
-	$T state define header
+	$T item state define header
 
 	$T element create e1 text \
 	    -fill [list white header $::SystemHighlightText selected] \
@@ -836,7 +836,7 @@ proc StyleEditor::StyleToCanvas {{scroll 0}} {
 	    $T selection clear
 	}
 	foreach state [$Tdemo item state get $I] {
-	    if {[lsearch -exact [$Tdemo state names] $state] != -1} {
+	    if {[lsearch -exact [$Tdemo item state names] $state] != -1} {
 		$T item state set root $state
 	    }
 	}

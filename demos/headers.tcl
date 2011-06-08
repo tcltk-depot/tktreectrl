@@ -1,12 +1,8 @@
+# Copyright (c) 2011 Tim Baker
+
 namespace eval DemoHeaders {}
 
-proc DemoHeaders {} {
-    DemoHeaders::Run
-    return
-}
-
-proc DemoHeaders::Run {} {
-    set T [DemoList]
+proc DemoHeaders::Init {T} {
 
     $T configure \
 	-showroot no -xscrollsmoothing yes -yscrollsmoothing yes \

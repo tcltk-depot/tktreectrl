@@ -1,8 +1,7 @@
 # Copyright (c) 2010-2011 Tim Baker
 
-proc DemoGradients2 {} {
-
-    set T [DemoList]
+namespace eval DemoGradients2 {}
+proc DemoGradients2::Init {T} {
 
     #
     # Configure the treectrl widget
@@ -51,8 +50,8 @@ proc DemoGradients2 {} {
     # Define new states
     #
 
-    $T state define openW
-    $T state define openN
+    $T item state define openW
+    $T item state define openN
 
     #
     # Create elements

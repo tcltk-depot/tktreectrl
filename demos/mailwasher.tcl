@@ -3,9 +3,8 @@
 #
 # Demo: MailWasher
 #
-proc DemoMailWasher {} {
-
-    set T [DemoList]
+namespace eval DemoMailWasher {}
+proc DemoMailWasher::Init {T} {
 
     InitPics *checked
 
@@ -36,7 +35,7 @@ proc DemoMailWasher {} {
     $T column create -text Received -textpadx $pad -arrow up -tags received
     $T column create -text Attachments -textpadx $pad -tags attachments
 
-    $T state define CHECK
+    $T item state define CHECK
 
     #
     # Create elements
@@ -153,7 +152,7 @@ proc DemoMailWasher {} {
 	switch [%T column cget %C -tags] {
 	    bounce -
 	    delete {
-		%T item sort root $order -column %C -command [list CompareOnOff %T %C] -column subject -dictionary
+		%T item sort root $order -column %C -command [list DemoMailWasher::CompareOnOff %T %C] -column subject -dictionary
 	    }
 	    status {
 		%T item sort root $order -column %C -dictionary
@@ -196,7 +195,7 @@ proc DemoMailWasher {} {
     return
 }
 
-proc CompareOnOff {T C item1 item2} {
+proc DemoMailWasher::CompareOnOff {T C item1 item2} {
     set s1 [$T item state forcolumn $item1 $C]
     set s2 [$T item state forcolumn $item2 $C]
     if {$s1 eq $s2} { return 0 }

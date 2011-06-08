@@ -1,8 +1,7 @@
 # Copyright (c) 2006-2011 Tim Baker
 
-proc DemoMyComputer {} {
-
-    set T [DemoList]
+namespace eval DemoMyComputer {}
+proc DemoMyComputer::Init {T} {
 
     set font [.menubar cget -font]
     if {[lsearch -exact [font names] DemoMyComputerHeaderFont] == -1} {
@@ -123,4 +122,6 @@ if 0 {
 
     bindtags $T [list $T TreeCtrlFileList TreeCtrl [winfo toplevel $T] all]
 }
+
+    return
 }

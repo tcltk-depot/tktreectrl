@@ -3,9 +3,8 @@
 #
 # Demo: iMovie
 #
-proc DemoIMovie {} {
-
-    set T [DemoList]
+namespace eval DemoIMovie {}
+proc DemoIMovie::Init {T} {
 
     #
     # Configure the treectrl widget
@@ -98,7 +97,7 @@ proc DemoIMovie {} {
     }
 
     bind DemoIMovie <ButtonPress-1> {
-	iMovieButton1 %W %x %y
+	DemoIMovie::Button1 %W %x %y
     }
 
     bindtags $T [list $T DemoIMovie TreeCtrl [winfo toplevel $T] all]
@@ -106,7 +105,7 @@ proc DemoIMovie {} {
     return
 }
 
-proc iMovieButton1 {T x y} {
+proc DemoIMovie::Button1 {T x y} {
     focus $T
     set id [$T identify $x $y]
 
@@ -155,11 +154,11 @@ proc iMovieButton1 {T x y} {
 #
 # Demo: iMovie (Wrap)
 #
-proc DemoIMovieWrap {} {
+namespace eval DemoIMovieWrap {}
+proc DemoIMovieWrap::Init {T} {
 
-    DemoIMovie
+    DemoIMovie::Init $T
 
-    set T [DemoList]
     $T configure -wrap "" -xscrollsmoothing yes
     $T item configure "root child 4" -wrap yes
     $T item configure "root child 5" -wrap yes

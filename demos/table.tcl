@@ -1,15 +1,13 @@
+# Copyright (c) 2011 Tim Baker
+
 namespace eval DemoTable {}
 
-proc DemoTable {} {
-    DemoTable::Run [DemoList]
-}
-
-proc DemoTable::Run {T} {
+proc DemoTable::Init {T} {
     variable Priv
 
     $T configure -showroot no -usetheme no -xscrollsmoothing yes
 
-    $T column create -tags rowtitle -lock left
+    $T column create -tags rowtitle -lock left -button no
     for {set i 1} {$i <= 10} {incr i} {
 	$T column create -text $i -minwidth 20
     }
@@ -71,11 +69,11 @@ proc DemoTable::Run {T} {
     $T item text 15 2 "RESIZE THE SPAN -->"
     $T item span 15 2 3
 
-    $T notify bind DemoTable <Edit-accept> {
+    $T notify bind $T <Edit-accept> {
 	%T item text %I %C %t
 	set DemoTable::EditAccepted 1
     }
-    $T notify bind DemoTable <Edit-end> {
+    $T notify bind $T <Edit-end> {
 	if {!$DemoTable::EditAccepted} {
 	    %T item element configure %I %C %E -text $DemoTable::OrigText
 	}
@@ -144,10 +142,8 @@ proc DemoTable::ButtonPress1 {T x y} {
     $T identify -array id $x $y
     if {$id(where) ne "item"} return
     if {$id(column) eq "tail"} return
-    if {[$T column compare $id(column) == first]} return
+    if {[$T column tag expr $id(column) rowtitle]} return
 
-    set prev [$T column id "$id(column) prev"]
-    set next [$T column id "$id(column) next !tail"]
     switch -- [WhichSide $T $id(item) $id(column) $x $y] {
 	left {
 	    if {[$T column compare $id(column) > "first visible lock none"]} {
@@ -160,7 +156,7 @@ proc DemoTable::ButtonPress1 {T x y} {
 	    }
 	}
 	right {
-	    if {[$T column id "$id(column) next !tail"] ne ""} {
+	    if {[$T column compare $id(column) < "last visible lock none"]} {
 		set Priv(buttonMode) resize
 		set Priv(item) $id(item)
 		set Priv(column) $id(column)
@@ -310,7 +306,7 @@ proc DemoTable::Motion {T x y} {
     set Priv(highlight,want) {}
     if {$id(where) ne "item"} return
     if {$id(column) eq "tail"} return
-    if {[$T column compare $id(column) == first]} return
+    if {[$T column tag expr $id(column) rowtitle]} return
     set Priv(highlight,want) [list $id(item) $id(column) mouseover]
     switch -- [WhichSide $T $id(item) $id(column) $x $y] {
 	left {
@@ -321,7 +317,7 @@ proc DemoTable::Motion {T x y} {
 	    }
 	}
 	right {
-	    if {[$T column id "$id(column) next !tail"] ne ""} {
+	    if {[$T column compare $id(column) < "last visible lock none"]} {
 		set Priv(cursor,want) sb_h_double_arrow
 		set Priv(highlight,want) [list $id(item) $id(column) mouseover]
 	    }

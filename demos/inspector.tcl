@@ -63,7 +63,7 @@ grid [label $f.label -text "Headers" -bg {light blue}] -row 0 -column 0 -columns
     # Tk listbox has linespace + 1 height
     $T style layout s1 e2 -union [list e1] -ipadx 2 -ipady {0 1} -iexpand nes
 
-    $T state define CHECK
+    $T item state define CHECK
     $T element create imgCheck image -image {checked CHECK unchecked {}}
     set S [$T style create styCheck]
     $T style elements $S [list imgCheck]
@@ -95,7 +95,7 @@ grid [label $f.label -text "Header columns" -bg {light blue}] -row 0 -column 0 -
     # Tk listbox has linespace + 1 height
     $T style layout s1 e2 -union [list e1] -ipadx 2 -ipady {0 1} -iexpand nes
 
-    $T state define CHECK
+    $T item state define CHECK
     $T element create imgCheck image -image {checked CHECK unchecked {}}
     set S [$T style create styCheck]
     $T style elements $S [list imgCheck]

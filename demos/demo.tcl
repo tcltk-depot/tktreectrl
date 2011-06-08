@@ -318,11 +318,11 @@ proc MakeMenuBar {} {
     } else {
 #	uplevel #0 source ~/Programming/console.tcl
     }
-    $m2 add command -label "Event Browser" -command ToggleEventsWindow
-    $m2 add command -label "Identify" -command ToggleIdentifyWindow
+    $m2 add command -label "Event Browser" -command EventsWindow::ToggleWindowVisibility
+    $m2 add command -label "Identify" -command IdentifyWindow::ToggleWindowVisibility
     $m2 add command -label "Style Editor" -command ToggleStyleEditorWindow
-    $m2 add command -label "View Source" -command ToggleSourceWindow
-    $m2 add command -label "Magnifier" -command ToggleLoupeWindow
+    $m2 add command -label "View Source" -command SourceWindow::ToggleWindowVisibility
+    $m2 add command -label "Magnifier" -command LoupeWindow::ToggleWindowVisibility
     $m2 add separator
     $m2 add checkbutton -label "Native Gradients" -command ToggleNativeGradients \
 	-variable ::NativeGradients
@@ -350,13 +350,15 @@ proc MakeMenuBar {} {
 		-variable ::DemoTheme -value $theme
 	}
 	$m2 add separator
-	$m2 add command -label "Inspector" -command ToggleThemeWindow
+	$m2 add command -label "Inspector" -command ThemeWindow::ToggleWindowVisibility
     }
 
     return
 }
 
-proc MakeEventsWindow {} {
+namespace eval EventsWindow {}
+
+proc EventsWindow::Init {} {
     set w [toplevel .events]
     wm withdraw $w
 #    wm transient $w .
@@ -369,7 +371,7 @@ proc MakeEventsWindow {} {
     $m1 add cascade -label "Dynamic" -menu [menu $m1.m2 -tearoff 0]
     $m1 add command -label "Clear Window" -command "$w.f.t item delete all" \
 	-accelerator Ctrl+X
-    $m1 add command -label "Rebuild Menus" -command "RebuildEventsMenus $w.f.t $m"
+    $m1 add command -label "Rebuild Menus" -command "EventsWindow::RebuildMenus $w.f.t $m"
     $m add cascade -label "Events" -menu $m1
 
     bind $w <Control-KeyPress-x> "$w.f.t item delete all"
@@ -403,9 +405,9 @@ proc MakeEventsWindow {} {
 
     $T column configure C0 -itemstyle s1
 
-    RebuildEventsMenus $T $m
+    RebuildMenus $T $m
 
-    wm protocol $w WM_DELETE_WINDOW "ToggleEventsWindow"
+    wm protocol $w WM_DELETE_WINDOW "EventsWindow::ToggleWindowVisibility"
     switch -- $::thisPlatform {
 	macintosh -
 	macosx {
@@ -418,7 +420,9 @@ proc MakeEventsWindow {} {
 
     return
 }
-proc RebuildEventsMenus {T m} {
+
+proc EventsWindow::RebuildMenus {T m} {
+    variable Priv
     foreach event [lsort -dictionary [[DemoList] notify eventnames]] {
 	set details [lsort -dictionary [[DemoList] notify detailnames $event]]
 	foreach detail $details {
@@ -440,35 +444,43 @@ proc RebuildEventsMenus {T m} {
     set menu(static) $m.m1.m1
     set menu(dynamic) $m.m1.m2
     foreach {pattern linkage} $patterns {
-	if {![info exists ::EventTrack($pattern)]} {
-	    set ::EventTrack($pattern) 1
+	if {![info exists Priv(track,$pattern)]} {
+	    set Priv(track,$pattern) 1
 	}
 	$menu($linkage) add checkbutton -label $pattern \
-	    -variable EventTrack($pattern) \
-	    -command [list ToggleEvent $T $pattern]
+	    -variable ::EventsWindow::Priv(track,$pattern) \
+	    -command [list EventsWindow::ToggleEvent $T $pattern]
     }
     foreach linkage {static dynamic} {
 	$menu($linkage) add separator
 	$menu($linkage) add command -label "Toggle All" \
-	    -command [list ToggleEvents $T $patterns2($linkage)]
+	    -command [list EventsWindow::ToggleEvents $T $patterns2($linkage)]
     }
 
-    set ::Events {}
-    set ::EventsId ""
+    set Priv(events) {}
+    set Priv(afterId) ""
     foreach {pattern linkage} $patterns {
 	[DemoList] notify bind $T $pattern {
-	    lappend Events %?
-	    if {$EventsId eq ""} {
-		set EventsId [after idle [list RecordEvents %W]]
-	    }
+	    EventsWindow::EventBinding %W %?
 	}
     }
     return
 }
-proc RecordEvents {T} {
-    set ::EventsId ""
-    set events $::Events
-    set ::Events {}
+
+proc EventsWindow::EventBinding {T charMap} {
+    variable Priv
+    lappend Priv(events) $charMap
+    if {$Priv(afterId) eq ""} {
+	set Priv(afterId) [after idle [list EventsWindow::RecordEvents $T]]
+    }
+    return
+}
+
+proc EventsWindow::RecordEvents {T} {
+    variable Priv
+    set Priv(afterId) ""
+    set events $Priv(events)
+    set Priv(events) {}
     if {![winfo ismapped .events]} return
     if {[$T item numchildren root] > 2000} {
 	set N [expr {[$T item numchildren root] - 2000}]
@@ -489,7 +501,8 @@ proc RecordEvents {T} {
     $T see "last visible"
     return
 }
-proc RecordEvent {T list open} {
+
+proc EventsWindow::RecordEvent {T list open} {
     set I [$T item create -open $open]
     array set map $list
     $T item text $I C0 $map(P)
@@ -504,10 +517,11 @@ proc RecordEvent {T list open} {
     }
     return
 }
-proc ToggleEventsWindow {} {
+
+proc EventsWindow::ToggleWindowVisibility {} {
     set w .events
     if {![winfo exists $w]} {
-	MakeEventsWindow
+	Init
     }
     if {[winfo ismapped $w]} {
 	wm withdraw $w
@@ -517,19 +531,25 @@ proc ToggleEventsWindow {} {
     }
     return
 }
-proc ToggleEvent {T pattern} {
-    [DemoList] notify configure $T $pattern -active $::EventTrack($pattern)
+
+proc EventsWindow::ToggleEvent {T pattern} {
+    variable Priv
+    [DemoList] notify configure $T $pattern -active $Priv(track,$pattern)
     return
 }
-proc ToggleEvents {T patterns} {
+
+proc EventsWindow::ToggleEvents {T patterns} {
+    variable Priv
     foreach pattern $patterns {
-	set ::EventTrack($pattern) [expr {!$::EventTrack($pattern)}]
+	set Priv(track,$pattern) [expr {!$Priv(track,$pattern)}]
 	ToggleEvent $T $pattern
     }
     return
 }
 
-proc MakeIdentifyWindow {} {
+namespace eval IdentifyWindow {}
+
+proc IdentifyWindow::Init {} {
     set w .identify
     toplevel $w
     wm withdraw $w
@@ -538,10 +558,11 @@ proc MakeIdentifyWindow {} {
     text $wText -state disabled -width 70 -height 3 -font [[DemoList] cget -font]
     $wText tag configure tagBold -font DemoFontBold
     pack $wText -expand yes -fill both
-    wm protocol $w WM_DELETE_WINDOW "ToggleIdentifyWindow"
+    wm protocol $w WM_DELETE_WINDOW "IdentifyWindow::ToggleWindowVisibility"
     return
 }
-proc UpdateIdentifyWindow {T x y} {
+
+proc IdentifyWindow::Update {T x y} {
     set w .identify
     if {![winfo exists $w]} return
     if {![winfo ismapped $w]} return
@@ -577,10 +598,11 @@ proc UpdateIdentifyWindow {T x y} {
     $wText configure -state disabled
     return
 }
-proc ToggleIdentifyWindow {} {
+
+proc IdentifyWindow::ToggleWindowVisibility {} {
     set w .identify
     if {![winfo exists $w]} {
-	MakeIdentifyWindow
+	Init
     }
     if {[winfo ismapped $w]} {
 	wm withdraw $w
@@ -591,7 +613,9 @@ proc ToggleIdentifyWindow {} {
     return
 }
 
-proc MakeSourceWindow {} {
+namespace eval SourceWindow {}
+
+proc SourceWindow::Init {} {
     set w [toplevel .source]
     wm withdraw $w
 #    wm transient $w .
@@ -623,7 +647,7 @@ proc MakeSourceWindow {} {
     grid configure $f.sh -row 1 -column 0 -sticky we
     grid configure $f.sv -row 0 -column 1 -sticky ns
 
-    wm protocol $w WM_DELETE_WINDOW "ToggleSourceWindow"
+    wm protocol $w WM_DELETE_WINDOW "SourceWindow::ToggleWindowVisibility"
     switch -- $::thisPlatform {
 	macintosh -
 	macosx {
@@ -636,7 +660,8 @@ proc MakeSourceWindow {} {
 
     return
 }
-proc ShowSource {file} {
+
+proc SourceWindow::ShowSource {file} {
     wm title .source "TkTreeCtrl Source: $file"
     set path [Path $file]
     set t .source.f.t
@@ -647,7 +672,8 @@ proc ShowSource {file} {
     close $chan
     return
 }
-proc ToggleSourceWindow {} {
+
+proc SourceWindow::ToggleWindowVisibility {} {
     set w .source
     if {[winfo ismapped $w]} {
 	wm withdraw $w
@@ -674,7 +700,8 @@ proc ToggleStyleEditorWindow {} {
     return
 }
 
-proc MakeThemeWindow {} {
+namespace eval ThemeWindow {}
+proc ThemeWindow::Init {} {
     set w [toplevel .theme]
     wm withdraw $w
 #    wm transient $w .
@@ -683,7 +710,7 @@ proc MakeThemeWindow {} {
     set m [menu $w.menubar]
     $w configure -menu $m
     set m1 [menu $m.m1 -tearoff 0]
-    $m1 add command -label "Set List" -command SetThemeWindow
+    $m1 add command -label "Set List" -command ThemeWindow::SetList
     $m add cascade -label "Theme" -menu $m1
 
     TreePlusScrollbarsInAFrame $w.f 1 1
@@ -705,16 +732,17 @@ proc MakeThemeWindow {} {
 
     $T column configure C0 -itemstyle s1
 
-    SetThemeWindow
+    SetList
 
-    wm protocol $w WM_DELETE_WINDOW "ToggleThemeWindow"
+    wm protocol $w WM_DELETE_WINDOW "ThemeWindow::ToggleWindowVisibility"
 
     return
 }
-proc ToggleThemeWindow {} {
+
+proc ThemeWindow::ToggleWindowVisibility {} {
     set w .theme
     if {![winfo exists $w]} {
-	MakeThemeWindow
+	Init
     }
     if {[winfo ismapped $w]} {
 	wm withdraw $w
@@ -724,7 +752,8 @@ proc ToggleThemeWindow {} {
     }
     return
 }
-proc SetThemeWindow {} {
+
+proc ThemeWindow::SetList {} {
     set w .theme
     set T $w.f.t
 
@@ -783,7 +812,7 @@ proc ToggleNativeGradients {} {
     return
 }
 
-MakeSourceWindow
+SourceWindow::Init
 MakeMenuBar
 
 # http://wiki.tcl.tk/950
@@ -953,7 +982,7 @@ proc MakeMainWindow {} {
 	    set x %x
 	    set y %y
 	}
-	UpdateIdentifyWindow [DemoList] $x $y
+	IdentifyWindow::Update [DemoList] $x $y
     }
     AddBindTag [DemoList] TagIdentify
 
@@ -984,6 +1013,7 @@ proc MakeMainWindow {} {
     # are generated by the library scripts.
 
     [DemoList] notify install <Header-invoke>
+    [DemoList] notify install <Header-state>
 
     [DemoList] notify install <ColumnDrag-begin>
     [DemoList] notify install <ColumnDrag-end>
@@ -999,6 +1029,8 @@ proc MakeMainWindow {} {
     [DemoList] notify install <Edit-accept>
     ###
 
+    # This event is generated when a column's visibility is changed by
+    # the context menu.
     [DemoList] notify install <DemoColumnVisibility>
 
     return
@@ -1559,16 +1591,16 @@ proc TimerStop {{startTime ""}} {
     return [format "%.2g" [expr {($endTime - $startTime) / 1000000.0}]]
 }
 
-proc DemoSet {cmd file} {
+proc DemoSet {namespace file} {
     DemoClear
     TimerStart
-    uplevel #0 $cmd
+    uplevel #0 ${namespace}::Init [DemoList]
     dbwin "set list in [TimerStop] seconds\n"
     [DemoList] xview moveto 0
     [DemoList] yview moveto 0
     update
     DisplayStylesInList
-    ShowSource $file
+    SourceWindow::ShowSource $file
     catch {
 	if {[winfo ismapped .styleEditor]} {
 	    StyleEditor::SetListOfStyles
@@ -1886,6 +1918,8 @@ proc DemoPictureCatalog {} {
 	-selectmode multiple -orient horizontal -wrap window \
 	-yscrollincrement 50 -showheader no
 
+    $T column create
+
     $T element create elemTxt text -fill {SystemHighlightText {selected focus}}
     $T element create elemSelTxt rect -fill {SystemHighlight {selected focus}}
     $T element create elemSelImg rect -outline {SystemHighlight {selected focus}} \
@@ -1919,8 +1953,10 @@ proc DemoPictureCatalog2 {} {
 	-selectmode multiple -orient horizontal -wrap window \
 	-yscrollincrement 50 -showheader no
 
+    $T column create
+
     $T element create elemTxt text -fill {SystemHighlightText {selected focus}} \
-	-justify left -wrap word -lines 2
+	-justify left -wrap word -lines 3
     $T element create elemSelTxt rect -fill {SystemHighlight {selected focus}}
     $T element create elemSelImg rect -outline {SystemHighlight {selected focus}} \
 	-outlinewidth 4
@@ -2073,32 +2109,34 @@ proc CursorWindow {} {
 # A little screen magnifier
 if {[llength [info commands loupe]]} {
 
-    set Loupe(zoom) 2
-    set Loupe(x) 0
-    set Loupe(y) 0
-    set Loupe(auto) 1
-    set Loupe(afterId) ""
+    namespace eval LoupeWindow {
+	variable Priv
+	set Priv(zoom) 2
+	set Priv(x) 0
+	set Priv(y) 0
+	set Priv(auto) 1
+	set Priv(afterId) ""
+	set Priv(image) ::LoupeWindow::Image
+	set Priv(delay) 500
+    }
 
-    proc LoupeAfter {} {
-
-	global Loupe
+    proc LoupeWindow::After {} {
+	variable Priv
 	set x [winfo pointerx .]
 	set y [winfo pointery .]
-	if {$Loupe(auto) || ($Loupe(x) != $x) || ($Loupe(y) != $y)} {
-	    set w [image width $Loupe(image)]
-	    set h [image height $Loupe(image)]
-	    loupe $Loupe(image) $x $y $w $h $::Loupe(zoom)
-	    set Loupe(x) $x
-	    set Loupe(y) $y
+	if {$Priv(auto) || ($Priv(x) != $x) || ($Priv(y) != $y)} {
+	    set w [image width $Priv(image)]
+	    set h [image height $Priv(image)]
+	    loupe $Priv(image) $x $y $w $h $Priv(zoom)
+	    set Priv(x) $x
+	    set Priv(y) $y
 	}
-	set Loupe(afterId) [after $Loupe(delay) LoupeAfter]
+	set Priv(afterId) [after $Priv(delay) LoupeWindow::After]
 	return
     }
 
-    proc MakeLoupeWindow {} {
-
-	global Loupe
-
+    proc LoupeWindow::Init {} {
+	variable Priv
 	set w [toplevel .loupe]
 	wm title $w "TreeCtrl Magnifier"
 	wm withdraw $w
@@ -2107,50 +2145,51 @@ if {[llength [info commands loupe]]} {
 	} else {
 	    wm geometry $w -0+0
 	}
-	image create photo ImageLoupe -width 280 -height 150
-	pack [label $w.label -image ImageLoupe -borderwidth 1 -relief sunken] \
+	image create photo $Priv(image) -width 280 -height 150
+	pack [label $w.label -image $Priv(image) -borderwidth 1 -relief sunken] \
 	    -expand yes -fill both
 
 	set f [frame $w.zoom -borderwidth 0]
-	radiobutton $f.r1 -text "1x" -variable ::Loupe(zoom) -value 1
-	radiobutton $f.r2 -text "2x" -variable ::Loupe(zoom) -value 2
-	radiobutton $f.r4 -text "4x" -variable ::Loupe(zoom) -value 4
-	radiobutton $f.r8 -text "8x" -variable ::Loupe(zoom) -value 8
+	radiobutton $f.r1 -text "1x" -variable ::LoupeWindow::Priv(zoom) -value 1
+	radiobutton $f.r2 -text "2x" -variable ::LoupeWindow::Priv(zoom) -value 2
+	radiobutton $f.r4 -text "4x" -variable ::LoupeWindow::Priv(zoom) -value 4
+	radiobutton $f.r8 -text "8x" -variable ::LoupeWindow::Priv(zoom) -value 8
 	pack $f.r1 $f.r2 $f.r4 $f.r8 -side left
 	pack $f -side bottom -anchor center
 
 	# Resize the image with the window
 	bind LoupeWindow <Configure> {
-	    set w [expr {%w - 2}]
-	    set h [expr {%h - 2}]
-	    if {$w != [$Loupe(image) cget -width] ||
-		$h != [$Loupe(image) cget -height]} {
-		$Loupe(image) configure -width $w -height $h
-		loupe $Loupe(image) $Loupe(x) $Loupe(y) $w $h $Loupe(zoom)
-	    }
+	    LoupeWindow::ResizeImage %w %h
 	}
 	bindtags $w.label [concat [bindtags .loupe] LoupeWindow]
 
-	wm protocol $w WM_DELETE_WINDOW "ToggleLoupeWindow"
-
-	set Loupe(image) ImageLoupe
-	set Loupe(delay) 500
+	wm protocol $w WM_DELETE_WINDOW "LoupeWindow::ToggleWindowVisibility"
 	return
     }
 
-    proc ToggleLoupeWindow {} {
+    proc LoupeWindow::ResizeImage {w h} {
+	variable Priv
+	set w [expr {$w - 2}]
+	set h [expr {$h - 2}]
+	if {$w != [$Priv(image) cget -width] ||
+	    $h != [$Priv(image) cget -height]} {
+	    $Priv(image) configure -width $w -height $h
+	    loupe $Priv(image) $Priv(x) $Priv(y) $w $h $Priv(zoom)
+	}
+	return
+    }
 
-	global Loupe
-
+    proc LoupeWindow::ToggleWindowVisibility {} {
+	variable Priv
 	set w .loupe
 	if {![winfo exists $w]} {
-	    MakeLoupeWindow
+	    LoupeWindow::Init
 	}
 	if {[winfo ismapped $w]} {
-	    after cancel $Loupe(afterId)
+	    after cancel $Priv(afterId)
 	    wm withdraw $w
 	} else {
-	    LoupeAfter
+	    After
 	    wm deiconify $w
 	    raise $w
 	}

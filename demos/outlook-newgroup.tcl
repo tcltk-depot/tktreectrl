@@ -3,13 +3,12 @@
 #
 # Demo: Outlook Express newsgroup messages
 #
-proc DemoOutlookNewsgroup {} {
+namespace eval DemoOutlookNewsgroup {}
+proc DemoOutlookNewsgroup::Init {T} {
 
-    global Message
+    variable Priv
 
     InitPics outlook-*
-
-    set T [DemoList]
 
     set height [font metrics [$T cget -font] -linespace]
     if {$height < 18} {
@@ -49,16 +48,16 @@ proc DemoOutlookNewsgroup {} {
     $T configure -treecolumn subject
 
     # State for a read message
-    $T state define read
+    $T item state define read
 
     # State for a message with unread descendants
-    $T state define unread
+    $T item state define unread
 
     # States for "open" rectangles.  This is an ugly hack to get the
     # active outline to span multiple columns.
-    $T state define openWE
-    $T state define openE
-    $T state define openW
+    $T item state define openWE
+    $T item state define openE
+    $T item state define openW
 
     #
     # Create elements
@@ -110,7 +109,7 @@ proc DemoOutlookNewsgroup {} {
     set msgCnt 100
 
     set thread 0
-    set Message(count,0) 0
+    set Priv(count,0) 0
     set items [$T item id root]
     for {set i 1} {$i < $msgCnt} {incr i} {
 	set itemi [$T item create]
@@ -119,36 +118,36 @@ proc DemoOutlookNewsgroup {} {
 	    set itemj [lindex $items $j]
 	    if {$j == 0} break
 	    if {[$T depth $itemj] == 5} continue
-	    if {$Message(count,$Message(thread,$itemj)) == 15} continue
+	    if {$Priv(count,$Priv(thread,$itemj)) == 15} continue
 	    break
 	}
 	$T item lastchild $itemj $itemi
 
-	set Message(read,$itemi) [expr rand() * 2 > 1]
+	set Priv(read,$itemi) [expr rand() * 2 > 1]
 	if {$j == 0} {
-	    set Message(thread,$itemi) [incr thread]
-	    set Message(seconds,$itemi) [expr {[clock seconds] - int(rand() * 500000)}]
-	    set Message(seconds2,$itemi) $Message(seconds,$itemi)
-	    set Message(count,$thread) 1
+	    set Priv(thread,$itemi) [incr thread]
+	    set Priv(seconds,$itemi) [expr {[clock seconds] - int(rand() * 500000)}]
+	    set Priv(seconds2,$itemi) $Priv(seconds,$itemi)
+	    set Priv(count,$thread) 1
 	} else {
-	    set Message(thread,$itemi) $Message(thread,$itemj)
-	    set Message(seconds,$itemi) [expr {$Message(seconds2,$itemj) + int(rand() * 10000)}]
-	    set Message(seconds2,$itemi) $Message(seconds,$itemi)
-	    set Message(seconds2,$itemj) $Message(seconds,$itemi)
-	    incr Message(count,$Message(thread,$itemj))
+	    set Priv(thread,$itemi) $Priv(thread,$itemj)
+	    set Priv(seconds,$itemi) [expr {$Priv(seconds2,$itemj) + int(rand() * 10000)}]
+	    set Priv(seconds2,$itemi) $Priv(seconds,$itemi)
+	    set Priv(seconds2,$itemj) $Priv(seconds,$itemi)
+	    incr Priv(count,$Priv(thread,$itemj))
 	}
 	lappend items $itemi
     }
 
     for {set i 1} {$i < $msgCnt} {incr i} {
 	set itemi [lindex $items $i]
-	set subject "This is thread number $Message(thread,$itemi)"
+	set subject "This is thread number $Priv(thread,$itemi)"
 	set from somebody@somewhere.net
-	set sent [clock format $Message(seconds,$itemi) -format "%d/%m/%y %I:%M %p"]
+	set sent [clock format $Priv(seconds,$itemi) -format "%d/%m/%y %I:%M %p"]
 	set size [expr {1 + int(rand() * 10)}]KB
 
 	# This message has been read
-	if {$Message(read,$itemi)} {
+	if {$Priv(read,$itemi)} {
 	    $T item state set $itemi read
 	}
 
@@ -177,47 +176,52 @@ proc DemoOutlookNewsgroup {} {
 
     # Do something when the selection changes
     $T notify bind $T <Selection> {
-
-	# One item is selected
-	if {[%T selection count] == 1} {
-	    if {[info exists Message(afterId)]} {
-		after cancel $Message(afterId)
-	    }
-	    set Message(afterId,item) [%T selection get 0]
-	    set Message(afterId) [after 500 MessageReadDelayed]
-	}
+	DemoOutlookNewsgroup::Selection %T
     }
 
     # Fix the display when a column is dragged
     $T notify bind $T <ColumnDrag-receive> {
 	%T column move %C %b
-	DemoOutlookNewgroup_FixItemStyles %T
+	DemoOutlookNewsgroup::FixItemStyles %T
     }
 
     # Fix the display when a column's visibility changes
     $T notify bind $T <DemoColumnVisibility> {
-	DemoOutlookNewgroup_FixItemStyles %T
+	DemoOutlookNewsgroup::FixItemStyles %T
     }
 
     return
 }
 
-proc MessageReadDelayed {} {
+proc DemoOutlookNewsgroup::Selection {T} {
+    variable Priv
+    # One item is selected
+    if {[$T selection count] == 1} {
+	if {[info exists Priv(afterId)]} {
+	    after cancel $Priv(afterId)
+	}
+	set Priv(afterId,item) [$T selection get 0]
+	set Priv(afterId) [after 500 DemoOutlookNewsgroup::MessageReadDelayed]
+    }
+    return
+}
 
-    global Message
+proc DemoOutlookNewsgroup::MessageReadDelayed {} {
+
+    variable Priv
 
     set T [DemoList]
 
-    unset Message(afterId)
-    set I $Message(afterId,item)
+    unset Priv(afterId)
+    set I $Priv(afterId,item)
     if {![$T selection includes $I]} return
 
     # This message is not read
-    if {!$Message(read,$I)} {
+    if {!$Priv(read,$I)} {
 
 	# Read the message
 	$T item state set $I read
-	set Message(read,$I) 1
+	set Priv(read,$I) 1
 
 	# Check ancestors (except root)
 	foreach I2 [lrange [$T item ancestors $I] 0 end-1] {
@@ -228,16 +232,15 @@ proc MessageReadDelayed {} {
 	    }
 	}
     }
+    return
 }
 
 # Alternate implementation that does not rely on run-time states
-proc DemoOutlookNewsgroup_2 {} {
+proc DemoOutlookNewsgroup::Init_2 {T} {
 
     global Message
 
     InitPics outlook-*
-
-    set T [DemoList]
 
     set height [font metrics [$T cget -font] -linespace]
     if {$height < 18} {
@@ -336,39 +339,39 @@ proc DemoOutlookNewsgroup_2 {} {
     set msgCnt 100
 
     set thread 0
-    set Message(count,0) 0
+    set Priv(count,0) 0
     for {set i 1} {$i < $msgCnt} {incr i} {
 	$T item create
 	while 1 {
 	    set j [expr {int(rand() * $i)}]
 	    if {$j == 0} break
 	    if {[$T depth $j] == 5} continue
-	    if {$Message(count,$Message(thread,$j)) == 15} continue
+	    if {$Priv(count,$Priv(thread,$j)) == 15} continue
 	    break
 	}
 	$T item lastchild $j $i
 
-	set Message(read,$i) [expr rand() * 2 > 1]
+	set Priv(read,$i) [expr rand() * 2 > 1]
 	if {$j == 0} {
-	    set Message(thread,$i) [incr thread]
-	    set Message(seconds,$i) [expr {[clock seconds] - int(rand() * 500000)}]
-	    set Message(seconds2,$i) $Message(seconds,$i)
-	    set Message(count,$thread) 1
+	    set Priv(thread,$i) [incr thread]
+	    set Priv(seconds,$i) [expr {[clock seconds] - int(rand() * 500000)}]
+	    set Priv(seconds2,$i) $Priv(seconds,$i)
+	    set Priv(count,$thread) 1
 	} else {
-	    set Message(thread,$i) $Message(thread,$j)
-	    set Message(seconds,$i) [expr {$Message(seconds2,$j) + int(rand() * 10000)}]
-	    set Message(seconds2,$i) $Message(seconds,$i)
-	    set Message(seconds2,$j) $Message(seconds,$i)
-	    incr Message(count,$Message(thread,$j))
+	    set Priv(thread,$i) $Priv(thread,$j)
+	    set Priv(seconds,$i) [expr {$Priv(seconds2,$j) + int(rand() * 10000)}]
+	    set Priv(seconds2,$i) $Priv(seconds,$i)
+	    set Priv(seconds2,$j) $Priv(seconds,$i)
+	    incr Priv(count,$Priv(thread,$j))
 	}
     }
 
     for {set i 1} {$i < $msgCnt} {incr i} {
-	set subject "This is thread number $Message(thread,$i)"
+	set subject "This is thread number $Priv(thread,$i)"
 	set from somebody@somewhere.net
-	set sent [clock format $Message(seconds,$i) -format "%d/%m/%y %I:%M %p"]
+	set sent [clock format $Priv(seconds,$i) -format "%d/%m/%y %I:%M %p"]
 	set size [expr {1 + int(rand() * 10)}]KB
-	if {$Message(read,$i)} {
+	if {$Priv(read,$i)} {
 	    set style read
 	    set style2 read
 	} else {
@@ -385,7 +388,7 @@ proc DemoOutlookNewsgroup_2 {} {
     $T notify bind $T <Selection> {
 	if {[%T selection count] == 1} {
 	    set I [%T selection get 0]
-	    if {!$Message(read,$I)} {
+	    if {!$Priv(read,$I)} {
 		if {[%T item isopen $I] || ![AnyUnreadDescendants %T $I]} {
 		    # unread ->read
 		    %T item style map $I subject read {text.unread text.read}
@@ -396,14 +399,14 @@ proc DemoOutlookNewsgroup_2 {} {
 		    # unread -> read2
 		    %T item style map $I subject read2 {text.unread text.unread}
 		}
-		set Message(read,$I) 1
+		set Priv(read,$I) 1
 		DisplayStylesInItem $I
 	    }
 	}
     }
 
     $T notify bind $T <Expand-after> {
-	if {$Message(read,%I) && [AnyUnreadDescendants %T %I]} {
+	if {$Priv(read,%I) && [AnyUnreadDescendants %T %I]} {
 	    # read2 -> read
 	    %T item style map %I subject read {text.unread text.read}
 	    # unread -> read
@@ -414,7 +417,7 @@ proc DemoOutlookNewsgroup_2 {} {
     }
 
     $T notify bind $T <Collapse-after> {
-	if {$Message(read,%I) && [AnyUnreadDescendants %T %I]} {
+	if {$Priv(read,%I) && [AnyUnreadDescendants %T %I]} {
 	    # read -> read2
 	    %T item style map %I subject read2 {text.read text.unread}
 	    # read -> unread
@@ -435,19 +438,19 @@ proc DemoOutlookNewsgroup_2 {} {
     return
 }
 
-proc AnyUnreadDescendants {T I} {
+proc DemoOutlookNewsgroup::AnyUnreadDescendants {T I} {
 
-    global Message
+    variable Priv
 
     foreach item [$T item descendants $I] {
-	if {!$Message(read,$item)} {
+	if {!$Priv(read,$item)} {
 	    return 1
 	}
     }
     return 0
 }
 
-proc DemoOutlookNewgroup_FixItemStyles {T} {
+proc DemoOutlookNewsgroup::FixItemStyles {T} {
 
     set columns1 [$T column id "visible tag clip||arrow||watch !tail"]
     set columns2 [$T column id "visible tag !(clip||arrow||watch) !tail"]
@@ -487,4 +490,5 @@ proc DemoOutlookNewgroup_FixItemStyles {T} {
 	# Change the style, but keep the text so we don't have to reset it.
 	$T item style map all $C $S {elemTxt elemTxt}
     }
+    return
 }

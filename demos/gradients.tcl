@@ -1,8 +1,7 @@
 # Copyright (c) 2010-2011 Tim Baker
 
-proc DemoGradients {} {
-
-    set T [DemoList]
+namespace eval DemoGradients {}
+proc DemoGradients::Init {T} {
 
     if {[lsearch -exact [font names] DemoGradientFont] == -1} {
 	array set fontInfo [font actual [$T cget -font]]
@@ -32,8 +31,8 @@ proc DemoGradients {} {
     # Define new states
     #
 
-    $T state define openW
-    $T state define openN
+    $T item state define openW
+    $T item state define openN
 
     #
     # Create elements

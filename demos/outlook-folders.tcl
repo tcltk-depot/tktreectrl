@@ -3,11 +3,10 @@
 #
 # Demo: Outlook Express folder list
 #
-proc DemoOutlookFolders {} {
+namespace eval DemoOutlookFolders {}
+proc DemoOutlookFolders::Init {T} {
 
     InitPics outlook-*
-
-    set T [DemoList]
 
     set height [font metrics [$T cget -font] -linespace]
     if {$height < 18} {
@@ -37,7 +36,7 @@ proc DemoOutlookFolders {} {
     # uses a bold font and the elemTxtCount element is visible.
     #
 
-    $T state define unread
+    $T item state define unread
 
     #
     # Create elements
@@ -113,11 +112,9 @@ proc DemoOutlookFolders {} {
 # Here is the original implementation which doesn't use custom states.
 # It has 4 different item styles and 6 different elements.
 #
-proc DemoOutlookFolders.orig {} {
+proc DemoOutlookFolders::Init.orig {T} {
 
     InitPics outlook-*
-
-    set T [DemoList]
 
     set height [font metrics [$T cget -font] -linespace]
     if {$height < 18} {

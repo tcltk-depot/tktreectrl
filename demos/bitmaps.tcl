@@ -1,11 +1,8 @@
 # Copyright (c) 2002-2011 Tim Baker
 
-#
-# Demo: Bitmaps
-#
-proc DemoBitmaps {} {
+namespace eval DemoBitmaps {}
 
-    set T [DemoList]
+proc DemoBitmaps::Init {T} {
 
     #
     # Configure the treectrl widget
@@ -61,7 +58,6 @@ proc DemoBitmaps {} {
 
     foreach name $bitmapNames {
 	set I [$T item create]
-#		$T item style set $I 0 $S
 	$T item text $I C0 $name
 	$T item element configure $I C0 elemBmp -bitmap $name
 	$T item lastchild root $I
