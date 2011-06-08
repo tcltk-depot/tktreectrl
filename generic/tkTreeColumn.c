@@ -3790,7 +3790,7 @@ AddColumnSpan(
     }
 
 #ifdef TREECTRL_DEBUG
-    if (priv->spansInvalid == FALSE) Debugger();
+    if (priv->spansInvalid == FALSE) BreakIntoDebugger();
 #endif
 
     if (priv->freeSpans == NULL) {
@@ -3826,8 +3826,8 @@ AddColumnSpan(
 	 * column.*/
 	if (priv->spansInvalid == FALSE) {
 #ifdef TREECTRL_DEBUG
-	    if (spanMin->index < cd->spanMin->index) Debugger();
-	    if (spanMax->index > cd->spanMax->index) Debugger();
+	    if (spanMin->index < cd->spanMin->index) BreakIntoDebugger();
+	    if (spanMax->index > cd->spanMax->index) BreakIntoDebugger();
 #endif
 	} else {
 	    if (spanMin->index < cd->spanMin->index)
@@ -3927,9 +3927,9 @@ TrimTheFatAux(
 
 #ifdef TREECTRL_DEBUG
     if (start->prev != NULL &&
-	start->prev->reqData.spanMax->index >= start->index) Debugger();
+	start->prev->reqData.spanMax->index >= start->index) BreakIntoDebugger();
     if (end->next != NULL &&
-	end->next->reqData.spanMin->index <= end->index) Debugger();
+	end->next->reqData.spanMin->index <= end->index) BreakIntoDebugger();
 #endif
 
     /* Sum the widths of spans across the range of columns. */
@@ -4028,9 +4028,9 @@ TrimTheFat(
 
 #ifdef TREECTRL_DEBUG
     if (start->prev != NULL &&
-	start->prev->reqData.spanMax->index >= start->index) Debugger();
+	start->prev->reqData.spanMax->index >= start->index) BreakIntoDebugger();
     if (end->next != NULL &&
-	end->next->reqData.spanMin->index <= end->index) Debugger();
+	end->next->reqData.spanMin->index <= end->index) BreakIntoDebugger();
 #endif
 
     for (cs = priv->spansCur; cs != NULL; cs = cs->nextCur) {
@@ -4109,12 +4109,12 @@ TreeItem_RequestWidthInColumns(
     ColumnSpan *csPrev = NULL;
 
 #ifdef TREECTRL_DEBUG
-    if (columnMax == tree->columnTail) Debugger();
-    if (priv->reqInvalid) Debugger();
+    if (columnMax == tree->columnTail) BreakIntoDebugger();
+    if (priv->reqInvalid) BreakIntoDebugger();
     if (columnMin->prev != NULL &&
-	columnMin->prev->reqData.spanMax->index >= columnMin->index) Debugger();
+	columnMin->prev->reqData.spanMax->index >= columnMin->index) BreakIntoDebugger();
     if (columnMax->next != NULL &&
-	columnMax->next->reqData.spanMin->index <= columnMax->index) Debugger();
+	columnMax->next->reqData.spanMin->index <= columnMax->index) BreakIntoDebugger();
 #endif
 
     treeColumn = columnMin;
@@ -4144,7 +4144,7 @@ TreeItem_RequestWidthInColumns(
 
 #if defined(TREECTRL_DEBUG)
     /* It must be true that a span starts at columnMin. */
-    if (spans[columnIndexMin] != columnIndexMin) Debugger();
+    if (spans[columnIndexMin] != columnIndexMin) BreakIntoDebugger();
 #endif
 
     for (columnIndex = columnIndexMin;
@@ -4155,9 +4155,9 @@ TreeItem_RequestWidthInColumns(
 	TreeColumn treeColumn2 = treeColumn;
 	TreeColumn lastColumnInSpan = treeColumn;
 #if defined(TREECTRL_DEBUG)
-	if (TreeColumn_Index(treeColumn) != columnIndex) Debugger();
-	if (itemColumn != NULL && TreeItemColumn_Index(tree, item, itemColumn) != columnIndex) Debugger();
-	if (spans[columnIndex] != columnIndex) Debugger();
+	if (TreeColumn_Index(treeColumn) != columnIndex) BreakIntoDebugger();
+	if (itemColumn != NULL && TreeItemColumn_Index(tree, item, itemColumn) != columnIndex) BreakIntoDebugger();
+	if (spans[columnIndex] != columnIndex) BreakIntoDebugger();
 #endif
 	while ((columnIndex2 <= columnIndexMax) &&
 		(spans[columnIndex2] == columnIndex)) {
@@ -4240,11 +4240,11 @@ DistributeSpanWidthToColumns(
 		column = column->next) {
 	    cd = &column->reqData;
 #if defined(TREECTRL_DEBUG)
-	    if (cd->vis != TreeColumn_Visible(column)) Debugger();
-	    if (TreeColumn_MaxWidth(column) >= 0 && cd->min > TreeColumn_MaxWidth(column)) Debugger();
-	    if (TreeColumn_MaxWidth(column) < 0 && cd->min != TreeColumn_MinWidth(column)) Debugger();
-	    if (cd->max != TreeColumn_MaxWidth(column)) Debugger();
-	    if (cd->fixed != TreeColumn_FixedWidth(column)) Debugger();
+	    if (cd->vis != TreeColumn_Visible(column)) BreakIntoDebugger();
+	    if (TreeColumn_MaxWidth(column) >= 0 && cd->min > TreeColumn_MaxWidth(column)) BreakIntoDebugger();
+	    if (TreeColumn_MaxWidth(column) < 0 && cd->min != TreeColumn_MinWidth(column)) BreakIntoDebugger();
+	    if (cd->max != TreeColumn_MaxWidth(column)) BreakIntoDebugger();
+	    if (cd->fixed != TreeColumn_FixedWidth(column)) BreakIntoDebugger();
 #endif
 	    cd->req = 0;
 	    if (cd->vis)
@@ -4320,8 +4320,8 @@ DistributeSpanWidthToColumns(
 		spaceUsed = MIN(spaceUsed, spaceRemaining);
 		cd->req += spaceUsed;
 #if defined(TREECTRL_DEBUG)
-		if (cd->fixed >= 0 && cd->req > cd->fixed) Debugger();
-		if (cd->fixed < 0 && cd->max >= 0 && cd->req > cd->max) Debugger();
+		if (cd->fixed >= 0 && cd->req > cd->fixed) BreakIntoDebugger();
+		if (cd->fixed < 0 && cd->max >= 0 && cd->req > cd->max) BreakIntoDebugger();
 #endif
 		spaceRemaining -= spaceUsed;
 	    }

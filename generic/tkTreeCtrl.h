@@ -815,7 +815,7 @@ MODULE_SCOPE TreeItem TreeItemForEach_Next(ItemForEach *iter);
 	 item = TreeItemForEach_Next(iter))
 
 #ifdef TREECTRL_DEBUG
-#define Debugger() TreeCtrl_BreakIntoDebugger(__FILE__, __LINE__)
+#define BreakIntoDebugger() TreeCtrl_BreakIntoDebugger(__FILE__, __LINE__)
 MODULE_SCOPE void TreeCtrl_BreakIntoDebugger(const char *file, int line);
 #endif
 

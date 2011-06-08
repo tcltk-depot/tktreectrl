@@ -3608,9 +3608,9 @@ Item_HeightOfStyles(
 		TreeColumn treeColumn2 = treeColumn;
 		drawArgs.width = 0;
 #if defined(TREECTRL_DEBUG)
-		if (TreeColumn_Index(treeColumn) != columnIndex) Debugger();
-		if (TreeItemColumn_Index(tree, item, column) != columnIndex) Debugger();
-		if (spans[columnIndex] != columnIndex) Debugger();
+		if (TreeColumn_Index(treeColumn) != columnIndex) BreakIntoDebugger();
+		if (TreeItemColumn_Index(tree, item, column) != columnIndex) BreakIntoDebugger();
+		if (spans[columnIndex] != columnIndex) BreakIntoDebugger();
 #endif
 		while (spans[columnIndex2] == columnIndex) {
 		    if (!TreeColumn_Visible(treeColumn2)) {
