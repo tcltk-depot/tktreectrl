@@ -387,7 +387,7 @@ proc DemoTable::DecrSpan {T I C newLast} {
 
 proc DemoTable::ColumnUnderPoint {T x y} {
     #return [$T column id "nearest $x $y"]
-    set totalWidth 0
+    set totalWidth [lindex [$T cget -canvaspadx] 0]
     foreach C [$T column id "lock none"] {
 	incr totalWidth [$T column width $C]
 	if {[$T canvasx $x] < $totalWidth} {
