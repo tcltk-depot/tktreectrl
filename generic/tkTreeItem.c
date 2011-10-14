@@ -4253,15 +4253,15 @@ Item_GetSpans(
     if ((item->header == NULL) && (dragPosition & WALKSPAN_ONLY_DRAGGED))
 	return 0;
 
-    if ((columns == NULL) || (siStack->columnCount < columnCount)) {
+    if ((columns == NULL) || (siStack->columnCount < tree->columnCount + 1)) {
 	columns = (ColumnColumn *) ckrealloc((char *) columns,
-	    sizeof(ColumnColumn) * columnCount);
-	siStack->columnCount = columnCount;
+	    sizeof(ColumnColumn) * (tree->columnCount + 1));
+	siStack->columnCount = tree->columnCount + 1;
 	siStack->columns = columns;
     }
 
 #ifdef TREECTRL_DEBUG
-    for (i = 0; i < columnCount; i++) {
+    for (i = 0; i < tree->columnCount + 1; i++) {
 	columns[i].treeColumn = NULL;
 	columns[i].itemColumn = NULL;
     }
@@ -4283,11 +4283,14 @@ Item_GetSpans(
 	    if (dragPosition & WALKSPAN_ONLY_DRAGGED)
 		isDragColumn = 1;
 	}
+#ifdef TREECTRL_DEBUG
+	if (columnIndex < 0 || columnIndex >= siStack->columnCount) panic("Item_GetSpans columnIndex %d columnCount %d", columnIndex, siStack->columnCount);
+#endif
 	columns[columnIndex].treeColumn = treeColumn;
 	columns[columnIndex].itemColumn = column;
 	columns[columnIndex].isDragColumn = isDragColumn;
 	columnCount++;
-	if (treeColumn == lastColumn)
+	if (treeColumn == lastColumn) /* FIXME: lastColumn is usually NULL */
 	    break;
 	treeColumn = Tree_ColumnToTheRight(treeColumn, TRUE,
 	    item->header != NULL);
