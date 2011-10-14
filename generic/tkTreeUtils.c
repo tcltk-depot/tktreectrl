@@ -4325,6 +4325,8 @@ PerStateCO_Set(
 	new.data = NULL;
 	new.count = 0;
 /*	Tcl_IncrRefCount((*value));*/
+	if (tree->configStateDomain == -1)
+	    panic("PerStateCO_Set configStateDomain == -1");
 	if (PerStateInfo_FromObj(tree, tree->configStateDomain, cd->proc, cd->typePtr, &new) != TCL_OK) {
 /*	    Tcl_DecrRefCount((*value));*/
 	    return TCL_ERROR;

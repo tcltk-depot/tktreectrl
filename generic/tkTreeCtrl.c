@@ -509,7 +509,7 @@ TreeObjCmd(
      */
     Tcl_Preserve((ClientData) tkwin);
 
-    if (Tk_InitOptions(interp, (char *) tree, optionTable, tkwin) != TCL_OK) {
+    if (Tree_InitOptions(tree, STATE_DOMAIN_ITEM, tree, optionTable) != TCL_OK) {
 	Tk_DestroyWindow(tree->tkwin);
 	return TCL_ERROR;
     }
