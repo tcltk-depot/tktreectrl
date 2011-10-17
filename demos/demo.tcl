@@ -2,7 +2,7 @@
 
 # Copyright (c) 2002-2011 Tim Baker
 
-set VERSION 2.4
+set VERSION 2.4.1
 
 package require Tk 8.4
 

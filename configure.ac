@@ -18,7 +18,7 @@ dnl	to configure the system for the local environment.
 #-----------------------------------------------------------------------
 
 AC_INIT([treectrl], [2.4])
-AC_SUBST([PACKAGE_PATCHLEVEL], [2.4])
+AC_SUBST([PACKAGE_PATCHLEVEL], [2.4.1])
 AC_DEFINE_UNQUOTED(PACKAGE_PATCHLEVEL, "$PACKAGE_PATCHLEVEL")
 
 TEA_INIT([3.9])

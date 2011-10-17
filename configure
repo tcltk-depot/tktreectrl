@@ -2248,7 +2248,7 @@ ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
-PACKAGE_PATCHLEVEL=2.4
+PACKAGE_PATCHLEVEL=2.4.1
 
 cat >>confdefs.h <<_ACEOF
 #define PACKAGE_PATCHLEVEL "$PACKAGE_PATCHLEVEL"
@@ -6420,12 +6420,11 @@ $as_echo "yes" >&6; }
 fi
 
 if test "${TEA_WINDOWINGSYSTEM}" = "aqua"; then
-
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to use Cocoa or Carbon" >&5
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to use Cocoa or Carbon" >&5
 $as_echo_n "checking whether to use Cocoa or Carbon... " >&6; }
-	case ${TK_LIBS} in
-		*Cocoa*)
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: Cocoa" >&5
+    case ${TK_LIBS} in
+	*Cocoa*)
+	    { $as_echo "$as_me:${as_lineno-$LINENO}: result: Cocoa" >&5
 $as_echo "Cocoa" >&6; }
 
     PKG_CFLAGS="$PKG_CFLAGS -DMAC_TK_COCOA -std=gnu99 -x objective-c -fobjc-gc"
@@ -6477,9 +6476,9 @@ $as_echo "Cocoa" >&6; }
     done
 
 
-            ;;
-		*)
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: Carbon" >&5
+	    ;;
+	*)
+	    { $as_echo "$as_me:${as_lineno-$LINENO}: result: Carbon" >&5
 $as_echo "Carbon" >&6; }
 
     PKG_CFLAGS="$PKG_CFLAGS -DMAC_TK_CARBON"
@@ -6531,8 +6530,8 @@ $as_echo "Carbon" >&6; }
     done
 
 
-            ;;
-	esac
+	    ;;
+    esac
 fi
 
 if test "${TEA_WINDOWINGSYSTEM}" = "x11"; then
