@@ -3990,3 +3990,29 @@ error2:
 error1:
     TkWinReleaseDrawableDC(td.drawable, hDC, &dcState);
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tree_IsToplevelActive --
+ *
+ *	Return 1 if the toplevel window for the widget is the "active"
+ *	window.
+ *
+ * Results:
+ *	1 if the toplevel is active, 0 otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tree_IsToplevelActive(
+    TreeCtrl *tree
+    )
+{
+    /* ActivateNotify/DeactivateNotify doesn't even happen on Windows. */
+    return tree->isActive;
+}

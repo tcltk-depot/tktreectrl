@@ -1706,6 +1706,12 @@ TreeEventProc(
 	case DeactivateNotify:
 	    Tree_Activate(tree, 0);
 	    break;
+	case MapNotify: {
+	    int isActive = Tree_IsToplevelActive(tree);
+	    if (isActive != tree->isActive)
+		Tree_Activate(tree, isActive);
+	    break;
+	}
 	case DestroyNotify:
 	    if (!tree->deleted) {
 		tree->deleted = 1;

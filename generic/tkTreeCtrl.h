@@ -1776,3 +1776,5 @@ MODULE_SCOPE void TreeColor_FillRoundRect(TreeCtrl *tree, TreeDrawable td,
     int rx, int ry, int open);
 
 MODULE_SCOPE int TreeDraw_InitInterp(Tcl_Interp *interp);
+
+MODULE_SCOPE int Tree_IsToplevelActive(TreeCtrl *tree);

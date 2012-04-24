@@ -2741,3 +2741,35 @@ TreeDraw_InitInterp(
 {
     return TCL_OK;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tree_IsToplevelActive --
+ *
+ *	Return 1 if the toplevel window for the widget is the "active"
+ *	window.
+ *
+ * Results:
+ *	1 if the toplevel is active, 0 otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tree_IsToplevelActive(
+    TreeCtrl *tree
+    )
+{
+    Drawable d = Tk_WindowId(tree->tkwin);
+    CGrafPtr port = TkMacOSXGetDrawablePort(d);
+    if (!port)
+	return tree->isActive;
+    WindowRef windowRef = GetWindowFromPort(port);
+    if (!windowRef)
+	return tree->isActive;
+    return IsWindowActive(windowRef);
+}

@@ -3163,3 +3163,28 @@ TreeDraw_InitInterp(
     return TCL_OK;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tree_IsToplevelActive --
+ *
+ *	Return 1 if the toplevel window for the widget is the "active"
+ *	window.
+ *
+ * Results:
+ *	1 if the toplevel is active, 0 otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tree_IsToplevelActive(
+    TreeCtrl *tree
+    )
+{
+    /* ActivateNotify/DeactivateNotify is MacOSX-only. */
+    return tree->isActive;
+}
