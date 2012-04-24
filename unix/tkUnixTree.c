@@ -833,6 +833,7 @@ Tree_Fill3DRectangle(
 #include <gdk-pixbuf/gdk-pixbuf.h>
 #include <gdk-pixbuf-xlib/gdk-pixbuf-xlib.h>
 #include <gdk/gdkx.h>
+#include <locale.h>
 
 TCL_DECLARE_MUTEX(themeMutex)
 
@@ -1805,6 +1806,7 @@ TreeTheme_InitInterp(
 	char **argv = g_new0(char*, 2);
 	argv[0] = (char *) Tcl_GetNameOfExecutable();
 	GtkTreeViewColumn *column;
+	const char *old_numeric, *new_numeric;
 
 	if (!g_thread_supported()) {
 	    /* Initialized Glib threads.  Must be done before gdk_threads_init(). */
@@ -1829,6 +1831,7 @@ TreeTheme_InitInterp(
 	 * error handler is restored. */
 	TkXErrorHandler = XSetErrorHandler(TreeCtrlErrorHandler);
 
+	old_numeric = setlocale(LC_NUMERIC, NULL);
 #if 0
 	/* This must be called before gtk_init(). */
 	/* FIXME: this might already have been called (from tile-gtk, or if this is an
@@ -1842,6 +1845,15 @@ TreeTheme_InitInterp(
 	    gdk_threads_leave(); /* +++ release global mutex +++ */
 	    Tcl_MutexUnlock(&themeMutex);
 	    return TCL_ERROR;
+	}
+
+	/* If gtk_init() changed the locale, then set it back to what
+	 * it was.  Tcl expects "C". [Bug 3502497] */
+	new_numeric = setlocale(LC_NUMERIC, NULL);
+	if ((old_numeric != NULL) && ((new_numeric == NULL) ||
+		(strcmp(old_numeric, new_numeric) != 0)))
+	{
+	    setlocale(LC_NUMERIC, old_numeric);
 	}
 
 	appThemeData->gtkWindow = gtk_window_new(GTK_WINDOW_POPUP);
