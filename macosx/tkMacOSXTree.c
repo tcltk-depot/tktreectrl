@@ -1852,8 +1852,8 @@ typedef struct ShadeData {
 static void
 ShadeEvaluate(
     void *info,
-    const float *in,
-    float *out)
+    const CGFloat *in,
+    CGFloat *out)
 {
     ShadeData *data = info;
     int nstops = data->nstops;
@@ -1998,6 +1998,7 @@ MakeLinearGradientShading(
     CGFunctionCallbacks callbacks;
     CGPoint start, end;
     CGFloat input_value_range[2] = {0.f, 1.f};
+    CGFloat output_value_ranges[8] = {0, 1, 0, 1, 0, 1, 0, 1};
 
     ms->data.nstops = gradient->stopArrPtr->nstops;
     for (i = 0; i < gradient->stopArrPtr->nstops; i++) {
@@ -2049,7 +2050,7 @@ MakeLinearGradientShading(
     callbacks.releaseInfo = ShadeRelease;
     ms->function = CGFunctionCreate((void *) &ms->data,
 	1, input_value_range/*kValidDomain*/,
-	4, kValidRange,
+	4, output_value_ranges,
 	&callbacks);
 
     ms->shading = CGShadingCreateAxial(ms->colorSpaceRef, start, end,
