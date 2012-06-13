@@ -2526,16 +2526,15 @@ struct AllocElem
     int free;		/* 1 if elem is available for reuse. */
     int size;		/* Number of bytes in body[]. */
 #endif
-    char body[1];	/* First byte of client's space.  Actual
-			 * size of this field will be larger than
-			 * one. */
+    /* Client data starts some multiple of ALIGN_MULTIPLE from the
+     * start of this struct. */
 };
 
 struct AllocBlock
 {
     int count;		/* Size of .elem[] */
     AllocBlock *next;	/* Next block with same-sized elems. */
-    AllocElem elem[1];	/* Actual size will be larger than one. */
+    AllocElem *elem;	/* Pointer to contiguous array of elems. */
 };
 
 /*
@@ -2574,16 +2573,25 @@ struct AllocStats {
 #endif
 
 /*
- * The following macro computes the offset of the "body" field within
- * AllocElem.  It is used to get back to the header pointer from the
- * body pointer that's used by clients.
+ * From tclInt.h TCL_ALLOCALIGN (renamed ALIGN_MULTIPLE here):
+ * This macro is used to properly align the memory allocated by Tcl, giving
+ * the same alignment as the native malloc.
  */
 
-#ifdef offsetofXXX
-#define BODY_OFFSET ((size_t) offsetof(AllocElem, body))
+#if defined(__APPLE__)
+#define ALIGN_MULTIPLE	16
 #else
-#define BODY_OFFSET ((size_t) (&((AllocElem *) 0)->body))
+#define ALIGN_MULTIPLE	(2*sizeof(void *))
 #endif
+
+#define ALIGNED_SIZE(n) (((n) + (ALIGN_MULTIPLE-1)) & ~(ALIGN_MULTIPLE-1))
+
+/*
+ * The following macro computes the offset of the client data within
+ * AllocElem.
+ */
+
+#define BODY_OFFSET ALIGNED_SIZE(sizeof(AllocElem))
 
 #ifdef ALLOC_STATS
 
@@ -2692,10 +2700,10 @@ TreeAlloc_Alloc(
     }
 
     if (freeList->head == NULL) {
-	unsigned elemSize = TCL_ALIGN(BODY_OFFSET + size);
+	unsigned elemSize = ALIGNED_SIZE(BODY_OFFSET + size);
 
-	block = (AllocBlock *) ckalloc(Tk_Offset(AllocBlock, elem) +
-		elemSize * freeList->blockSize);
+	block = (AllocBlock*) ckalloc(sizeof(AllocBlock));
+	block->elem = (AllocElem *) ckalloc(elemSize * freeList->blockSize);
 	block->count = freeList->blockSize;
 	block->next = freeList->blocks;
 
@@ -2712,7 +2720,7 @@ TreeAlloc_Alloc(
 	    elem->free = 1;
 	    elem->size = size;
 #endif
-	    elem->next = (AllocElem *) (((char *) freeList->head) +
+	    elem->next = (AllocElem *) (((size_t) freeList->head) +
 		elemSize * i);
 	    elem = elem->next;
 	}
@@ -2731,7 +2739,7 @@ TreeAlloc_Alloc(
 	panic("TreeAlloc_Alloc: element not marked free");
     result->free = 0;
 #endif
-    return result->body;
+    return (char *)(((size_t)result) + BODY_OFFSET);
 }
 
 /*
@@ -2833,7 +2841,7 @@ TreeAlloc_Free(
     if (freeList == NULL)
 	panic("TreeAlloc_Free: can't find free list for size %d", size);
 
-    WIPE(elem->body, size);
+    WIPE(ptr, size);
     elem->next = freeList->head;
 #ifdef TREECTRL_DEBUG
     elem->free = 1;
