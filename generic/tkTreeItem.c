@@ -2781,9 +2781,7 @@ Item_ToggleOpen(
     int stateOn			/* STATE_ITEM_OPEN or 0 */
     )
 {
-    int mask;
-
-    mask = TreeItem_ChangeState(tree, item, stateOff, stateOn);
+    TreeItem_ChangeState(tree, item, stateOff, stateOn);
 
     if (IS_ROOT(item) && !tree->showRoot)
 	return;

@@ -100,8 +100,10 @@ Tree_DrawActiveOutline(
     int n = !(open & RECT_OPEN_N);
     int e = !(open & RECT_OPEN_E);
     int s = !(open & RECT_OPEN_S);
+#if 1
+    int nw, ne, sw;
+#else
     int nw, ne, sw, se;
-#if 0
     int i;
 #endif
     XGCValues gcValues;
@@ -114,7 +116,6 @@ Tree_DrawActiveOutline(
     nw = !(wx & 1) == !(wy & 1);
     ne = !((wx + width - 1) & 1) == !(wy & 1);
     sw = !(wx & 1) == !((wy + height - 1) & 1);
-    se = !((wx + width - 1) & 1) == !((wy + height - 1) & 1);
 
     gcValues.function = GXinvert;
     gcValues.line_style = LineOnOffDash;

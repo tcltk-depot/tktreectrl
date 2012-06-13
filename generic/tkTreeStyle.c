@@ -234,14 +234,13 @@ Style_DoExpandH(
     MElementLink *eLink1 = layout->master;
     int flags = eLink1->flags;
     int numExpand = 0, spaceRemaining, spaceUsed = 0;
-    int *ePadX, *iPadX, *uPadX;
+    int *ePadX, *iPadX;
 
     if (!(flags & (ELF_EXPAND_WE | ELF_iEXPAND_X)))
 	return 0;
 
     ePadX = layout->ePadX;
     iPadX = layout->iPadX;
-    uPadX = layout->uPadX;
 
     spaceRemaining = extraSpace;
     if (spaceRemaining <= 0)
@@ -367,14 +366,13 @@ Style_DoExpandV(
     MElementLink *eLink1 = layout->master;
     int flags = eLink1->flags;
     int numExpand = 0, spaceRemaining, spaceUsed = 0;
-    int *ePadY, *iPadY, *uPadY;
+    int *ePadY, *iPadY;
 
     if (!(flags & (ELF_EXPAND_NS | ELF_iEXPAND_Y)))
 	return 0;
 
     ePadY = layout->ePadY;
     iPadY = layout->iPadY;
-    uPadY = layout->uPadY;
 
     spaceRemaining = extraSpace;
     if (spaceRemaining <= 0)
@@ -1875,7 +1873,6 @@ Style_DoLayoutV(
     IStyle *style = (IStyle *) drawArgs->style;
     MStyle *masterStyle = style->master;
     MElementLink *eLinks1, *eLink1;
-    IElementLink *eLinks2, *eLink2;
     int y = 0;
     int *ePadY, *iPadY, *uPadY;
     int numExpandNS = 0;
@@ -1885,7 +1882,6 @@ Style_DoLayoutV(
     int iCenterMin = -1, iCenterMax = -1;
 
     eLinks1 = masterStyle->elements;
-    eLinks2 = style->elements;
     eLinkCount = masterStyle->numElements;
 
     for (i = 0; i < eLinkCount; i++) {
@@ -1999,7 +1995,6 @@ Style_DoLayoutV(
 	    continue;
 
 	eLink1 = &eLinks1[i];
-	eLink2 = &eLinks2[i];
 
 	if (DETACH_OR_UNION(eLink1))
 	    continue;
@@ -2150,7 +2145,6 @@ Style_DoLayoutV(
 	    continue;
 
 	eLink1 = &eLinks1[i];
-	eLink2 = &eLinks2[i];
 
 	if (!IS_DETACH(eLink1) || IS_UNION(eLink1))
 	    continue;
@@ -2241,13 +2235,13 @@ Layout_Size(
     for (i = 0; i < numLayouts; i++) {
 	struct Layout *layout = &layouts[i];
 	int w, n, e, s;
-	int *ePadX, *iPadX, *uPadX, *ePadY, *iPadY, *uPadY;
+	int *ePadX, *uPadX, *ePadY, *uPadY;
 
 	if (IS_HIDDEN(layout))
 	    continue;
 
-	ePadX = layout->ePadX, iPadX = layout->iPadX, uPadX = layout->uPadX;
-	ePadY = layout->ePadY, iPadY = layout->iPadY, uPadY = layout->uPadY;
+	ePadX = layout->ePadX, uPadX = layout->uPadX;
+	ePadY = layout->ePadY, uPadY = layout->uPadY;
 
 	w = layout->x + ePadX[PAD_TOP_LEFT] - MAX(ePadX[PAD_TOP_LEFT], uPadX[PAD_TOP_LEFT]);
 	n = layout->y + ePadY[PAD_TOP_LEFT] - MAX(ePadY[PAD_TOP_LEFT], uPadY[PAD_TOP_LEFT]);
@@ -2304,13 +2298,11 @@ Style_DoLayoutNeededV(
     IStyle *style = (IStyle *) drawArgs->style;
     MStyle *masterStyle = style->master;
     MElementLink *eLinks1, *eLink1;
-    IElementLink *eLinks2, *eLink2;
     int *ePadY, *iPadY, *uPadY;
     int i;
     int y = 0;
 
     eLinks1 = masterStyle->elements;
-    eLinks2 = style->elements;
 
     /* Layout elements left-to-right, or top-to-bottom */
     for (i = 0; i < masterStyle->numElements; i++) {
@@ -2320,7 +2312,6 @@ Style_DoLayoutNeededV(
 	    continue;
 
 	eLink1 = &eLinks1[i];
-	eLink2 = &eLinks2[i];
 
 	/* The size of a -union element is determined by the elements
 	 * it surrounds */
@@ -2355,7 +2346,6 @@ Style_DoLayoutNeededV(
 	    continue;
 
 	eLink1 = &eLinks1[i];
-	eLink2 = &eLinks2[i];
 
 	if (!IS_DETACH(eLink1) || IS_UNION(eLink1))
 	    continue;
@@ -4262,7 +4252,7 @@ MStyle_ChangeElementsAux(
 				 * currently used by the style. */
     )
 {
-    MElementLink *eLink, *eLinks = NULL;
+    MElementLink *eLinks = NULL;
     int i, staticKeep[STATIC_SIZE], *keep = staticKeep;
 
     STATIC_ALLOC(keep, int, style->numElements);
@@ -4286,7 +4276,7 @@ MStyle_ChangeElementsAux(
 	    eLinks[i] = style->elements[map[i]];
 	    keep[map[i]] = 1;
 	} else {
-	    eLink = MElementLink_Init(&eLinks[i], elemList[i]);
+	    MElementLink_Init(&eLinks[i], elemList[i]);
 	}
     }
 

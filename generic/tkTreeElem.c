@@ -4379,7 +4379,6 @@ static void HeightProcText(TreeElementArgs *args)
     int inHeader = elem->stateDomain == STATE_DOMAIN_HEADER;
     int state = args->state;
     int height = 0;
-    char *text = NULL;
     int textLen = 0;
     Tk_Font tkfont;
     Tk_FontMetrics fm;
@@ -4391,10 +4390,8 @@ static void HeightProcText(TreeElementArgs *args)
 	TextLayout_Size(etl2->layout, NULL, &height);
     } else {
 	if (elemX->text != NULL) {
-	    text = elemX->text;
 	    textLen = elemX->textLen;
 	} else if ((masterX != NULL) && (masterX->text != NULL)) {
-	    text = masterX->text;
 	    textLen = masterX->textLen;
 	}
 	if (textLen > 0) {

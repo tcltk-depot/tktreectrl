@@ -3923,9 +3923,9 @@ TrimTheFatAux(
     int numColsThatCanShrink = 0, csn;
     ColumnReqData *cd;
     ColumnSpan *cs;
+#ifdef TREECTRL_DEBUG
     int visited;
 
-#ifdef TREECTRL_DEBUG
     if (start->prev != NULL &&
 	start->prev->reqData.spanMax->index >= start->index) BreakIntoDebugger();
     if (end->next != NULL &&
@@ -3934,7 +3934,10 @@ TrimTheFatAux(
 
     /* Sum the widths of spans across the range of columns. */
     sumOfSpanWidths = 0;
-    visited = SumSpanWidths(&sumOfSpanWidths, &start->reqData.spans, end);
+#ifdef TREECTRL_DEBUG
+    visited = 
+#endif
+    SumSpanWidths(&sumOfSpanWidths, &start->reqData.spans, end);
     if (sumOfSpanWidths <= 0)
 	return;
 

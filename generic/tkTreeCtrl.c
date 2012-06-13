@@ -3072,7 +3072,6 @@ Tree_AddToSelection(
     TreeItem item		/* Item to add to the selection. */
     )
 {
-    Tcl_HashEntry *hPtr;
     int isNew;
 
 #ifdef SELECTION_VISIBLE
@@ -3087,7 +3086,7 @@ Tree_AddToSelection(
 	panic("Tree_AddToSelection: item %d not enabled",
 		TreeItem_GetID(tree, item));
     TreeItem_ChangeState(tree, item, 0, STATE_ITEM_SELECTED);
-    hPtr = Tcl_CreateHashEntry(&tree->selection, (char *) item, &isNew);
+    Tcl_CreateHashEntry(&tree->selection, (char *) item, &isNew);
     if (!isNew)
 	panic("Tree_AddToSelection: item %d already in selection hash table",
 		TreeItem_GetID(tree, item));

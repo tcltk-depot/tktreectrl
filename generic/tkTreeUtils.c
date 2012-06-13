@@ -1715,7 +1715,6 @@ DuplicateListObj(
 {
     int objc;
     Tcl_Obj **objv;
-    int result;
 
     /*
      * Comment from TclLsetFlat:
@@ -1725,7 +1724,7 @@ DuplicateListObj(
      * their refCount.
      */
 
-    result = Tcl_ListObjGetElements(NULL, objPtr, &objc, &objv);
+    Tcl_ListObjGetElements(NULL, objPtr, &objc, &objv);
     return Tcl_NewListObj(objc, objv);
 }
 
@@ -4406,18 +4405,18 @@ PerStateCO_Free(
     PerStateCOClientData *cd = (PerStateCOClientData *) clientData;
     TreeCtrl *tree = (TreeCtrl *) ((TkWindow *) tkwin)->instanceData;
     PerStateInfo *hax;
-    Tcl_Obj *objPtr = NULL;
+//    Tcl_Obj *objPtr = NULL;
 
     if (OptionHax_Forget(tree, internalPtr)) {
 	hax = *(PerStateInfo **) internalPtr;
 	if (hax != NULL) {
-	    objPtr = hax->obj;
+//	    objPtr = hax->obj;
 	    PerStateInfo_Free(tree, cd->typePtr, hax);
 	    ckfree((char *) hax);
 	}
     } else {
 /*dbwin("PerStateCO_Free %p %s\n", internalPtr, cd->typePtr->name);*/
-	objPtr = ((PerStateInfo *) internalPtr)->obj;
+//	objPtr = ((PerStateInfo *) internalPtr)->obj;
 	PerStateInfo_Free(tree, cd->typePtr, (PerStateInfo *) internalPtr);
     }
 /*    if (objPtr != NULL)
@@ -8047,7 +8046,7 @@ TreeGradient_FillRectX11(
     )
 {
     TreeRectangle trSub;
-    int oldX = trBrush.x, oldY = trBrush.y;
+    int oldY = trBrush.y;
 
     if (trBrush.height < 1 || trBrush.width < 1) return;
     if (tr.height < 1 || tr.width < 1) return;
@@ -8061,7 +8060,7 @@ TreeGradient_FillRectX11(
 	trBrush.y -= trBrush.height;
     while (tr.y >= trBrush.y + trBrush.height)
 	trBrush.y += trBrush.height;
-    oldX = trBrush.x, oldY = trBrush.y;
+    oldY = trBrush.y;
     while (trBrush.x < tr.x + tr.width) {
 	trBrush.y = oldY;
 	while (trBrush.y < tr.y + tr.height) {
