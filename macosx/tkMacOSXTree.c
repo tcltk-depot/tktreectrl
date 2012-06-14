@@ -2766,6 +2766,12 @@ Tree_IsToplevelActive(
     )
 {
     Drawable d = Tk_WindowId(tree->tkwin);
+#if MAC_TK_COCOA
+    NSWindow *nsWin = TkMacOSXDrawable(d);
+    if (!nsWin)
+	return tree->isActive;
+    return [nsWin isKeyWindow];
+#else
     CGrafPtr port = TkMacOSXGetDrawablePort(d);
     if (!port)
 	return tree->isActive;
@@ -2773,4 +2779,5 @@ Tree_IsToplevelActive(
     if (!windowRef)
 	return tree->isActive;
     return IsWindowActive(windowRef);
+#endif
 }
