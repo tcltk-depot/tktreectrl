@@ -583,6 +583,10 @@ Item_Alloc(
     if (isHeader) {
 	if (tree->gotFocus)
 	    item->state |= STATE_HEADER_FOCUS;
+#if MAC_OSX_TK
+	if (!tree->isActive)
+	    item->state |= STATE_HEADER_BG;
+#endif
     } else {
 	item->state =
 	    STATE_ITEM_OPEN |
