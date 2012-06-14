@@ -73,7 +73,9 @@ struct TreeItem_ {
 #define ITEM_FLAGS_BUTTONSTATE (ITEM_FLAG_BUTTONSTATE_ACTIVE | \
     ITEM_FLAG_BUTTONSTATE_PRESSED)
 
+#ifdef ALLOC_HAX
 static CONST char *ItemUid = "Item", *ItemColumnUid = "ItemColumn";
+#endif
 
 /*
  * Macro to test whether an item is the unique root item

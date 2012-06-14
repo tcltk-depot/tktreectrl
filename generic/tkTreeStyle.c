@@ -143,8 +143,10 @@ struct IElementLink
 #endif
 };
 
+#ifdef ALLOC_HAX
 static CONST char *MStyleUid = "MStyle", *IStyleUid = "IStyle",
     *MElementLinkUid = "MElementLink", *IElementLinkUid = "IElementLink";
+#endif
 
 static char *orientStringTable[] = { "horizontal", "vertical", (char *) NULL };
 

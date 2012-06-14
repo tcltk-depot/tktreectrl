@@ -3194,7 +3194,9 @@ TreePtrList_Free(
 #define TAG_INFO_SIZE(tagSpace) \
     (Tk_Offset(TagInfo, tagPtr) + ((tagSpace) * sizeof(Tk_Uid)))
 
+#ifdef ALLOC_HAX
 static CONST char *TagInfoUid = "TagInfo";
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -4513,7 +4515,9 @@ PerStateCO_Init(
 
 #define DEBUG_DYNAMICxxx
 
+#ifdef ALLOC_HAX
 static CONST char *DynamicOptionUid = "DynamicOption";
+#endif
 
 /*
  *----------------------------------------------------------------------
