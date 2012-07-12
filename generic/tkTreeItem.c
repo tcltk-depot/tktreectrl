@@ -8686,7 +8686,9 @@ TreeItemCmd(
 #define AF_NOT_ITEM	0x00080000 /* arg is not an Item */
 #define AF_NOT_DELETED	0x00100000 /* item can't be deleted */
 
-    struct {
+    /* This struct must be static, as it is an argument to
+      Tcl_GetIndexFromObjStruct(). */
+    static struct {
 	char *cmdName;
 	int minArgs;
 	int maxArgs;
