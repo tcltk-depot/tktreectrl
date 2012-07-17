@@ -4415,18 +4415,18 @@ PerStateCO_Free(
     PerStateCOClientData *cd = (PerStateCOClientData *) clientData;
     TreeCtrl *tree = (TreeCtrl *) ((TkWindow *) tkwin)->instanceData;
     PerStateInfo *hax;
-//    Tcl_Obj *objPtr = NULL;
+/*    Tcl_Obj *objPtr = NULL; */
 
     if (OptionHax_Forget(tree, internalPtr)) {
 	hax = *(PerStateInfo **) internalPtr;
 	if (hax != NULL) {
-//	    objPtr = hax->obj;
+/*	    objPtr = hax->obj; */
 	    PerStateInfo_Free(tree, cd->typePtr, hax);
 	    ckfree((char *) hax);
 	}
     } else {
 /*dbwin("PerStateCO_Free %p %s\n", internalPtr, cd->typePtr->name);*/
-//	objPtr = ((PerStateInfo *) internalPtr)->obj;
+/*	objPtr = ((PerStateInfo *) internalPtr)->obj; */
 	PerStateInfo_Free(tree, cd->typePtr, (PerStateInfo *) internalPtr);
     }
 /*    if (objPtr != NULL)
