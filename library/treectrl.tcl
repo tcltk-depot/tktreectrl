@@ -196,18 +196,40 @@ if {[string equal "x11" [tk windowingsystem]]} {
 	    %W yview scroll -5 units
 	}
     }
+    bind TreeCtrl <Shift-4> {
+	if {!$tk_strictMotif} {
+	    %W xview scroll -5 units
+	}
+    }
     bind TreeCtrl <5> {
 	if {!$tk_strictMotif} {
 	    %W yview scroll 5 units
+	}
+    }
+    bind TreeCtrl <Shift-5> {
+	if {!$tk_strictMotif} {
+	    %W xview scroll 5 units
 	}
     }
 } elseif {[string equal [tk windowingsystem] "aqua"]} {
     bind TreeCtrl <MouseWheel> {
 	%W yview scroll [expr {- (%D)}] units
     }
+    bind TreeCtrl <Option-MouseWheel> {
+        %W yview scroll [expr {-10 * (%D)}] units
+    }
+    bind TreeCtrl <Shift-MouseWheel> {
+        %W xview scroll [expr {- (%D)}] units
+    }
+    bind TreeCtrl <Shift-Option-MouseWheel> {
+        %W xview scroll [expr {-10 * (%D)}] units
+    }
 } else {
     bind TreeCtrl <MouseWheel> {
 	%W yview scroll [expr {- (%D / 120) * 4}] units
+    }
+    bind TreeCtrl <Shift-MouseWheel> {
+        %W xview scroll [expr {- (%D / 120) * 4}] units
     }
 }
 
