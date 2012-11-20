@@ -452,8 +452,10 @@ struct TreeCtrl
 	int right;
 	int bottom;
     } inset;			/* borderWidth + highlightWidth */
-    int xOrigin;		/* offset from content x=0 to window x=0 */
-    int yOrigin;		/* offset from content y=0 to window y=0 */
+    int xOrigin;		/* offset from canvas x=0 to window x=0 */
+    int yOrigin;		/* offset from canvas y=0 to window y=0 */
+    int xOriginV2;		/* offset from canvas x=0 to content x=0 */
+    int yOriginV2;		/* offset from canvas y=0 to content y=0 */
     GC copyGC;
     GC textGC;
     GC headerTextGC;

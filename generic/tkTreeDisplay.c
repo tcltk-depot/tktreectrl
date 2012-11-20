@@ -1859,6 +1859,7 @@ TreeXviewCmd(
 	offset = Increment_ToOffsetX(tree, index);
 	if (tree->xOrigin != offset - Tree_ContentLeft(tree)) {
 	    tree->xOrigin = offset - Tree_ContentLeft(tree);
+	    tree->xOriginV2 = offset;
 	    Tree_EventuallyRedraw(tree);
 	}
     }
@@ -1966,6 +1967,7 @@ TreeYviewCmd(
 	offset = Increment_ToOffsetY(tree, index);
 	if (tree->yOrigin != offset - Tree_ContentTop(tree)) {
 	    tree->yOrigin = offset - Tree_ContentTop(tree);
+	    tree->yOriginV2 = offset;
 	    Tree_EventuallyRedraw(tree);
 	}
     }
@@ -7095,11 +7097,11 @@ displayRetry:
 	    DINFO_OUT_OF_DATE;
     }
     if (dInfo->flags & DINFO_SET_ORIGIN_X) {
-	Tree_SetOriginX(tree, tree->xOrigin);
+	Tree_GetOriginX(tree);
 	dInfo->flags &= ~DINFO_SET_ORIGIN_X;
     }
     if (dInfo->flags & DINFO_SET_ORIGIN_Y) {
-	Tree_SetOriginY(tree, tree->yOrigin);
+	Tree_GetOriginY(tree);
 	dInfo->flags &= ~DINFO_SET_ORIGIN_Y;
     }
 #ifdef COMPLEX_WHITESPACE
@@ -8269,6 +8271,7 @@ Tree_SetOriginX(
 	xOrigin = 0 - Tree_ContentLeft(tree);
 	if (xOrigin != tree->xOrigin) {
 	    tree->xOrigin = xOrigin;
+	    tree->xOriginV2 = 0;
 	    Tree_EventuallyRedraw(tree);
 	}
 	return;
@@ -8299,6 +8302,7 @@ Tree_SetOriginX(
 	return;
 
     tree->xOrigin = xOrigin;
+    tree->xOriginV2 = offset;
 
     Tree_EventuallyRedraw(tree);
 }
@@ -8340,6 +8344,7 @@ Tree_SetOriginY(
 	yOrigin = 0 - Tree_ContentTop(tree);
 	if (yOrigin != tree->yOrigin) {
 	    tree->yOrigin = yOrigin;
+	    tree->yOriginV2 = 0;
 	    Tree_EventuallyRedraw(tree);
 	}
 	return;
@@ -8369,6 +8374,7 @@ Tree_SetOriginY(
 	return;
 
     tree->yOrigin = yOrigin;
+    tree->yOriginV2 = offset;
 
     Tree_EventuallyRedraw(tree);
 }
@@ -8397,7 +8403,7 @@ Tree_GetOriginX(
     )
 {
     /* Update the value if needed. */
-    Tree_SetOriginX(tree, tree->xOrigin);
+    Tree_SetOriginX(tree, tree->xOriginV2 - Tree_ContentLeft(tree));
 
     return tree->xOrigin;
 }
@@ -8426,7 +8432,7 @@ Tree_GetOriginY(
     )
 {
     /* Update the value if needed. */
-    Tree_SetOriginY(tree, tree->yOrigin);
+    Tree_SetOriginY(tree, tree->yOriginV2 - Tree_ContentTop(tree));
 
     return tree->yOrigin;
 }
