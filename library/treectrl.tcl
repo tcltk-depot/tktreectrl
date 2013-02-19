@@ -1767,7 +1767,7 @@ proc ::TreeCtrl::Cancel w {
     }
     set first [$w item id anchor]
     set last $Priv(prev)
-    if { [string equal $last ""] } {
+    if {[string equal $last ""] || [string equal [$w item id $last] ""]} {
 	# Not actually doing any selection right now
 	return
     }
