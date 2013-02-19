@@ -4,9 +4,46 @@
 
 
 
+
   <meta content="text/html; charset=ISO-8859-1" http-equiv="content-type"><title>What's New in TkTreeCtrl</title>
   <meta content="Tim Baker" name="author"></head><body>
+<h1>What's New in TkTreeCtrl 2.4.2</h1>
+<h2>Changed how the scroll position is calculated.<br>
+</h2>
+<div style="text-align: left;">The x/y scroll position has always been
+relative to the top-left corner of the widget, when it should really be
+relative to the top-left corner of the content area (i.e., the area
+inside the borders and headers).&nbsp; In every previous version,
+showing the header would often result in the item visible at the top of
+the content area becoming obscured by the header.&nbsp; The developer
+was often forced to add a call <span style="font-weight: bold;">[$T yview moveto 0]</span>
+as a workaround after creating a treectrl and filling it with
+items.&nbsp; With the new behavior, changing the height (or visibility)
+of the headers or borders preserves the scroll position relative to the
+top of the content area.<br>
+</div>
+<h2>New MouseWheel bindings<br>
+</h2>
+<ul>
+  <li>Holding down the Shift key while rotating the mousewheel results in horizontal scrolling.</li>
+  <li>On Mac OS X, holding down the Option key while rotating the mousewheel results in faster scrolling (10 times normal).<br>
+  </li>
+</ul>
+<h2>Bug Fixes</h2>
+<ul>
+  <li>[Bug 3502497]&nbsp; Builds created with --enable-gtk would change the system locale from "C" which Tcl requires.</li>
+  <li>[Bug 3520259]&nbsp; The active/inactive state of a toplevel
+containing a treectrl wasn't being tracked properly.&nbsp; This only
+affected Mac OS X, and resulted in headers not having the correct
+appearance in some cases.</li>
+  <li>[Bug 3461526]&nbsp; Improper memory alignment caused a crash when creating headers on HP-UX ia64 systems.</li>
+  <li>Fixed compilation of gradient-related code on Mac OS X 64-bit systems.</li>
+  <li>Fixed Brian Griffin's "1-in-a-million crash" caused by passing a non-static struct to Tcl_GetIndexFromObjStruct().<br>
+  </li>
+</ul>
+<hr style="width: 100%; height: 2px;">
 <h1>What's New in TkTreeCtrl 2.4.1</h1>
+
 <h2>Bug Fixes</h2>
 <ul>
   <li>[BUG 3421503] Creating a new treectrl widget would crash the application if the default value of either of the <span style="font-weight: bold;">-buttonbitmap</span> or <span style="font-weight: bold;">-buttonimage</span> options was changed using the Tk option database.</li>

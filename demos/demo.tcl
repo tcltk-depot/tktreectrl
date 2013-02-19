@@ -1,8 +1,8 @@
 #!/bin/wish84.exe
 
-# Copyright (c) 2002-2011 Tim Baker
+# Copyright (c) 2002-2013 Tim Baker
 
-set VERSION 2.4.1
+set VERSION 2.4.2
 
 package require Tk 8.4
 
