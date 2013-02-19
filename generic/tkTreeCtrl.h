@@ -14,6 +14,10 @@
 #include "tkInt.h"
 #include "qebind.h"
 
+#if defined(__WIN32__) && !defined(WIN32)
+#define WIN32
+#endif
+
 /*
  * Used to tag functions that are only to be visible within the module being
  * built and not outside it (where this is supported by the linker).
