@@ -1327,7 +1327,14 @@ MODULE_SCOPE void TreeTheme_SetOptionDefault(Tk_OptionSpec *specPtr);
 #define WFREE(p,t) WIPEFREE(p, sizeof(t))
 #define WCFREE(p,t,c) WIPEFREE(p, sizeof(t) * (c))
 
-MODULE_SCOPE int Tree_Ellipsis(Tk_Font tkfont, char *string, int numBytes, int *maxPixels, char *ellipsis, int force);
+enum TruncPosition {
+    TruncStart,
+    TruncMiddle,
+    TruncEnd
+};
+MODULE_SCOPE int Tree_Ellipsis(Tk_Font tkfont, char *string, int numBytes,
+    int *maxPixels, char *ellipsis, int force, enum TruncPosition truncPos,
+    int *truncStart, int *truncEnd, Tcl_DString *dString);
 MODULE_SCOPE void Tree_HDotLine(TreeCtrl *tree, Drawable drawable, int x1, int y1, int x2);
 MODULE_SCOPE void Tree_VDotLine(TreeCtrl *tree, Drawable drawable, int x1, int y1, int y2);
 MODULE_SCOPE void Tree_DrawActiveOutline(TreeCtrl *tree, Drawable drawable, int x, int y, int width, int height, int open);

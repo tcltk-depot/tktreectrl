@@ -3324,6 +3324,7 @@ typedef struct ElementTextLayout {
 #define TEXT_WRAP_NONE 1
 #define TEXT_WRAP_WORD 2
     int wrap;				/* -wrap */
+    int truncPos;			/* -truncpos */
 } ElementTextLayout;
 
 /* This structure doesn't hold any option values, but it is managed by
@@ -3392,11 +3393,13 @@ ElementTextLayoutInit(
     etl->justify = TK_JUSTIFY_NULL;
     etl->lines = -1;
     etl->wrap = TEXT_WRAP_NULL;
+    etl->truncPos = -1;
 }
 
 static CONST char *textDataTypeST[] = { "double", "integer", "long", "string",
 					"time", (char *) NULL };
 static CONST char *textJustifyST[] = { "left", "right", "center", (char *) NULL };
+static CONST char *textTruncST[] = { "start", "middle", "end", (char *) NULL };
 static CONST char *textWrapST[] = { "char", "none", "word", (char *) NULL };
 
 static Tk_OptionSpec textOptionSpecs[] = {
@@ -3440,6 +3443,9 @@ static Tk_OptionSpec textOptionSpecs[] = {
      (char *) NULL, -1, Tk_Offset(TreeElement_, options),
      TK_OPTION_NULL_OK, (ClientData) NULL, TEXT_CONF_STRINGREP | TEXT_CONF_TEXTVAR},
 #endif
+    {TK_OPTION_CUSTOM, "-truncpos", (char *) NULL, (char *) NULL,
+     (char *) NULL, -1, Tk_Offset(TreeElement_, options),
+     TK_OPTION_NULL_OK, (ClientData) NULL, TEXT_CONF_LAYOUT},
 #ifdef TEXT_STYLE
     {TK_OPTION_CUSTOM, "-underline", (char *) NULL, (char *) NULL,
      (char *) NULL, -1, Tk_Offset(TreeElement_, options),
@@ -4074,6 +4080,10 @@ static void DisplayProcText(TreeElementArgs *args)
 #endif
     int inHeader = elem->stateDomain == STATE_DOMAIN_HEADER;
     int columnState = COLUMN_STATE_NORMAL;
+    ElementTextLayout *etl, *etlM = NULL;
+    Tcl_DString dString;
+    enum TruncPosition truncPos = TruncEnd;
+    int truncStart, truncEnd;
 
 #ifdef DEPRECATED
     draw = DO_BooleanForState(tree, elem, DOID_TEXT_DRAW, state);
@@ -4201,9 +4211,18 @@ static void DisplayProcText(TreeElementArgs *args)
 
     Tk_GetFontMetrics(tkfont, &fm);
 
+    etl = DynamicOption_FindData(elem->options, DOID_TEXT_LAYOUT);
+    if (etl != NULL && etl->truncPos != -1)
+	truncPos = etl->truncPos;
+    else if (masterX != NULL) {
+	etlM = DynamicOption_FindData(elem->master->options, DOID_TEXT_LAYOUT);
+	if (etlM != NULL && etlM->truncPos != -1)
+	    truncPos = etlM->truncPos;
+    }
+
     pixelsForText = args->display.width;
     bytesThatFit = Tree_Ellipsis(tkfont, text, textLen, &pixelsForText,
-	    ellipsis, FALSE);
+	    ellipsis, FALSE, truncPos, &truncStart, &truncEnd, &dString);
     width = pixelsForText, height = fm.linespace;
     /* Hack -- The actual size of the text may be slightly smaller than
     * the available space when squeezed. If so we don't want to center
@@ -4227,6 +4246,7 @@ static void DisplayProcText(TreeElementArgs *args)
 	clipRgn = Tree_GetRectRegion(tree, &trClip);
 	TkSetRegion(tree->display, gc, clipRgn);
     } else {
+	Tcl_DStringFree(&dString);
 	return;
     }
 #else
@@ -4242,41 +4262,29 @@ static void DisplayProcText(TreeElementArgs *args)
 	TkSetRegion(tree->display, gc, clipRgn);
     }
 #endif
-    if (bytesThatFit != textLen) {
-	char staticStr[256], *buf = staticStr;
-	int bufLen = abs(bytesThatFit);
-	int ellipsisLen = (int) strlen(ellipsis);
-
-	if (bufLen + ellipsisLen > sizeof(staticStr))
-	    buf = ckalloc(bufLen + ellipsisLen);
-	memcpy(buf, text, bufLen);
-	if (bytesThatFit > 0) {
-	    memcpy(buf + bufLen, ellipsis, ellipsisLen);
-	    bufLen += ellipsisLen;
-	}
+    {
+	char *buf = Tcl_DStringValue(&dString);
+	int bufLen = Tcl_DStringLength(&dString);
 	Tk_DrawChars(tree->display, args->display.drawable, gc,
 		tkfont, buf, bufLen, x, y + fm.ascent);
 #ifdef TEXT_STYLE
-	if (underline >= 0 && underline < Tcl_NumUtfChars(buf, abs(bytesThatFit))) {
+	if (underline >= 0 && underline <= truncStart) {
 	    CONST char *fstBytePtr = Tcl_UtfAtIndex(buf, underline);
 	    CONST char *sndBytePtr = Tcl_UtfNext(fstBytePtr);
 	    Tk_UnderlineChars(tree->display, args->display.drawable, gc,
 		    tkfont, buf, x, y + fm.ascent,
 		    (int) (fstBytePtr - buf), (int) (sndBytePtr - buf));
-	}
-#endif
-	if (buf != staticStr)
-	    ckfree(buf);
-    } else {
-	Tk_DrawChars(tree->display, args->display.drawable, gc,
-		tkfont, text, textLen, x, y + fm.ascent);
-#ifdef TEXT_STYLE
-	if (underline >= 0 && underline < Tcl_NumUtfChars(text, textLen)) {
-	    CONST char *fstBytePtr = Tcl_UtfAtIndex(text, underline);
-	    CONST char *sndBytePtr = Tcl_UtfNext(fstBytePtr);
-	    Tk_UnderlineChars(tree->display, args->display.drawable, gc,
-		    tkfont, text, x, y + fm.ascent,
-		    (int) (fstBytePtr - text), (int) (sndBytePtr - text));
+	} else if (underline >= 0 && truncEnd >= 0 && underline >= truncEnd && underline < Tcl_NumUtfChars(text, textLen)) {
+	    if (truncEnd > 0)
+		underline += strlen(ellipsis); /* chars added before truncEnd */
+	    underline -= truncEnd - MAX(-1, truncStart) - 1; /* chars removed before truncEnd*/
+	    {
+		CONST char *fstBytePtr = Tcl_UtfAtIndex(buf, underline);
+		CONST char *sndBytePtr = Tcl_UtfNext(fstBytePtr);
+		Tk_UnderlineChars(tree->display, args->display.drawable, gc,
+			tkfont, buf, x, y + fm.ascent,
+			(int) (fstBytePtr - buf), (int) (sndBytePtr - buf));
+	    }
 	}
 #endif
     }
@@ -4284,6 +4292,7 @@ static void DisplayProcText(TreeElementArgs *args)
 	Tree_UnsetClipMask(tree, args->display.drawable, gc);
 	Tree_FreeRegion(tree, clipRgn);
     }
+    Tcl_DStringFree(&dString);
 }
 
 static void NeededProcText(TreeElementArgs *args)
@@ -5559,7 +5568,7 @@ TreeElement_InitInterp(
 	-1, &TreeCtrlCO_string,
 	ElementTextDataInit);
 
-    /* 4 options in the same structure. */
+    /* 5 options in the same structure. */
     DynamicCO_Init(treeElemTypeText.optionSpecs, "-justify",
 	DOID_TEXT_LAYOUT, sizeof(ElementTextLayout),
 	-1,
@@ -5586,6 +5595,12 @@ TreeElement_InitInterp(
 	-1,
 	Tk_Offset(ElementTextLayout, wrap),
 	StringTableCO_Alloc("-wrap", textWrapST),
+	ElementTextLayoutInit);
+    DynamicCO_Init(treeElemTypeText.optionSpecs, "-truncpos",
+	DOID_TEXT_LAYOUT, sizeof(ElementTextLayout),
+	-1,
+	Tk_Offset(ElementTextLayout, truncPos),
+	StringTableCO_Alloc("-truncpos", textTruncST),
 	ElementTextLayoutInit);
 
 #ifdef DEPRECATED

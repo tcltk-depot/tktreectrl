@@ -233,6 +233,170 @@ DStringAppendf(
  */
 
 int
+Tree_EllipsisStart(
+    Tk_Font tkfont,		/* The font used to display the string. */
+    char *string,		/* UTF-8 string, need not be NULL-terminated. */
+    int numBytes,		/* Number of bytes to consider. */
+    int *maxPixels,		/* In: maximum line length allowed.
+				 * Out: length of string that fits (with
+				 * ellipsis added if needed). */
+    char *ellipsis,		/* NULL-terminated "..." */
+    int force,			/* TRUE if ellipsis should always be added
+				 * even if the whole string fits in
+				 * maxPixels. */
+    int *truncStart, int *truncEnd,
+    Tcl_DString *dString
+    )
+{
+    char *tmpStr = Tcl_DStringValue(dString);
+    int pixelsTest, bytesThatFit, bytesTest;
+    int ellipsisNumBytes = (int) strlen(ellipsis);
+    int numUtfChars = Tcl_NumUtfChars(string, numBytes);
+    const char *firstCharPtr = string;
+    int i;
+
+    for (i = 0; i < numUtfChars; i++) {
+	int tmpLen;
+	bytesTest = string + numBytes - firstCharPtr;
+	tmpLen = bytesTest;
+	if (i > 0 || force) {
+	    memcpy(tmpStr, ellipsis, ellipsisNumBytes);
+	    memcpy(tmpStr + ellipsisNumBytes, firstCharPtr, bytesTest);
+	    tmpLen += ellipsisNumBytes;
+	} else
+	    memcpy(tmpStr, firstCharPtr, bytesTest);
+	Tcl_DStringSetLength(dString, tmpLen);
+	pixelsTest = (i + 1 == numUtfChars) ? -1 : *maxPixels;
+	bytesThatFit = Tk_MeasureChars(tkfont, tmpStr, tmpLen, pixelsTest, 0,
+	    &pixelsTest);
+	if (bytesThatFit == tmpLen)
+	    break;
+	firstCharPtr = Tcl_UtfNext(firstCharPtr);
+    }
+
+    (*maxPixels) = pixelsTest;
+    (*truncStart) = -1;
+    (*truncEnd) = i;
+    return bytesTest;
+}
+
+int
+Tree_EllipsisMiddle(
+    Tk_Font tkfont,		/* The font used to display the string. */
+    char *string,		/* UTF-8 string, need not be NULL-terminated. */
+    int numBytes,		/* Number of bytes to consider. */
+    int *maxPixels,		/* In: maximum line length allowed.
+				 * Out: length of string that fits (with
+				 * ellipsis added if needed). */
+    char *ellipsis,		/* NULL-terminated "..." */
+    int force,			/* TRUE if ellipsis should always be added
+				 * even if the whole string fits in
+				 * maxPixels. */
+    int *truncStart, int *truncEnd,
+    Tcl_DString *dString
+    )
+{
+    char *tmpStr = Tcl_DStringValue(dString);
+    int pixelsTest, bytesThatFit, bytesTest;
+    int ellipsisNumBytes = (int) strlen(ellipsis);
+    int numUtfChars = Tcl_NumUtfChars(string, numBytes);
+    int start, end, moveEnd = 1;
+
+    start = end = numUtfChars / 2;
+    while (1) {
+	int tmpLen = 0;
+	bytesTest = 0;
+	if (start == end) {
+	    memcpy(tmpStr, string, numBytes);
+	    tmpLen = bytesTest = numBytes;
+	} else {
+	    if (start >= 0) {
+		/* Include the start character. */
+		const char *startPtr = Tcl_UtfAtIndex(string, start + 1);
+		memcpy(tmpStr, string, startPtr - string);
+		tmpLen += startPtr - string;
+		bytesTest += startPtr - string;
+	    }
+	    if (start < end) {
+		memcpy(tmpStr + tmpLen, ellipsis, ellipsisNumBytes);
+		tmpLen += ellipsisNumBytes;
+	    }
+	    if (end + 1 <= numUtfChars) {
+		/* Include the end character. */
+		const char *endPtr = Tcl_UtfAtIndex(string, end);
+		memcpy(tmpStr + tmpLen, endPtr, string + numBytes - endPtr);
+		tmpLen += string + numBytes - endPtr;
+		bytesTest += string + numBytes - endPtr;
+	    }
+	}
+	Tcl_DStringSetLength(dString, tmpLen);
+	pixelsTest = (!start && (end >= numUtfChars)) ? -1 : *maxPixels;
+	bytesThatFit = Tk_MeasureChars(tkfont, tmpStr, tmpLen, pixelsTest, 0,
+	    &pixelsTest);
+	if (bytesThatFit == tmpLen)
+	    break;
+	if (!moveEnd && (start > 0)) --start;
+	if (moveEnd && (end <= numUtfChars - 1)) ++end;
+	moveEnd = !moveEnd;
+    }
+    if (start == end) {
+	start = numUtfChars - 1;
+	end = -1;
+    }
+
+    (*maxPixels) = pixelsTest;
+    (*truncStart) = start;
+    (*truncEnd) = (end >= numUtfChars) ? -1 : end;
+    return bytesTest;
+}
+
+int
+Tree_EllipsisEnd(
+    Tk_Font tkfont,		/* The font used to display the string. */
+    char *string,		/* UTF-8 string, need not be NULL-terminated. */
+    int numBytes,		/* Number of bytes to consider. */
+    int *maxPixels,		/* In: maximum line length allowed.
+				 * Out: length of string that fits (with
+				 * ellipsis added if needed). */
+    char *ellipsis,		/* NULL-terminated "..." */
+    int force,			/* TRUE if ellipsis should always be added
+				 * even if the whole string fits in
+				 * maxPixels. */
+    int *truncStart, int *truncEnd,
+    Tcl_DString *dString
+    )
+{
+    char *tmpStr = Tcl_DStringValue(dString);
+    int pixelsTest, bytesThatFit, bytesTest;
+    int ellipsisNumBytes = (int) strlen(ellipsis);
+    int numUtfChars = Tcl_NumUtfChars(string, numBytes);
+    const char *lastCharPtr = Tcl_UtfAtIndex(string, numUtfChars);
+    int i;
+
+    memcpy(tmpStr, string, numBytes);
+    for (i = numUtfChars - 1; i >= 0; i--) {
+	int tmpLen = lastCharPtr - string;
+	bytesTest = tmpLen;
+	if ((i != numUtfChars - 1) || force) {
+	    memcpy(tmpStr + tmpLen, ellipsis, ellipsisNumBytes);
+	    tmpLen += ellipsisNumBytes;
+	}
+	Tcl_DStringSetLength(dString, tmpLen);
+	pixelsTest = (i == 0) ? -1 : *maxPixels;
+	bytesThatFit = Tk_MeasureChars(tkfont, tmpStr, tmpLen, pixelsTest, 0,
+	    &pixelsTest);
+	if (bytesThatFit == tmpLen)
+	    break;
+	lastCharPtr = Tcl_UtfPrev(lastCharPtr, string);
+    }
+
+    (*maxPixels) = pixelsTest;
+    (*truncStart) = i;
+    (*truncEnd) = -1;
+    return bytesTest;
+}
+
+int
 Tree_Ellipsis(
     Tk_Font tkfont,		/* The font used to display the string. */
     char *string,		/* UTF-8 string, need not be NULL-terminated. */
@@ -241,66 +405,29 @@ Tree_Ellipsis(
 				 * Out: length of string that fits (with
 				 * ellipsis added if needed). */
     char *ellipsis,		/* NULL-terminated "..." */
-    int force			/* TRUE if ellipsis should always be added
+    int force,			/* TRUE if ellipsis should always be added
 				 * even if the whole string fits in
 				 * maxPixels. */
+    enum TruncPosition truncPos,
+    int *truncStart, int *truncEnd,
+    Tcl_DString *dString
     )
 {
-    char staticStr[256], *tmpStr = staticStr;
-    int pixels, pixelsTest, bytesThatFit, bytesTest;
-    int ellipsisNumBytes = (int) strlen(ellipsis);
-    int bytesInFirstCh;
-    Tcl_UniChar uniCh;
+    Tcl_DStringInit(dString);
+    Tcl_DStringSetLength(dString, numBytes + strlen(ellipsis));
 
-    bytesThatFit = Tk_MeasureChars(tkfont, string, numBytes, *maxPixels, 0,
-	&pixels);
-
-    /* The whole string fits. No ellipsis needed (unless forced) */
-    if ((bytesThatFit == numBytes) && !force) {
-	(*maxPixels) = pixels;
-	return numBytes;
+    switch (truncPos) {
+	case TruncStart:
+	    return Tree_EllipsisStart(tkfont, string, numBytes, maxPixels, ellipsis,
+		force, truncStart, truncEnd, dString);
+	case TruncMiddle:
+	    return Tree_EllipsisMiddle(tkfont, string, numBytes, maxPixels, ellipsis,
+		force, truncStart, truncEnd, dString);
+	case TruncEnd:
+	    return Tree_EllipsisEnd(tkfont, string, numBytes, maxPixels, ellipsis,
+		force, truncStart, truncEnd, dString);
     }
-
-    bytesInFirstCh = Tcl_UtfToUniChar(string, &uniCh);
-    if (bytesThatFit <= bytesInFirstCh) {
-	goto singleChar;
-    }
-
-    /* Strip off one character at a time, adding ellipsis, until it fits */
-    if (force)
-	bytesTest = bytesThatFit;
-    else
-	bytesTest = (int) (Tcl_UtfPrev(string + bytesThatFit, string) - string);
-    if (bytesTest + ellipsisNumBytes > sizeof(staticStr))
-	tmpStr = ckalloc(bytesTest + ellipsisNumBytes);
-    memcpy(tmpStr, string, bytesTest);
-    while (bytesTest > 0) {
-	memcpy(tmpStr + bytesTest, ellipsis, ellipsisNumBytes);
-	numBytes = Tk_MeasureChars(tkfont, tmpStr,
-	    bytesTest + ellipsisNumBytes,
-	    *maxPixels, 0, &pixelsTest);
-	if (numBytes == bytesTest + ellipsisNumBytes) {
-	    (*maxPixels) = pixelsTest;
-	    if (tmpStr != staticStr)
-		ckfree(tmpStr);
-	    return bytesTest;
-	}
-	bytesTest = (int) (Tcl_UtfPrev(string + bytesTest, string) - string);
-    }
-
-    singleChar:
-    /* No single char + ellipsis fits. Return the number of bytes for
-     * the first character. The returned pixel width is the width of the
-     * first character plus ellipsis. */
-    bytesThatFit = bytesInFirstCh;
-    memcpy(tmpStr, string, bytesThatFit);
-    memcpy(tmpStr + bytesThatFit, ellipsis, ellipsisNumBytes);
-    (void) Tk_MeasureChars(tkfont, tmpStr, bytesThatFit + ellipsisNumBytes,
-	-1, 0, &pixels);
-    (*maxPixels) = pixels;
-    if (tmpStr != staticStr)
-	ckfree(tmpStr);
-    return bytesThatFit;
+    return 0;
 }
 
 /*
@@ -911,6 +1038,9 @@ wrapLine:
 	if (wrapLength > 0) {
 	    y = chunkPtr->y;
 	    for (n = layoutPtr->numChunks - 1; n >= 0; n--) {
+		Tcl_DString dString;
+		int truncStart, truncEnd;
+
 		chunkPtr = &layoutPtr->chunks[n];
 
 		/* Only consider the last line */
@@ -926,7 +1056,8 @@ wrapLine:
 		    pixelsForText = chunkPtr->totalWidth - 1;
 		bytesThisChunk = Tree_Ellipsis(tkfont,
 			(char *) chunkPtr->start, chunkPtr->numBytes,
-			&pixelsForText, ellipsis, TRUE);
+			&pixelsForText, ellipsis, TRUE,
+			TruncEnd, &truncStart, &truncEnd, &dString);
 		if (pixelsForText > wrapLength - chunkPtr->x)
 		    pixelsForText = wrapLength - chunkPtr->x;
 		if (bytesThisChunk > 0) {
