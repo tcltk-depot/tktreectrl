@@ -5,6 +5,8 @@
 
 
 
+
+
   <meta content="text/html; charset=ISO-8859-1" http-equiv="content-type"><title>What's New in TkTreeCtrl</title>
   <meta content="Tim Baker" name="author"></head><body>
 <h1>What's New in TkTreeCtrl 2.4.2</h1>
@@ -20,10 +22,15 @@ was often forced to add a call <span style="font-weight: bold;">[$T yview moveto
 as a workaround after creating a treectrl and filling it with
 items.&nbsp; With the new behavior, changing the height (or visibility)
 of the headers or borders preserves the scroll position relative to the
-top of the content area.<br>
+top-left corner of the content area.<br>
 </div>
+<h2>New text-element option for positioning the "...".</h2>The new <span style="font-weight: bold;">-elidepos</span> text-element option accepts a value of <span style="font-weight: bold;">start</span>, <span style="font-weight: bold;">middle</span> or <span style="font-weight: bold;">end</span>
+to control where eliding long lines occurs.&nbsp; This only works
+for single-line text.&nbsp;&nbsp; Multi-line text is always elided at the
+end.<br>
 <h2>New MouseWheel bindings<br>
 </h2>
+
 <ul>
   <li>Holding down the Shift key while rotating the mousewheel results in horizontal scrolling.</li>
   <li>On Mac OS X, holding down the Option key while rotating the mousewheel results in faster scrolling (10 times normal).<br>

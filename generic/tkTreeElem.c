@@ -3324,7 +3324,7 @@ typedef struct ElementTextLayout {
 #define TEXT_WRAP_NONE 1
 #define TEXT_WRAP_WORD 2
     int wrap;				/* -wrap */
-    int truncPos;			/* -truncpos */
+    int elidePos;			/* -elidepos */
 } ElementTextLayout;
 
 /* This structure doesn't hold any option values, but it is managed by
@@ -3393,13 +3393,13 @@ ElementTextLayoutInit(
     etl->justify = TK_JUSTIFY_NULL;
     etl->lines = -1;
     etl->wrap = TEXT_WRAP_NULL;
-    etl->truncPos = -1;
+    etl->elidePos = -1;
 }
 
 static CONST char *textDataTypeST[] = { "double", "integer", "long", "string",
 					"time", (char *) NULL };
+static CONST char *textElideST[] = { "start", "middle", "end", (char *) NULL };
 static CONST char *textJustifyST[] = { "left", "right", "center", (char *) NULL };
-static CONST char *textTruncST[] = { "start", "middle", "end", (char *) NULL };
 static CONST char *textWrapST[] = { "char", "none", "word", (char *) NULL };
 
 static Tk_OptionSpec textOptionSpecs[] = {
@@ -3414,6 +3414,9 @@ static Tk_OptionSpec textOptionSpecs[] = {
      (char *) NULL, -1, Tk_Offset(TreeElement_, options),
      TK_OPTION_NULL_OK, (ClientData) NULL, TEXT_CONF_DISPLAY},
 #endif
+    {TK_OPTION_CUSTOM, "-elidepos", (char *) NULL, (char *) NULL,
+     (char *) NULL, -1, Tk_Offset(TreeElement_, options),
+     TK_OPTION_NULL_OK, (ClientData) NULL, TEXT_CONF_LAYOUT},
     {TK_OPTION_CUSTOM, "-fill", (char *) NULL, (char *) NULL,
      (char *) NULL, -1, Tk_Offset(TreeElement_, options),
      TK_OPTION_NULL_OK, (ClientData) NULL,  TEXT_CONF_DISPLAY},
@@ -3443,9 +3446,6 @@ static Tk_OptionSpec textOptionSpecs[] = {
      (char *) NULL, -1, Tk_Offset(TreeElement_, options),
      TK_OPTION_NULL_OK, (ClientData) NULL, TEXT_CONF_STRINGREP | TEXT_CONF_TEXTVAR},
 #endif
-    {TK_OPTION_CUSTOM, "-truncpos", (char *) NULL, (char *) NULL,
-     (char *) NULL, -1, Tk_Offset(TreeElement_, options),
-     TK_OPTION_NULL_OK, (ClientData) NULL, TEXT_CONF_LAYOUT},
 #ifdef TEXT_STYLE
     {TK_OPTION_CUSTOM, "-underline", (char *) NULL, (char *) NULL,
      (char *) NULL, -1, Tk_Offset(TreeElement_, options),
@@ -4082,8 +4082,8 @@ static void DisplayProcText(TreeElementArgs *args)
     int columnState = COLUMN_STATE_NORMAL;
     ElementTextLayout *etl, *etlM = NULL;
     Tcl_DString dString;
-    enum TruncPosition truncPos = TruncEnd;
-    int truncStart, truncEnd;
+    enum ElidePosition elidePos = ElideEnd;
+    int elideStart, elideEnd;
 
 #ifdef DEPRECATED
     draw = DO_BooleanForState(tree, elem, DOID_TEXT_DRAW, state);
@@ -4212,17 +4212,17 @@ static void DisplayProcText(TreeElementArgs *args)
     Tk_GetFontMetrics(tkfont, &fm);
 
     etl = DynamicOption_FindData(elem->options, DOID_TEXT_LAYOUT);
-    if (etl != NULL && etl->truncPos != -1)
-	truncPos = etl->truncPos;
+    if (etl != NULL && etl->elidePos != -1)
+	elidePos = etl->elidePos;
     else if (masterX != NULL) {
 	etlM = DynamicOption_FindData(elem->master->options, DOID_TEXT_LAYOUT);
-	if (etlM != NULL && etlM->truncPos != -1)
-	    truncPos = etlM->truncPos;
+	if (etlM != NULL && etlM->elidePos != -1)
+	    elidePos = etlM->elidePos;
     }
 
     pixelsForText = args->display.width;
     bytesThatFit = Tree_Ellipsis(tkfont, text, textLen, &pixelsForText,
-	    ellipsis, FALSE, truncPos, &truncStart, &truncEnd, &dString);
+	    ellipsis, FALSE, elidePos, &elideStart, &elideEnd, &dString);
     width = pixelsForText, height = fm.linespace;
     /* Hack -- The actual size of the text may be slightly smaller than
     * the available space when squeezed. If so we don't want to center
@@ -4268,16 +4268,16 @@ static void DisplayProcText(TreeElementArgs *args)
 	Tk_DrawChars(tree->display, args->display.drawable, gc,
 		tkfont, buf, bufLen, x, y + fm.ascent);
 #ifdef TEXT_STYLE
-	if (underline >= 0 && underline <= truncStart) {
+	if (underline >= 0 && underline <= elideStart) {
 	    CONST char *fstBytePtr = Tcl_UtfAtIndex(buf, underline);
 	    CONST char *sndBytePtr = Tcl_UtfNext(fstBytePtr);
 	    Tk_UnderlineChars(tree->display, args->display.drawable, gc,
 		    tkfont, buf, x, y + fm.ascent,
 		    (int) (fstBytePtr - buf), (int) (sndBytePtr - buf));
-	} else if (underline >= 0 && truncEnd >= 0 && underline >= truncEnd && underline < Tcl_NumUtfChars(text, textLen)) {
-	    if (truncEnd > 0)
-		underline += strlen(ellipsis); /* chars added before truncEnd */
-	    underline -= truncEnd - MAX(-1, truncStart) - 1; /* chars removed before truncEnd*/
+	} else if (underline >= 0 && elideEnd >= 0 && underline >= elideEnd && underline < Tcl_NumUtfChars(text, textLen)) {
+	    if (elideEnd > 0)
+		underline += strlen(ellipsis); /* chars added before elideEnd */
+	    underline -= elideEnd - MAX(-1, elideStart) - 1; /* chars removed before elideEnd*/
 	    {
 		CONST char *fstBytePtr = Tcl_UtfAtIndex(buf, underline);
 		CONST char *sndBytePtr = Tcl_UtfNext(fstBytePtr);
@@ -5596,11 +5596,11 @@ TreeElement_InitInterp(
 	Tk_Offset(ElementTextLayout, wrap),
 	StringTableCO_Alloc("-wrap", textWrapST),
 	ElementTextLayoutInit);
-    DynamicCO_Init(treeElemTypeText.optionSpecs, "-truncpos",
+    DynamicCO_Init(treeElemTypeText.optionSpecs, "-elidepos",
 	DOID_TEXT_LAYOUT, sizeof(ElementTextLayout),
 	-1,
-	Tk_Offset(ElementTextLayout, truncPos),
-	StringTableCO_Alloc("-truncpos", textTruncST),
+	Tk_Offset(ElementTextLayout, elidePos),
+	StringTableCO_Alloc("-elidepos", textElideST),
 	ElementTextLayoutInit);
 
 #ifdef DEPRECATED

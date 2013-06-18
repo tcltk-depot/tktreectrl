@@ -3738,6 +3738,15 @@ options will be displayed as text.</p></dd>
 <dd><p>Specifies the type of information in the <b class="option">-data</b> option.
 Acceptable values are <b class="const">double</b>, <b class="const">integer</b>, <b class="const">long</b>,
 <b class="const">string</b>, or <b class="const">time</b>.</p></dd>
+<dt><b class="option"><b class="option">-elidepos</b></b> <i class="arg">position</i></dt>
+<dd><p><i class="arg">Position</i> specifies where to elide long lines of text.
+<i class="arg">Position</i> must be one of <b class="const">start</b>, <b class="const">middle</b> or <b class="const">end</b>.
+When the width of the text displayed by this element is greater than the
+display-width of the element, a portion of the text is replaced with &quot;...&quot;.
+This option has no effect on multi-line text, which is always elided at the end.
+If this option is unspecified (the default), <b class="const">end</b> is used.
+See the <b class="option">-width</b> option for a description of how the maximum line
+length is determined.</p></dd>
 <dt><b class="option"><b class="option">-fill</b></b> <i class="arg">color</i></dt>
 <dd><p>Specifies as a <span class="sectref"><a href="#section12">per-state</a></span> option the
 foreground color to use when displaying text.</p>

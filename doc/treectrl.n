@@ -4849,6 +4849,16 @@ Specifies the type of information in the \fB-data\fR option.
 Acceptable values are \fBdouble\fR, \fBinteger\fR, \fBlong\fR,
 \fBstring\fR, or \fBtime\fR.
 .TP
+\fB\fB-elidepos\fR\fR \fIposition\fR
+\fIPosition\fR specifies where to elide long lines of text.
+\fIPosition\fR must be one of \fBstart\fR, \fBmiddle\fR or \fBend\fR.
+When the width of the text displayed by this element is greater than the
+display-width of the element, a portion of the text is replaced with "...".
+This option has no effect on multi-line text, which is always elided at the end.
+If this option is unspecified (the default), \fBend\fR is used.
+See the \fB-width\fR option for a description of how the maximum line
+length is determined.
+.TP
 \fB\fB-fill\fR\fR \fIcolor\fR
 Specifies as a \fBper-state\fR option the
 foreground color to use when displaying text.

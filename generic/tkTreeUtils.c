@@ -210,21 +210,15 @@ DStringAppendf(
  *
  * Tree_Ellipsis --
  *
- *	Determine the number of bytes from the string that will fit
- *	in the given horizontal span. If the entire string does not
- *	fit then determine the largest number of bytes of a substring
- *	with an ellipsis "..." appended that will fit.
+ *	Replaces a range of characters in a given string with "..." if
+ *	the string does not otherwise fit in a given horizontal span.
+ *	The "..." may replace a substring at the start, middle, or end.
+ *	A minimum of 1 character plus the "..." is always returned in
+ *	cases where eliding occurs.
  *
  * Results:
- *	When the return value is equal to numBytes the caller should
- *	not add the ellipsis to the string (unless force is TRUE). In
- *	this case maxPixels contains the number of pixels for the entire
- *	string (plus ellipsis if force is TRUE).
- *
- *	When the return value is less than numBytes the caller should add
- *	the ellipsis because only a substring fits. In this case
- *	maxPixels contains the number of pixels for the substring
- *	plus ellipsis. The substring has a minimum of one character.
+ *	The return value is the number of bytes (not characters) of the
+ *	given string that fits in the given span.
  *
  * Side effects:
  *	None.
@@ -244,12 +238,16 @@ Tree_EllipsisStart(
     int force,			/* TRUE if ellipsis should always be added
 				 * even if the whole string fits in
 				 * maxPixels. */
-    int *truncStart, int *truncEnd,
-    Tcl_DString *dString
+    int *elideStart,		/* Returned index of the right-most character
+                                 * before the ellipsis, or -1. */
+    int *elideEnd,		/* Returned index of the left-most character
+                                 * after the ellipsis, or -1. */
+    Tcl_DString *dString	/* Previously-initialised string to hold the
+				 * possibly-elided text. */
     )
 {
     char *tmpStr = Tcl_DStringValue(dString);
-    int pixelsTest, bytesThatFit, bytesTest;
+    int pixelsTest = 0, bytesThatFit, bytesTest = 0;
     int ellipsisNumBytes = (int) strlen(ellipsis);
     int numUtfChars = Tcl_NumUtfChars(string, numBytes);
     const char *firstCharPtr = string;
@@ -275,8 +273,8 @@ Tree_EllipsisStart(
     }
 
     (*maxPixels) = pixelsTest;
-    (*truncStart) = -1;
-    (*truncEnd) = i;
+    (*elideStart) = -1;
+    (*elideEnd) = i;
     return bytesTest;
 }
 
@@ -292,12 +290,16 @@ Tree_EllipsisMiddle(
     int force,			/* TRUE if ellipsis should always be added
 				 * even if the whole string fits in
 				 * maxPixels. */
-    int *truncStart, int *truncEnd,
-    Tcl_DString *dString
+    int *elideStart,		/* Returned index of the right-most character
+                                 * before the ellipsis, or -1. */
+    int *elideEnd,		/* Returned index of the left-most character
+                                 * after the ellipsis, or -1. */
+    Tcl_DString *dString	/* Previously-initialised string to hold the
+				 * possibly-elided text. */
     )
 {
     char *tmpStr = Tcl_DStringValue(dString);
-    int pixelsTest, bytesThatFit, bytesTest;
+    int pixelsTest = 0, bytesThatFit, bytesTest = 0;
     int ellipsisNumBytes = (int) strlen(ellipsis);
     int numUtfChars = Tcl_NumUtfChars(string, numBytes);
     int start, end, moveEnd = 1;
@@ -345,8 +347,8 @@ Tree_EllipsisMiddle(
     }
 
     (*maxPixels) = pixelsTest;
-    (*truncStart) = start;
-    (*truncEnd) = (end >= numUtfChars) ? -1 : end;
+    (*elideStart) = start;
+    (*elideEnd) = (end >= numUtfChars) ? -1 : end;
     return bytesTest;
 }
 
@@ -362,12 +364,16 @@ Tree_EllipsisEnd(
     int force,			/* TRUE if ellipsis should always be added
 				 * even if the whole string fits in
 				 * maxPixels. */
-    int *truncStart, int *truncEnd,
-    Tcl_DString *dString
+    int *elideStart,		/* Returned index of the right-most character
+                                 * before the ellipsis, or -1. */
+    int *elideEnd,		/* Returned index of the left-most character
+                                 * after the ellipsis, or -1. */
+    Tcl_DString *dString	/* Previously-initialised string to hold the
+				 * possibly-elided text. */
     )
 {
     char *tmpStr = Tcl_DStringValue(dString);
-    int pixelsTest, bytesThatFit, bytesTest;
+    int pixelsTest = 0, bytesThatFit, bytesTest = 0;
     int ellipsisNumBytes = (int) strlen(ellipsis);
     int numUtfChars = Tcl_NumUtfChars(string, numBytes);
     const char *lastCharPtr = Tcl_UtfAtIndex(string, numUtfChars);
@@ -391,8 +397,8 @@ Tree_EllipsisEnd(
     }
 
     (*maxPixels) = pixelsTest;
-    (*truncStart) = i;
-    (*truncEnd) = -1;
+    (*elideStart) = i;
+    (*elideEnd) = -1;
     return bytesTest;
 }
 
@@ -408,24 +414,28 @@ Tree_Ellipsis(
     int force,			/* TRUE if ellipsis should always be added
 				 * even if the whole string fits in
 				 * maxPixels. */
-    enum TruncPosition truncPos,
-    int *truncStart, int *truncEnd,
-    Tcl_DString *dString
+    enum ElidePosition elidePos,/* Where to add the ellipsis. */
+    int *elideStart,		/* Returned index of the right-most character
+                                 * before the ellipsis, or -1. */
+    int *elideEnd,		/* Returned index of the left-most character
+                                 * after the ellipsis, or -1. */
+    Tcl_DString *dString	/* Uninitialised string to hold the
+				 * possibly-elided text. */
     )
 {
     Tcl_DStringInit(dString);
     Tcl_DStringSetLength(dString, numBytes + strlen(ellipsis));
 
-    switch (truncPos) {
-	case TruncStart:
+    switch (elidePos) {
+	case ElideStart:
 	    return Tree_EllipsisStart(tkfont, string, numBytes, maxPixels, ellipsis,
-		force, truncStart, truncEnd, dString);
-	case TruncMiddle:
+		force, elideStart, elideEnd, dString);
+	case ElideMiddle:
 	    return Tree_EllipsisMiddle(tkfont, string, numBytes, maxPixels, ellipsis,
-		force, truncStart, truncEnd, dString);
-	case TruncEnd:
+		force, elideStart, elideEnd, dString);
+	case ElideEnd:
 	    return Tree_EllipsisEnd(tkfont, string, numBytes, maxPixels, ellipsis,
-		force, truncStart, truncEnd, dString);
+		force, elideStart, elideEnd, dString);
     }
     return 0;
 }
@@ -1039,7 +1049,7 @@ wrapLine:
 	    y = chunkPtr->y;
 	    for (n = layoutPtr->numChunks - 1; n >= 0; n--) {
 		Tcl_DString dString;
-		int truncStart, truncEnd;
+		int elideStart, elideEnd;
 
 		chunkPtr = &layoutPtr->chunks[n];
 
@@ -1057,7 +1067,7 @@ wrapLine:
 		bytesThisChunk = Tree_Ellipsis(tkfont,
 			(char *) chunkPtr->start, chunkPtr->numBytes,
 			&pixelsForText, ellipsis, TRUE,
-			TruncEnd, &truncStart, &truncEnd, &dString);
+			ElideEnd, &elideStart, &elideEnd, &dString);
 		if (pixelsForText > wrapLength - chunkPtr->x)
 		    pixelsForText = wrapLength - chunkPtr->x;
 		if (bytesThisChunk > 0) {
