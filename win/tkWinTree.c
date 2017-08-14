@@ -1337,69 +1337,9 @@ Tree_Fill3DRectangle(
 #define TMT_CONTENTMARGINS 3602
 #endif
 
-typedef HTHEME (STDAPICALLTYPE OpenThemeDataProc)(HWND hwnd,
-    LPCWSTR pszClassList);
-typedef HRESULT (STDAPICALLTYPE CloseThemeDataProc)(HTHEME hTheme);
-typedef HRESULT (STDAPICALLTYPE DrawThemeBackgroundProc)(HTHEME hTheme,
-    HDC hdc, int iPartId, int iStateId, const RECT *pRect,
-    OPTIONAL const RECT *pClipRect);
-typedef HRESULT (STDAPICALLTYPE DrawThemeBackgroundExProc)(HTHEME hTheme,
-    HDC hdc, int iPartId, int iStateId, const RECT *pRect,
-    DTBGOPTS *PDTBGOPTS);
-typedef HRESULT (STDAPICALLTYPE DrawThemeParentBackgroundProc)(HWND hwnd,
-    HDC hdc, OPTIONAL const RECT *prc);
-typedef HRESULT (STDAPICALLTYPE DrawThemeEdgeProc)(HTHEME hTheme, HDC hdc,
-    int iPartId, int iStateId, const RECT *pDestRect,
-    UINT uEdge, UINT uFlags, RECT *pContentRect);
-typedef HRESULT (STDAPICALLTYPE DrawThemeTextProc)(HTHEME hTheme, HDC hdc,
-    int iPartId, int iStateId, LPCWSTR pszText, int iCharCount,
-    DWORD dwTextFlags, DWORD dwTextFlags2, const RECT *pRect);
-typedef HRESULT (STDAPICALLTYPE GetThemeBackgroundContentRectProc)(
-    HTHEME hTheme, HDC hdc, int iPartId, int iStateId,
-    const RECT *pBoundingRect, RECT *pContentRect);
-typedef HRESULT (STDAPICALLTYPE GetThemeBackgroundExtentProc)(HTHEME hTheme,
-    HDC hdc, int iPartId, int iStateId, const RECT *pContentRect,
-    RECT *pExtentRect);
-typedef HRESULT (STDAPICALLTYPE GetThemeMarginsProc)(HTHEME, HDC,
-    int iPartId, int iStateId, int iPropId, OPTIONAL RECT *prc,
-    MARGINS *pMargins);
-typedef HRESULT (STDAPICALLTYPE GetThemePartSizeProc)(HTHEME, HDC, int iPartId,
-    int iStateId, RECT *prc, enum THEMESIZE eSize, SIZE *psz);
-typedef HRESULT (STDAPICALLTYPE GetThemeTextExtentProc)(HTHEME hTheme, HDC hdc,
-    int iPartId, int iStateId, LPCWSTR pszText, int iCharCount,
-    DWORD dwTextFlags, const RECT *pBoundingRect, RECT *pExtentRect);
-typedef BOOL (STDAPICALLTYPE IsThemeActiveProc)(VOID);
-typedef BOOL (STDAPICALLTYPE IsAppThemedProc)(VOID);
-typedef BOOL (STDAPICALLTYPE IsThemePartDefinedProc)(HTHEME, int, int);
-typedef HRESULT (STDAPICALLTYPE IsThemeBackgroundPartiallyTransparentProc)(
-    HTHEME, int, int);
-typedef HRESULT (STDAPICALLTYPE SetWindowThemeProc)(HWND, LPCWSTR, LPCWSTR);
-
-typedef struct
-{
-    OpenThemeDataProc				*OpenThemeData;
-    CloseThemeDataProc				*CloseThemeData;
-    DrawThemeBackgroundProc			*DrawThemeBackground;
-    DrawThemeBackgroundExProc			*DrawThemeBackgroundEx;
-    DrawThemeParentBackgroundProc		*DrawThemeParentBackground;
-    DrawThemeEdgeProc				*DrawThemeEdge;
-    DrawThemeTextProc				*DrawThemeText;
-    GetThemeBackgroundContentRectProc		*GetThemeBackgroundContentRect;
-    GetThemeBackgroundExtentProc		*GetThemeBackgroundExtent;
-    GetThemeMarginsProc				*GetThemeMargins;
-    GetThemePartSizeProc			*GetThemePartSize;
-    GetThemeTextExtentProc			*GetThemeTextExtent;
-    IsThemeActiveProc				*IsThemeActive;
-    IsAppThemedProc				*IsAppThemed;
-    IsThemePartDefinedProc			*IsThemePartDefined;
-    IsThemeBackgroundPartiallyTransparentProc 	*IsThemeBackgroundPartiallyTransparent;
-    SetWindowThemeProc				*SetWindowTheme;
-} XPThemeProcs;
-
 typedef struct
 {
     HINSTANCE hlibrary;
-    XPThemeProcs *procs;
     int registered;
     int themeEnabled;
 } XPThemeData;
@@ -1412,7 +1352,6 @@ typedef struct TreeThemeData_
     SIZE buttonClosed;
 } TreeThemeData_;
 
-static XPThemeProcs *procs = NULL;
 static XPThemeData *appThemeData = NULL;
 TCL_DECLARE_MUTEX(themeMutex)
 
@@ -1467,9 +1406,6 @@ ActivateManifestContext(ULONG_PTR *ulpCookie)
     actctx.dwFlags = ACTCTX_FLAG_RESOURCE_NAME_VALID;
 #else
 
-    if (procs == NULL)
-	return INVALID_HANDLE_VALUE;
-
     ZeroMemory(&actctx, sizeof(actctx));
     actctx.cbSize = sizeof(actctx);
     actctx.dwFlags = ACTCTX_FLAG_HMODULE_VALID | ACTCTX_FLAG_RESOURCE_NAME_VALID;
@@ -1502,8 +1438,6 @@ DeactivateManifestContext(HANDLE hCtx, ULONG_PTR ulpCookie)
 	DeactivateActCtx(0, ulpCookie);
 	ReleaseActCtx(hCtx);
     }
-
-    ckfree((char*)procs);
 }
 
 /* http://www.manbu.net/Lib/En/Class5/Sub16/1/29.asp */
@@ -1534,81 +1468,6 @@ ComCtlVersionOK(void)
     }
     FreeLibrary(handle);
     return result;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * LoadXPThemeProcs --
- *	Initialize XP theming support.
- *
- *	XP theme support is included in UXTHEME.DLL
- *	We dynamically load this DLL at runtime instead of linking
- *	to it at build-time.
- *
- * Returns:
- *	A pointer to an XPThemeProcs table if successful, NULL otherwise.
- *----------------------------------------------------------------------
- */
-
-static XPThemeProcs *
-LoadXPThemeProcs(HINSTANCE *phlib)
-{
-    OSVERSIONINFO os;
-
-    /*
-     * We have to check whether we are running at least on Windows XP.
-     * In order to determine this we call GetVersionEx directly, although
-     * it would be a good idea to wrap it inside a function similar to
-     * TkWinGetPlatformId...
-     */
-    ZeroMemory(&os, sizeof(os));
-    os.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-    GetVersionEx(&os);
-    if ((os.dwMajorVersion >= 5 && os.dwMinorVersion >= 1) ||
-	    (os.dwMajorVersion > 5)) {
-	/*
-	 * We are running under Windows XP or a newer version.
-	 * Load the library "uxtheme.dll", where the native widget
-	 * drawing routines are implemented.
-	 */
-	HINSTANCE handle;
-	*phlib = handle = LoadLibraryA("uxtheme.dll");
-	if (handle != 0) {
-	    /*
-	     * We have successfully loaded the library. Proceed in storing the
-	     * addresses of the functions we want to use.
-	     */
-	    XPThemeProcs *procs = (XPThemeProcs*)ckalloc(sizeof(XPThemeProcs));
-#define LOADPROC(name) \
-	(0 != (procs->name = (name ## Proc *)GetProcAddress(handle, #name) ))
-
-	    if (   LOADPROC(OpenThemeData)
-		&& LOADPROC(CloseThemeData)
-		&& LOADPROC(DrawThemeBackground)
-		&& LOADPROC(DrawThemeBackgroundEx)
-		&& LOADPROC(DrawThemeParentBackground)
-		&& LOADPROC(DrawThemeEdge)
-		&& LOADPROC(DrawThemeText)
-		&& LOADPROC(GetThemeBackgroundContentRect)
-		&& LOADPROC(GetThemeBackgroundExtent)
-		&& LOADPROC(GetThemeMargins)
-		&& LOADPROC(GetThemePartSize)
-		&& LOADPROC(GetThemeTextExtent)
-		&& LOADPROC(IsThemeActive)
-		&& LOADPROC(IsAppThemed)
-		&& LOADPROC(IsThemePartDefined)
-		&& LOADPROC(IsThemeBackgroundPartiallyTransparent)
-		&& LOADPROC(SetWindowTheme)
-		&& ComCtlVersionOK()
-	    ) {
-		return procs;
-	    }
-#undef LOADPROC
-	    ckfree((char*)procs);
-	}
-    }
-    return 0;
 }
 
 /*
@@ -1654,7 +1513,7 @@ TreeTheme_DrawHeaderItem(
 	case COLUMN_STATE_PRESSED: iStateId = HIS_PRESSED; break;
     }
 
-    if (!appThemeData->themeEnabled || !procs)
+    if (!appThemeData->themeEnabled)
 	return TCL_ERROR;
 
     hTheme = tree->themeData->hThemeHEADER;
@@ -1676,7 +1535,7 @@ TreeTheme_DrawHeaderItem(
     rc.bottom = y + height;
 
     /* Is transparent for the default XP style. */
-    if (procs->IsThemeBackgroundPartiallyTransparent(
+    if (IsThemeBackgroundPartiallyTransparent(
 	hTheme,
 	iPartId,
 	iStateId)) {
@@ -1686,7 +1545,7 @@ TreeTheme_DrawHeaderItem(
 #else
 	/* This draws nothing, maybe because the parent window is not
 	 * themed */
-	procs->DrawThemeParentBackground(
+	DrawThemeParentBackground(
 	    hwnd,
 	    hDC,
 	    &rc);
@@ -1699,7 +1558,7 @@ TreeTheme_DrawHeaderItem(
     {
 	/* Default XP theme gives rect 3 pixels narrower than rc */
 	RECT contentRect, extentRect;
-	hr = procs->GetThemeBackgroundContentRect(
+	hr = GetThemeBackgroundContentRect(
 	    hTheme,
 	    hDC,
 	    iPartId,
@@ -1712,7 +1571,7 @@ TreeTheme_DrawHeaderItem(
 	    contentRect.bottom - contentRect.top);
 
 	/* Gives rc */
-	hr = procs->GetThemeBackgroundExtent(
+	hr = GetThemeBackgroundExtent(
 	    hTheme,
 	    hDC,
 	    iPartId,
@@ -1726,7 +1585,7 @@ TreeTheme_DrawHeaderItem(
     }
 #endif
 
-    hr = procs->DrawThemeBackground(
+    hr = DrawThemeBackground(
 	hTheme,
 	hDC,
 	iPartId,
@@ -1782,7 +1641,7 @@ TreeTheme_GetHeaderContentMargins(
 	case COLUMN_STATE_PRESSED: iStateId = HIS_PRESSED; break;
     }
 
-    if (!appThemeData->themeEnabled || !procs)
+    if (!appThemeData->themeEnabled)
 	return TCL_ERROR;
 
     hTheme = tree->themeData->hThemeHEADER;
@@ -1794,7 +1653,7 @@ TreeTheme_GetHeaderContentMargins(
     /* The default XP themes give 3,0,0,0 which makes little sense since
      * it is the *right* side that should not be drawn over by text; the
      * 2-pixel wide header divider is on the right */
-    hr = procs->GetThemeMargins(
+    hr = GetThemeMargins(
 	hTheme,
 	hDC,
 	iPartId,
@@ -1852,7 +1711,7 @@ TreeTheme_DrawHeaderArrow(
     GC gc;
     int i;
 
-    if (!appThemeData->themeEnabled || !procs)
+    if (!appThemeData->themeEnabled)
 	return TCL_ERROR;
 
     color = Tk_GetColor(tree->interp, tree->tkwin, "#ACA899");
@@ -1887,14 +1746,14 @@ TreeTheme_DrawHeaderArrow(
     int iPartId = HP_HEADERSORTARROW;
     int iStateId = up ? HSAS_SORTEDUP : HSAS_SORTEDDOWN;
 
-    if (!appThemeData->themeEnabled || !procs)
+    if (!appThemeData->themeEnabled)
 	return TCL_ERROR;
 
     hTheme = tree->themeData->hThemeHEADER;
     if (!hTheme)
 	return TCL_ERROR;
 
-    if (!procs->IsThemePartDefined(
+    if (!IsThemePartDefined(
 	hTheme,
 	iPartId,
 	iStateId)) {
@@ -1908,7 +1767,7 @@ TreeTheme_DrawHeaderArrow(
     rc.right = x + width;
     rc.bottom = y + height;
 
-    hr = procs->DrawThemeBackground(
+    hr = DrawThemeBackground(
 	hTheme,
 	hDC,
 	iPartId,
@@ -1958,7 +1817,7 @@ TreeTheme_DrawButton(
     HRESULT hr;
     int iPartId, iStateId;
 
-    if (!appThemeData->themeEnabled || !procs)
+    if (!appThemeData->themeEnabled)
 	return TCL_ERROR;
 
     hTheme = tree->themeData->hThemeTREEVIEW;
@@ -1968,7 +1827,7 @@ TreeTheme_DrawButton(
     /* On Win7 IsThemePartDefined(TVP_HOTGLYPH) correctly returns
      * TRUE when SetWindowTheme("explorer") is called and FALSE when it
      * wasn't called. */
-    if (active && procs->IsThemePartDefined(hTheme, TVP_HOTGLYPH, 0)) {
+    if (active && IsThemePartDefined(hTheme, TVP_HOTGLYPH, 0)) {
 	iPartId  = TVP_HOTGLYPH;
 	iStateId = open ? HGLPS_OPENED : HGLPS_CLOSED;
     } else {
@@ -1977,7 +1836,7 @@ TreeTheme_DrawButton(
     }
 
 #if 0 /* Always returns FALSE */
-    if (!procs->IsThemePartDefined(
+    if (!IsThemePartDefined(
 	hTheme,
 	iPartId,
 	iStateId)) {
@@ -1991,7 +1850,7 @@ TreeTheme_DrawButton(
     rc.top = y;
     rc.right = x + width;
     rc.bottom = y + height;
-    hr = procs->DrawThemeBackground(
+    hr = DrawThemeBackground(
 	hTheme,
 	hDC,
 	iPartId,
@@ -2041,7 +1900,7 @@ TreeTheme_GetButtonSize(
     SIZE size;
     int iPartId, iStateId;
 
-    if (!appThemeData->themeEnabled || !procs)
+    if (!appThemeData->themeEnabled)
 	return TCL_ERROR;
 
     /* Use cached values */
@@ -2060,7 +1919,7 @@ TreeTheme_GetButtonSize(
     iStateId = open ? GLPS_OPENED : GLPS_CLOSED;
 
 #if 0 /* Always returns FALSE */
-    if (!procs->IsThemePartDefined(
+    if (!IsThemePartDefined(
 	hTheme,
 	iPartId,
 	iStateId)) {
@@ -2071,7 +1930,7 @@ TreeTheme_GetButtonSize(
     hDC = TkWinGetDrawableDC(tree->display, drawable, &dcState);
 
     /* Returns 9x9 for default XP style */
-    hr = procs->GetThemePartSize(
+    hr = GetThemePartSize(
 	hTheme,
 	hDC,
 	iPartId,
@@ -2131,7 +1990,7 @@ TreeTheme_GetArrowSize(
     )
 {
 #if THEME_ARROW==0
-    if (!appThemeData->themeEnabled || !procs)
+    if (!appThemeData->themeEnabled)
 	return TCL_ERROR;
 
     *widthPtr = 9;
@@ -2147,7 +2006,7 @@ TreeTheme_GetArrowSize(
     SIZE size;
     int iPartId, iStateId;
 
-    if (!appThemeData->themeEnabled || !procs)
+    if (!appThemeData->themeEnabled)
 	return TCL_ERROR;
 
     hTheme = themeData->hThemeTREEVIEW;
@@ -2158,7 +2017,7 @@ TreeTheme_GetArrowSize(
     iStateId = up ? HSAS_SORTEDUP : HSAS_SORTEDDOWN;
 
 #if 0 /* Always returns FALSE */
-    if (!procs->IsThemePartDefined(
+    if (!IsThemePartDefined(
 	hTheme,
 	iPartId,
 	iStateId)) {
@@ -2168,7 +2027,7 @@ TreeTheme_GetArrowSize(
 
     hDC = TkWinGetDrawableDC(tree->display, drawable, &dcState);
 
-    hr = procs->GetThemePartSize(
+    hr = GetThemePartSize(
 	hTheme,
 	hDC,
 	iPartId,
@@ -2441,8 +2300,8 @@ ThemeMonitorWndProc(
     switch (msg) {
 	case WM_THEMECHANGED:
 	    Tcl_MutexLock(&themeMutex);
-	    appThemeData->themeEnabled = procs->IsThemeActive() &&
-		    procs->IsAppThemed();
+	    appThemeData->themeEnabled = IsThemeActive() &&
+		    IsAppThemed();
 	    Tcl_MutexUnlock(&themeMutex);
 	    Tree_TheWorldHasChanged(interp);
 	    /* FIXME: must get tree->themeData->hThemeHEADER etc for each widget */
@@ -2539,23 +2398,23 @@ TreeTheme_ThemeChanged(
 
     if (tree->themeData != NULL) {
 	if (tree->themeData->hThemeHEADER != NULL) {
-	    procs->CloseThemeData(tree->themeData->hThemeHEADER);
+	    CloseThemeData(tree->themeData->hThemeHEADER);
 	    tree->themeData->hThemeHEADER = NULL;
 	}
 	if (tree->themeData->hThemeTREEVIEW != NULL) {
-	    procs->CloseThemeData(tree->themeData->hThemeTREEVIEW);
+	    CloseThemeData(tree->themeData->hThemeTREEVIEW);
 	    tree->themeData->hThemeTREEVIEW = NULL;
 	}
     }
 
-    if (!appThemeData->themeEnabled || !procs)
+    if (!appThemeData->themeEnabled)
 	return;
 
     if (tree->themeData == NULL)
 	tree->themeData = (TreeThemeData) ckalloc(sizeof(TreeThemeData_));
 
-    tree->themeData->hThemeHEADER = procs->OpenThemeData(hwnd, L"HEADER");
-    tree->themeData->hThemeTREEVIEW = procs->OpenThemeData(hwnd, L"TREEVIEW");
+    tree->themeData->hThemeHEADER = OpenThemeData(hwnd, L"HEADER");
+    tree->themeData->hThemeTREEVIEW = OpenThemeData(hwnd, L"TREEVIEW");
 
     tree->themeData->buttonClosed.cx = tree->themeData->buttonOpen.cx = -1;
 }
@@ -2585,7 +2444,7 @@ TreeTheme_InitWidget(
     Window win = Tk_WindowId(tree->tkwin);
     HWND hwnd = Tk_GetHWND(win);
 
-    if (!appThemeData->themeEnabled || !procs)
+    if (!appThemeData->themeEnabled)
 	return TCL_ERROR;
 
     tree->themeData = (TreeThemeData) ckalloc(sizeof(TreeThemeData_));
@@ -2593,8 +2452,8 @@ TreeTheme_InitWidget(
     /* http://www.codeproject.com/cs/miscctrl/themedtabpage.asp?msg=1445385#xx1445385xx */
     /* http://msdn2.microsoft.com/en-us/library/ms649781.aspx */
 
-    tree->themeData->hThemeHEADER = procs->OpenThemeData(hwnd, L"HEADER");
-    tree->themeData->hThemeTREEVIEW = procs->OpenThemeData(hwnd, L"TREEVIEW");
+    tree->themeData->hThemeHEADER = OpenThemeData(hwnd, L"HEADER");
+    tree->themeData->hThemeTREEVIEW = OpenThemeData(hwnd, L"TREEVIEW");
 
     tree->themeData->buttonClosed.cx = tree->themeData->buttonOpen.cx = -1;
 
@@ -2624,9 +2483,9 @@ TreeTheme_FreeWidget(
 {
     if (tree->themeData != NULL) {
 	if (tree->themeData->hThemeHEADER != NULL)
-	    procs->CloseThemeData(tree->themeData->hThemeHEADER);
+	    CloseThemeData(tree->themeData->hThemeHEADER);
 	if (tree->themeData->hThemeTREEVIEW != NULL)
-	    procs->CloseThemeData(tree->themeData->hThemeTREEVIEW);
+	    CloseThemeData(tree->themeData->hThemeTREEVIEW);
 	ckfree((char *) tree->themeData);
     }
     return TCL_OK;
@@ -2662,25 +2521,18 @@ TreeTheme_InitInterp(
     /* This is done once per-application */
     if (appThemeData == NULL) {
 	appThemeData = (XPThemeData *) ckalloc(sizeof(XPThemeData));
-	appThemeData->procs = LoadXPThemeProcs(&appThemeData->hlibrary);
 	appThemeData->registered = FALSE;
 	appThemeData->themeEnabled = FALSE;
 
-	procs = appThemeData->procs;
-
-	if (appThemeData->procs) {
-	    /* Check this again if WM_THEMECHANGED arrives */
-	    appThemeData->themeEnabled = procs->IsThemeActive() &&
-		    procs->IsAppThemed();
-
-	    appThemeData->registered =
-		RegisterThemeMonitorWindowClass(Tk_GetHINSTANCE());
-	}
+        /* Check this again if WM_THEMECHANGED arrives */
+        appThemeData->themeEnabled = IsThemeActive() && IsAppThemed();
+        appThemeData->registered =
+            RegisterThemeMonitorWindowClass(Tk_GetHINSTANCE());
     }
 
     Tcl_MutexUnlock(&themeMutex);
 
-    if (!procs || !appThemeData->registered)
+    if (!appThemeData->registered)
 	return TCL_ERROR;
 
     /* Per-interp */
@@ -2767,7 +2619,7 @@ TreeThemeCmd(
 	/* T theme platform */
 	case COMMAND_PLATFORM: {
 	    char *platform = "X11"; /* X11, xlib, whatever */
-	    if (appThemeData->themeEnabled && appThemeData->procs)
+	    if (appThemeData->themeEnabled)
 		platform = "visualstyles";
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(platform, -1));
 	    break;
@@ -2783,12 +2635,12 @@ TreeThemeCmd(
 		Tcl_WrongNumArgs(interp, 3, objv, "appname");
 		return TCL_ERROR;
 	    }
-	    if (!appThemeData->themeEnabled || !appThemeData->procs)
+	    if (!appThemeData->themeEnabled)
 		break;
 	    win = Tk_WindowId(tree->tkwin);
 	    hwnd = Tk_GetHWND(win);
 	    pszSubAppName = Tcl_GetUnicodeFromObj(objv[3], &length);
-	    procs->SetWindowTheme(hwnd, length ? pszSubAppName : NULL, NULL);
+	    SetWindowTheme(hwnd, length ? pszSubAppName : NULL, NULL);
 
 	    /* uxtheme.h says a WM_THEMECHANGED is sent to the window. */
 	    /* FIXME: only this window needs to be updated. */

@@ -326,7 +326,7 @@ guilflags = $(lflags) -subsystem:windows
 !if !$(STATIC_BUILD)
 baselibs  = $(TCLSTUBLIB)
 !if defined(TKSTUBLIB)
-baselibs  = $(baselibs) $(TKSTUBLIB) gdi32.lib user32.lib
+baselibs  = $(baselibs) $(TKSTUBLIB) gdi32.lib user32.lib uxtheme.lib
 !endif
 !endif
 
