@@ -162,6 +162,12 @@ PROJECT = treectrl
 PROJECT_REQUIRES_TK = 1
 !include "rules.vc"
 
+!if $(TCLINSTALL)
+!message *** Warning: treectrl requires the source distribution of Tcl to build from,
+!message ***    at this time, sorry.  Please set the TCLDIR macro to point to the
+!message ***    Tcl sources.
+!endif
+
 !if $(TKINSTALL)
 !message *** Warning: treectrl requires the source distribution of Tk to build from,
 !message ***    at this time, sorry.  Please set the TKDIR macro to point to the
