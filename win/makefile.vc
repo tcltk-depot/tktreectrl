@@ -223,8 +223,9 @@ INCLUDE_INSTALL_DIR	= $(_TCLDIR)\include
 ### The following paths CANNOT have spaces in them.
 GENERICDIR	= $(ROOT)\generic
 WINDIR		= $(ROOT)\win
-LIBDIR          = $(ROOT)\lib
+LIBDIR          = $(ROOT)\library
 DOCDIR		= $(ROOT)\doc
+DEMODIR		= $(ROOT)\demos
 TOOLSDIR	= $(ROOT)\tools
 COMPATDIR	= $(ROOT)\compat
 EXPATDIR        = $(ROOT)\expat
@@ -349,7 +350,7 @@ TESTFLAGS = $(TESTFLAGS) -file $(TESTPAT)
 
 all:	    setup $(PROJECT)
 $(PROJECT): setup $(PRJLIB) $(PRJSTUBLIB)
-install:    install-binaries install-libraries install-docs
+install:    install-binaries install-libraries install-docs install-demos
 
 # Tests need to ensure we load the right dll file we
 # have to handle the output differently on Win9x.
@@ -469,19 +470,29 @@ install-binaries:
 	@echo Installing binaries to '$(SCRIPT_INSTALL_DIR)'
 	@if not exist "$(SCRIPT_INSTALL_DIR)" mkdir "$(SCRIPT_INSTALL_DIR)"
 	@$(CPY) $(PRJLIB) "$(SCRIPT_INSTALL_DIR)" >NUL
-	@$(CPY) $(PRJSTUBLIB) "$(SCRIPT_INSTALL_DIR)" >NUL
 
 install-libraries:
         @echo Installing libraries to '$(SCRIPT_INSTALL_DIR)'
         @if exist $(LIBDIR)\NUL $(CPY) $(LIBDIR)\*.tcl "$(SCRIPT_INSTALL_DIR)" >NUL
         @echo Installing package index in '$(SCRIPT_INSTALL_DIR)'
         @type << >"$(SCRIPT_INSTALL_DIR)\pkgIndex.tcl"
-    package ifneeded $(PROJECT) $(DOTVERSION) "[list load [file join $$dir $(PROJECT)$(VERSION)$(SUFX).$(EXT)] tdom]; [list source [file join $$dir tdom.tcl]]"
+	if {[catch {package require Tcl $(TCL_MAJOR_VERSION).$(TCL_MINOR_VERSION)} o]} return
+	set script ""
+	if {![info exists ::env(TREECTRL_LIBRARY)]
+	   && [file exists [file join $$dir treectrl.tcl]]} {
+	    append script "[list set ::treectrl_library $$dir]\n"
+	}
+	append script [list load [file join $$dir $(PRJLIBNAME)] $(PROJECT)]
+	package ifneeded $(PROJECT) $(DOTVERSION) $$script
 <<
 
 install-docs:
-#	@echo Installing documentation files to '$(DOC_INSTALL_DIR)'
-#	@if exist $(DOCDIR) $(CPY) $(DOCDIR)\*.n "$(DOC_INSTALL_DIR)"
+	@echo Installing documentation files to '$(DOC_INSTALL_DIR)'
+	@if exist $(DOCDIR) $(CPY) $(DOCDIR)\*.html "$(DOC_INSTALL_DIR)"
+
+install-demos:
+	@$(CPY) "$(DEMODIR)\*.tcl" "$(SCRIPT_INSTALL_DIR)\demos\"
+	@$(CPY) "$(DEMODIR)\pics\*.gif" "$(SCRIPT_INSTALL_DIR)\demos\pics\"
 
 #---------------------------------------------------------------------
 # Clean up
