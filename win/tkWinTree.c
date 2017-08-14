@@ -1437,7 +1437,7 @@ GetActCtxProcs(void)
     HINSTANCE hInst;
     ActCtxProcs *procs = (ActCtxProcs *) ckalloc(sizeof(ActCtxProcs));
 
-    hInst = LoadLibrary("kernel32.dll"); /* FIXME: leak? */
+    hInst = LoadLibraryA("kernel32.dll"); /* FIXME: leak? */
     if (hInst != 0)
     {
  #define LOADPROC(name) \
@@ -1503,7 +1503,7 @@ ActivateManifestContext(ActCtxProcs *procs, ULONG_PTR *ulpCookie)
     if (procs == NULL)
 	return INVALID_HANDLE_VALUE;
 
-    len = GetModuleFileName(GetMyHandle(),myPath,1024);
+    len = GetModuleFileNameA(GetMyHandle(),myPath,1024);
     myPath[len] = 0;
 
     ZeroMemory(&actctx, sizeof(actctx));
@@ -1520,7 +1520,7 @@ ActivateManifestContext(ActCtxProcs *procs, ULONG_PTR *ulpCookie)
     actctx.dwFlags = ACTCTX_FLAG_HMODULE_VALID | ACTCTX_FLAG_RESOURCE_NAME_VALID;
     actctx.hModule = GetMyHandle();
 #endif
-    actctx.lpResourceName = MAKEINTRESOURCE(2);
+    actctx.lpResourceName = MAKEINTRESOURCEA(2);
 
     hCtx = procs->CreateActCtxA(&actctx);
     if (hCtx == INVALID_HANDLE_VALUE)
@@ -1568,7 +1568,7 @@ ComCtlVersionOK(void)
 
     procs = GetActCtxProcs();
     hCtx = ActivateManifestContext(procs, &ulpCookie);
-    handle = LoadLibrary("comctl32.dll");
+    handle = LoadLibraryA("comctl32.dll");
     DeactivateManifestContext(procs, hCtx, ulpCookie);
     if (handle == NULL)
 	return FALSE;
@@ -1623,7 +1623,7 @@ LoadXPThemeProcs(HINSTANCE *phlib)
 	 * drawing routines are implemented.
 	 */
 	HINSTANCE handle;
-	*phlib = handle = LoadLibrary("uxtheme.dll");
+	*phlib = handle = LoadLibraryA("uxtheme.dll");
 	if (handle != 0) {
 	    /*
 	     * We have successfully loaded the library. Proceed in storing the
@@ -2507,7 +2507,7 @@ static BOOL
 RegisterThemeMonitorWindowClass(
     HINSTANCE hinst)
 {
-    WNDCLASSEX wc;
+    WNDCLASSEXA wc;
 
     wc.cbSize        = sizeof(WNDCLASSEX);
     wc.style         = CS_HREDRAW | CS_VREDRAW;
@@ -2533,7 +2533,7 @@ CreateThemeMonitorWindow(
     CHAR title[32] = "TreeCtrlMonitorWindow";
     HWND hwnd;
 
-    hwnd = CreateWindow(windowClassName, title, WS_OVERLAPPEDWINDOW,
+    hwnd = CreateWindowA(windowClassName, title, WS_OVERLAPPEDWINDOW,
 	CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
 	NULL, NULL, hinst, NULL);
     if (!hwnd)
@@ -3022,7 +3022,7 @@ TreeDraw_ExitHandler(
 static int
 LoadGdiplus(void)
 {
-    DllExports.handle = LoadLibrary("gdiplus.dll");
+    DllExports.handle = LoadLibraryA("gdiplus.dll");
     if (DllExports.handle != NULL) {
 #define LOADPROC(name) \
 	(0 != (DllExports._ ## name = (VOID *)GetProcAddress(DllExports.handle, #name) ))
