@@ -1416,48 +1416,6 @@ static XPThemeProcs *procs = NULL;
 static XPThemeData *appThemeData = NULL;
 TCL_DECLARE_MUTEX(themeMutex)
 
-/* Functions imported from kernel32.dll requiring windows XP or greater. */
-/* But I already link to GetVersionEx so is this importing needed? */
-typedef HANDLE (STDAPICALLTYPE CreateActCtxAProc)(PCACTCTXA pActCtx);
-typedef BOOL (STDAPICALLTYPE ActivateActCtxProc)(HANDLE hActCtx, ULONG_PTR *lpCookie);
-typedef BOOL (STDAPICALLTYPE DeactivateActCtxProc)(DWORD dwFlags, ULONG_PTR ulCookie);
-typedef VOID (STDAPICALLTYPE ReleaseActCtxProc)(HANDLE hActCtx);
-
-typedef struct
-{
-    CreateActCtxAProc *CreateActCtxA;
-    ActivateActCtxProc *ActivateActCtx;
-    DeactivateActCtxProc *DeactivateActCtx;
-    ReleaseActCtxProc *ReleaseActCtx;
-} ActCtxProcs;
-
-static ActCtxProcs *
-GetActCtxProcs(void)
-{
-    HINSTANCE hInst;
-    ActCtxProcs *procs = (ActCtxProcs *) ckalloc(sizeof(ActCtxProcs));
-
-    hInst = LoadLibraryA("kernel32.dll"); /* FIXME: leak? */
-    if (hInst != 0)
-    {
- #define LOADPROC(name) \
-	(0 != (procs->name = (name ## Proc *)GetProcAddress(hInst, #name) ))
-
-	if (LOADPROC(CreateActCtxA) &&
-	    LOADPROC(ActivateActCtx) &&
-	    LOADPROC(DeactivateActCtx) &&
-	    LOADPROC(ReleaseActCtx))
-	{
-	    return procs;
-	}
-
-#undef LOADPROC
-    }
-
-    ckfree((char*)procs);
-    return NULL;
-}
-
 static HMODULE thisModule = NULL;
 
 /* Return the HMODULE for this treectrl.dll. */
@@ -1492,16 +1450,13 @@ DllMain(
 }
 
 static HANDLE
-ActivateManifestContext(ActCtxProcs *procs, ULONG_PTR *ulpCookie)
+ActivateManifestContext(ULONG_PTR *ulpCookie)
 {
     ACTCTXA actctx;
     HANDLE hCtx;
 #if 1
     char myPath[1024];
     DWORD len;
-
-    if (procs == NULL)
-	return INVALID_HANDLE_VALUE;
 
     len = GetModuleFileNameA(GetMyHandle(),myPath,1024);
     myPath[len] = 0;
@@ -1522,7 +1477,7 @@ ActivateManifestContext(ActCtxProcs *procs, ULONG_PTR *ulpCookie)
 #endif
     actctx.lpResourceName = MAKEINTRESOURCEA(2);
 
-    hCtx = procs->CreateActCtxA(&actctx);
+    hCtx = CreateActCtxA(&actctx);
     if (hCtx == INVALID_HANDLE_VALUE)
     {
 	char msg[1024];
@@ -1533,22 +1488,19 @@ ActivateManifestContext(ActCtxProcs *procs, ULONG_PTR *ulpCookie)
 	return INVALID_HANDLE_VALUE;
     }
 
-    if (procs->ActivateActCtx(hCtx, ulpCookie))
+    if (ActivateActCtx(hCtx, ulpCookie))
 	return hCtx;
 
     return INVALID_HANDLE_VALUE;
 }
 
 static void
-DeactivateManifestContext(ActCtxProcs *procs, HANDLE hCtx, ULONG_PTR ulpCookie)
+DeactivateManifestContext(HANDLE hCtx, ULONG_PTR ulpCookie)
 {
-    if (procs == NULL)
-	return;
-
     if (hCtx != INVALID_HANDLE_VALUE)
     {
-	procs->DeactivateActCtx(0, ulpCookie);
-	procs->ReleaseActCtx(hCtx);
+	DeactivateActCtx(0, ulpCookie);
+	ReleaseActCtx(hCtx);
     }
 
     ckfree((char*)procs);
@@ -1562,14 +1514,12 @@ ComCtlVersionOK(void)
     typedef HRESULT (STDAPICALLTYPE DllGetVersionProc)(DLLVERSIONINFO *);
     DllGetVersionProc *pDllGetVersion;
     int result = FALSE;
-    ActCtxProcs *procs;
     HANDLE hCtx;
     ULONG_PTR ulpCookie;
 
-    procs = GetActCtxProcs();
-    hCtx = ActivateManifestContext(procs, &ulpCookie);
+    hCtx = ActivateManifestContext(&ulpCookie);
     handle = LoadLibraryA("comctl32.dll");
-    DeactivateManifestContext(procs, hCtx, ulpCookie);
+    DeactivateManifestContext(hCtx, ulpCookie);
     if (handle == NULL)
 	return FALSE;
     pDllGetVersion = (DllGetVersionProc *) GetProcAddress(handle,
@@ -2522,7 +2472,7 @@ RegisterThemeMonitorWindowClass(
     wc.lpszMenuName  = windowClassName;
     wc.lpszClassName = windowClassName;
 
-    return RegisterClassEx(&wc);
+    return RegisterClassExA(&wc);
 }
 
 static HWND
