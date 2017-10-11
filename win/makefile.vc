@@ -175,7 +175,7 @@ PROJECT_REQUIRES_TK = 1
 !endif
 
 
-DOTVERSION      = 2.4.2
+DOTVERSION      = 2.4.3
 VERSION         = $(DOTVERSION:.=)
 STUBPREFIX      = $(PROJECT)stub
 
