@@ -255,11 +255,23 @@ Tree_EllipsisStart(
     int i, tmpLen;
     int pixelsEllipsis;
 
+    /*
+     * NOTE: font calculations cannot be done by adding pixel widths for 
+     * multiple segments as kerning, ligatures etc. means width of
+     * the sum is not necessarily sum of individual segment widths. We
+     * have to construct the actual full string to calculate the width.
+     */
+
+    /* 
+     * Check the pixel length of the given string. If it all fits,
+     * no need for ellipsis unless force indicates ellipsis should
+     * always be added.
+     */
     pixelsTest = Tk_TextWidth(tkfont, string, numBytes);
     if (pixelsTest <= *maxPixels && ! force) {
         /* Given space can fit the whole string */
         Tcl_DStringSetLength(dString, numBytes);
-        memcpy(Tcl_DStringValue(dString), firstCharPtr, numBytes);
+        memcpy(Tcl_DStringValue(dString), string, numBytes);
         *maxPixels = pixelsTest;
         *elideStart = -1;
         *elideEnd = 0;
@@ -279,10 +291,25 @@ Tree_EllipsisStart(
             /* Text fits but can happen if force is true requiring ellipsis */
             i = 0;
         } else {
+            /* 
+             * Estimate the number of leading characters that need to be
+             * replaced by ellipsis. (pixelsTest - *maxPixels) is how 
+             * many pixels we are short. Divide by pixelsTest to get
+             * the fractional equivalent and multiply by numUtfChars to 
+             * get the equivalent character count. The computation is
+             * rearranged as below for overflow/underflow issues
+             * NOTE THIS IS ONLY AN ESTIMATE
+             */
             Tcl_WideInt temp = (Tcl_WideInt) numUtfChars * (Tcl_WideInt) (pixelsTest - *maxPixels);
             i = (int) ( temp / pixelsTest);
         }
     }
+
+    /* 
+     * We have an estimate (i) of how many characters need to be replaced
+     * by the ellipsis. We will use that as a starting point to find the
+     * exact number.
+     */
     memcpy(tmpStr, ellipsis, ellipsisNumBytes);
     firstCharPtr = Tcl_UtfAtIndex(string, i);
     bytesTest = endCharPtr-firstCharPtr;
@@ -334,31 +361,6 @@ Tree_EllipsisStart(
     (*elideStart) = -1;
     (*elideEnd) = i;
     return bytesTest;
-#if 0
-    for (i = 0; i < numUtfChars; i++) {
-	int tmpLen;
-	bytesTest = string + numBytes - firstCharPtr;
-	tmpLen = bytesTest;
-	if (i > 0 || force) {
-	    memcpy(tmpStr, ellipsis, ellipsisNumBytes);
-	    memcpy(tmpStr + ellipsisNumBytes, firstCharPtr, bytesTest);
-	    tmpLen += ellipsisNumBytes;
-	} else
-	    memcpy(tmpStr, firstCharPtr, bytesTest);
-	Tcl_DStringSetLength(dString, tmpLen);
-	pixelsTest = (i + 1 == numUtfChars) ? -1 : *maxPixels;
-	bytesThatFit = Tk_MeasureChars(tkfont, tmpStr, tmpLen, pixelsTest, 0,
-	    &pixelsTest);
-	if (bytesThatFit == tmpLen)
-	    break;
-	firstCharPtr = Tcl_UtfNext(firstCharPtr);
-    }
-
-    (*maxPixels) = pixelsTest;
-    (*elideStart) = -1;
-    (*elideEnd) = i;
-    return bytesTest;
-#endif
 }
 
 int
@@ -386,8 +388,68 @@ Tree_EllipsisMiddle(
     int ellipsisNumBytes = (int) strlen(ellipsis);
     int numUtfChars = Tcl_NumUtfChars(string, numBytes);
     int start, end, moveEnd = 1;
+    int pixelsEllipsis;
 
-    start = end = numUtfChars / 2;
+    /*
+     * NOTE: font calculations cannot be done by adding pixel widths for 
+     * multiple segments as kerning, ligatures etc. means width of
+     * the sum is not necessarily sum of individual segment widths. We
+     * have to construct the actual full string to calculate the width.
+     */
+
+    /* 
+     * Check the pixel length of the given string. If it all fits, no
+     * need for ellipsis. NOTE: Like the original code, the force
+     * argument is ignored for middle ellipsis
+     */
+    pixelsTest = Tk_TextWidth(tkfont, string, numBytes);
+    if (pixelsTest <= *maxPixels) {
+        /* Given space can fit the whole string */
+        Tcl_DStringSetLength(dString, numBytes);
+        memcpy(Tcl_DStringValue(dString), string, numBytes);
+        *maxPixels = pixelsTest;
+        *elideStart = numUtfChars-1;
+        *elideEnd = -1;
+        return numBytes;
+   }
+
+    /* Make sure DString has room for max size output and more */
+    Tcl_DStringSetLength(dString, numBytes+ellipsisNumBytes);
+    tmpStr = Tcl_DStringValue(dString);
+
+    /* Check how room the ellipsis themselves take up */
+    pixelsEllipsis = Tk_TextWidth(tkfont, ellipsis, ellipsisNumBytes);
+    if (pixelsEllipsis >= *maxPixels) {
+        /* No room for actual text */
+        start = 0;
+        end = numUtfChars-1;
+    } else {
+        /* Note pixelsTest > *maxPixels because of a previous check above */
+        /* 
+         * Estimate the number of leading characters that need to be
+         * replaced by ellipsis. (pixelsTest - *maxPixels) is how 
+         * many pixels we are short. Divide by pixelsTest to get
+         * the fractional equivalent and multiply by numUtfChars to 
+         * get the equivalent character count. Split this into two,
+         * characters to be removed left of the ellipsis and characters
+         * to remove right of the ellipsis. The computation is
+         * rearranged as below for overflow/underflow issues
+         * NOTE THIS IS ONLY AN ESTIMATE
+         */
+        Tcl_WideInt temp = (Tcl_WideInt) numUtfChars * (Tcl_WideInt) (pixelsTest - *maxPixels);
+        int overflow = (int) ( temp / pixelsTest);
+        /* (start,end) is the range of characters to replace with ellipsis */
+        end = numUtfChars/2 + overflow/2;
+        start = end - overflow;
+        /* Should not happen but sanity checks */
+        if (start < 0) start = 0;
+        if (end >= numUtfChars) end = numUtfChars - 1;
+    }
+
+    /*
+     * Now loop incrementally removing additional characters until we can
+     * fit in the ellipsis 
+     */
     while (1) {
 	int tmpLen = 0;
 	bytesTest = 0;
@@ -463,12 +525,25 @@ Tree_EllipsisEnd(
     const char *lastCharPtr;
     int i, tmpLen;
 
+    /*
+     * NOTE: font calculations cannot be done by adding pixel widths for 
+     * multiple segments as kerning, ligatures etc. means width of
+     * the sum is not necessarily sum of individual segment widths. We
+     * have to construct the actual full string to calculate the width.
+     */
+
+    /* First estimate how many leading characters will fit. */
+
     bytesThatFit = Tk_MeasureChars(tkfont, string, numBytes, *maxPixels, 0,
                                    &pixelsTest);
     numFitUtfChars = Tcl_NumUtfChars(string, bytesThatFit);
     lastCharPtr = Tcl_UtfAtIndex(string, numFitUtfChars);
-    
     memcpy(tmpStr, string, bytesThatFit);
+
+    /* 
+     * Now refine estimate by removing trailing characters and adding
+     * ellipsis if necessary until truncated string fits in max pixes width
+     */
     for (i = numFitUtfChars - 1; i >= 0; i--) {
 	tmpLen = lastCharPtr - string;
 	bytesTest = tmpLen;
