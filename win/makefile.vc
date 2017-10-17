@@ -160,7 +160,23 @@ Please `cd` to its location first.
 
 PROJECT = treectrl
 PROJECT_REQUIRES_TK = 1
-!include "rules.vc"
+PRJ_OBJS = \
+	$(TMP_DIR)\qebind.obj \
+	$(TMP_DIR)\tkTreeColumn.obj \
+	$(TMP_DIR)\tkTreeCtrl.obj \
+	$(TMP_DIR)\tkTreeDisplay.obj \
+	$(TMP_DIR)\tkTreeDrag.obj \
+	$(TMP_DIR)\tkTreeElem.obj \
+	$(TMP_DIR)\tkTreeHeader.obj \
+	$(TMP_DIR)\tkTreeItem.obj \
+	$(TMP_DIR)\tkTreeMarquee.obj \
+	$(TMP_DIR)\tkTreeNotify.obj \
+	$(TMP_DIR)\tkTreeStyle.obj \
+	$(TMP_DIR)\tkTreeTheme.obj \
+	$(TMP_DIR)\tkTreeUtils.obj \
+	$(TMP_DIR)\tkWinTree.obj
+
+!include "rules-ext.vc"
 
 !if $(TCLINSTALL)
 !message *** Warning: treectrl requires the source distribution of Tcl to build from,
@@ -175,169 +191,17 @@ PROJECT_REQUIRES_TK = 1
 !endif
 
 
-DOTVERSION      = 2.4.3
-VERSION         = $(DOTVERSION:.=)
-STUBPREFIX      = $(PROJECT)stub
-
-DLLOBJS = \
-	$(TMP_DIR)\qebind.obj \
-	$(TMP_DIR)\tkTreeColumn.obj \
-	$(TMP_DIR)\tkTreeCtrl.obj \
-	$(TMP_DIR)\tkTreeDisplay.obj \
-	$(TMP_DIR)\tkTreeDrag.obj \
-	$(TMP_DIR)\tkTreeElem.obj \
-	$(TMP_DIR)\tkTreeHeader.obj \
-	$(TMP_DIR)\tkTreeItem.obj \
-	$(TMP_DIR)\tkTreeMarquee.obj \
-	$(TMP_DIR)\tkTreeNotify.obj \
-	$(TMP_DIR)\tkTreeStyle.obj \
-	$(TMP_DIR)\tkTreeTheme.obj \
-	$(TMP_DIR)\tkTreeUtils.obj \
-	$(TMP_DIR)\tkWinTree.obj \
-!if !$(STATIC_BUILD)
-	$(TMP_DIR)\treectrl.res
-!endif
-
 #-------------------------------------------------------------------------
 # Target names and paths ( shouldn't need changing )
 #-------------------------------------------------------------------------
 
-BINROOT		= .
-ROOT            = ..
-
-PRJIMPLIB	= $(OUT_DIR)\$(PROJECT)$(VERSION)$(SUFX).lib
-PRJLIBNAME	= $(PROJECT)$(VERSION)$(SUFX).$(EXT)
-PRJLIB		= $(OUT_DIR)\$(PRJLIBNAME)
-
-PRJSTUBLIBNAME	= $(STUBPREFIX)$(VERSION).lib
-PRJSTUBLIB	= $(OUT_DIR)\$(PRJSTUBLIBNAME)
-
-### Make sure we use backslash only.
-PRJ_INSTALL_DIR         = $(_INSTALLDIR)\$(PROJECT)$(DOTVERSION)
-LIB_INSTALL_DIR		= $(PRJ_INSTALL_DIR)
-BIN_INSTALL_DIR		= $(PRJ_INSTALL_DIR)
-DOC_INSTALL_DIR		= $(PRJ_INSTALL_DIR)\doc
-SCRIPT_INSTALL_DIR	= $(PRJ_INSTALL_DIR)
-INCLUDE_INSTALL_DIR	= $(_TCLDIR)\include
-
-### The following paths CANNOT have spaces in them.
-GENERICDIR	= $(ROOT)\generic
-WINDIR		= $(ROOT)\win
-LIBDIR          = $(ROOT)\library
-DOCDIR		= $(ROOT)\doc
-DEMODIR		= $(ROOT)\demos
-TOOLSDIR	= $(ROOT)\tools
-COMPATDIR	= $(ROOT)\compat
-EXPATDIR        = $(ROOT)\expat
-
-
-#---------------------------------------------------------------------
-# Compile flags
-#---------------------------------------------------------------------
-
-!if !$(DEBUG)
-!if $(OPTIMIZING)
-### This cranks the optimization level to maximize speed
-cdebug	= $(OPTIMIZATIONS)
-!else
-cdebug	=
+!if [echo PACKAGE_PATCHLEVEL = \> versions.vc] && \
+    [nmakehlp -V $(ROOT)\configure.ac PACKAGE_PATCHLEVEL >> versions.vc]
 !endif
-!else if "$(MACHINE)" == "IA64" || "$(MACHINE)" == "AMD64"
-### Warnings are too many, can't support warnings into errors.
-cdebug	= -Zi -Od $(DEBUGFLAGS)
-!else
-cdebug	= -Zi -WX $(DEBUGFLAGS)
-!endif
+!include versions.vc
 
-### Declarations common to all compiler options
-cwarn = $(WARNINGS) -D _CRT_SECURE_NO_DEPRECATE -D _CRT_NONSTDC_NO_DEPRECATE
-cflags = -nologo -c $(COMPILERFLAGS) $(cwarn) -Fp$(TMP_DIR)^\
+PRJ_DEFINES	=  $(PRJ_DEFINES) -DHAVE_INTPTR_T=1 -DNO_VIZ=/\*\*/ -DPACKAGE_PATCHLEVEL=\"$(PACKAGE_PATCHLEVEL)\" -D_CRT_SECURE_NO_WARNINGS
 
-# TBD - some of the code, like expat checks for Windows using the
-# WIN32 macro. This should really be changed to check _WIN32. For now,
-# define WIN32 ourselves
-cflags = $(cflags) -DWIN32
-
-!if $(MSVCRT)
-!if $(DEBUG) && !$(UNCHECKED)
-crt = -MDd
-!else
-crt = -MD
-!endif
-!else
-!if $(DEBUG) && !$(UNCHECKED)
-crt = -MTd
-!else
-crt = -MT
-!endif
-!endif
-
-!if !$(STATIC_BUILD)
-cflags = $(cflags) -DUSE_TCL_STUBS
-!if defined(TKSTUBLIB)
-cflags = $(cflags) -DUSE_TK_STUBS
-!endif
-!endif
-
-DEFS		=  -DHAVE_INTPTR_T=1 -DTCL_THREADS=1 -DMODULE_SCOPE=extern -DNO_VIZ=/\*\*/ -DUSE_TCL_STUBS=1 -DUSE_TK_STUBS=1
-INCLUDES	= -I"$(WINDIR)" -I"$(GENERICDIR)" -I"$(EXPATDIR)" $(TCL_INCLUDES) $(TK_INCLUDES)
-BASE_CFLAGS	= $(cflags) $(cdebug) $(crt) $(INCLUDES)
-CON_CFLAGS	= $(cflags) $(cdebug) $(crt) -DCONSOLE
-TCL_CFLAGS      = -DPACKAGE_NAME="\"$(PROJECT)\"" \
-		  -DPACKAGE_VERSION="\"$(DOTVERSION)\"" \
-		  -DPACKAGE_PATCHLEVEL="\"$(DOTVERSION)\"" \
-		  $(BASE_CFLAGS) $(OPTDEFINES) $(DEFS) $(DEFS_EXPAT)
-
-#---------------------------------------------------------------------
-# Link flags
-#---------------------------------------------------------------------
-
-!if $(DEBUG)
-ldebug	= -debug:full -debugtype:cv
-!if $(MSVCRT)
-ldebug = $(ldebug) -nodefaultlib:msvcrt
-!endif
-!else
-ldebug	= -release -opt:ref -opt:icf,3
-!if $(SYMBOLS)
-ldebug	= $(ldebug) -debug -debugtype:cv
-!endif
-!endif
-
-### Declarations common to all linker options
-lflags	= -nologo -machine:$(MACHINE) $(LINKERFLAGS) $(ldebug)
-
-!if $(PROFILE)
-lflags	= $(lflags) -profile
-!endif
-
-!if $(ALIGN98_HACK) && !$(STATIC_BUILD)
-### Align sections for PE size savings.
-lflags	= $(lflags) -opt:nowin98
-!else if !$(ALIGN98_HACK) && $(STATIC_BUILD)
-### Align sections for speed in loading by choosing the virtual page size.
-lflags	= $(lflags) -align:4096
-!endif
-
-!if $(LOIMPACT)
-lflags	= $(lflags) -ws:aggressive
-!endif
-
-dlllflags = $(lflags) -dll
-conlflags = $(lflags) -subsystem:console
-guilflags = $(lflags) -subsystem:windows
-!if !$(STATIC_BUILD)
-baselibs  = $(TCLSTUBLIB)
-!if defined(TKSTUBLIB)
-baselibs  = $(baselibs) $(TKSTUBLIB) gdi32.lib user32.lib uxtheme.lib
-!endif
-!endif
-
-# Avoid 'unresolved external symbol __security_cookie' errors.
-# c.f. http://support.microsoft.com/?id=894573
-!if "$(MACHINE)" == "IA64" || "$(MACHINE)" == "AMD64"
-baselibs   = $(baselibs) bufferoverflowU.lib
-!endif
 
 #---------------------------------------------------------------------
 # TclTest flags
@@ -347,13 +211,7 @@ baselibs   = $(baselibs) bufferoverflowU.lib
 TESTFLAGS = $(TESTFLAGS) -file $(TESTPAT)
 !ENDIF
 
-#---------------------------------------------------------------------
-# Project specific targets (EDIT)
-#---------------------------------------------------------------------
-
-all:	    setup $(PROJECT)
-$(PROJECT): setup $(PRJLIB) $(PRJSTUBLIB)
-install:    install-binaries install-libraries install-docs install-demos
+!include "$(_RULESDIR)\targets.vc"
 
 # Tests need to ensure we load the right dll file we
 # have to handle the output differently on Win9x.
@@ -382,50 +240,6 @@ source all.tcl
         type tests.log | more
 !endif
 
-setup:
-	@if not exist $(OUT_DIR)\nul mkdir $(OUT_DIR)
-	@if not exist $(TMP_DIR)\nul mkdir $(TMP_DIR)
-
-# See <tcl>/win/coffbase.txt for extension base addresses.
-$(PRJLIB): $(DLLOBJS)
-!if $(STATIC_BUILD)
-	$(lib32) -nologo -out:$@ @<<
-$**
-<<
-!else
-	$(link32) $(dlllflags) -base:0x109E0000 -out:$@ $(baselibs) @<<
-$**
-<<
-	$(_VC_MANIFEST_EMBED_DLL)
-	-@del $*.exp
-!endif
-
-$(PRJSTUBLIB): $(PRJSTUBOBJS)
-	$(lib32) -nologo -out:$@ $(PRJSTUBOBJS)
-
-#---------------------------------------------------------------------
-# Implicit rules
-#---------------------------------------------------------------------
-
-{$(WINDIR)}.c{$(TMP_DIR)}.obj::
-    $(cc32) $(TCL_CFLAGS) -DBUILD_$(PROJECT) -Fo$(TMP_DIR)\ @<<
-$<
-<<
-
-{$(GENERICDIR)}.c{$(TMP_DIR)}.obj::
-    $(cc32) $(TCL_CFLAGS) -DBUILD_$(PROJECT) -Fo$(TMP_DIR)\ @<<
-$<
-<<
-
-{$(COMPATDIR)}.c{$(TMP_DIR)}.obj::
-    $(cc32) $(TCL_CFLAGS) -DBUILD_$(PROJECT) -Fo$(TMP_DIR)\ @<<
-$<
-<<
-
-{$(EXPATDIR)}.c{$(TMP_DIR)}.obj::
-    $(cc32) $(TCL_CFLAGS) -DBUILD_$(PROJECT) -Fo$(TMP_DIR)\ @<<
-$<
-<<
 
 $(TMP_DIR)\treectrl.dll.manifest: $(ROOT)\treectrl.dll.manifest.in
 	@nmakehlp -s << $** >$@
@@ -433,32 +247,8 @@ $(TMP_DIR)\treectrl.dll.manifest: $(ROOT)\treectrl.dll.manifest.in
 @TCL_WIN_VERSION@  $(DOTVERSION).0.0
 <<
 
-{$(ROOT)}.rc{$(TMP_DIR)}.res:
-	$(rc32) -fo $@ -r -i "$(GENERICDIR)" -i "$(TMP_DIR)" -D__WIN32__ \
-                -DCOMMAVERSION=$(DOTVERSION:.=,),0 \
-                -DDOTVERSION=\"$(DOTVERSION)\" \
-                -DVERSION=\"$(VERSION)$(SUFX)\" \
-!if $(DEBUG)
-	-d DEBUG \
-!endif
-!if $(TCL_THREADS)
-	-d TCL_THREADS \
-!endif
-!if $(STATIC_BUILD)
-	-d STATIC_BUILD \
-!endif
-	$<
 
 $(TMP_DIR)\treectrl.res:  $(TMP_DIR)\treectrl.dll.manifest
-
-
-.SUFFIXES:
-.SUFFIXES:.c .rc
-
-#-------------------------------------------------------------------------
-# Explicit dependency rules
-#
-#-------------------------------------------------------------------------
 
 
 #---------------------------------------------------------------------
@@ -469,16 +259,10 @@ $(TMP_DIR)\treectrl.res:  $(TMP_DIR)\treectrl.dll.manifest
 #
 #---------------------------------------------------------------------
 
-install-binaries:
-	@echo Installing binaries to '$(SCRIPT_INSTALL_DIR)'
-	@if not exist "$(SCRIPT_INSTALL_DIR)" mkdir "$(SCRIPT_INSTALL_DIR)"
-	@$(CPY) $(PRJLIB) "$(SCRIPT_INSTALL_DIR)" >NUL
+install: install-docs install-demos
 
-install-libraries:
-        @echo Installing libraries to '$(SCRIPT_INSTALL_DIR)'
-        @if exist $(LIBDIR)\NUL $(CPY) $(LIBDIR)\*.tcl "$(SCRIPT_INSTALL_DIR)" >NUL
-        @echo Installing package index in '$(SCRIPT_INSTALL_DIR)'
-        @type << >"$(SCRIPT_INSTALL_DIR)\pkgIndex.tcl"
+pkgindex: 
+        @type << >"$(OUT_DIR)\pkgIndex.tcl"
 	if {[catch {package require Tcl $(TCL_MAJOR_VERSION).$(TCL_MINOR_VERSION)} o]} return
 	set script ""
 	if {![info exists ::env(TREECTRL_LIBRARY)]
@@ -497,20 +281,3 @@ install-demos:
 	@$(CPY) "$(DEMODIR)\*.tcl" "$(SCRIPT_INSTALL_DIR)\demos\"
 	@$(CPY) "$(DEMODIR)\pics\*.gif" "$(SCRIPT_INSTALL_DIR)\demos\pics\"
 
-#---------------------------------------------------------------------
-# Clean up
-#---------------------------------------------------------------------
-
-clean:
-	@if exist $(TMP_DIR)\nul $(RMDIR) $(TMP_DIR)
-	@if exist $(WINDIR)\versions.vc del $(WINDIR)\versions.vc
-	@if exist $(WINDIR)\vercl.i del $(WINDIR)\vercl.i
-	@if exist $(WINDIR)\vercl.x del $(WINDIR)\vercl.x
-	@if exist $(WINDIR)\_junk.pch del $(WINDIR)\_junk.pch
-
-realclean: clean
-	@if exist $(OUT_DIR)\nul $(RMDIR) $(OUT_DIR)
-
-distclean: realclean
-	@if exist $(WINDIR)\nmakehlp.exe del $(WINDIR)\nmakehlp.exe
-	@if exist $(WINDIR)\nmakehlp.obj del $(WINDIR)\nmakehlp.obj

@@ -114,8 +114,8 @@ puts "demo.tcl: Tcl/Tk [info patchlevel] [winfo server .]"
 # See if treectrl is already loaded for some reason
 if {[llength [info commands treectrl]]} {
     puts "demo.tcl: using previously-loaded treectrl package v[package provide treectrl]"
-    if {$VERSION ne [package provide treectrl]} {
-	puts "demo.tcl: WARNING: expected v$VERSION"
+    if {![package vsatisfies [package provide treectrl] $VERSION]} {
+	puts "demo.tcl: WARNING: expected at least v$VERSION"
     }
 
 # For 'package require' to work with the development version, make sure the
