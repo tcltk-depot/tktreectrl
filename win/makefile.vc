@@ -19,7 +19,6 @@
 
 
 PROJECT = treectrl
-NEED_TK = 1
 NEED_TK_SOURCE = 1
 NEED_TCL_SOURCE = 1
 PRJ_MANIFEST = ..\treectrl.dll.manifest.in
