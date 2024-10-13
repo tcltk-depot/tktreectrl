@@ -103,7 +103,7 @@ test itemdesc-1.13 {nearest without x/y} -body {
 
 test itemdesc-1.14 {nearest with invalid x/y} -body {
     .t item id "nearest foo bar"
-} -returnCodes error -result {bad screen distance "foo"}
+} -returnCodes error -result {expected screen distance but got "foo"}
 
 test itemdesc-1.15 {nearest with valid x/y} -setup {
     .t configure -showroot 1

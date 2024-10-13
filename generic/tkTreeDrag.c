@@ -57,11 +57,11 @@ struct TreeDragImage_
 static Tk_OptionSpec optionSpecs[] = {
 #ifdef DRAGIMAGE_STYLE
     {TK_OPTION_CUSTOM, "-style", (char *) NULL, (char *) NULL,
-     (char *) NULL, -1, Tk_Offset(TreeDragImage_, masterStyle),
+     (char *) NULL, -1, offsetof(TreeDragImage_, masterStyle),
      TK_OPTION_NULL_OK, (ClientData) &TreeCtrlCO_style, 0},
 #endif /* DRAGIMAGE_STYLE */
     {TK_OPTION_BOOLEAN, "-visible", (char *) NULL, (char *) NULL,
-	"0", -1, Tk_Offset(TreeDragImage_, visible),
+	"0", -1, offsetof(TreeDragImage_, visible),
 	0, (ClientData) NULL, DRAG_CONF_VISIBLE},
     {TK_OPTION_END, (char *) NULL, (char *) NULL, (char *) NULL,
 	(char *) NULL, 0, -1, 0, 0, 0}
@@ -731,7 +731,7 @@ static int
 DragImage_Config(
     TreeDragImage dragImage,	/* Drag image record. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[]	/* Argument values. */
+    Tcl_Obj *const objv[]	/* Argument values. */
     )
 {
     TreeCtrl *tree = dragImage->tree;
@@ -853,12 +853,12 @@ TreeDragImageCmd(
     ClientData clientData,	/* Widget info. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[]	/* Argument values. */
+    Tcl_Obj *const objv[]	/* Argument values. */
     )
 {
     TreeCtrl *tree = clientData;
     TreeDragImage dragImage = tree->dragImage;
-    static CONST char *commandNames[] = { "add", "cget", "clear", "configure",
+    static const char *commandNames[] = { "add", "cget", "clear", "configure",
 	"offset",
 #ifdef DRAGIMAGE_STYLE
 	"stylehotspot",

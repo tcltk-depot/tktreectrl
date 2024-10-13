@@ -116,7 +116,7 @@ DumpPercents(
     QE_ExpandArgs *args,	/* %-substitution args. */
     QE_ExpandProc proc,		/* Function to return value for a given
 				 * %-char. */
-    CONST char *chars		/* NULL-terminated list of %-chars. */
+    const char *chars		/* NULL-terminated list of %-chars. */
     )
 {
     char which = args->which;
@@ -160,7 +160,7 @@ Percents_Any(
     QE_ExpandArgs *args,	/* %-substitution args. */
     QE_ExpandProc proc,		/* Function to return value for a given
 				* %-char. */
-    CONST char *chars		/* NULL-terminated list of %-chars. */
+    const char *chars		/* NULL-terminated list of %-chars. */
     )
 {
     struct {
@@ -433,11 +433,11 @@ TreeNotifyCmd(
     ClientData clientData,	/* Widget info. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[]	/* Argument values. */
+    Tcl_Obj *const objv[]	/* Argument values. */
     )
 {
     TreeCtrl *tree = clientData;
-    static CONST char *commandName[] = { "bind", "configure", "detailnames",
+    static const char *commandName[] = { "bind", "configure", "detailnames",
 	"eventnames", "generate", "install", "linkage", "unbind", "uninstall",
 	(char *) NULL };
     enum {

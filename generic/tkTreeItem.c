@@ -74,7 +74,7 @@ struct TreeItem_ {
     ITEM_FLAG_BUTTONSTATE_PRESSED)
 
 #ifdef ALLOC_HAX
-static CONST char *ItemUid = "Item", *ItemColumnUid = "ItemColumn";
+static const char *ItemUid = "Item", *ItemColumnUid = "ItemColumn";
 #endif
 
 /*
@@ -101,19 +101,19 @@ static CONST char *ItemUid = "Item", *ItemColumnUid = "ItemColumn";
  */
 static Tk_OptionSpec itemOptionSpecs[] = {
     {TK_OPTION_CUSTOM, "-button", (char *) NULL, (char *) NULL,
-     "0", -1, Tk_Offset(TreeItem_, flags),
+     "0", -1, offsetof(TreeItem_, flags),
      0, (ClientData) NULL, ITEM_CONF_BUTTON},
     {TK_OPTION_PIXELS, "-height", (char *) NULL, (char *) NULL,
-     (char *) NULL, -1, Tk_Offset(TreeItem_, fixedHeight),
+     (char *) NULL, -1, offsetof(TreeItem_, fixedHeight),
      TK_OPTION_NULL_OK, (ClientData) NULL, ITEM_CONF_SIZE},
     {TK_OPTION_CUSTOM, "-tags", (char *) NULL, (char *) NULL,
-     (char *) NULL, -1, Tk_Offset(TreeItem_, tagInfo),
+     (char *) NULL, -1, offsetof(TreeItem_, tagInfo),
      TK_OPTION_NULL_OK, (ClientData) &TreeCtrlCO_tagInfo, 0},
     {TK_OPTION_CUSTOM, "-visible", (char *) NULL, (char *) NULL,
-     "1", -1, Tk_Offset(TreeItem_, flags),
+     "1", -1, offsetof(TreeItem_, flags),
      0, (ClientData) NULL, ITEM_CONF_VISIBLE},
     {TK_OPTION_CUSTOM, "-wrap", (char *) NULL, (char *) NULL,
-     "0", -1, Tk_Offset(TreeItem_, flags),
+     "0", -1, offsetof(TreeItem_, flags),
      0, (ClientData) NULL, ITEM_CONF_WRAP},
     {TK_OPTION_END, (char *) NULL, (char *) NULL, (char *) NULL,
      (char *) NULL, 0, -1, 0, 0, 0}
@@ -155,7 +155,7 @@ Column_Alloc(
 	    item->header, column);
 #if TREECTRL_DEBUG
 	if (column->headerColumn == NULL)
-	    panic("TreeHeaderColumn_CreateWithItemColumn failed");
+	    Tcl_Panic("TreeHeaderColumn_CreateWithItemColumn failed");
 #endif
 	column->cstate = STATE_HEADER_NORMAL;
     }
@@ -309,7 +309,7 @@ TreeItemColumn_Index(
 	walk = walk->next;
     }
     if (walk == NULL)
-	panic("TreeItemColumn_Index: couldn't find the column\n");
+	Tcl_Panic("TreeItemColumn_Index: couldn't find the column\n");
     return i;
 }
 
@@ -581,7 +581,7 @@ Item_Alloc(
     memset(item, '\0', sizeof(TreeItem_));
     if (Tk_InitOptions(tree->interp, (char *) item,
 		tree->itemOptionTable, tree->tkwin) != TCL_OK)
-	panic("Tk_InitOptions() failed in Item_Alloc()");
+	Tcl_Panic("Tk_InitOptions() failed in Item_Alloc()");
     if (isHeader) {
 	if (tree->gotFocus)
 	    item->state |= STATE_HEADER_FOCUS;
@@ -1790,7 +1790,7 @@ Qualifiers_Scan(
     Tcl_Interp *interp = tree->interp;
     int qual, j = startIndex;
 
-    static CONST char *qualifiers[] = {
+    static const char *qualifiers[] = {
 	"depth", "state", "tag", "visible", "!visible", NULL
     };
     enum qualEnum {
@@ -2041,7 +2041,7 @@ TreeItemList_FromObj(
     Qualifiers q;
     int qualArgsTotal;
 
-    static CONST char *indexName[] = {
+    static const char *indexName[] = {
 	"active", "all", "anchor", "end", "first", "last", "list",
 	"nearest", "range", "rnc", "root", (char *) NULL
     };
@@ -2059,7 +2059,7 @@ TreeItemList_FromObj(
 	0, 1, 0, 1, 1, 1, 0, 0, 1, 0, 0, 1
     };
 
-    static CONST char *modifiers[] = {
+    static const char *modifiers[] = {
 	"above", "ancestors", "below", "bottom", "child", "children",
 	"descendants", "firstchild", "lastchild", "left", "leftmost", "next",
 	"nextsibling", "parent", "prev", "prevsibling", "right", "rightmost",
@@ -3377,7 +3377,7 @@ Item_CreateColumn(
 
 #ifdef TREECTRL_DEBUG
     if (columnIndex < 0 || columnIndex >= tree->columnCount + (item->header ? 1 : 0)) {
-	panic("Item_CreateColumn with index %d, must be from 0-%d", columnIndex, tree->columnCount + (item->header ? 1 : 0) - 1);
+	Tcl_Panic("Item_CreateColumn with index %d, must be from 0-%d", columnIndex, tree->columnCount + (item->header ? 1 : 0) - 1);
     }
 #endif
 
@@ -4288,7 +4288,7 @@ Item_GetSpans(
 		isDragColumn = 1;
 	}
 #ifdef TREECTRL_DEBUG
-	if (columnIndex < 0 || columnIndex >= siStack->columnCount) panic("Item_GetSpans columnIndex %d columnCount %d", columnIndex, siStack->columnCount);
+	if (columnIndex < 0 || columnIndex >= siStack->columnCount) Tcl_Panic("Item_GetSpans columnIndex %d columnCount %d", columnIndex, siStack->columnCount);
 #endif
 	columns[columnIndex].treeColumn = treeColumn;
 	columns[columnIndex].itemColumn = column;
@@ -4479,7 +4479,7 @@ TreeItem_WalkSpans(
 	return;
 
 #ifdef TREECTRL_DEBUG
-    if (siStack->inUse) panic("TreeItem_WalkSpans stack is in use");
+    if (siStack->inUse) Tcl_Panic("TreeItem_WalkSpans stack is in use");
 #endif
     siStack->inUse = 1;
 
@@ -4490,7 +4490,7 @@ TreeItem_WalkSpans(
     totalWidth = 0;
     if (dragPosition & WALKSPAN_ONLY_DRAGGED) {
 #ifdef TREECTRL_DEBUG
-	if (item->header == NULL) panic("TreeItem_WalkSpans header == NULL");
+	if (item->header == NULL) Tcl_Panic("TreeItem_WalkSpans header == NULL");
 #endif
 	treeColumn = spans[0].treeColumn; /* tree->columnDrag.column */
 	totalWidth = TreeColumn_Offset(treeColumn);
@@ -4541,7 +4541,7 @@ TreeItem_WalkSpans(
 	drawArgs.x = x + totalWidth;
 	if (dragPosition & WALKSPAN_ONLY_DRAGGED) {
 #ifdef TREECTRL_DEBUG
-	    if (item->header == NULL) panic("TreeItem_WalkSpans header == NULL");
+	    if (item->header == NULL) Tcl_Panic("TreeItem_WalkSpans header == NULL");
 #endif
 	    drawArgs.x += tree->columnDrag.offset;
 	    drawArgs.indent = 0;
@@ -5412,7 +5412,7 @@ Item_Configure(
     TreeCtrl *tree,		/* Widget info. */
     TreeItem item,		/* Item to configure. */
     int objc,			/* Number of arguments */
-    Tcl_Obj *CONST objv[]	/* Array of arguments */
+    Tcl_Obj *const objv[]	/* Array of arguments */
     )
 {
     Tk_SavedOptions savedOptions;
@@ -5586,7 +5586,7 @@ int
 TreeItemCmd_Bbox(
     TreeCtrl *tree,		/* Widget info. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[],	/* Argument values. */
+    Tcl_Obj *const objv[],	/* Argument values. */
     int doHeaders		/* TRUE to operate on headers, FALSE
 				 * to operate on items. */
     )
@@ -5679,7 +5679,7 @@ ItemBboxCmd(
     ClientData clientData,	/* Widget info. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[]	/* Argument values. */
+    Tcl_Obj *const objv[]	/* Argument values. */
     )
 {
     TreeCtrl *tree = clientData;
@@ -5710,11 +5710,11 @@ ItemCreateCmd(
     ClientData clientData,	/* Widget info. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[]	/* Argument values. */
+    Tcl_Obj *const objv[]	/* Argument values. */
     )
 {
     TreeCtrl *tree = clientData;
-    static CONST char *optionNames[] = { "-button", "-count", "-enabled",
+    static const char *optionNames[] = { "-button", "-count", "-enabled",
 	"-height", "-nextsibling", "-open", "-parent", "-prevsibling",
 	"-returnid", "-tags", "-visible", "-wrap",
 	(char *) NULL };
@@ -5979,13 +5979,13 @@ int
 TreeItemCmd_Element(
     TreeCtrl *tree,
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[],	/* Argument values. */
+    Tcl_Obj *const objv[],	/* Argument values. */
     int doHeaders		/* TRUE to operate on headers, FALSE
 				 * to operate on items. */
     )
 {
     Tcl_Interp *interp = tree->interp;
-    static CONST char *commandNames[] = {
+    static const char *commandNames[] = {
 #ifdef DEPRECATED
 	"actual",
 #endif
@@ -6217,7 +6217,7 @@ TreeItemCmd_Element(
 		    ColumnForEach citer;
 		    TreeColumn treeColumn;
 #ifdef TREECTRL_DEBUG
-if (!co[index].isColumn) panic("isColumn == FALSE");
+if (!co[index].isColumn) Tcl_Panic("isColumn == FALSE");
 #endif
 		    COLUMN_FOR_EACH(treeColumn, &co[index].columns, NULL, &citer) {
 			int columnIndex, cMask = 0;
@@ -6236,7 +6236,7 @@ if (!co[index].isColumn) panic("isColumn == FALSE");
 			while (1) {
 			    int eMask, index2;
 #ifdef TREECTRL_DEBUG
-if (co[indexElem].numArgs == -1) panic("indexElem=%d (%s) objc=%d numArgs == -1", indexElem, Tcl_GetString(objv[indexElem]), objc);
+if (co[indexElem].numArgs == -1) Tcl_Panic("indexElem=%d (%s) objc=%d numArgs == -1", indexElem, Tcl_GetString(objv[indexElem]), objc);
 #endif
 			    result = TreeStyle_ElementConfigureFromObj(tree, item,
 				    column, column->style, objv[indexElem],
@@ -6303,7 +6303,7 @@ ItemElementCmd(
     ClientData clientData,	/* Widget info. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[]	/* Argument values. */
+    Tcl_Obj *const objv[]	/* Argument values. */
     )
 {
     TreeCtrl *tree = clientData;
@@ -6332,7 +6332,7 @@ int
 TreeItemCmd_Style(
     TreeCtrl *tree,		/* Widget info. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[],	/* Argument values. */
+    Tcl_Obj *const objv[],	/* Argument values. */
     int doHeaders		/* TRUE to operate on headers, FALSE
 				 * to operate on items. */
     )
@@ -6345,7 +6345,7 @@ TreeItemCmd_Style(
     int flags = IFO_NOT_NULL;
     int result = TCL_OK;
     int tailFlag = doHeaders ? 0 : CFO_NOT_TAIL;
-    static CONST char *commandNames[] = {
+    static const char *commandNames[] = {
 	"elements", "map", "set", (char *) NULL
     };
     enum { COMMAND_ELEMENTS, COMMAND_MAP, COMMAND_SET };
@@ -6614,7 +6614,7 @@ ItemStyleCmd(
     ClientData clientData,	/* Widget info. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[]	/* Argument values. */
+    Tcl_Obj *const objv[]	/* Argument values. */
     )
 {
     TreeCtrl *tree = clientData;
@@ -6643,7 +6643,7 @@ int
 TreeItemCmd_ImageOrText(
     TreeCtrl *tree,		/* Widget info. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[],	/* Argument values. */
+    Tcl_Obj *const objv[],	/* Argument values. */
     int doImage,		/* TRUE if this is [item image] */
     int doHeaders		/* TRUE to operate on headers, FALSE
 				 * to operate on items. */
@@ -6818,7 +6818,7 @@ ItemImageCmd(
     ClientData clientData,	/* Widget info. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[]	/* Argument values. */
+    Tcl_Obj *const objv[]	/* Argument values. */
     )
 {
     TreeCtrl *tree = clientData;
@@ -6830,7 +6830,7 @@ ItemTextCmd(
     ClientData clientData,	/* Widget info. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[]	/* Argument values. */
+    Tcl_Obj *const objv[]	/* Argument values. */
     )
 {
     TreeCtrl *tree = clientData;
@@ -7326,7 +7326,7 @@ ItemSortCmd(
     ClientData clientData,	/* Widget info. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[]	/* Argument values. */
+    Tcl_Obj *const objv[]	/* Argument values. */
     )
 {
     TreeCtrl *tree = clientData;
@@ -7368,7 +7368,7 @@ ItemSortCmd(
     last = item->lastChild;
 
     for (i = 4; i < objc; ) {
-	static CONST char *optionName[] = { "-ascii", "-column", "-command",
+	static const char *optionName[] = { "-ascii", "-column", "-command",
 					    "-decreasing", "-dictionary", "-element", "-first", "-increasing",
 					    "-integer", "-last", "-notreally", "-real", NULL };
 	int numArgs[] = { 1, 2, 2, 1, 1, 2, 2, 1, 1, 2, 1, 1 };
@@ -7796,8 +7796,8 @@ ItemSortCmd(
 
 static int
 TILSCompare(
-    CONST VOID *first_,
-    CONST VOID *second_
+    const void *first_,
+    const void *second_
     )
 {
     TreeItem first = *(TreeItem *) first_;
@@ -7814,7 +7814,7 @@ TreeItemList_Sort(
     Tree_UpdateItemIndex(items->tree);
 
     /* TkTable uses this, but mentions possible lack of thread-safety. */
-    qsort((VOID *) TreeItemList_Items(items),
+    qsort((void *) TreeItemList_Items(items),
 	    (size_t) TreeItemList_Count(items),
 	    sizeof(TreeItem),
 	    TILSCompare);
@@ -7840,7 +7840,7 @@ int
 TreeItemCmd_Span(
     TreeCtrl *tree,		/* Widget info. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[],	/* Argument values. */
+    Tcl_Obj *const objv[],	/* Argument values. */
     int doHeaders		/* TRUE to operate on headers, FALSE
 				 * to operate on items. */
     )
@@ -7973,7 +7973,7 @@ ItemSpanCmd(
     ClientData clientData,	/* Widget info. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[]	/* Argument values. */
+    Tcl_Obj *const objv[]	/* Argument values. */
     )
 {
     TreeCtrl *tree = clientData;
@@ -8003,7 +8003,7 @@ int
 TreeItemCmd_State(
     TreeCtrl *tree,		/* Widget info. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[],	/* Argument values. */
+    Tcl_Obj *const objv[],	/* Argument values. */
     int doHeaders		/* TRUE to operate on headers, FALSE
 				 * to operate on items. */
     )
@@ -8012,7 +8012,7 @@ TreeItemCmd_State(
     int domain = doHeaders ? STATE_DOMAIN_HEADER : STATE_DOMAIN_ITEM;
     TreeStateDomain *domainPtr = &tree->stateDomain[domain];
     int tailFlag = doHeaders ? 0 : CFO_NOT_TAIL;
-    static CONST char *commandNames[] = {
+    static const char *commandNames[] = {
 	"define", "forcolumn", "get", "linkage", "names", "set", "undefine",
 	(char *) NULL
     };
@@ -8309,7 +8309,7 @@ ItemStateCmd(
     ClientData clientData,	/* Widget info. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[]	/* Argument values. */
+    Tcl_Obj *const objv[]	/* Argument values. */
     )
 {
     TreeCtrl *tree = clientData;
@@ -8339,13 +8339,13 @@ int
 TreeItemCmd_Tag(
     TreeCtrl *tree,		/* Widget info. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[],	/* Argument values. */
+    Tcl_Obj *const objv[],	/* Argument values. */
     int doHeaders		/* TRUE to operate on headers, FALSE
 				 * to operate on items. */
     )
 {
     Tcl_Interp *interp = tree->interp;
-    static CONST char *commandNames[] = {
+    static const char *commandNames[] = {
 	"add", "expr", "names", "remove", (char *) NULL
     };
     enum {
@@ -8516,7 +8516,7 @@ ItemTagCmd(
     ClientData clientData,	/* Widget info. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[]	/* Argument values. */
+    Tcl_Obj *const objv[]	/* Argument values. */
     )
 {
     TreeCtrl *tree = clientData;
@@ -8631,7 +8631,7 @@ TreeItemCmd(
     ClientData clientData,	/* Widget info. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[]	/* Argument values. */
+    Tcl_Obj *const objv[]	/* Argument values. */
     )
 {
     TreeCtrl *tree = clientData;
@@ -9011,7 +9011,7 @@ reqSameRoot:
 	}
 	/* T item compare I op I */
 	case COMMAND_COMPARE: {
-	    static CONST char *opName[] = { "<", "<=", "==", ">=", ">", "!=", NULL };
+	    static const char *opName[] = { "<", "<=", "==", ">=", ">", "!=", NULL };
 	    enum { COP_LT, COP_LE, COP_EQ, COP_GE, COP_GT, COP_NE };
 	    int op, compare = 0, index1 = 0, index2 = 0;
 
@@ -9952,11 +9952,11 @@ SpanWalkProc_GetRects(
     )
 {
     int objc;
-    Tcl_Obj *CONST *objv;
+    Tcl_Obj *const *objv;
     struct {
 	TreeColumn treeColumn;
 	int count;
-	Tcl_Obj *CONST *objv;
+	Tcl_Obj *const *objv;
 	TreeRectangle *rects;
 	int result;
    } *data = clientData;
@@ -10043,7 +10043,7 @@ TreeItem_GetRects(
 				 * 0 means get bounds of the span.
 				 * 1+ means objv[] contains names of elements
 				 *  to get rects for. */
-    Tcl_Obj *CONST objv[],	/* Array of element names or NULL. */
+    Tcl_Obj *const objv[],	/* Array of element names or NULL. */
     TreeRectangle rects[]	/* Out: returned bounding boxes. */
     )
 {
@@ -10052,7 +10052,7 @@ TreeItem_GetRects(
     struct {
 	TreeColumn treeColumn;
 	int count;
-	Tcl_Obj *CONST *objv;
+	Tcl_Obj *const *objv;
 	TreeRectangle *rects;
 	int result;
     } clientData;
@@ -10224,7 +10224,7 @@ IsHeaderOption(
     Tcl_Obj *objPtr		/* Name of the option. */
     )
 {
-    static CONST char *headerOptions[] = {
+    static const char *headerOptions[] = {
 	"-height", "-tags", "-visible", NULL
     };
     int index;
@@ -10296,7 +10296,7 @@ TreeItem_ConsumeHeaderConfig(
     TreeCtrl *tree,		/* Widget info. */
     TreeItem item,		/* Item token. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[]	/* Argument values. */
+    Tcl_Obj *const objv[]	/* Argument values. */
     )
 {
     Tcl_Interp *interp = tree->interp;
@@ -10342,7 +10342,7 @@ TreeItem_GetHeaderOptionInfo(
     Tcl_Interp *interp = tree->interp;
     TreeItem item = TreeHeader_GetItem(header);
     Tcl_Obj *listObjPtr;
-    static CONST char *headerOptions[] = {
+    static const char *headerOptions[] = {
 	"-height", "-tags", "-visible", NULL
     };
     int i;

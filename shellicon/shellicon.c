@@ -176,49 +176,49 @@ struct ElementShellIcon
 #define SHELLICON_CONF_SIZE 0x0002
 #define SHELLICON_CONF_DRAW 0x0004
 
-static CONST char *sizeST[] = {
+static const char *sizeST[] = {
     "large", "small", (char *) NULL
 };
-static CONST char *typeST[] = {
+static const char *typeST[] = {
     "directory", "file", (char *) NULL
 };
-static CONST char *useSelectedST[] = {
+static const char *useSelectedST[] = {
     "always", "auto", "never", (char *) NULL
 };
 
 static Tk_OptionSpec shellIconOptionSpecs[] = {
     {TK_OPTION_CUSTOM, "-addoverlays", (char *) NULL, (char *) NULL,
-     (char *) NULL, -1, Tk_Offset(ElementShellIcon, addOverlays),
+     (char *) NULL, -1, offsetof(ElementShellIcon, addOverlays),
      TK_OPTION_NULL_OK, (ClientData) NULL, SHELLICON_CONF_ICON},
 #ifdef DEPRECATED
     {TK_OPTION_CUSTOM, "-draw", (char *) NULL, (char *) NULL,
-     (char *) NULL, Tk_Offset(ElementShellIcon, draw.obj),
-     Tk_Offset(ElementShellIcon, draw),
+     (char *) NULL, offsetof(ElementShellIcon, draw.obj),
+     offsetof(ElementShellIcon, draw),
      TK_OPTION_NULL_OK, (ClientData) NULL, SHELLICON_CONF_DRAW},
 #endif
     {TK_OPTION_PIXELS, "-height", (char *) NULL, (char *) NULL,
-     (char *) NULL, Tk_Offset(ElementShellIcon, heightObj),
-     Tk_Offset(ElementShellIcon, height),
+     (char *) NULL, offsetof(ElementShellIcon, heightObj),
+     offsetof(ElementShellIcon, height),
      TK_OPTION_NULL_OK, (ClientData) NULL, SHELLICON_CONF_SIZE},
     {TK_OPTION_STRING, "-path", (char *) NULL, (char *) NULL,
-     (char *) NULL, Tk_Offset(ElementShellIcon, pathObj),
-     Tk_Offset(ElementShellIcon, path),
+     (char *) NULL, offsetof(ElementShellIcon, pathObj),
+     offsetof(ElementShellIcon, path),
      TK_OPTION_NULL_OK, (ClientData) NULL, SHELLICON_CONF_ICON},
     {TK_OPTION_CUSTOM, "-size",(char *) NULL, (char *) NULL,
-     (char *) NULL, -1, Tk_Offset(ElementShellIcon, size),
+     (char *) NULL, -1, offsetof(ElementShellIcon, size),
      TK_OPTION_NULL_OK, (ClientData) NULL, SHELLICON_CONF_ICON},
     {TK_OPTION_CUSTOM, "-type", (char *) NULL, (char *) NULL,
-     (char *) NULL, -1, Tk_Offset(ElementShellIcon, type),
+     (char *) NULL, -1, offsetof(ElementShellIcon, type),
      TK_OPTION_NULL_OK, (ClientData) NULL, SHELLICON_CONF_ICON},
     {TK_OPTION_CUSTOM, "-useimagelist", (char *) NULL, (char *) NULL,
-     (char *) NULL, -1, Tk_Offset(ElementShellIcon, useImgList),
+     (char *) NULL, -1, offsetof(ElementShellIcon, useImgList),
      TK_OPTION_NULL_OK, (ClientData) NULL, SHELLICON_CONF_ICON},
     {TK_OPTION_CUSTOM, "-useselected", (char *) NULL, (char *) NULL,
-     (char *) NULL, -1, Tk_Offset(ElementShellIcon, useSelected),
+     (char *) NULL, -1, offsetof(ElementShellIcon, useSelected),
      TK_OPTION_NULL_OK, (ClientData) NULL, SHELLICON_CONF_DRAW},
     {TK_OPTION_PIXELS, "-width", (char *) NULL, (char *) NULL,
-     (char *) NULL, Tk_Offset(ElementShellIcon, widthObj),
-     Tk_Offset(ElementShellIcon, width),
+     (char *) NULL, offsetof(ElementShellIcon, widthObj),
+     offsetof(ElementShellIcon, width),
      TK_OPTION_NULL_OK, (ClientData) NULL, SHELLICON_CONF_SIZE},
     {TK_OPTION_END, (char *) NULL, (char *) NULL, (char *) NULL,
      (char *) NULL, 0, -1, 0, (ClientData) NULL, 0}
@@ -674,7 +674,7 @@ static int ActualProcShellIcon(TreeElementArgs *args)
     TreeCtrl *tree = args->tree;
     ElementShellIcon *elemX = (ElementShellIcon *) args->elem;
     ElementShellIcon *masterX = (ElementShellIcon *) args->elem->master;
-    static CONST char *optionName[] = {
+    static const char *optionName[] = {
 #ifdef DEPRECATED
 	"-draw",
 #endif

@@ -144,7 +144,7 @@ struct IElementLink
 };
 
 #ifdef ALLOC_HAX
-static CONST char *MStyleUid = "MStyle", *IStyleUid = "IStyle",
+static const char *MStyleUid = "MStyle", *IStyleUid = "IStyle",
     *MElementLinkUid = "MElementLink", *IElementLinkUid = "IElementLink";
 #endif
 
@@ -152,11 +152,11 @@ static char *orientStringTable[] = { "horizontal", "vertical", (char *) NULL };
 
 static Tk_OptionSpec styleOptionSpecs[] = {
     {TK_OPTION_PIXELS, "-buttony", (char *) NULL, (char *) NULL,
-	(char *) NULL, Tk_Offset(MStyle, buttonYObj),
-	Tk_Offset(MStyle, buttonY),
+	(char *) NULL, offsetof(MStyle, buttonYObj),
+	offsetof(MStyle, buttonY),
 	TK_OPTION_NULL_OK, (ClientData) NULL, 0},
     {TK_OPTION_STRING_TABLE, "-orient", (char *) NULL, (char *) NULL,
-	"horizontal", -1, Tk_Offset(MStyle, vertical),
+	"horizontal", -1, offsetof(MStyle, vertical),
 	0, (ClientData) orientStringTable, 0},
     {TK_OPTION_END, (char *) NULL, (char *) NULL, (char *) NULL,
 	(char *) NULL, 0, -1, 0, (ClientData) NULL, 0}
@@ -650,7 +650,7 @@ Layout_AddUnionPadding(
 
 #ifdef TREECTRL_DEBUG
     if (IS_HIDDEN(layoutP) || IS_HIDDEN(layout))
-	panic("Layout_AddUnionPadding: element is hidden");
+	Tcl_Panic("Layout_AddUnionPadding: element is hidden");
 #endif
 
     uPadX = layout->uPadX;
@@ -765,9 +765,9 @@ Layout_ExpandUnionH(
 
 #ifdef TREECTRL_DEBUG
     if (IS_HIDDEN(layout))
-	panic("Layout_ExpandUnionH: element is hidden");
+	Tcl_Panic("Layout_ExpandUnionH: element is hidden");
     if (!IS_UNION(eLink1))
-	panic("Layout_ExpandUnionH: element is !union");
+	Tcl_Panic("Layout_ExpandUnionH: element is !union");
 #endif
 
     if (!(eLink1->flags & ELF_EXPAND_WE))
@@ -888,9 +888,9 @@ Layout_ExpandUnionV(
 
 #ifdef TREECTRL_DEBUG
     if (IS_HIDDEN(layout))
-	panic("Layout_ExpandUnionV: element is hidden");
+	Tcl_Panic("Layout_ExpandUnionV: element is hidden");
     if (!IS_UNION(eLink1))
-	panic("Layout_ExpandUnionV: element is !union");
+	Tcl_Panic("Layout_ExpandUnionV: element is !union");
 #endif
 
     if (!(eLink1->flags & ELF_EXPAND_NS))
@@ -1006,7 +1006,7 @@ Layout_CalcUnionLayoutH(
 
 #ifdef TREECTRL_DEBUG
     if (IS_HIDDEN(layout))
-	panic("Layout_CalcUnionLayoutH: element is hidden");
+	Tcl_Panic("Layout_CalcUnionLayoutH: element is hidden");
 #endif
 
     if (!IS_UNION(eLink))
@@ -1076,7 +1076,7 @@ Layout_CalcUnionLayoutV(
 
 #ifdef TREECTRL_DEBUG
     if (IS_HIDDEN(layout))
-	panic("Layout_CalcUnionLayoutV: element is hidden");
+	Tcl_Panic("Layout_CalcUnionLayoutV: element is hidden");
 #endif
 
     if (!IS_UNION(eLink))
@@ -1767,6 +1767,7 @@ TreeElement_GetContentMargins(tree, layout->eLink->elem, drawArgs->state, layout
 		continue;
 
 	    switch (drawArgs->justify) {
+		case TK_JUSTIFY_NULL:
 		case TK_JUSTIFY_LEFT:
 		    break;
 		case TK_JUSTIFY_RIGHT:
@@ -2395,11 +2396,11 @@ Style_DoLayout(
     int i;
 
     if (style->neededWidth == -1)
-	panic("Style_DoLayout(file %s line %d): style.neededWidth == -1",
+	Tcl_Panic("Style_DoLayout(file %s line %d): style.neededWidth == -1",
 	    file, line);
 #ifdef CACHE_STYLE_STYLE
     if (style->minWidth + drawArgs->indent > drawArgs->width)
-	panic("Style_DoLayout(file %s line %d): style.minWidth + drawArgs->indent %d > drawArgs.width %d",
+	Tcl_Panic("Style_DoLayout(file %s line %d): style.minWidth + drawArgs->indent %d > drawArgs.width %d",
 	    file, line, style->minWidth + drawArgs->indent, drawArgs->width);
 #endif
     Style_DoLayoutH(drawArgs, layouts);
@@ -2810,7 +2811,7 @@ Style_CheckNeededSize(
     }
 #ifdef TREECTRL_DEBUG
     if (style->neededState != state)
-	panic("Style_CheckNeededSize: neededState %d != state %d\n",
+	Tcl_Panic("Style_CheckNeededSize: neededState %d != state %d\n",
 	    style->neededState, state);
 #endif
 }
@@ -3750,10 +3751,10 @@ Element_CreateAndConfig(
     TreeElement masterElem,	/* Master element if creating an instance. */
     TreeElementType *type,	/* Element type. Should be NULL when
 				 * creating an instance. */
-    CONST char *name,		/* Name of master element, NULL for an
+    const char *name,		/* Name of master element, NULL for an
 				 * instance. */
     int objc,			/* Array of intialial configuration. */
-    Tcl_Obj *CONST objv[]	/* options. */
+    Tcl_Obj *const objv[]	/* options. */
     )
 {
     TreeElement elem;
@@ -3768,7 +3769,7 @@ Element_CreateAndConfig(
     /* FIXME: there is no way to query this. */
     for (i = 0; i < objc; i += 2) {
 	int length;
-	CONST char *s = Tcl_GetStringFromObj(objv[i], &length);
+	const char *s = Tcl_GetStringFromObj(objv[i], &length);
 	if (strncmp(s, "-statedomain", length) == 0) {
 	    if (i + 1 == objc) {
 		FormatResult(tree->interp, "value for \"%s\" missing", s);
@@ -3901,7 +3902,7 @@ Style_CreateElem(
     int i;
 
     if (masterElem->master != NULL)
-	panic("Style_CreateElem called with instance Element");
+	Tcl_Panic("Style_CreateElem called with instance Element");
 
     if (isNew != NULL) (*isNew) = FALSE;
 
@@ -4049,7 +4050,7 @@ int
 TreeElement_IsType(
     TreeCtrl *tree,		/* Widget info. */
     TreeElement elem,		/* Element to check. */
-    CONST char *type		/* NULL-terminated element type name. */
+    const char *type		/* NULL-terminated element type name. */
     )
 {
     return strcmp(elem->typePtr->name, type) == 0;
@@ -4715,7 +4716,7 @@ TreeStyle_GetMaster(
  *----------------------------------------------------------------------
  */
 
-CONST char *
+const char *
 TreeStyle_GetName(
     TreeCtrl *tree,		/* Widget info. */
     TreeStyle style_		/* Master or instance style token. */
@@ -5356,7 +5357,7 @@ Tree_ElementChangedItself(
 	int columnIndex;
 
 	if (style == NULL)
-	    panic("Tree_ElementChangedItself but style is NULL\n");
+	    Tcl_Panic("Tree_ElementChangedItself but style is NULL\n");
 
 	for (i = 0; i < style->master->numElements; i++) {
 	    eLink = &style->elements[i];
@@ -5365,7 +5366,7 @@ Tree_ElementChangedItself(
 	}
 
 	if (eLink == NULL)
-	    panic("Tree_ElementChangedItself but eLink is NULL\n");
+	    Tcl_Panic("Tree_ElementChangedItself but eLink is NULL\n");
 
 	columnIndex = TreeItemColumn_Index(tree, item, column);
 
@@ -5753,11 +5754,11 @@ TreeElementCmd(
     ClientData clientData,	/* Widget info. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[]	/* Argument values. */
+    Tcl_Obj *const objv[]	/* Argument values. */
     )
 {
     TreeCtrl *tree = clientData;
-    static CONST char *commandNames[] = {
+    static const char *commandNames[] = {
 	"cget", "configure", "create", "delete", "names", "perstate", "type",
 	(char *) NULL
     };
@@ -5791,7 +5792,7 @@ TreeElementCmd(
 	    /* Hack -- allow [cget -statedomain] but not [configure] */
 	    {
 		int length;
-		CONST char *s = Tcl_GetStringFromObj(objv[4], &length);
+		const char *s = Tcl_GetStringFromObj(objv[4], &length);
 		/* FIXME: Check for minimum # unique chars. */
 		if (strncmp(s, "-statedomain", length) == 0 && length >= 6) {
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
@@ -5978,7 +5979,7 @@ Style_CreateAndConfig(
     TreeCtrl *tree,		/* Widget info. */
     char *name,			/* Name of new style. */
     int objc,			/* Number of config-option arg-value pairs. */
-    Tcl_Obj *CONST objv[]	/* Config-option arg-value pairs. */
+    Tcl_Obj *const objv[]	/* Config-option arg-value pairs. */
     )
 {
     MStyle *style;
@@ -5992,7 +5993,7 @@ Style_CreateAndConfig(
     /* FIXME: there is no way to query this. */
     for (i = 0; i < objc; i += 2) {
 	int length;
-	CONST char *s = Tcl_GetStringFromObj(objv[i], &length);
+	const char *s = Tcl_GetStringFromObj(objv[i], &length);
 	if (strncmp(s, "-statedomain", length) == 0) {
 	    if (i + 1 == objc) {
 		FormatResult(tree->interp, "value for \"%s\" missing", s);
@@ -6300,7 +6301,7 @@ StyleLayoutCmd(
     ClientData clientData,	/* Widget info. */
     Tcl_Interp *interp,		/* The current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[]	/* Argument values. */
+    Tcl_Obj *const objv[]	/* Argument values. */
     )
 {
     TreeCtrl *tree = clientData;
@@ -6309,7 +6310,7 @@ StyleLayoutCmd(
     TreeElement elem;
     MElementLink saved, *eLink;
     int i, index, eIndex;
-    static CONST char *optionNames[] = {
+    static const char *optionNames[] = {
 	"-center", "-detach", "-draw", "-expand", "-height", "-iexpand",
 	"-indent", "-ipadx", "-ipady", "-maxheight", "-maxwidth", "-minheight",
 	"-minwidth", "-padx", "-pady", "-squeeze", "-sticky", "-union",
@@ -6746,11 +6747,11 @@ TreeStyleCmd(
     ClientData clientData,	/* Widget info. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[]	/* Argument values. */
+    Tcl_Obj *const objv[]	/* Argument values. */
     )
 {
     TreeCtrl *tree = clientData;
-    static CONST char *commandNames[] = {
+    static const char *commandNames[] = {
 	"cget", "configure", "create", "delete", "elements", "layout",
 	"names", (char *) NULL };
     enum {
@@ -6784,7 +6785,7 @@ TreeStyleCmd(
 	    /* Hack -- allow [cget -statedomain] but not [configure] */
 	    {
 		int length;
-		CONST char *s = Tcl_GetStringFromObj(objv[4], &length);
+		const char *s = Tcl_GetStringFromObj(objv[4], &length);
 		/* FIXME: Check for minimum # unique chars. */
 		if (strncmp(s, "-statedomain", length) == 0 && length >= 7) {
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
@@ -7234,7 +7235,7 @@ TreeStyle_Remap(
     TreeStyle styleTo_,		/* Master style to "convert" the current
 				 * style to. */
     int objc,			/* Must be even number. */
-    Tcl_Obj *CONST objv[]	/* Array of old-new element names. */
+    Tcl_Obj *const objv[]	/* Array of old-new element names. */
     )
 {
     IStyle *styleFrom = (IStyle *) styleFrom_;
@@ -7410,7 +7411,7 @@ TreeStyle_GetSortData(
 	}
     } else {
 	if ((elemIndex < 0) || (elemIndex >= style->master->numElements))
-	    panic("bad elemIndex %d to TreeStyle_GetSortData", elemIndex);
+	    Tcl_Panic("bad elemIndex %d to TreeStyle_GetSortData", elemIndex);
 	eLink = &style->elements[elemIndex];
 	if (ELEMENT_TYPE_MATCHES(eLink->elem->typePtr, &treeElemTypeText))
 	    return TreeElement_GetSortData(tree, eLink->elem, type, lv, dv, sv);
@@ -7441,7 +7442,7 @@ int
 TreeStyle_GetElemRects(
     StyleDrawArgs *drawArgs,	/* Various args. */
     int objc,			/* Number of element names. */
-    Tcl_Obj *CONST objv[],	/* Array of element names. */
+    Tcl_Obj *const objv[],	/* Array of element names. */
     TreeRectangle rects[]	/* Returned rectangles. */
     )
 {
@@ -8047,7 +8048,7 @@ TreeStyle_InitWidget(
 #ifdef TREECTRL_DEBUG
     if (STICKY_W != ELF_STICKY_W || STICKY_E != ELF_STICKY_E ||
 	STICKY_N != ELF_STICKY_N || STICKY_S != ELF_STICKY_S)
-	panic("STICKY_XYZ != ELF_STICKY_XYZ");
+	Tcl_Panic("STICKY_XYZ != ELF_STICKY_XYZ");
 #endif
     tree->styleOptionTable = Tk_CreateOptionTable(tree->interp,
 	styleOptionSpecs);

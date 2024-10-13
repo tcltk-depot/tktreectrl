@@ -39,19 +39,19 @@ struct TreeMarquee_
 
 static Tk_OptionSpec optionSpecs[] = {
     {TK_OPTION_CUSTOM, "-fill", (char *) NULL, (char *) NULL,
-	(char *) NULL, Tk_Offset(TreeMarquee_, fillObj),
-	Tk_Offset(TreeMarquee_, fillColorPtr), TK_OPTION_NULL_OK,
+	(char *) NULL, offsetof(TreeMarquee_, fillObj),
+	offsetof(TreeMarquee_, fillColorPtr), TK_OPTION_NULL_OK,
 	(ClientData) &TreeCtrlCO_treecolor, MARQ_CONF_COLORS},
     {TK_OPTION_CUSTOM, "-outline", (char *) NULL, (char *) NULL,
-	(char *) NULL, Tk_Offset(TreeMarquee_, outlineObj),
-	Tk_Offset(TreeMarquee_, outlineColorPtr), TK_OPTION_NULL_OK,
+	(char *) NULL, offsetof(TreeMarquee_, outlineObj),
+	offsetof(TreeMarquee_, outlineColorPtr), TK_OPTION_NULL_OK,
 	(ClientData) &TreeCtrlCO_treecolor, MARQ_CONF_COLORS},
     {TK_OPTION_PIXELS, "-outlinewidth", (char *) NULL, (char *) NULL,
-	"1", Tk_Offset(TreeMarquee_, outlineWidthObj),
-	Tk_Offset(TreeMarquee_, outlineWidth), 0,
+	"1", offsetof(TreeMarquee_, outlineWidthObj),
+	offsetof(TreeMarquee_, outlineWidth), 0,
 	(ClientData) NULL, MARQ_CONF_COLORS},
     {TK_OPTION_BOOLEAN, "-visible", (char *) NULL, (char *) NULL,
-	"0", -1, Tk_Offset(TreeMarquee_, visible),
+	"0", -1, offsetof(TreeMarquee_, visible),
 	0, (ClientData) NULL, MARQ_CONF_VISIBLE},
     {TK_OPTION_END, (char *) NULL, (char *) NULL, (char *) NULL,
 	(char *) NULL, 0, -1, 0, 0, 0}
@@ -430,7 +430,7 @@ static int
 Marquee_Config(
     TreeMarquee marquee,	/* Marquee record. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[]	/* Argument values. */
+    Tcl_Obj *const objv[]	/* Argument values. */
     )
 {
     TreeCtrl *tree = marquee->tree;
@@ -495,12 +495,12 @@ TreeMarqueeCmd(
     ClientData clientData,	/* Widget info. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[]	/* Argument values. */
+    Tcl_Obj *const objv[]	/* Argument values. */
     )
 {
     TreeCtrl *tree = clientData;
     TreeMarquee marquee = tree->marquee;
-    static CONST char *commandNames[] = { "anchor", "cget", "configure",
+    static const char *commandNames[] = { "anchor", "cget", "configure",
 	"coords", "corner", "identify", (char *) NULL };
     enum { COMMAND_ANCHOR, COMMAND_CGET, COMMAND_CONFIGURE, COMMAND_COORDS,
 	COMMAND_CORNER, COMMAND_IDENTIFY };

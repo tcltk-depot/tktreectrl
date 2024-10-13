@@ -24,7 +24,7 @@ struct TreeElementArgs
     } delete;
     struct {
 	int objc;
-	Tcl_Obj *CONST *objv;
+	Tcl_Obj *const *objv;
 	int flagSelf;
 	TreeItem item;
 	TreeItemColumn column;
@@ -183,10 +183,10 @@ struct TreeCtrlStubs
 		PerStateInfo *pInfo, PerStateInfo *pSave);
     int (*TreeStateFromObj)(TreeCtrl *tree, int domain, Tcl_Obj *obj, int *stateOff,
 		int *stateOn);
-    int (*BooleanCO_Init)(Tk_OptionSpec *optionTable, CONST char *optionName);
+    int (*BooleanCO_Init)(Tk_OptionSpec *optionTable, const char *optionName);
     int (*StringTableCO_Init)(Tk_OptionSpec *optionTable,
-		CONST char *optionName, CONST char **tablePtr);
-    int (*PerStateCO_Init)(Tk_OptionSpec *optionTable, CONST char *optionName,
+		const char *optionName, const char **tablePtr);
+    int (*PerStateCO_Init)(Tk_OptionSpec *optionTable, const char *optionName,
 		PerStateType *typePtr, StateFromObjProc proc);
 };
 

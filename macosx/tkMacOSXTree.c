@@ -335,7 +335,7 @@ TreeDotRect_Setup(
     CGRect r;
 
     if (sizeof(*dotState) > sizeof(*p))
-	panic("TreeDotRect_Setup: DotState hack is too small");
+	Tcl_Panic("TreeDotRect_Setup: DotState hack is too small");
 
     dotState->context = NULL;
     if (!(macDraw->flags & TK_IS_PIXMAP)) {
@@ -364,7 +364,7 @@ TreeDotRect_Setup(
     XRectangle xrect;
 
     if (sizeof(*dotState) > sizeof(*p))
-	panic("TreeDotRect_Setup: DotState hack is too small");
+	Tcl_Panic("TreeDotRect_Setup: DotState hack is too small");
 
     dotState->tree = tree;
     dotState->drawable = drawable;
@@ -1583,7 +1583,7 @@ TreeTheme_SetOptionDefault(
 {
 #ifdef TREECTRL_DEBUG
     if (specPtr == NULL)
-	panic("TreeTheme_SetOptionDefault specPtr == NULL");
+	Tcl_Panic("TreeTheme_SetOptionDefault specPtr == NULL");
 #endif
 
     /* Only set the default value once per-application. */
@@ -1597,7 +1597,7 @@ TreeTheme_SetOptionDefault(
 
 #ifdef TREECTRL_DEBUG
     else
-	panic("TreeTheme_SetOptionDefault unhandled option \"%s\"",
+	Tcl_Panic("TreeTheme_SetOptionDefault unhandled option \"%s\"",
 	    specPtr->optionName ? specPtr->optionName : "NULL");
 #endif
 }
@@ -1606,11 +1606,11 @@ int
 TreeThemeCmd(
     TreeCtrl *tree,		/* Widget info. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[]	/* Argument values. */
+    Tcl_Obj *const objv[]	/* Argument values. */
     )
 {
     Tcl_Interp *interp = tree->interp;
-    static CONST char *commandName[] = {
+    static const char *commandName[] = {
 	"platform", (char *) NULL
     };
     enum {

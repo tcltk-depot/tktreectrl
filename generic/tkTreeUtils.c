@@ -15,7 +15,7 @@ struct dbwinterps {
 };
 
 static Tcl_ThreadDataKey dbwinTDK;
-static CONST char *DBWIN_VAR_NAME = "dbwin";
+static const char *DBWIN_VAR_NAME = "dbwin";
 
 static void dbwin_forget_interp(ClientData clientData, Tcl_Interp *interp)
 {
@@ -86,7 +86,7 @@ void dbwin(char *fmt, ...)
  * TreeCtrl_BreakIntoDebugger --
  *
  *	If running in a debugger, call DebugBreak(), otherwise
- *	panic().
+ *	Tcl_Panic().
  *
  * Results:
  *	None.
@@ -108,7 +108,7 @@ TreeCtrl_BreakIntoDebugger(
 	DebugBreak();
     else
 #endif
-    panic("Debugger call at %s:%d", file, line);
+    Tcl_Panic("Debugger call at %s:%d", file, line);
 }
 #endif /* TREECTRL_DEBUG */
 
@@ -116,17 +116,17 @@ TreeCtrl_BreakIntoDebugger(
  * Forward declarations for procedures defined later in this file:
  */
 
-static int	PadAmountOptionSet _ANSI_ARGS_((ClientData clientData,
+static int	PadAmountOptionSet(ClientData clientData,
 		Tcl_Interp *interp, Tk_Window tkwin,
 		Tcl_Obj **value, char *recordPtr, int internalOffset,
-		char *saveInternalPtr, int flags));
-static Tcl_Obj *PadAmountOptionGet _ANSI_ARGS_((ClientData clientData,
-		Tk_Window tkwin, char *recordPtr, int internalOffset));
-static void	PadAmountOptionRestore _ANSI_ARGS_((ClientData clientData,
+		char *saveInternalPtr, int flags);
+static Tcl_Obj *PadAmountOptionGet(ClientData clientData,
+		Tk_Window tkwin, char *recordPtr, int internalOffset);
+static void	PadAmountOptionRestore(ClientData clientData,
 		Tk_Window tkwin, char *internalPtr,
-		char *saveInternalPtr));
-static void	PadAmountOptionFree _ANSI_ARGS_((ClientData clientData,
-		Tk_Window tkwin, char *internalPtr));
+		char *saveInternalPtr);
+static void	PadAmountOptionFree(ClientData clientData,
+		Tk_Window tkwin, char *internalPtr);
 
 /*
  * The following Tk_ObjCustomOption structure can be used as clientData entry
@@ -658,7 +658,7 @@ Tree_FreeRegion(
     )
 {
     if (tree->regionStackLen == sizeof(tree->regionStack) / sizeof(TkRegion))
-	panic("Tree_FreeRegion: the stack is full");
+	Tcl_Panic("Tree_FreeRegion: the stack is full");
     tree->regionStack[tree->regionStackLen++] = region;
 }
 
@@ -894,7 +894,7 @@ Tree_DrawBitmap(
 
 typedef struct LayoutChunk
 {
-    CONST char *start;		/* Pointer to simple string to be displayed.
+    const char *start;		/* Pointer to simple string to be displayed.
 				 * * This is a pointer into the TkTextLayout's
 				 * * string. */
     int numBytes;		/* The number of bytes in this chunk. */
@@ -923,7 +923,7 @@ typedef struct LayoutChunk
 typedef struct LayoutInfo
 {
     Tk_Font tkfont;		/* The font used when laying out the text. */
-    CONST char *string;		/* The string that was layed out. */
+    const char *string;		/* The string that was layed out. */
     int numLines;		/* Number of lines */
     int width;			/* The maximum width of all lines in the
 				 * * text layout. */
@@ -952,7 +952,7 @@ static LayoutChunk *NewChunk(LayoutInfo **layoutPtrPtr,
 #else
 static LayoutChunk *NewChunk(LayoutInfo **layoutPtrPtr, int *maxPtr,
 #endif
-    CONST char *start, int numBytes, int curX, int newX, int y)
+    const char *start, int numBytes, int curX, int newX, int y)
 {
     LayoutInfo *layoutPtr;
     LayoutChunk *chunkPtr;
@@ -1001,7 +1001,7 @@ static LayoutChunk *NewChunk(LayoutInfo **layoutPtrPtr, int *maxPtr,
 
 TextLayout TextLayout_Compute(
     Tk_Font tkfont,		/* Font that will be used to display text. */
-    CONST char *string,		/* String whose dimensions are to be
+    const char *string,		/* String whose dimensions are to be
 				** computed. */
     int numChars,		/* Number of characters to consider from
 				** string, or < 0 for strlen(). */
@@ -1018,7 +1018,7 @@ TextLayout TextLayout_Compute(
 		 ** cause a line break. */
     )
 {
-    CONST char *start, *end, *special;
+    const char *start, *end, *special;
     int n, y, bytesThisChunk, maxChunks;
     int baseline, height, curX, newX, maxWidth;
     LayoutInfo *layoutPtr;
@@ -1146,7 +1146,7 @@ TextLayout TextLayout_Compute(
 	    start++;
 	}
 	if (chunkPtr != NULL) {
-	    CONST char *end;
+	    const char *end;
 
 	    end = chunkPtr->start + chunkPtr->numBytes;
 	    bytesThisChunk = (int) (start - end);
@@ -1378,8 +1378,8 @@ void TextLayout_Draw(
 {
     LayoutInfo *layoutPtr = (LayoutInfo *) layout;
     int i, numDisplayChars, drawX;
-    CONST char *firstByte;
-    CONST char *lastByte;
+    const char *firstByte;
+    const char *lastByte;
     LayoutChunk *chunkPtr;
 
     if (lastChar < 0)
@@ -1422,8 +1422,8 @@ void TextLayout_Draw(
 		x + chunkPtr->x + drawX, y + chunkPtr->y);
 
 	    if (underline >= firstChar && underline < numDisplayChars) {
-		CONST char *fstBytePtr = Tcl_UtfAtIndex(chunkPtr->start, underline);
-		CONST char *sndBytePtr = Tcl_UtfNext(fstBytePtr);
+		const char *fstBytePtr = Tcl_UtfAtIndex(chunkPtr->start, underline);
+		const char *sndBytePtr = Tcl_UtfNext(fstBytePtr);
 		Tk_UnderlineChars(display, drawable, gc,
 			layoutPtr->tkfont, firstByte,
 			x + chunkPtr->x + drawX, y + chunkPtr->y,
@@ -1476,7 +1476,7 @@ TreeCtrl_GetPadAmountFromObj(
 				   second component of the padding. */
     )
 {
-    int padc;			/* Number of element objects in padv. */
+    Tcl_Size padc;			/* Number of element objects in padv. */
     Tcl_Obj **padv;		/* Pointer to the element objects of the
 				 * parsed pad amount value. */
 	int topLeft, bottomRight;
@@ -1761,7 +1761,7 @@ PerStateInfo_Free(
 
 #ifdef TREECTRL_DEBUG
     if (pInfo->type != typePtr)
-	panic("PerStateInfo_Free type mismatch: got %s expected %s",
+	Tcl_Panic("PerStateInfo_Free type mismatch: got %s expected %s",
 		pInfo->type ? pInfo->type->name : "NULL", typePtr->name);
 #endif
     for (i = 0; i < pInfo->count; i++) {
@@ -1808,7 +1808,7 @@ PerStateInfo_FromObj(
     )
 {
     int i, j;
-    int objc, objc2;
+    Tcl_Size objc, objc2;
     Tcl_Obj **objv, **objv2;
     PerStateData *pData;
 
@@ -1929,7 +1929,7 @@ PerStateInfo_ForState(
 
 #ifdef TREECTRL_DEBUG
     if ((pInfo->data != NULL) && (pInfo->type != typePtr)) {
-	panic("PerStateInfo_ForState type mismatch: got %s expected %s",
+	Tcl_Panic("PerStateInfo_ForState type mismatch: got %s expected %s",
 		pInfo->type ? pInfo->type->name : "NULL", typePtr->name);
     }
 #endif
@@ -1999,7 +1999,7 @@ PerStateInfo_ObjForState(
 
 #ifdef TREECTRL_DEBUG
     if ((pInfo->data != NULL) && (pInfo->type != typePtr))
-	panic("PerStateInfo_ObjForState type mismatch: got %s expected %s",
+	Tcl_Panic("PerStateInfo_ObjForState type mismatch: got %s expected %s",
 		pInfo->type ? pInfo->type->name : "NULL", typePtr->name);
 #endif
 
@@ -2018,7 +2018,7 @@ DuplicateListObj(
     Tcl_Obj *objPtr
     )
 {
-    int objc;
+    Tcl_Size objc;
     Tcl_Obj **objv;
 
     /*
@@ -2069,7 +2069,7 @@ PerStateInfo_Undefine(
 
 #ifdef TREECTRL_DEBUG
     if ((pInfo->data != NULL) && (pInfo->type != typePtr))
-	panic("PerStateInfo_Undefine type mismatch: got %s expected %s",
+	Tcl_Panic("PerStateInfo_Undefine type mismatch: got %s expected %s",
 		pInfo->type ? pInfo->type->name : "NULL", typePtr->name);
 #endif
 
@@ -2124,7 +2124,7 @@ Tree_GetGC(
 	    GCForeground | GCFunction | GCGraphicsExposures | GCLineStyle;
 
     if ((mask | valid) != valid)
-	panic("Tree_GetGC: unsupported mask");
+	Tcl_Panic("Tree_GetGC: unsupported mask");
 
     for (pGC = tree->gcCache; pGC != NULL; pGC = pGC->next) {
 	if (mask != pGC->mask)
@@ -3041,7 +3041,7 @@ TreeAlloc_Alloc(
     freeList->head = result->next;
 #ifdef TREECTRL_DEBUG
     if (!result->free)
-	panic("TreeAlloc_Alloc: element not marked free");
+	Tcl_Panic("TreeAlloc_Alloc: element not marked free");
     result->free = 0;
 #endif
     return (char *)(((size_t)result) + BODY_OFFSET);
@@ -3135,16 +3135,16 @@ TreeAlloc_Free(
 
 #ifdef TREECTRL_DEBUG
     if (strncmp(elem->dbug, "DBUG", 4) != 0)
-	panic("TreeAlloc_Free: element header != DBUG");
+	Tcl_Panic("TreeAlloc_Free: element header != DBUG");
     if (elem->free)
-	panic("TreeAlloc_Free: element already marked free");
+	Tcl_Panic("TreeAlloc_Free: element already marked free");
     if (elem->size != size)
-	panic("TreeAlloc_Free: element size %d != size %d", elem->size, size);
+	Tcl_Panic("TreeAlloc_Free: element size %d != size %d", elem->size, size);
 #endif
     while (freeList != NULL && freeList->size != size)
 	freeList = freeList->next;
     if (freeList == NULL)
-	panic("TreeAlloc_Free: can't find free list for size %d", size);
+	Tcl_Panic("TreeAlloc_Free: can't find free list for size %d", size);
 
     WIPE(ptr, size);
     elem->next = freeList->head;
@@ -3378,7 +3378,7 @@ TreePtrList_Grow(
 {
 #ifdef TREECTRL_DEBUG
     if (strncmp(tplPtr->magic, "MAGC", 4) != 0)
-	panic("TreePtrList_Grow: using uninitialized list");
+	Tcl_Panic("TreePtrList_Grow: using uninitialized list");
 #endif
     if (tplPtr->space >= count + 1)
 	return;
@@ -3419,7 +3419,7 @@ TreePtrList_Append(
 {
 #ifdef TREECTRL_DEBUG
     if (strncmp(tplPtr->magic, "MAGC", 4) != 0)
-	panic("TreePtrList_Append: using uninitialized list");
+	Tcl_Panic("TreePtrList_Append: using uninitialized list");
 #endif
     TreePtrList_Grow(tplPtr, tplPtr->count + 1);
     tplPtr->pointers[tplPtr->count] = pointer;
@@ -3452,7 +3452,7 @@ TreePtrList_Concat(
 {
 #ifdef TREECTRL_DEBUG
     if (strncmp(tplPtr->magic, "MAGC", 4) != 0)
-	panic("TreePtrList_Concat: using uninitialized list");
+	Tcl_Panic("TreePtrList_Concat: using uninitialized list");
 #endif
     TreePtrList_Grow(tplPtr, tplPtr->count + tpl2Ptr->count);
     memcpy(tplPtr->pointers + tplPtr->count, tpl2Ptr->pointers,
@@ -3485,7 +3485,7 @@ TreePtrList_Free(
 {
 #ifdef TREECTRL_DEBUG
     if (strncmp(tplPtr->magic, "MAGC", 4) != 0)
-	panic("TreePtrList_Free: using uninitialized list");
+	Tcl_Panic("TreePtrList_Free: using uninitialized list");
 #endif
     if (tplPtr->pointers != tplPtr->pointerSpace) {
 	ckfree((char *) tplPtr->pointers);
@@ -3497,10 +3497,10 @@ TreePtrList_Free(
 }
 
 #define TAG_INFO_SIZE(tagSpace) \
-    (Tk_Offset(TagInfo, tagPtr) + ((tagSpace) * sizeof(Tk_Uid)))
+    (offsetof(TagInfo, tagPtr) + ((tagSpace) * sizeof(Tk_Uid)))
 
 #ifdef ALLOC_HAX
-static CONST char *TagInfoUid = "TagInfo";
+static const char *TagInfoUid = "TagInfo";
 #endif
 
 /*
@@ -3541,7 +3541,7 @@ TagInfo_Add(
 	} else {
 	    int tagSpace = (numTags / TREE_TAG_SPACE) * TREE_TAG_SPACE +
 		((numTags % TREE_TAG_SPACE) ? TREE_TAG_SPACE : 0);
-if (tagSpace % TREE_TAG_SPACE) panic("TagInfo_Add miscalc");
+if (tagSpace % TREE_TAG_SPACE) Tcl_Panic("TagInfo_Add miscalc");
 #ifdef ALLOC_HAX
 	    tagInfo = (TagInfo *) TreeAlloc_Alloc(tree->allocData, TagInfoUid,
 		TAG_INFO_SIZE(tagSpace));
@@ -3755,7 +3755,8 @@ TagInfo_FromObj(
     TagInfo **tagInfoPtr
     )
 {
-    int i, numTags;
+    int i;
+    Tcl_Size numTags;
     Tcl_Obj **listObjv;
     TagInfo *tagInfo = NULL;
 
@@ -4523,11 +4524,11 @@ OptionHax_Remember(
     int i;
     for (i = 0; i < tree->optionHaxCnt; i++) {
 	if (ptr == tree->optionHax[i]) {
-	    panic("OptionHax_Remember: ptr is not new");
+	    Tcl_Panic("OptionHax_Remember: ptr is not new");
 	}
     }
     if (tree->optionHaxCnt == sizeof(tree->optionHax) / sizeof(tree->optionHax[0]))
-	panic("OptionHax_Remember: too many options");
+	Tcl_Panic("OptionHax_Remember: too many options");
 #endif
     tree->optionHax[tree->optionHaxCnt++] = ptr;
 /*dbwin("OptionHax_Remember %p\n", ptr);*/
@@ -4570,7 +4571,7 @@ OptionHax_Forget(
 Tk_OptionSpec *
 Tree_FindOptionSpec(
     Tk_OptionSpec *optionTable,
-    CONST char *optionName
+    const char *optionName
     )
 {
     while (optionTable->type != TK_OPTION_END) {
@@ -4578,7 +4579,7 @@ Tree_FindOptionSpec(
 	    return optionTable;
 	optionTable++;
     }
-    panic("Tree_FindOptionSpec: can't find %s", optionName);
+    Tcl_Panic("Tree_FindOptionSpec: can't find %s", optionName);
     return NULL;
 }
 
@@ -4640,7 +4641,7 @@ PerStateCO_Set(
 	new.count = 0;
 /*	Tcl_IncrRefCount((*value));*/
 	if (tree->configStateDomain == -1)
-	    panic("PerStateCO_Set configStateDomain == -1");
+	    Tcl_Panic("PerStateCO_Set configStateDomain == -1");
 	if (PerStateInfo_FromObj(tree, tree->configStateDomain, cd->proc, cd->typePtr, &new) != TCL_OK) {
 /*	    Tcl_DecrRefCount((*value));*/
 	    return TCL_ERROR;
@@ -4756,7 +4757,7 @@ PerStateCO_Free(
 
 Tk_ObjCustomOption *
 PerStateCO_Alloc(
-    CONST char *optionName,
+    const char *optionName,
     PerStateType *typePtr,
     StateFromObjProc proc
     )
@@ -4800,7 +4801,7 @@ PerStateCO_Alloc(
 int
 PerStateCO_Init(
     Tk_OptionSpec *optionTable,
-    CONST char *optionName,
+    const char *optionName,
     PerStateType *typePtr,
     StateFromObjProc proc
     )
@@ -4809,7 +4810,7 @@ PerStateCO_Init(
 
     specPtr = Tree_FindOptionSpec(optionTable, optionName);
     if (specPtr->type != TK_OPTION_CUSTOM)
-	panic("PerStateCO_Init: %s is not TK_OPTION_CUSTOM", optionName);
+	Tcl_Panic("PerStateCO_Init: %s is not TK_OPTION_CUSTOM", optionName);
     if (specPtr->clientData != NULL)
 	return TCL_OK;
 
@@ -4821,7 +4822,7 @@ PerStateCO_Init(
 #define DEBUG_DYNAMICxxx
 
 #ifdef ALLOC_HAX
-static CONST char *DynamicOptionUid = "DynamicOption";
+static const char *DynamicOptionUid = "DynamicOption";
 #endif
 
 /*
@@ -4926,9 +4927,9 @@ dbwin("DynamicOption_AllocIfNeeded allocated id=%d\n", id);
 #endif
 #ifdef ALLOC_HAX
     opt = (DynamicOption *) TreeAlloc_Alloc(tree->allocData, DynamicOptionUid,
-	    Tk_Offset(DynamicOption, data) + size);
+	    offsetof(DynamicOption, data) + size);
 #else
-    opt = (DynamicOption *) ckalloc(Tk_Offset(DynamicOption, data) + size);
+    opt = (DynamicOption *) ckalloc(offsetof(DynamicOption, data) + size);
 #endif
     opt->id = id;
     memset(opt->data, '\0', size);
@@ -5076,7 +5077,7 @@ dbwin("DynamicCO_Get id=%d opt=%p objOffset=%d\n", cd->id, opt, cd->objOffset);
     if (cd->objOffset >= 0) {
 #ifdef TREECTRL_DEBUG
 Tcl_Obj *objPtr = *(Tcl_Obj **) (opt->data + cd->objOffset);
-if (objPtr && objPtr->refCount == 0) panic("DynamicCO_Get refCount=0");
+if (objPtr && objPtr->refCount == 0) Tcl_Panic("DynamicCO_Get refCount=0");
 #endif
 	return *(Tcl_Obj **) (opt->data + cd->objOffset);
     }
@@ -5102,7 +5103,7 @@ DynamicCO_Restore(
     Tcl_Obj **objPtrPtr;
 
     if (opt == NULL)
-	panic("DynamicCO_Restore: opt=NULL");
+	Tcl_Panic("DynamicCO_Restore: opt=NULL");
 #ifdef DEBUG_DYNAMIC
 dbwin("DynamicCO_Restore id=%d internalOffset=%d save=%p\n", cd->id, cd->internalOffset, save);
 #endif
@@ -5154,7 +5155,7 @@ dbwin("DynamicCO_Free id=%d internalPtr=%p save=%p\n", cd->id, internalPtr, save
 #ifdef DEBUG_DYNAMIC
 if (save->objPtr) {
     dbwin("DynamicCO_Free free object '%s' refCount=%d-1\n", Tcl_GetString(save->objPtr), (save->objPtr)->refCount);
-    if (save->objPtr->refCount == 0) panic("DynamicCO_Free refCount=0");
+    if (save->objPtr->refCount == 0) Tcl_Panic("DynamicCO_Free refCount=0");
 }
 else
     dbwin("DynamicCO_Free free object NULL\n");
@@ -5178,7 +5179,7 @@ dbwin("DynamicCO_Free id=%d internalPtr=%p save=NULL\n", cd->id, internalPtr);
 #ifdef DEBUG_DYNAMIC
 if (*objPtrPtr) {
     dbwin("DynamicCO_Free free object '%s' refCount=%d-1\n", Tcl_GetString(*objPtrPtr), (*objPtrPtr)->refCount);
-    if ((*objPtrPtr)->refCount == 0) panic("DynamicCO_Free refCount=0");
+    if ((*objPtrPtr)->refCount == 0) Tcl_Panic("DynamicCO_Free refCount=0");
 }
 else
     dbwin("DynamicCO_Free free object NULL\n");
@@ -5210,7 +5211,7 @@ else
 int
 DynamicCO_Init(
     Tk_OptionSpec *optionTable,	/* Table to search. */
-    CONST char *optionName,	/* Name of the option. */
+    const char *optionName,	/* Name of the option. */
     int id,			/* Unique id. */
     int size,			/* Size of client data. */
     int objOffset,		/* Offset in the client data to store the
@@ -5231,11 +5232,11 @@ DynamicCO_Init(
     Tk_ObjCustomOption *co;
 
     if (size <= 0)
-	panic("DynamicCO_Init: option %s size=%d", optionName, size);
+	Tcl_Panic("DynamicCO_Init: option %s size=%d", optionName, size);
 
     specPtr = Tree_FindOptionSpec(optionTable, optionName);
     if (specPtr->type != TK_OPTION_CUSTOM)
-	panic("DynamicCO_Init: %s is not TK_OPTION_CUSTOM", optionName);
+	Tcl_Panic("DynamicCO_Init: %s is not TK_OPTION_CUSTOM", optionName);
     if (specPtr->clientData != NULL)
 	return TCL_OK;
 
@@ -5312,7 +5313,7 @@ DynamicOption_Free(
 
 #ifdef ALLOC_HAX
 	    TreeAlloc_Free(tree->allocData, DynamicOptionUid, (char *) opt,
-		    Tk_Offset(DynamicOption, data) + cd->size);
+		    offsetof(DynamicOption, data) + cd->size);
 #else
 	    ckfree((char *) opt);
 #endif
@@ -5358,7 +5359,7 @@ DynamicOption_Free1(
 		prev->next = opt->next;
 #ifdef ALLOC_HAX
 	    TreeAlloc_Free(tree->allocData, DynamicOptionUid, (char *) opt,
-		    Tk_Offset(DynamicOption, data) + size);
+		    offsetof(DynamicOption, data) + size);
 #else
 	    ckfree((char *) opt);
 #endif
@@ -5399,7 +5400,7 @@ Tree_InitOptions(
     int result;
 
     if (tree->configStateDomain != -1)
-	panic("Tree_InitOptions configStateDomain != -1");
+	Tcl_Panic("Tree_InitOptions configStateDomain != -1");
 
     tree->configStateDomain = domain;
 
@@ -5416,7 +5417,7 @@ Tree_SetOptions(
     void *recordPtr,
     Tk_OptionTable optionTable,
     int objc,
-    Tcl_Obj *CONST objv[],
+    Tcl_Obj *const objv[],
     Tk_SavedOptions *savePtr,
     int *maskPtr
     )
@@ -5424,7 +5425,7 @@ Tree_SetOptions(
     int result;
 
     if (tree->configStateDomain != -1)
-	panic("Tree_SetOptions configStateDomain != -1");
+	Tcl_Panic("Tree_SetOptions configStateDomain != -1");
 
     tree->configStateDomain = domain;
 
@@ -5758,7 +5759,7 @@ Tk_ObjCustomOption TreeCtrlCO_style =
 void
 TreeStyleCO_Init(
     Tk_OptionSpec *optionTable,
-    CONST char *optionName,
+    const char *optionName,
     int domain
     )
 {
@@ -5767,7 +5768,7 @@ TreeStyleCO_Init(
 
     specPtr = Tree_FindOptionSpec(optionTable, optionName);
     if (specPtr->type != TK_OPTION_CUSTOM)
-	panic("TreeStyleCO_Init: %s is not TK_OPTION_CUSTOM", optionName);
+	Tcl_Panic("TreeStyleCO_Init: %s is not TK_OPTION_CUSTOM", optionName);
     if (specPtr->clientData != NULL)
 	return;
 
@@ -5866,7 +5867,7 @@ BooleanFlagCO_Restore(
 int
 BooleanFlagCO_Init(
     Tk_OptionSpec *optionTable,
-    CONST char *optionName,
+    const char *optionName,
     int theFlag
     )
 {
@@ -5875,7 +5876,7 @@ BooleanFlagCO_Init(
 
     specPtr = Tree_FindOptionSpec(optionTable, optionName);
     if (specPtr->type != TK_OPTION_CUSTOM)
-	panic("BooleanFlagCO_Init: %s is not TK_OPTION_CUSTOM", optionName);
+	Tcl_Panic("BooleanFlagCO_Init: %s is not TK_OPTION_CUSTOM", optionName);
     if (specPtr->clientData != NULL)
 	return TCL_OK;
 
@@ -6002,7 +6003,7 @@ ItemButtonCO_Restore(
 int
 ItemButtonCO_Init(
     Tk_OptionSpec *optionTable,
-    CONST char *optionName,
+    const char *optionName,
     int flag1,
     int flag2
     )
@@ -6013,7 +6014,7 @@ ItemButtonCO_Init(
 
     specPtr = Tree_FindOptionSpec(optionTable, optionName);
     if (specPtr->type != TK_OPTION_CUSTOM)
-	panic("BooleanFlagCO_Init: %s is not TK_OPTION_CUSTOM", optionName);
+	Tcl_Panic("BooleanFlagCO_Init: %s is not TK_OPTION_CUSTOM", optionName);
     if (specPtr->clientData != NULL)
 	return TCL_OK;
 
@@ -6069,7 +6070,7 @@ Tree_GetIntForIndex(
     int endValue = 0;
     char *bytes;
 
-    if (TclGetIntForIndex(tree->interp, objPtr, endValue, indexPtr) != TCL_OK)
+    if (Tcl_GetIntForIndex(tree->interp, objPtr, endValue, indexPtr) != TCL_OK)
 	return TCL_ERROR;
 
     bytes = Tcl_GetString(objPtr);
@@ -6674,7 +6675,7 @@ StopsSet(
     )
 {
     char *internalPtr;
-    int i, nstops, stopLen;
+    Tcl_Size i, nstops, stopLen;
     int objEmpty = 0;
     Tcl_Obj *valuePtr;
     double offset, lastOffset, opacity;
@@ -6843,7 +6844,7 @@ GradientCoordSet(
     int objEmpty = 0;
     Tcl_Obj *valuePtr;
     Tcl_Obj **objv;
-    int objc;
+    Tcl_Size objc;
     double coordValue;
     GradientCoordType coordType;
     GradientCoord *new = NULL;
@@ -6869,7 +6870,7 @@ GradientCoordSet(
 	    return TCL_ERROR;
         }
         if (Tcl_GetIndexFromObj(interp, objv[1], coordTypeNames,
-	    "coordinate type", 0, (int *) &coordType) != TCL_OK) {
+	    "coordinate type", 0, &coordType) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (Tcl_GetDoubleFromObj(interp, objv[0], &coordValue) != TCL_OK) {
@@ -7456,30 +7457,30 @@ static char *orientStringTable[] = { "horizontal", "vertical", (char *) NULL };
 
 static Tk_OptionSpec gradientOptionSpecs[] = {
     {TK_OPTION_CUSTOM, "-bottom", NULL, NULL, NULL,
-	Tk_Offset(TreeGradient_, bottomObj),
-        Tk_Offset(TreeGradient_, bottom),
+	offsetof(TreeGradient_, bottomObj),
+        offsetof(TreeGradient_, bottom),
 	TK_OPTION_NULL_OK, (ClientData) &gradientCoordCO, 0},
     {TK_OPTION_CUSTOM, "-left", NULL, NULL, NULL,
-	Tk_Offset(TreeGradient_, leftObj),
-        Tk_Offset(TreeGradient_, left),
+	offsetof(TreeGradient_, leftObj),
+        offsetof(TreeGradient_, left),
 	TK_OPTION_NULL_OK, (ClientData) &gradientCoordCO, 0},
     {TK_OPTION_CUSTOM, "-right", NULL, NULL, NULL,
-	Tk_Offset(TreeGradient_, rightObj),
-        Tk_Offset(TreeGradient_, right),
+	offsetof(TreeGradient_, rightObj),
+        offsetof(TreeGradient_, right),
 	TK_OPTION_NULL_OK, (ClientData) &gradientCoordCO, 0},
     {TK_OPTION_CUSTOM, "-top", NULL, NULL, NULL,
-	Tk_Offset(TreeGradient_, topObj),
-        Tk_Offset(TreeGradient_, top),
+	offsetof(TreeGradient_, topObj),
+        offsetof(TreeGradient_, top),
 	TK_OPTION_NULL_OK, (ClientData) &gradientCoordCO, 0},
     {TK_OPTION_STRING_TABLE, "-orient", (char *) NULL, (char *) NULL,
-	"horizontal", -1, Tk_Offset(TreeGradient_, vertical),
+	"horizontal", -1, offsetof(TreeGradient_, vertical),
 	0, (ClientData) orientStringTable, 0},
     {TK_OPTION_INT, "-steps", (char *) NULL, (char *) NULL,
-	"1", -1, Tk_Offset(TreeGradient_, steps),
+	"1", -1, offsetof(TreeGradient_, steps),
 	0, (ClientData) NULL, GRAD_CONF_STEPS},
     {TK_OPTION_CUSTOM, "-stops", NULL, NULL, NULL,
-	Tk_Offset(TreeGradient_, stopsObj),
-        Tk_Offset(TreeGradient_, stopArrPtr),
+	offsetof(TreeGradient_, stopsObj),
+        offsetof(TreeGradient_, stopArrPtr),
 	TK_OPTION_NULL_OK, (ClientData) &stopsCO, GRAD_CONF_STOPS},
     {TK_OPTION_END, (char *) NULL, (char *) NULL, (char *) NULL,
 	(char *) NULL, 0, -1, 0, (ClientData) NULL, 0}
@@ -7684,7 +7685,7 @@ Gradient_Config(
     TreeCtrl *tree,		/* Widget info. */
     TreeGradient gradient,	/* Gradient token. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[],	/* Argument values. */
+    Tcl_Obj *const objv[],	/* Argument values. */
     int createFlag		/* TRUE if the gradient is being created. */
     )
 {
@@ -7867,7 +7868,7 @@ TreeGradient_Release(
 {
 #ifdef TREECTRL_DEBUG
     if (gradient->refCount <= 0)
-	panic("TreeGradient_Release: refCount <= 0");
+	Tcl_Panic("TreeGradient_Release: refCount <= 0");
 #endif
     gradient->refCount--;
     if ((gradient->refCount == 0) && (gradient->deletePending != 0)) {
@@ -7896,7 +7897,7 @@ Gradient_CreateAndConfig(
     TreeCtrl *tree,		/* Widget info. */
     char *name,			/* Name of new gradient. */
     int objc,			/* Number of config-option arg-value pairs. */
-    Tcl_Obj *CONST objv[]	/* Config-option arg-value pairs. */
+    Tcl_Obj *const objv[]	/* Config-option arg-value pairs. */
     )
 {
     TreeGradient gradient;
@@ -7959,11 +7960,11 @@ TreeGradientCmd(
     ClientData clientData,	/* Widget info. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[]	/* Argument values. */
+    Tcl_Obj *const objv[]	/* Argument values. */
     )
 {
     TreeCtrl *tree = clientData;
-    static CONST char *commandNames[] = {
+    static const char *commandNames[] = {
 	"cget", "configure", "create", "delete", "names", "native",
 	(char *) NULL
     };
@@ -8243,7 +8244,7 @@ TreeGradient_FreeWidget(
 	    break;
 	gradient = (TreeGradient) Tcl_GetHashValue(hPtr);
 	if (gradient->refCount != 0) {
-	    panic("TreeGradient_Free: one or more gradients still being used");
+	    Tcl_Panic("TreeGradient_Free: one or more gradients still being used");
 	}
 	Gradient_FreeResources(tree, gradient, 1);
     }

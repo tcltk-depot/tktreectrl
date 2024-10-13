@@ -388,7 +388,7 @@ Range_Redo(
 	while (1) {
 	    rItem = dInfo->rItem + rItemCount;
 	    if (rItemCount >= dInfo->rItemMax)
-		panic("rItemCount > dInfo->rItemMax");
+		Tcl_Panic("rItemCount > dInfo->rItemMax");
 	    if (range->first == NULL)
 		range->first = range->last = rItem;
 	    TreeItem_SetRInfo(tree, item, (TreeItemRInfo) rItem);
@@ -1177,7 +1177,7 @@ Increment_AddX(
 #ifdef TREECTRL_DEBUG
     if ((dIncr->count > 0) &&
 	    (offset == dIncr->increments[dIncr->count - 1])) {
-	panic("Increment_AddX: offset %d same as previous offset", offset);
+	Tcl_Panic("Increment_AddX: offset %d same as previous offset", offset);
     }
 #endif
     if (dIncr->count + 1 > size) {
@@ -1226,7 +1226,7 @@ Increment_AddY(
 #ifdef TREECTRL_DEBUG
     if ((dIncr->count > 0) &&
 	    (offset == dIncr->increments[dIncr->count - 1])) {
-	panic("Increment_AddY: offset %d same as previous offset", offset);
+	Tcl_Panic("Increment_AddY: offset %d same as previous offset", offset);
     }
 #endif
     if (dIncr->count + 1 > size) {
@@ -1689,7 +1689,7 @@ B_IncrementFind(
 	else
 	    l = i + 1;
     }
-    panic("B_IncrementFind failed (count %d offset %d)", count, offset);
+    Tcl_Panic("B_IncrementFind failed (count %d offset %d)", count, offset);
     return -1;
 }
 
@@ -1781,7 +1781,7 @@ int
 TreeXviewCmd(
     TreeCtrl *tree,		/* Widget info. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[]	/* Argument values. */
+    Tcl_Obj *const objv[]	/* Argument values. */
     )
 {
     Tcl_Interp *interp = tree->interp;
@@ -1888,7 +1888,7 @@ int
 TreeYviewCmd(
     TreeCtrl *tree,		/* Widget info. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[]	/* Argument values. */
+    Tcl_Obj *const objv[]	/* Argument values. */
     )
 {
     Tcl_Interp *interp = tree->interp;
@@ -2638,7 +2638,7 @@ DItem_Alloc(
 
     dItem = (DItem *) TreeItem_GetDInfo(tree, rItem->item);
     if (dItem != NULL)
-	panic("tried to allocate duplicate DItem");
+	Tcl_Panic("tried to allocate duplicate DItem");
 
     /* Pop unused DItem from stack */
     if (dInfo->dItemFree != NULL) {
@@ -2726,7 +2726,7 @@ DItem_Free(
     DItem *next = dItem->next;
 #ifdef TREECTRL_DEBUG
     if (strncmp(dItem->magic, "MAGC", 4) != 0)
-	panic("DItem_Free: dItem.magic != MAGC");
+	Tcl_Panic("DItem_Free: dItem.magic != MAGC");
 #endif
     if (dItem->item != NULL) {
 	TreeItem_SetDInfo(tree, dItem->item, (TreeItemDInfo) NULL);
@@ -5119,8 +5119,8 @@ int
 TreeRect_Intersect(
     TreeRectangle *resultPtr,	/* Out: area of overlap. May be the same
 				 * as r1 or r2. */
-    CONST TreeRectangle *r1,	/* First rectangle. */
-    CONST TreeRectangle *r2	/* Second rectangle. */
+    const TreeRectangle *r1,	/* First rectangle. */
+    const TreeRectangle *r2	/* Second rectangle. */
     )
 {
     TreeRectangle result;
@@ -6227,6 +6227,7 @@ CalcBgImageBounds(
     Tk_SizeOfImage(tree->backgroundImage, &imgWidth, &imgHeight);
 
     switch (tree->bgImageAnchor) {
+	case TK_ANCHOR_NULL:
 	case TK_ANCHOR_NW:
 	case TK_ANCHOR_W:
 	case TK_ANCHOR_SW:
@@ -6244,6 +6245,7 @@ CalcBgImageBounds(
     }
 
     switch (tree->bgImageAnchor) {
+	case TK_ANCHOR_NULL:
 	case TK_ANCHOR_NW:
 	case TK_ANCHOR_N:
 	case TK_ANCHOR_NE:
@@ -7686,7 +7688,9 @@ Tcl_SetServiceMode(oldMode);
 		    fgGC = Tk_GCForColor(tree->highlightColorPtr, drawable);
 		else
 		    fgGC = bgGC;
-		TkpDrawHighlightBorder(tkwin, fgGC, bgGC, tree->highlightWidth,
+//		TkpDrawHighlightBorder(tkwin, fgGC, bgGC, tree->highlightWidth,
+//			drawable);
+		Tk_DrawHighlightBorder(tkwin, fgGC, bgGC, tree->highlightWidth,
 			drawable);
 		dInfo->flags &= ~DINFO_DRAW_HIGHLIGHT;
 	    }
@@ -8022,7 +8026,7 @@ Increment_ToOffsetX(
     if (xIncr <= 0) {
 	DScrollIncrements *dIncr = &dInfo->xScrollIncrements;
 	if (index < 0 || index >= dIncr->count) {
-	    panic("Increment_ToOffsetX: bad index %d (must be 0-%d)",
+	    Tcl_Panic("Increment_ToOffsetX: bad index %d (must be 0-%d)",
 		    index, dIncr->count-1);
 	}
 	return dIncr->increments[index];
@@ -8060,7 +8064,7 @@ Increment_ToOffsetY(
     if (yIncr <= 0) {
 	DScrollIncrements *dIncr = &dInfo->yScrollIncrements;
 	if (index < 0 || index >= dIncr->count) {
-	    panic("Increment_ToOffsetY: bad index %d (must be 0-%d)\ntotHeight %d visHeight %d",
+	    Tcl_Panic("Increment_ToOffsetY: bad index %d (must be 0-%d)\ntotHeight %d visHeight %d",
 		    index, dIncr->count - 1,
 		    Tree_CanvasHeight(tree), Tree_ContentHeight(tree));
 	}
@@ -8941,7 +8945,7 @@ if (hPtr == NULL) {
 }
     while (hPtr != NULL) {
 	value = (TreeColumn *) Tcl_GetHashValue(hPtr);
-	if (value == NULL) panic("TreeDisplay_ColumnDeleted value == NULL");
+	if (value == NULL) Tcl_Panic("TreeDisplay_ColumnDeleted value == NULL");
 	for (i = 0; value[i] != NULL; i++) {
 	    if (value[i] == column) {
 		while (value[i] != NULL) {
@@ -9619,7 +9623,7 @@ int
 Tree_DumpDInfo(
     TreeCtrl *tree,		/* Widget info. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[]	/* Argument values. */
+    Tcl_Obj *const objv[]	/* Argument values. */
     )
 {
     Tcl_Interp *interp = tree->interp;
@@ -9630,7 +9634,7 @@ Tree_DumpDInfo(
     RItem *rItem;
     int index;
 
-    static CONST char *optionNames[] = {
+    static const char *optionNames[] = {
 	"alloc", "ditem", "onscreen", "range", (char *) NULL
     };
 #undef DUMP_ALLOC /* [BUG 2233922] SunOS: build error */

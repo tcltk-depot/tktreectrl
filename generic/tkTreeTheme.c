@@ -355,7 +355,7 @@ typedef struct
 static Ttk_ElementOptionSpec HeaderElementOptions[] =
 {
     { "-background", TK_OPTION_COLOR,
-	Tk_Offset(HeaderElement, backgroundObj), DEFAULT_BACKGROUND },
+	offsetof(HeaderElement, backgroundObj), DEFAULT_BACKGROUND },
     {NULL}
 };
 
@@ -391,13 +391,13 @@ typedef struct
 static Ttk_ElementOptionSpec TreeitemIndicatorOptions[] =
 {
     { "-buttonbackground", TK_OPTION_COLOR,
-	Tk_Offset(TreeitemIndicator, backgroundObj), "white" },
+	offsetof(TreeitemIndicator, backgroundObj), "white" },
     { "-buttoncolor", TK_OPTION_COLOR,
-	Tk_Offset(TreeitemIndicator, colorObj), "#808080" },
+	offsetof(TreeitemIndicator, colorObj), "#808080" },
     { "-buttonsize", TK_OPTION_PIXELS,
-	Tk_Offset(TreeitemIndicator, sizeObj), "9" },
+	offsetof(TreeitemIndicator, sizeObj), "9" },
     { "-buttonthickness", TK_OPTION_PIXELS,
-	Tk_Offset(TreeitemIndicator, thicknessObj), "1" },
+	offsetof(TreeitemIndicator, thicknessObj), "1" },
     {NULL}
 };
 

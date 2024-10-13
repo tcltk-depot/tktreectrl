@@ -139,7 +139,7 @@ typedef void (*PerStateType_FreeProc)(TreeCtrl *, PerStateData *);
 /* A structure of the following type is kept for each per-state data type. */
 struct PerStateType
 {
-    CONST char *name;		/* Name for debugging purposes. */
+    const char *name;		/* Name for debugging purposes. */
     int size;			/* Size of PerStateData + type-specific
 				 * fields. */
     PerStateType_FromObjProc fromObjProc; /* Convert a Tcl_Obj to this type's
@@ -282,7 +282,7 @@ struct TreeCtrlColumnDrag
 typedef struct TreeStateDomain TreeStateDomain;
 struct TreeStateDomain
 {
-    CONST char *name;		/* Human-readable name of this domain. */
+    const char *name;		/* Human-readable name of this domain. */
     char *stateNames[32];	/* Sparse array of state names. */
     int staticCount;		/* Number of static states. */
 };
@@ -694,7 +694,7 @@ MODULE_SCOPE int TreeArea_FromObj(TreeCtrl *tree, Tcl_Obj *objPtr,
 MODULE_SCOPE int Tree_StateFromObj(TreeCtrl *tree, int domain, Tcl_Obj *obj, int states[3], int *indexPtr, int flags);
 MODULE_SCOPE int Tree_StateFromListObj(TreeCtrl *tree, int domain, Tcl_Obj *obj, int states[3], int flags);
 
-MODULE_SCOPE int Tree_StateCmd(TreeCtrl *tree, int domain, int objc, Tcl_Obj *CONST objv[]);
+MODULE_SCOPE int Tree_StateCmd(TreeCtrl *tree, int domain, int objc, Tcl_Obj *const objv[]);
 
 #define Tree_BorderLeft(tree) \
     tree->inset.left
@@ -735,7 +735,7 @@ MODULE_SCOPE int Tree_StateCmd(TreeCtrl *tree, int domain, int objc, Tcl_Obj *CO
 MODULE_SCOPE int TreeHeader_InitWidget(TreeCtrl *tree);
 MODULE_SCOPE void TreeHeader_FreeWidget(TreeCtrl *tree);
 MODULE_SCOPE int TreeHeaderCmd(ClientData clientData, Tcl_Interp *interp,
-    int objc, Tcl_Obj *CONST objv[]);
+    int objc, Tcl_Obj *const objv[]);
 MODULE_SCOPE int TreeHeaderList_FromObj(TreeCtrl *tree, Tcl_Obj *objPtr, TreeItemList *items, int flags);
 MODULE_SCOPE void TreeHeader_TreeChanged(TreeCtrl *tree, int flagT);
 MODULE_SCOPE int TreeHeader_ColumnDragOrder(TreeHeader header,
@@ -762,7 +762,7 @@ MODULE_SCOPE int TreeHeaderColumn_EnsureStyleExists(TreeHeader header,
 MODULE_SCOPE int TreeHeader_ConsumeColumnCget(TreeCtrl *tree,
     TreeColumn treeColumn, Tcl_Obj *objPtr);
 MODULE_SCOPE int TreeHeader_ConsumeColumnConfig(TreeCtrl *tree,
-    TreeColumn treeColumn, int objc, Tcl_Obj *CONST objv[], int createFlag);
+    TreeColumn treeColumn, int objc, Tcl_Obj *const objv[], int createFlag);
 MODULE_SCOPE Tcl_Obj *TreeHeader_ConsumeColumnOptionInfo(TreeCtrl *tree,
     TreeColumn treeColumn, Tcl_Obj *objPtr);
 MODULE_SCOPE TreeHeader TreeHeader_CreateWithItem(TreeCtrl *tree,
@@ -893,23 +893,23 @@ MODULE_SCOPE TreeHeaderColumn TreeItemColumn_GetHeaderColumn(TreeCtrl *tree, Tre
 MODULE_SCOPE int TreeItem_ConsumeHeaderCget(TreeCtrl *tree, TreeItem item,
     Tcl_Obj *objPtr);
 MODULE_SCOPE int TreeItem_ConsumeHeaderConfig(TreeCtrl *tree, TreeItem item,
-    int objc, Tcl_Obj *CONST objv[]);
+    int objc, Tcl_Obj *const objv[]);
 MODULE_SCOPE int TreeItem_GetHeaderOptionInfo(TreeCtrl *tree,
     TreeHeader header, Tcl_Obj *objPtr, Tcl_Obj *resultObjPtr);
 MODULE_SCOPE int TreeItemCmd_Bbox(TreeCtrl *tree, int objc,
-    Tcl_Obj *CONST objv[], int doHeaders);
+    Tcl_Obj *const objv[], int doHeaders);
 MODULE_SCOPE int TreeItemCmd_Element(TreeCtrl *tree, int objc,
-    Tcl_Obj *CONST objv[], int doHeaders);
+    Tcl_Obj *const objv[], int doHeaders);
 MODULE_SCOPE int TreeItemCmd_Span(TreeCtrl *tree, int objc,
-    Tcl_Obj *CONST objv[], int doHeaders);
+    Tcl_Obj *const objv[], int doHeaders);
 MODULE_SCOPE int TreeItemCmd_State(TreeCtrl *tree, int objc,
-    Tcl_Obj *CONST objv[], int doHeaders);
+    Tcl_Obj *const objv[], int doHeaders);
 MODULE_SCOPE int TreeItemCmd_Style(TreeCtrl *tree, int objc,
-    Tcl_Obj *CONST objv[], int doHeaders);
+    Tcl_Obj *const objv[], int doHeaders);
 MODULE_SCOPE int TreeItemCmd_ImageOrText(TreeCtrl *tree, int objc,
-    Tcl_Obj *CONST objv[], int doImage, int doHeaders);
+    Tcl_Obj *const objv[], int doImage, int doHeaders);
 MODULE_SCOPE int TreeItemCmd_Tag(TreeCtrl *tree, int objc,
-    Tcl_Obj *CONST objv[], int doHeaders);
+    Tcl_Obj *const objv[], int doHeaders);
 
 MODULE_SCOPE void TreeItem_AppendChild(TreeCtrl *tree, TreeItem self, TreeItem child);
 MODULE_SCOPE void TreeItem_RemoveFromParent(TreeCtrl *tree, TreeItem self);
@@ -942,11 +942,11 @@ MODULE_SCOPE void TreeItem_Identify(TreeCtrl *tree, TreeItem item_, int lock, in
 MODULE_SCOPE void TreeItem_Identify2(TreeCtrl *tree, TreeItem item_,
 	int x1, int y1, int x2, int y2, Tcl_Obj *listObj);
 MODULE_SCOPE int TreeItem_GetRects(TreeCtrl *tree, TreeItem item_,
-    TreeColumn treeColumn, int objc, Tcl_Obj *CONST objv[], TreeRectangle rects[]);
+    TreeColumn treeColumn, int objc, Tcl_Obj *const objv[], TreeRectangle rects[]);
 MODULE_SCOPE int TreeItem_Indent(TreeCtrl *tree, TreeColumn column, TreeItem item_);
 MODULE_SCOPE void Tree_UpdateItemIndex(TreeCtrl *tree);
 MODULE_SCOPE void Tree_DeselectHidden(TreeCtrl *tree);
-MODULE_SCOPE int TreeItemCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]);
+MODULE_SCOPE int TreeItemCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 MODULE_SCOPE void TreeItem_UpdateWindowPositions(TreeCtrl *tree, TreeItem item_,
     int lock, int x, int y, int width, int height);
 MODULE_SCOPE void TreeItem_GetOnScreenColumns(TreeCtrl *tree, TreeItem item_,
@@ -979,7 +979,7 @@ MODULE_SCOPE int TreeElement_InitInterp(Tcl_Interp *interp);
 MODULE_SCOPE int TreeElement_InitWidget(TreeCtrl *tree);
 MODULE_SCOPE void TreeElement_FreeWidget(TreeCtrl *tree);
 MODULE_SCOPE int TreeStateFromObj(TreeCtrl *tree, int domain, Tcl_Obj *obj, int *stateOff, int *stateOn);
-MODULE_SCOPE int StringTableCO_Init(Tk_OptionSpec *optionTable, CONST char *optionName, CONST char **tablePtr);
+MODULE_SCOPE int StringTableCO_Init(Tk_OptionSpec *optionTable, const char *optionName, const char **tablePtr);
 
 struct StyleDrawArgs
 {
@@ -1009,7 +1009,7 @@ MODULE_SCOPE void TreeStyle_FreeResources(TreeCtrl *tree, TreeStyle style_);
 MODULE_SCOPE void TreeStyle_FreeWidget(TreeCtrl *tree);
 MODULE_SCOPE Tcl_Obj *TreeElement_ToObj(TreeElement elem);
 MODULE_SCOPE int TreeElement_FromObj(TreeCtrl *tree, Tcl_Obj *obj, TreeElement *elemPtr);
-MODULE_SCOPE int TreeElement_IsType(TreeCtrl *tree, TreeElement elem, CONST char *type);
+MODULE_SCOPE int TreeElement_IsType(TreeCtrl *tree, TreeElement elem, const char *type);
 MODULE_SCOPE int TreeStyle_FromObj(TreeCtrl *tree, Tcl_Obj *obj, TreeStyle *stylePtr);
 MODULE_SCOPE Tcl_Obj *TreeStyle_ToObj(TreeStyle style_);
 MODULE_SCOPE Tcl_Obj *TreeStyle_GetImage(TreeCtrl *tree, TreeStyle style_, TreeElement *elemPtr);
@@ -1029,12 +1029,12 @@ MODULE_SCOPE int TreeStyle_ElementConfigureFromObj(TreeCtrl *tree,
 MODULE_SCOPE void TreeStyle_ListElements(TreeCtrl *tree, TreeStyle style_);
 MODULE_SCOPE int TreeStyle_GetButtonY(TreeCtrl *tree, TreeStyle style_);
 MODULE_SCOPE TreeStyle TreeStyle_GetMaster(TreeCtrl *tree, TreeStyle style_);
-MODULE_SCOPE CONST char *TreeStyle_GetName(TreeCtrl *tree, TreeStyle style_);
+MODULE_SCOPE const char *TreeStyle_GetName(TreeCtrl *tree, TreeStyle style_);
 MODULE_SCOPE int TreeStyle_GetStateDomain(TreeCtrl *tree, TreeStyle style_);
 MODULE_SCOPE TreeElement TreeStyle_Identify(StyleDrawArgs *drawArgs, int x, int y);
 MODULE_SCOPE void TreeStyle_Identify2(StyleDrawArgs *drawArgs,
 	int x1, int y1, int x2, int y2, Tcl_Obj *listObj);
-MODULE_SCOPE int TreeStyle_Remap(TreeCtrl *tree, TreeStyle styleFrom_, TreeStyle styleTo_, int objc, Tcl_Obj *CONST objv[]);
+MODULE_SCOPE int TreeStyle_Remap(TreeCtrl *tree, TreeStyle styleFrom_, TreeStyle styleTo_, int objc, Tcl_Obj *const objv[]);
 MODULE_SCOPE void TreeStyle_TreeChanged(TreeCtrl *tree, int flagT);
 #define SORT_ASCII 0
 #define SORT_DICT  1
@@ -1043,11 +1043,11 @@ MODULE_SCOPE void TreeStyle_TreeChanged(TreeCtrl *tree, int flagT);
 #define SORT_COMMAND 4
 MODULE_SCOPE int TreeStyle_GetSortData(TreeCtrl *tree, TreeStyle style_, int elemIndex, int type, long *lv, double *dv, char **sv);
 #if 0
-MODULE_SCOPE int TreeStyle_ValidateElements(TreeCtrl *tree, TreeStyle style_, int objc, Tcl_Obj *CONST objv[]);
+MODULE_SCOPE int TreeStyle_ValidateElements(TreeCtrl *tree, TreeStyle style_, int objc, Tcl_Obj *const objv[]);
 #endif
-MODULE_SCOPE int TreeStyle_GetElemRects(StyleDrawArgs *drawArgs, int objc, Tcl_Obj *CONST objv[], TreeRectangle rects[]);
-MODULE_SCOPE int TreeElementCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]);
-MODULE_SCOPE int TreeStyleCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]);
+MODULE_SCOPE int TreeStyle_GetElemRects(StyleDrawArgs *drawArgs, int objc, Tcl_Obj *const objv[], TreeRectangle rects[]);
+MODULE_SCOPE int TreeElementCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+MODULE_SCOPE int TreeStyleCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 MODULE_SCOPE int TreeStyle_ChangeState(TreeCtrl *tree, TreeStyle style_, int state1, int state2);
 MODULE_SCOPE void Tree_UndefineState(TreeCtrl *tree, int domain, int state);
 MODULE_SCOPE int TreeStyle_NumElements(TreeCtrl *tree, TreeStyle style_);
@@ -1064,7 +1064,7 @@ MODULE_SCOPE int Tree_ButtonHeight(TreeCtrl *tree, int state);
 MODULE_SCOPE int TreeNotify_InitWidget(TreeCtrl *tree);
 MODULE_SCOPE void TreeNotify_OpenClose(TreeCtrl *tree, TreeItem item, int isOpen, int before);
 MODULE_SCOPE void TreeNotify_Selection(TreeCtrl *tree, TreeItemList *select, TreeItemList *deselect);
-MODULE_SCOPE int TreeNotifyCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]);
+MODULE_SCOPE int TreeNotifyCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 MODULE_SCOPE void TreeNotify_ActiveItem(TreeCtrl *tree, TreeItem itemOld, TreeItem itemNew);
 MODULE_SCOPE void TreeNotify_Scroll(TreeCtrl *tree, double fractions[2], int vertical);
 MODULE_SCOPE void TreeNotify_ItemDeleted(TreeCtrl *tree, TreeItemList *items);
@@ -1118,7 +1118,7 @@ MODULE_SCOPE TreeColumn TreeColumnForEach_Next(ColumnForEach *iter);
 	 column = TreeColumnForEach_Next(iter))
 
 MODULE_SCOPE Tcl_Obj *TreeColumn_ToObj(TreeCtrl *tree, TreeColumn column_);
-MODULE_SCOPE int TreeColumnCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]);
+MODULE_SCOPE int TreeColumnCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 MODULE_SCOPE int TreeColumn_GetID(TreeColumn column_);
 MODULE_SCOPE int TreeColumn_Index(TreeColumn column_);
 MODULE_SCOPE int TreeColumn_VisIndex(TreeColumn column_);
@@ -1175,7 +1175,7 @@ MODULE_SCOPE void TreeDragImage_Display(TreeDragImage dragImage_);
 MODULE_SCOPE void TreeDragImage_Undisplay(TreeDragImage dragImage_);
 MODULE_SCOPE void TreeDragImage_DrawXOR(TreeDragImage dragImage_, Drawable drawable, int x, int y);
 MODULE_SCOPE void TreeDragImage_Draw(TreeDragImage dragImage, TreeDrawable td);
-MODULE_SCOPE int TreeDragImageCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]);
+MODULE_SCOPE int TreeDragImageCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 
 /* tkTreeMarquee.c */
 MODULE_SCOPE int TreeMarquee_InitWidget(TreeCtrl *tree);
@@ -1186,7 +1186,7 @@ MODULE_SCOPE void TreeMarquee_DrawXOR(TreeMarquee marquee_, Drawable drawable, i
 MODULE_SCOPE void TreeMarquee_Display(TreeMarquee marquee_);
 MODULE_SCOPE void TreeMarquee_Undisplay(TreeMarquee marquee_);
 MODULE_SCOPE void TreeMarquee_Draw(TreeMarquee marquee_, TreeDrawable td);
-MODULE_SCOPE int TreeMarqueeCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]);
+MODULE_SCOPE int TreeMarqueeCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 
 /* tkTreeDisplay.c */
 MODULE_SCOPE int Tree_CanvasWidth(TreeCtrl *tree);
@@ -1233,8 +1233,8 @@ MODULE_SCOPE int Increment_FindX(TreeCtrl *tree, int offset);
 MODULE_SCOPE int Increment_FindY(TreeCtrl *tree, int offset);
 MODULE_SCOPE int Increment_ToOffsetX(TreeCtrl *tree, int index);
 MODULE_SCOPE int Increment_ToOffsetY(TreeCtrl *tree, int index);
-MODULE_SCOPE int TreeXviewCmd(TreeCtrl *tree, int objc, Tcl_Obj *CONST objv[]);
-MODULE_SCOPE int TreeYviewCmd(TreeCtrl *tree, int objc, Tcl_Obj *CONST objv[]);
+MODULE_SCOPE int TreeXviewCmd(TreeCtrl *tree, int objc, Tcl_Obj *const objv[]);
+MODULE_SCOPE int TreeYviewCmd(TreeCtrl *tree, int objc, Tcl_Obj *const objv[]);
 MODULE_SCOPE void Tree_SetOriginX(TreeCtrl *tree, int xOrigin);
 MODULE_SCOPE void Tree_SetOriginY(TreeCtrl *tree, int yOrigin);
 MODULE_SCOPE int Tree_GetOriginX(TreeCtrl *tree);
@@ -1270,7 +1270,7 @@ MODULE_SCOPE int Tree_DrawBgImage(TreeCtrl *tree, TreeDrawable td,
     TreeRectangle tr, int xOrigin, int yOrigin);
 
 MODULE_SCOPE int TreeRect_Intersect(TreeRectangle *resultPtr,
-    CONST TreeRectangle *r1, CONST TreeRectangle *r2);
+    const TreeRectangle *r1, const TreeRectangle *r2);
 
 #define DINFO_OUT_OF_DATE 0x0001
 #define DINFO_CHECK_COLUMN_WIDTH 0x0002
@@ -1291,7 +1291,7 @@ MODULE_SCOPE int TreeRect_Intersect(TreeRectangle *resultPtr,
 MODULE_SCOPE void Tree_DInfoChanged(TreeCtrl *tree, int flags);
 
 MODULE_SCOPE void Tree_TheWorldHasChanged(Tcl_Interp *interp);
-MODULE_SCOPE int Tree_DumpDInfo(TreeCtrl *tree, int objc, Tcl_Obj *CONST objv[]);
+MODULE_SCOPE int Tree_DumpDInfo(TreeCtrl *tree, int objc, Tcl_Obj *const objv[]);
 
 /* tkTreeTheme.c */
 MODULE_SCOPE int TreeTheme_InitInterp(Tcl_Interp *interp);
@@ -1313,7 +1313,7 @@ MODULE_SCOPE int TreeTheme_AnimateButtonStart(TreeCtrl *tree, TreeItem item);
 MODULE_SCOPE int TreeTheme_ItemDeleted(TreeCtrl *tree, TreeItem item);
 MODULE_SCOPE void TreeTheme_Relayout(TreeCtrl *tree);
 MODULE_SCOPE int TreeTheme_IsDesktopComposited(TreeCtrl *tree);
-MODULE_SCOPE int TreeThemeCmd(TreeCtrl *tree, int objc, Tcl_Obj *CONST objv[]);
+MODULE_SCOPE int TreeThemeCmd(TreeCtrl *tree, int objc, Tcl_Obj *const objv[]);
 MODULE_SCOPE void TreeTheme_SetOptionDefault(Tk_OptionSpec *specPtr);
 
 /* tkTreeUtils.c */
@@ -1346,7 +1346,7 @@ MODULE_SCOPE void TreeDotRect_Setup(TreeCtrl *tree, Drawable drawable, DotState 
 MODULE_SCOPE void TreeDotRect_Draw(DotState *dotState, int x, int y, int width, int height);
 MODULE_SCOPE void TreeDotRect_Restore(DotState *dotState);
 typedef struct TextLayout_ *TextLayout;
-MODULE_SCOPE TextLayout TextLayout_Compute(Tk_Font tkfont, CONST char *string,
+MODULE_SCOPE TextLayout TextLayout_Compute(Tk_Font tkfont, const char *string,
 	int numChars, int wrapLength, Tk_Justify justify, int maxLines,
 	int lMargin1, int lMargin2, int flags);
 MODULE_SCOPE void TextLayout_Free(TextLayout textLayout);
@@ -1550,11 +1550,11 @@ MODULE_SCOPE int TagExpr_Scan(TagExpr *expr);
 MODULE_SCOPE int TagExpr_Eval(TagExpr *expr, TagInfo *tags);
 MODULE_SCOPE void TagExpr_Free(TagExpr *expr);
 
-MODULE_SCOPE Tk_OptionSpec *Tree_FindOptionSpec(Tk_OptionSpec *optionTable, CONST char *optionName);
+MODULE_SCOPE Tk_OptionSpec *Tree_FindOptionSpec(Tk_OptionSpec *optionTable, const char *optionName);
 
-MODULE_SCOPE Tk_ObjCustomOption *PerStateCO_Alloc(CONST char *optionName,
+MODULE_SCOPE Tk_ObjCustomOption *PerStateCO_Alloc(const char *optionName,
     PerStateType *typePtr, StateFromObjProc proc);
-MODULE_SCOPE int PerStateCO_Init(Tk_OptionSpec *optionTable, CONST char *optionName,
+MODULE_SCOPE int PerStateCO_Init(Tk_OptionSpec *optionTable, const char *optionName,
     PerStateType *typePtr, StateFromObjProc proc);
 
 /*****/
@@ -1578,7 +1578,7 @@ MODULE_SCOPE void DynamicOption_Free(TreeCtrl *tree, DynamicOption *first,
     Tk_OptionSpec *optionTable);
 MODULE_SCOPE void DynamicOption_Free1(TreeCtrl *tree, DynamicOption **firstPtr,
     int id, int size);
-MODULE_SCOPE int DynamicCO_Init(Tk_OptionSpec *optionTable, CONST char *optionName,
+MODULE_SCOPE int DynamicCO_Init(Tk_OptionSpec *optionTable, const char *optionName,
     int id, int size, int objOffset, int internalOffset,
     Tk_ObjCustomOption *custom, DynamicOptionInitProc *init);
 
@@ -1587,14 +1587,14 @@ MODULE_SCOPE int DynamicCO_Init(Tk_OptionSpec *optionTable, CONST char *optionNa
 MODULE_SCOPE int Tree_InitOptions(TreeCtrl *tree, int domain, void *recordPtr,
     Tk_OptionTable optionTable);
 MODULE_SCOPE int Tree_SetOptions(TreeCtrl *tree, int domain, void *recordPtr,
-    Tk_OptionTable optionTable, int objc, Tcl_Obj *CONST objv[],
+    Tk_OptionTable optionTable, int objc, Tcl_Obj *const objv[],
     Tk_SavedOptions *savePtr, int *maskPtr);
 
-MODULE_SCOPE int BooleanFlagCO_Init(Tk_OptionSpec *optionTable, CONST char *optionName,
+MODULE_SCOPE int BooleanFlagCO_Init(Tk_OptionSpec *optionTable, const char *optionName,
     int theFlag);
-MODULE_SCOPE int ItemButtonCO_Init(Tk_OptionSpec *optionTable, CONST char *optionName,
+MODULE_SCOPE int ItemButtonCO_Init(Tk_OptionSpec *optionTable, const char *optionName,
     int flag1, int flag2);
-MODULE_SCOPE void TreeStyleCO_Init(Tk_OptionSpec *optionTable, CONST char *optionName,
+MODULE_SCOPE void TreeStyleCO_Init(Tk_OptionSpec *optionTable, const char *optionName,
     int domain);
 
 MODULE_SCOPE int Tree_GetIntForIndex(TreeCtrl *tree, Tcl_Obj *objPtr, int *indexPtr,
@@ -1676,7 +1676,7 @@ typedef struct TreeGradient_
 MODULE_SCOPE void TreeGradient_InitWidget(TreeCtrl *tree);
 MODULE_SCOPE void TreeGradient_FreeWidget(TreeCtrl *tree);
 MODULE_SCOPE int TreeGradientCmd(ClientData clientData, Tcl_Interp *interp,
-    int objc, Tcl_Obj *CONST objv[]);
+    int objc, Tcl_Obj *const objv[]);
 MODULE_SCOPE int TreeGradient_FromObj(TreeCtrl *tree, Tcl_Obj *objPtr,
     TreeGradient *gradientPtr);
 MODULE_SCOPE void TreeGradient_Release(TreeCtrl *tree, TreeGradient gradient);

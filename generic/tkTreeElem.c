@@ -339,8 +339,8 @@ static void IntegerRestore(
 
 typedef struct StringTableClientData
 {
-    CONST char **tablePtr; /* NULL-termintated list of strings */
-    CONST char *msg; /* Tcl_GetIndexFromObj() message */
+    const char **tablePtr; /* NULL-termintated list of strings */
+    const char *msg; /* Tcl_GetIndexFromObj() message */
 } StringTableClientData;
 
 static int StringTableSet(
@@ -409,7 +409,7 @@ static void StringTableRestore(
 static int
 BooleanCO_Init(
     Tk_OptionSpec *optionTable,
-    CONST char *optionName)
+    const char *optionName)
 {
     Tk_OptionSpec *specPtr;
 
@@ -420,7 +420,7 @@ BooleanCO_Init(
 
 static Tk_ObjCustomOption *
 IntegerCO_Alloc(
-    CONST char *optionName,
+    const char *optionName,
     int min,
     int max,
     int empty,
@@ -453,7 +453,7 @@ IntegerCO_Alloc(
 static int
 IntegerCO_Init(
     Tk_OptionSpec *optionTable,
-    CONST char *optionName,
+    const char *optionName,
     int min,
     int max,
     int empty,
@@ -464,7 +464,7 @@ IntegerCO_Init(
 
     specPtr = Tree_FindOptionSpec(optionTable, optionName);
     if (specPtr->type != TK_OPTION_CUSTOM)
-	panic("IntegerCO_Init: %s is not TK_OPTION_CUSTOM", optionName);
+	Tcl_Panic("IntegerCO_Init: %s is not TK_OPTION_CUSTOM", optionName);
     if (specPtr->clientData != NULL)
 	return TCL_OK;
 
@@ -476,8 +476,8 @@ IntegerCO_Init(
 
 static Tk_ObjCustomOption *
 StringTableCO_Alloc(
-    CONST char *optionName,
-    CONST char **tablePtr
+    const char *optionName,
+    const char **tablePtr
     )
 {
     StringTableClientData *cd;
@@ -500,13 +500,13 @@ StringTableCO_Alloc(
     return co;
 }
 
-int StringTableCO_Init(Tk_OptionSpec *optionTable, CONST char *optionName, CONST char **tablePtr)
+int StringTableCO_Init(Tk_OptionSpec *optionTable, const char *optionName, const char **tablePtr)
 {
     Tk_OptionSpec *specPtr;
 
     specPtr = Tree_FindOptionSpec(optionTable, optionName);
     if (specPtr->type != TK_OPTION_CUSTOM)
-	panic("StringTableCO_Init: %s is not TK_OPTION_CUSTOM", optionName);
+	Tcl_Panic("StringTableCO_Init: %s is not TK_OPTION_CUSTOM", optionName);
     if (specPtr->clientData != NULL)
 	return TCL_OK;
 
@@ -640,21 +640,21 @@ struct ElementBitmap
 static Tk_OptionSpec bitmapOptionSpecs[] = {
     {TK_OPTION_CUSTOM, "-background", (char *) NULL, (char *) NULL,
      (char *) NULL,
-     Tk_Offset(ElementBitmap, bg.obj), Tk_Offset(ElementBitmap, bg),
+     offsetof(ElementBitmap, bg.obj), offsetof(ElementBitmap, bg),
      TK_OPTION_NULL_OK, (ClientData) NULL, BITMAP_CONF_BG},
     {TK_OPTION_CUSTOM, "-bitmap", (char *) NULL, (char *) NULL,
      (char *) NULL,
-     Tk_Offset(ElementBitmap, bitmap.obj), Tk_Offset(ElementBitmap, bitmap),
+     offsetof(ElementBitmap, bitmap.obj), offsetof(ElementBitmap, bitmap),
      TK_OPTION_NULL_OK, (ClientData) NULL, BITMAP_CONF_BITMAP},
 #ifdef DEPRECATED
     {TK_OPTION_CUSTOM, "-draw", (char *) NULL, (char *) NULL,
      (char *) NULL,
-     Tk_Offset(ElementBitmap, draw.obj), Tk_Offset(ElementBitmap, draw),
+     offsetof(ElementBitmap, draw.obj), offsetof(ElementBitmap, draw),
      TK_OPTION_NULL_OK, (ClientData) NULL, BITMAP_CONF_DRAW},
 #endif
     {TK_OPTION_CUSTOM, "-foreground", (char *) NULL, (char *) NULL,
      (char *) NULL,
-     Tk_Offset(ElementBitmap, fg.obj), Tk_Offset(ElementBitmap, fg),
+     offsetof(ElementBitmap, fg.obj), offsetof(ElementBitmap, fg),
      TK_OPTION_NULL_OK, (ClientData) NULL, BITMAP_CONF_FG},
     {TK_OPTION_END, (char *) NULL, (char *) NULL, (char *) NULL,
      (char *) NULL, 0, -1, 0, (ClientData) NULL, 0}
@@ -886,7 +886,7 @@ static int ActualProcBitmap(TreeElementArgs *args)
     TreeCtrl *tree = args->tree;
     ElementBitmap *elemX = (ElementBitmap *) args->elem;
     ElementBitmap *masterX = (ElementBitmap *) args->elem->master;
-    static CONST char *optionName[] = {
+    static const char *optionName[] = {
 	"-background", "-bitmap",
 #ifdef DEPRECATED
 	"-draw",
@@ -981,32 +981,32 @@ struct ElementBorder
 static Tk_OptionSpec borderOptionSpecs[] = {
     {TK_OPTION_CUSTOM, "-background", (char *) NULL, (char *) NULL,
      (char *) NULL,
-     Tk_Offset(ElementBorder, border.obj), Tk_Offset(ElementBorder, border),
+     offsetof(ElementBorder, border.obj), offsetof(ElementBorder, border),
      TK_OPTION_NULL_OK, (ClientData) NULL, BORDER_CONF_BG},
 #ifdef DEPRECATED
     {TK_OPTION_CUSTOM, "-draw", (char *) NULL, (char *) NULL,
      (char *) NULL,
-     Tk_Offset(ElementBorder, draw.obj), Tk_Offset(ElementBorder, draw),
+     offsetof(ElementBorder, draw.obj), offsetof(ElementBorder, draw),
      TK_OPTION_NULL_OK, (ClientData) NULL, BORDER_CONF_DRAW},
 #endif
     {TK_OPTION_CUSTOM, "-filled", (char *) NULL, (char *) NULL,
-     (char *) NULL, -1, Tk_Offset(ElementBorder, filled),
+     (char *) NULL, -1, offsetof(ElementBorder, filled),
      TK_OPTION_NULL_OK, (ClientData) &booleanCO, BORDER_CONF_FILLED},
     {TK_OPTION_PIXELS, "-height", (char *) NULL, (char *) NULL,
-     (char *) NULL, Tk_Offset(ElementBorder, heightObj),
-     Tk_Offset(ElementBorder, height),
+     (char *) NULL, offsetof(ElementBorder, heightObj),
+     offsetof(ElementBorder, height),
      TK_OPTION_NULL_OK, (ClientData) NULL, BORDER_CONF_SIZE},
     {TK_OPTION_CUSTOM, "-relief", (char *) NULL, (char *) NULL,
      (char *) NULL,
-     Tk_Offset(ElementBorder, relief.obj), Tk_Offset(ElementBorder, relief),
+     offsetof(ElementBorder, relief.obj), offsetof(ElementBorder, relief),
      TK_OPTION_NULL_OK, (ClientData) NULL, BORDER_CONF_RELIEF},
     {TK_OPTION_PIXELS, "-thickness", (char *) NULL, (char *) NULL,
-     (char *) NULL, Tk_Offset(ElementBorder, thicknessObj),
-     Tk_Offset(ElementBorder, thickness),
+     (char *) NULL, offsetof(ElementBorder, thicknessObj),
+     offsetof(ElementBorder, thickness),
      TK_OPTION_NULL_OK, (ClientData) NULL, BORDER_CONF_THICKNESS},
     {TK_OPTION_PIXELS, "-width", (char *) NULL, (char *) NULL,
-     (char *) NULL, Tk_Offset(ElementBorder, widthObj),
-     Tk_Offset(ElementBorder, width),
+     (char *) NULL, offsetof(ElementBorder, widthObj),
+     offsetof(ElementBorder, width),
      TK_OPTION_NULL_OK, (ClientData) NULL, BORDER_CONF_SIZE},
     {TK_OPTION_END, (char *) NULL, (char *) NULL, (char *) NULL,
      (char *) NULL, 0, -1, 0, (ClientData) NULL, 0}
@@ -1255,7 +1255,7 @@ static int ActualProcBorder(TreeElementArgs *args)
     TreeCtrl *tree = args->tree;
     ElementBorder *elemX = (ElementBorder *) args->elem;
     ElementBorder *masterX = (ElementBorder *) args->elem->master;
-    static CONST char *optionName[] = {
+    static const char *optionName[] = {
 	"-background",
 #ifdef DEPRECATED
 	"-draw",
@@ -1316,7 +1316,7 @@ TreeElementType treeElemTypeBorder = {
 /*****/
 #if 0
 
-static CONST char *chkbutStateST[] = {
+static const char *chkbutStateST[] = {
     "checked", "mixed", "normal", "active", "pressed", "disabled", (char *) NULL
 };
 
@@ -1334,10 +1334,10 @@ struct ElementCheckButton
 
 static Tk_OptionSpec chkbutOptionSpecs[] = {
     {TK_OPTION_STRING, "-image", (char *) NULL, (char *) NULL,
-     (char *) NULL, Tk_Offset(ElementCheckButton, image.obj), -1,
+     (char *) NULL, offsetof(ElementCheckButton, image.obj), -1,
      TK_OPTION_NULL_OK, (ClientData) NULL, CHKBUT_CONF_IMAGE},
     {TK_OPTION_STRING_TABLE, "-state", (char *) NULL, (char *) NULL,
-     "normal", -1, Tk_Offset(ElementCheckButton, state),
+     "normal", -1, offsetof(ElementCheckButton, state),
      0, (ClientData) chkbutStateST, CHKBUT_CONF_STATE},
     {TK_OPTION_END, (char *) NULL, (char *) NULL, (char *) NULL,
      (char *) NULL, 0, -1, 0, (ClientData) NULL, 0}
@@ -1597,7 +1597,7 @@ static int ActualProcCheckButton(TreeElementArgs *args)
     TreeCtrl *tree = args->tree;
     ElementCheckButton *elemX = (ElementCheckButton *) args->elem;
     ElementCheckButton *masterX = (ElementCheckButton *) args->elem->master;
-    static CONST char *optionName[] = {
+    static const char *optionName[] = {
 	"-image",
 	(char *) NULL };
     int index, match, matchM;
@@ -1669,47 +1669,47 @@ struct ElementHeader
     int state;			/* -state */
 };
 
-static CONST char *headerStateST[] = { "normal", "active", "pressed", (char *) NULL };
-static CONST char *headerArrowST[] = { "none", "up", "down", (char *) NULL };
-static CONST char *headerArrowSideST[] = { "left", "right", (char *) NULL };
+static const char *headerStateST[] = { "normal", "active", "pressed", (char *) NULL };
+static const char *headerArrowST[] = { "none", "up", "down", (char *) NULL };
+static const char *headerArrowSideST[] = { "left", "right", (char *) NULL };
 
 #define HEADER_CONF_SIZE 0x0001
 #define HEADER_CONF_DISPLAY 0x0002
 
 static Tk_OptionSpec headerOptionSpecs[] = {
     {TK_OPTION_CUSTOM, "-arrow", (char *) NULL, (char *) NULL,
-     (char *) NULL, -1, Tk_Offset(ElementHeader, arrow), TK_OPTION_NULL_OK,
+     (char *) NULL, -1, offsetof(ElementHeader, arrow), TK_OPTION_NULL_OK,
      (ClientData) NULL, HEADER_CONF_DISPLAY | HEADER_CONF_SIZE},
     {TK_OPTION_CUSTOM, "-arrowbitmap", (char *) NULL, (char *) NULL,
      (char *) NULL,
-     Tk_Offset(ElementHeader, arrowBitmap.obj), Tk_Offset(ElementHeader, arrowBitmap),
+     offsetof(ElementHeader, arrowBitmap.obj), offsetof(ElementHeader, arrowBitmap),
      TK_OPTION_NULL_OK, (ClientData) NULL, HEADER_CONF_DISPLAY | HEADER_CONF_SIZE},
     {TK_OPTION_CUSTOM, "-arrowgravity", (char *) NULL, (char *) NULL,
-     (char *) NULL, -1, Tk_Offset(ElementHeader, arrowGravity), TK_OPTION_NULL_OK,
+     (char *) NULL, -1, offsetof(ElementHeader, arrowGravity), TK_OPTION_NULL_OK,
      (ClientData) NULL, HEADER_CONF_DISPLAY | HEADER_CONF_SIZE},
     {TK_OPTION_CUSTOM, "-arrowimage", (char *) NULL, (char *) NULL,
      (char *) NULL,
-     Tk_Offset(ElementHeader, arrowImage.obj), Tk_Offset(ElementHeader, arrowImage),
+     offsetof(ElementHeader, arrowImage.obj), offsetof(ElementHeader, arrowImage),
      TK_OPTION_NULL_OK, (ClientData) NULL, HEADER_CONF_DISPLAY | HEADER_CONF_SIZE},
     {TK_OPTION_CUSTOM, "-arrowpadx", (char *) NULL, (char *) NULL,
-     (char *) NULL, Tk_Offset(ElementHeader, arrowPadXObj), Tk_Offset(ElementHeader, arrowPadX),
+     (char *) NULL, offsetof(ElementHeader, arrowPadXObj), offsetof(ElementHeader, arrowPadX),
      TK_OPTION_NULL_OK, (ClientData) &TreeCtrlCO_pad, HEADER_CONF_DISPLAY | HEADER_CONF_SIZE},
     {TK_OPTION_CUSTOM, "-arrowpady", (char *) NULL, (char *) NULL,
-     (char *) NULL, Tk_Offset(ElementHeader, arrowPadYObj), Tk_Offset(ElementHeader, arrowPadY),
+     (char *) NULL, offsetof(ElementHeader, arrowPadYObj), offsetof(ElementHeader, arrowPadY),
      TK_OPTION_NULL_OK, (ClientData) &TreeCtrlCO_pad, HEADER_CONF_DISPLAY | HEADER_CONF_SIZE},
     {TK_OPTION_CUSTOM, "-arrowside", (char *) NULL, (char *) NULL,
-     (char *) NULL, -1, Tk_Offset(ElementHeader, arrowSide), TK_OPTION_NULL_OK,
+     (char *) NULL, -1, offsetof(ElementHeader, arrowSide), TK_OPTION_NULL_OK,
      (ClientData) NULL, HEADER_CONF_DISPLAY | HEADER_CONF_SIZE},
     {TK_OPTION_CUSTOM, "-background", (char *) NULL, (char *) NULL,
      (char *) NULL,
-     Tk_Offset(ElementHeader, border.obj), Tk_Offset(ElementHeader, border),
+     offsetof(ElementHeader, border.obj), offsetof(ElementHeader, border),
      TK_OPTION_NULL_OK, (ClientData) NULL, HEADER_CONF_DISPLAY},
     {TK_OPTION_PIXELS, "-borderwidth", (char *) NULL, (char *) NULL,
-     (char *) NULL, Tk_Offset(ElementHeader, borderWidthObj),
-     Tk_Offset(ElementHeader, borderWidth),
+     (char *) NULL, offsetof(ElementHeader, borderWidthObj),
+     offsetof(ElementHeader, borderWidth),
      TK_OPTION_NULL_OK, (ClientData) NULL, HEADER_CONF_SIZE | HEADER_CONF_DISPLAY},
     {TK_OPTION_CUSTOM, "-state", (char *) NULL, (char *) NULL,
-     (char *) NULL, -1, Tk_Offset(ElementHeader, state), TK_OPTION_NULL_OK,
+     (char *) NULL, -1, offsetof(ElementHeader, state), TK_OPTION_NULL_OK,
      (ClientData) NULL, HEADER_CONF_DISPLAY},
     {TK_OPTION_END, (char *) NULL, (char *) NULL, (char *) NULL,
      (char *) NULL, 0, -1, 0, (ClientData) NULL, 0}
@@ -2357,7 +2357,7 @@ static int ActualProcHeader(TreeElementArgs *args)
     TreeCtrl *tree = args->tree;
     ElementHeader *elemX = (ElementHeader *) args->elem;
     ElementHeader *masterX = (ElementHeader *) args->elem->master;
-    static CONST char *optionName[] = {
+    static const char *optionName[] = {
 	"-arrowbitmap",
 	"-arrowimage",
 	"-background",
@@ -2483,21 +2483,21 @@ typedef struct ElementImageSize
 static Tk_OptionSpec imageOptionSpecs[] = {
 #ifdef DEPRECATED
     {TK_OPTION_CUSTOM, "-draw", (char *) NULL, (char *) NULL,
-     (char *) NULL, -1, Tk_Offset(TreeElement_, options),
+     (char *) NULL, -1, offsetof(TreeElement_, options),
      TK_OPTION_NULL_OK, (ClientData) NULL, IMAGE_CONF_DRAW},
 #endif
     {TK_OPTION_CUSTOM, "-height", (char *) NULL, (char *) NULL,
-     (char *) NULL, -1, Tk_Offset(TreeElement_, options),
+     (char *) NULL, -1, offsetof(TreeElement_, options),
      TK_OPTION_NULL_OK, (ClientData) NULL, IMAGE_CONF_SIZE},
     {TK_OPTION_CUSTOM, "-image", (char *) NULL, (char *) NULL,
      (char *) NULL,
-     Tk_Offset(ElementImage, image.obj), Tk_Offset(ElementImage, image),
+     offsetof(ElementImage, image.obj), offsetof(ElementImage, image),
      TK_OPTION_NULL_OK, (ClientData) NULL, IMAGE_CONF_IMAGE},
     {TK_OPTION_CUSTOM, "-tiled", (char *) NULL, (char *) NULL,
-     (char *) NULL, -1, Tk_Offset(TreeElement_, options),
+     (char *) NULL, -1, offsetof(TreeElement_, options),
      TK_OPTION_NULL_OK, (ClientData) NULL, IMAGE_CONF_DISPLAY},
     {TK_OPTION_CUSTOM, "-width", (char *) NULL, (char *) NULL,
-     (char *) NULL, -1, Tk_Offset(TreeElement_, options),
+     (char *) NULL, -1, offsetof(TreeElement_, options),
      TK_OPTION_NULL_OK, (ClientData) NULL, IMAGE_CONF_SIZE},
     {TK_OPTION_END, (char *) NULL, (char *) NULL, (char *) NULL,
      (char *) NULL, 0, -1, 0, (ClientData) NULL, 0}
@@ -2745,7 +2745,7 @@ static int ActualProcImage(TreeElementArgs *args)
     TreeCtrl *tree = args->tree;
     ElementImage *elemX = (ElementImage *) args->elem;
     ElementImage *masterX = (ElementImage *) args->elem->master;
-    static CONST char *optionName[] = {
+    static const char *optionName[] = {
 #ifdef DEPRECATED
 	"-draw",
 #endif
@@ -2839,42 +2839,42 @@ static Tk_OptionSpec rectOptionSpecs[] = {
 #ifdef DEPRECATED
     {TK_OPTION_CUSTOM, "-draw", (char *) NULL, (char *) NULL,
      (char *) NULL,
-     Tk_Offset(ElementRect, draw.obj), Tk_Offset(ElementRect, draw),
+     offsetof(ElementRect, draw.obj), offsetof(ElementRect, draw),
      TK_OPTION_NULL_OK, (ClientData) NULL, RECT_CONF_DRAW},
 #endif
     {TK_OPTION_CUSTOM, "-fill", (char *) NULL, (char *) NULL,
      (char *) NULL,
-     Tk_Offset(ElementRect, fill.obj), Tk_Offset(ElementRect, fill),
+     offsetof(ElementRect, fill.obj), offsetof(ElementRect, fill),
      TK_OPTION_NULL_OK, (ClientData) NULL, RECT_CONF_FILL},
     {TK_OPTION_PIXELS, "-height", (char *) NULL, (char *) NULL,
-     (char *) NULL, Tk_Offset(ElementRect, heightObj),
-     Tk_Offset(ElementRect, height),
+     (char *) NULL, offsetof(ElementRect, heightObj),
+     offsetof(ElementRect, height),
      TK_OPTION_NULL_OK, (ClientData) NULL, RECT_CONF_SIZE},
     {TK_OPTION_CUSTOM, "-open", (char *) NULL, (char *) NULL, (char *) NULL,
-     Tk_Offset(ElementRect, open.obj), Tk_Offset(ElementRect, open),
+     offsetof(ElementRect, open.obj), offsetof(ElementRect, open),
      TK_OPTION_NULL_OK, (ClientData) NULL, RECT_CONF_OPEN},
     {TK_OPTION_CUSTOM, "-outline", (char *) NULL, (char *) NULL,
      (char *) NULL,
-     Tk_Offset(ElementRect, outline.obj), Tk_Offset(ElementRect, outline),
+     offsetof(ElementRect, outline.obj), offsetof(ElementRect, outline),
      TK_OPTION_NULL_OK, (ClientData) NULL, RECT_CONF_OUTLINE},
     {TK_OPTION_PIXELS, "-outlinewidth", (char *) NULL, (char *) NULL,
-     (char *) NULL, Tk_Offset(ElementRect, outlineWidthObj),
-     Tk_Offset(ElementRect, outlineWidth),
+     (char *) NULL, offsetof(ElementRect, outlineWidthObj),
+     offsetof(ElementRect, outlineWidth),
      TK_OPTION_NULL_OK, (ClientData) NULL, RECT_CONF_OUTWIDTH},
     {TK_OPTION_PIXELS, "-rx", (char *) NULL, (char *) NULL,
-     (char *) NULL, Tk_Offset(ElementRect, rxObj),
-     Tk_Offset(ElementRect, rx),
+     (char *) NULL, offsetof(ElementRect, rxObj),
+     offsetof(ElementRect, rx),
      TK_OPTION_NULL_OK, (ClientData) NULL, RECT_CONF_RADIUS},
     {TK_OPTION_PIXELS, "-ry", (char *) NULL, (char *) NULL,
-     (char *) NULL, Tk_Offset(ElementRect, ryObj),
-     Tk_Offset(ElementRect, ry),
+     (char *) NULL, offsetof(ElementRect, ryObj),
+     offsetof(ElementRect, ry),
      TK_OPTION_NULL_OK, (ClientData) NULL, RECT_CONF_RADIUS},
     {TK_OPTION_CUSTOM, "-showfocus", (char *) NULL, (char *) NULL,
-     (char *) NULL, -1, Tk_Offset(ElementRect, showFocus),
+     (char *) NULL, -1, offsetof(ElementRect, showFocus),
      TK_OPTION_NULL_OK, (ClientData) &booleanCO, RECT_CONF_FOCUS},
     {TK_OPTION_PIXELS, "-width", (char *) NULL, (char *) NULL,
-     (char *) NULL, Tk_Offset(ElementRect, widthObj),
-     Tk_Offset(ElementRect, width),
+     (char *) NULL, offsetof(ElementRect, widthObj),
+     offsetof(ElementRect, width),
      TK_OPTION_NULL_OK, (ClientData) NULL, RECT_CONF_SIZE},
     {TK_OPTION_END, (char *) NULL, (char *) NULL, (char *) NULL,
      (char *) NULL, 0, -1, 0, (ClientData) NULL, 0}
@@ -3196,7 +3196,7 @@ static int ActualProcRect(TreeElementArgs *args)
     TreeCtrl *tree = args->tree;
     ElementRect *elemX = (ElementRect *) args->elem;
     ElementRect *masterX = (ElementRect *) args->elem->master;
-    static CONST char *optionName[] = {
+    static const char *optionName[] = {
 #ifdef DEPRECATED
 	"-draw",
 #endif
@@ -3396,66 +3396,66 @@ ElementTextLayoutInit(
     etl->elidePos = -1;
 }
 
-static CONST char *textDataTypeST[] = { "double", "integer", "long", "string",
+static const char *textDataTypeST[] = { "double", "integer", "long", "string",
 					"time", (char *) NULL };
-static CONST char *textElideST[] = { "start", "middle", "end", (char *) NULL };
-static CONST char *textJustifyST[] = { "left", "right", "center", (char *) NULL };
-static CONST char *textWrapST[] = { "char", "none", "word", (char *) NULL };
+static const char *textElideST[] = { "start", "middle", "end", (char *) NULL };
+static const char *textJustifyST[] = { "left", "right", "center", (char *) NULL };
+static const char *textWrapST[] = { "char", "none", "word", (char *) NULL };
 
 static Tk_OptionSpec textOptionSpecs[] = {
     {TK_OPTION_CUSTOM, "-data", (char *) NULL, (char *) NULL,
-     (char *) NULL, -1, Tk_Offset(TreeElement_, options),
+     (char *) NULL, -1, offsetof(TreeElement_, options),
      TK_OPTION_NULL_OK, (ClientData) NULL, TEXT_CONF_STRINGREP},
     {TK_OPTION_CUSTOM, "-datatype", (char *) NULL, (char *) NULL,
-     (char *) NULL, -1, Tk_Offset(TreeElement_, options),
+     (char *) NULL, -1, offsetof(TreeElement_, options),
      TK_OPTION_NULL_OK, (ClientData) NULL, TEXT_CONF_STRINGREP},
 #ifdef DEPRECATED
     {TK_OPTION_CUSTOM, "-draw", (char *) NULL, (char *) NULL,
-     (char *) NULL, -1, Tk_Offset(TreeElement_, options),
+     (char *) NULL, -1, offsetof(TreeElement_, options),
      TK_OPTION_NULL_OK, (ClientData) NULL, TEXT_CONF_DISPLAY},
 #endif
     {TK_OPTION_CUSTOM, "-elidepos", (char *) NULL, (char *) NULL,
-     (char *) NULL, -1, Tk_Offset(TreeElement_, options),
+     (char *) NULL, -1, offsetof(TreeElement_, options),
      TK_OPTION_NULL_OK, (ClientData) NULL, TEXT_CONF_LAYOUT},
     {TK_OPTION_CUSTOM, "-fill", (char *) NULL, (char *) NULL,
-     (char *) NULL, -1, Tk_Offset(TreeElement_, options),
+     (char *) NULL, -1, offsetof(TreeElement_, options),
      TK_OPTION_NULL_OK, (ClientData) NULL,  TEXT_CONF_DISPLAY},
     {TK_OPTION_CUSTOM, "-font", (char *) NULL, (char *) NULL,
-     (char *) NULL, -1, Tk_Offset(TreeElement_, options),
+     (char *) NULL, -1, offsetof(TreeElement_, options),
      TK_OPTION_NULL_OK, (ClientData) NULL, TEXT_CONF_LAYOUT},
     {TK_OPTION_CUSTOM, "-format", (char *) NULL, (char *) NULL,
-     (char *) NULL, -1, Tk_Offset(TreeElement_, options),
+     (char *) NULL, -1, offsetof(TreeElement_, options),
      TK_OPTION_NULL_OK, (ClientData) NULL, TEXT_CONF_STRINGREP},
     {TK_OPTION_CUSTOM, "-justify", (char *) NULL, (char *) NULL,
-     (char *) NULL, -1, Tk_Offset(TreeElement_, options),
+     (char *) NULL, -1, offsetof(TreeElement_, options),
      TK_OPTION_NULL_OK, (ClientData) NULL, TEXT_CONF_LAYOUT},
     {TK_OPTION_CUSTOM, "-lines", (char *) NULL, (char *) NULL,
-     (char *) NULL, -1, Tk_Offset(TreeElement_, options),
+     (char *) NULL, -1, offsetof(TreeElement_, options),
      TK_OPTION_NULL_OK, (ClientData) NULL, TEXT_CONF_LAYOUT},
     {TK_OPTION_CUSTOM, "-lmargin1", (char *) NULL, (char *) NULL,
-     (char *) NULL, -1, Tk_Offset(TreeElement_, options),
+     (char *) NULL, -1, offsetof(TreeElement_, options),
      TK_OPTION_NULL_OK, (ClientData) NULL, TEXT_CONF_LAYOUT},
     {TK_OPTION_CUSTOM, "-lmargin2", (char *) NULL, (char *) NULL,
-     (char *) NULL, -1, Tk_Offset(TreeElement_, options),
+     (char *) NULL, -1, offsetof(TreeElement_, options),
      TK_OPTION_NULL_OK, (ClientData) NULL, TEXT_CONF_LAYOUT},
     {TK_OPTION_STRING, "-text", (char *) NULL, (char *) NULL,
-     (char *) NULL, -1, Tk_Offset(ElementText, textCfg),
+     (char *) NULL, -1, offsetof(ElementText, textCfg),
      TK_OPTION_NULL_OK, (ClientData) NULL, TEXT_CONF_STRINGREP},
 #ifdef TEXTVAR
     {TK_OPTION_CUSTOM, "-textvariable", (char *) NULL, (char *) NULL,
-     (char *) NULL, -1, Tk_Offset(TreeElement_, options),
+     (char *) NULL, -1, offsetof(TreeElement_, options),
      TK_OPTION_NULL_OK, (ClientData) NULL, TEXT_CONF_STRINGREP | TEXT_CONF_TEXTVAR},
 #endif
 #ifdef TEXT_STYLE
     {TK_OPTION_CUSTOM, "-underline", (char *) NULL, (char *) NULL,
-     (char *) NULL, -1, Tk_Offset(TreeElement_, options),
+     (char *) NULL, -1, offsetof(TreeElement_, options),
      TK_OPTION_NULL_OK, (ClientData) NULL, TEXT_CONF_DISPLAY},
 #endif
     {TK_OPTION_CUSTOM, "-width", (char *) NULL, (char *) NULL,
-     (char *) NULL, -1, Tk_Offset(TreeElement_, options),
+     (char *) NULL, -1, offsetof(TreeElement_, options),
      TK_OPTION_NULL_OK, (ClientData) NULL, TEXT_CONF_LAYOUT},
     {TK_OPTION_CUSTOM, "-wrap", (char *) NULL, (char *) NULL,
-     (char *) NULL, -1, Tk_Offset(TreeElement_, options),
+     (char *) NULL, -1, offsetof(TreeElement_, options),
      TK_OPTION_NULL_OK, (ClientData) NULL, TEXT_CONF_LAYOUT},
     {TK_OPTION_END, (char *) NULL, (char *) NULL, (char *) NULL,
      (char *) NULL, 0, -1, 0, 0, 0}
@@ -3644,7 +3644,7 @@ static void TextUpdateStringRep(TreeElementArgs *args)
 		    resultObj = Tcl_GetObjResult(tree->interp);
 		break;
 	    default:
-		panic("unknown ElementText dataType");
+		Tcl_Panic("unknown ElementText dataType");
 		break;
 	}
 
@@ -3834,7 +3834,7 @@ static void TextTraceUnset(Tcl_Interp *interp, ElementText *elemX)
 }
 
 static char *VarTraceProc_Text(ClientData clientData, Tcl_Interp *interp,
-    CONST char *name1, CONST char *name2, int flags)
+    const char *name1, const char *name2, int flags)
 {
     ElementText *elemX = (ElementText *) clientData;
     ElementTextVar *etv = DynamicOption_FindData(elemX->header.options,
@@ -3848,7 +3848,7 @@ static char *VarTraceProc_Text(ClientData clientData, Tcl_Interp *interp,
      */
 
     if (flags & TCL_TRACE_UNSETS) {
-	if ((flags & TCL_TRACE_DESTROYED) && !(flags & TCL_INTERP_DESTROYED)) {
+	if ((flags & TCL_TRACE_DESTROYED) && !Tcl_InterpDeleted(interp)) {
 	    /* Use the current string if it is valid. */
 	    if (elemX->textLen > 0) {
 		valueObj = Tcl_NewStringObj(elemX->text, elemX->textLen);
@@ -4269,8 +4269,8 @@ static void DisplayProcText(TreeElementArgs *args)
 		tkfont, buf, bufLen, x, y + fm.ascent);
 #ifdef TEXT_STYLE
 	if (underline >= 0 && underline <= elideStart) {
-	    CONST char *fstBytePtr = Tcl_UtfAtIndex(buf, underline);
-	    CONST char *sndBytePtr = Tcl_UtfNext(fstBytePtr);
+	    const char *fstBytePtr = Tcl_UtfAtIndex(buf, underline);
+	    const char *sndBytePtr = Tcl_UtfNext(fstBytePtr);
 	    Tk_UnderlineChars(tree->display, args->display.drawable, gc,
 		    tkfont, buf, x, y + fm.ascent,
 		    (int) (fstBytePtr - buf), (int) (sndBytePtr - buf));
@@ -4279,8 +4279,8 @@ static void DisplayProcText(TreeElementArgs *args)
 		underline += strlen(ellipsis); /* chars added before elideEnd */
 	    underline -= elideEnd - MAX(-1, elideStart) - 1; /* chars removed before elideEnd*/
 	    {
-		CONST char *fstBytePtr = Tcl_UtfAtIndex(buf, underline);
-		CONST char *sndBytePtr = Tcl_UtfNext(fstBytePtr);
+		const char *fstBytePtr = Tcl_UtfAtIndex(buf, underline);
+		const char *sndBytePtr = Tcl_UtfNext(fstBytePtr);
 		Tk_UnderlineChars(tree->display, args->display.drawable, gc,
 			tkfont, buf, x, y + fm.ascent,
 			(int) (fstBytePtr - buf), (int) (sndBytePtr - buf));
@@ -4558,7 +4558,7 @@ static int ActualProcText(TreeElementArgs *args)
     TreeCtrl *tree = args->tree;
 /*    ElementText *elemX = (ElementText *) args->elem;
     ElementText *masterX = (ElementText *) args->elem->master;*/
-    static CONST char *optionName[] = {
+    static const char *optionName[] = {
 #ifdef DEPRECATED
 	"-draw",
 #endif
@@ -4656,20 +4656,20 @@ struct ElementWindow
 static Tk_OptionSpec windowOptionSpecs[] = {
 #ifdef CLIP_WINDOW
     {TK_OPTION_CUSTOM, "-clip", (char *) NULL, (char *) NULL,
-     (char *) NULL, -1, Tk_Offset(ElementWindow, clip),
+     (char *) NULL, -1, offsetof(ElementWindow, clip),
      TK_OPTION_NULL_OK, (ClientData) &booleanCO, 0},
 #endif
     {TK_OPTION_CUSTOM, "-destroy", (char *) NULL, (char *) NULL,
-     (char *) NULL, -1, Tk_Offset(ElementWindow, destroy),
+     (char *) NULL, -1, offsetof(ElementWindow, destroy),
      TK_OPTION_NULL_OK, (ClientData) &booleanCO, 0},
 #ifdef DEPRECATED
     {TK_OPTION_CUSTOM, "-draw", (char *) NULL, (char *) NULL,
      (char *) NULL,
-     Tk_Offset(ElementWindow, draw.obj), Tk_Offset(ElementWindow, draw),
+     offsetof(ElementWindow, draw.obj), offsetof(ElementWindow, draw),
      TK_OPTION_NULL_OK, (ClientData) NULL, EWIN_CONF_DRAW},
 #endif
     {TK_OPTION_WINDOW, "-window", (char *) NULL, (char *) NULL,
-     (char *) NULL, -1, Tk_Offset(ElementWindow, tkwin),
+     (char *) NULL, -1, offsetof(ElementWindow, tkwin),
      TK_OPTION_NULL_OK, (ClientData) NULL, EWIN_CONF_WINDOW},
     {TK_OPTION_END, (char *) NULL, (char *) NULL, (char *) NULL,
      (char *) NULL, 0, -1, 0, (ClientData) NULL, 0}
@@ -5177,7 +5177,7 @@ static int ActualProcWindow(TreeElementArgs *args)
     TreeCtrl *tree = args->tree;
     ElementWindow *elemX = (ElementWindow *) args->elem;
     ElementWindow *masterX = (ElementWindow *) args->elem->master;
-    static CONST char *optionName[] = {
+    static const char *optionName[] = {
 	"-draw",
 	(char *) NULL };
     int index, match, matchM;
@@ -5508,7 +5508,7 @@ TreeElement_InitInterp(
 #ifdef DEPRECATED
     DynamicCO_Init(treeElemTypeImage.optionSpecs, "-draw",
 	1002, sizeof(PerStateInfo),
-	Tk_Offset(PerStateInfo, obj),
+	offsetof(PerStateInfo, obj),
 	0, PerStateCO_Alloc("-draw", &pstBoolean, TreeStateFromObj),
 	(DynamicOptionInitProc *) NULL);
 #endif
@@ -5518,13 +5518,13 @@ TreeElement_InitInterp(
     /* 2 options in the same structure. */
     DynamicCO_Init(treeElemTypeImage.optionSpecs, "-height",
 	1001, sizeof(ElementImageSize),
-	Tk_Offset(ElementImageSize, heightObj),
-	Tk_Offset(ElementImageSize, height), &TreeCtrlCO_pixels,
+	offsetof(ElementImageSize, heightObj),
+	offsetof(ElementImageSize, height), &TreeCtrlCO_pixels,
 	(DynamicOptionInitProc *) NULL);
     DynamicCO_Init(treeElemTypeImage.optionSpecs, "-width",
 	1001, sizeof(ElementImageSize),
-	Tk_Offset(ElementImageSize, widthObj),
-	Tk_Offset(ElementImageSize, width), &TreeCtrlCO_pixels,
+	offsetof(ElementImageSize, widthObj),
+	offsetof(ElementImageSize, width), &TreeCtrlCO_pixels,
 	(DynamicOptionInitProc *) NULL);
 
     DynamicCO_Init(treeElemTypeImage.optionSpecs, "-tiled",
@@ -5553,18 +5553,18 @@ TreeElement_InitInterp(
     /* 3 options in the same structure. */
     DynamicCO_Init(treeElemTypeText.optionSpecs, "-data",
 	DOID_TEXT_DATA, sizeof(ElementTextData),
-	Tk_Offset(ElementTextData, dataObj),
+	offsetof(ElementTextData, dataObj),
 	-1, &TreeCtrlCO_string,
 	ElementTextDataInit);
     DynamicCO_Init(treeElemTypeText.optionSpecs, "-datatype",
 	DOID_TEXT_DATA, sizeof(ElementTextData),
 	-1,
-	Tk_Offset(ElementTextData, dataType),
+	offsetof(ElementTextData, dataType),
 	StringTableCO_Alloc("-datatype", textDataTypeST),
 	ElementTextDataInit);
     DynamicCO_Init(treeElemTypeText.optionSpecs, "-format",
 	DOID_TEXT_DATA, sizeof(ElementTextData),
-	Tk_Offset(ElementTextData, formatObj),
+	offsetof(ElementTextData, formatObj),
 	-1, &TreeCtrlCO_string,
 	ElementTextDataInit);
 
@@ -5572,13 +5572,13 @@ TreeElement_InitInterp(
     DynamicCO_Init(treeElemTypeText.optionSpecs, "-justify",
 	DOID_TEXT_LAYOUT, sizeof(ElementTextLayout),
 	-1,
-	Tk_Offset(ElementTextLayout, justify),
+	offsetof(ElementTextLayout, justify),
 	StringTableCO_Alloc("-justify", textJustifyST),
 	ElementTextLayoutInit);
     DynamicCO_Init(treeElemTypeText.optionSpecs, "-lines",
 	DOID_TEXT_LAYOUT, sizeof(ElementTextLayout),
 	-1,
-	Tk_Offset(ElementTextLayout, lines),
+	offsetof(ElementTextLayout, lines),
 	IntegerCO_Alloc("-lines",
 	    0,		/* min */
 	    0,		/* max (ignored) */
@@ -5587,43 +5587,43 @@ TreeElement_InitInterp(
 	ElementTextLayoutInit);
     DynamicCO_Init(treeElemTypeText.optionSpecs, "-width",
 	DOID_TEXT_LAYOUT, sizeof(ElementTextLayout),
-	Tk_Offset(ElementTextLayout, widthObj),
-	Tk_Offset(ElementTextLayout, width), &TreeCtrlCO_pixels,
+	offsetof(ElementTextLayout, widthObj),
+	offsetof(ElementTextLayout, width), &TreeCtrlCO_pixels,
 	ElementTextLayoutInit);
     DynamicCO_Init(treeElemTypeText.optionSpecs, "-wrap",
 	DOID_TEXT_LAYOUT, sizeof(ElementTextLayout),
 	-1,
-	Tk_Offset(ElementTextLayout, wrap),
+	offsetof(ElementTextLayout, wrap),
 	StringTableCO_Alloc("-wrap", textWrapST),
 	ElementTextLayoutInit);
     DynamicCO_Init(treeElemTypeText.optionSpecs, "-elidepos",
 	DOID_TEXT_LAYOUT, sizeof(ElementTextLayout),
 	-1,
-	Tk_Offset(ElementTextLayout, elidePos),
+	offsetof(ElementTextLayout, elidePos),
 	StringTableCO_Alloc("-elidepos", textElideST),
 	ElementTextLayoutInit);
 
 #ifdef DEPRECATED
     DynamicCO_Init(treeElemTypeText.optionSpecs, "-draw",
 	DOID_TEXT_DRAW, sizeof(PerStateInfo),
-	Tk_Offset(PerStateInfo, obj),
+	offsetof(PerStateInfo, obj),
 	0, PerStateCO_Alloc("-draw", &pstBoolean, TreeStateFromObj),
 	(DynamicOptionInitProc *) NULL);
 #endif
     DynamicCO_Init(treeElemTypeText.optionSpecs, "-fill",
 	DOID_TEXT_FILL, sizeof(PerStateInfo),
-	Tk_Offset(PerStateInfo, obj),
+	offsetof(PerStateInfo, obj),
 	0, PerStateCO_Alloc("-fill", &pstColor, TreeStateFromObj),
 	(DynamicOptionInitProc *) NULL);
     DynamicCO_Init(treeElemTypeText.optionSpecs, "-font",
 	DOID_TEXT_FONT, sizeof(PerStateInfo),
-	Tk_Offset(PerStateInfo, obj),
+	offsetof(PerStateInfo, obj),
 	0, PerStateCO_Alloc("-font", &pstFont, TreeStateFromObj),
 	(DynamicOptionInitProc *) NULL);
 #ifdef TEXTVAR
     DynamicCO_Init(treeElemTypeText.optionSpecs, "-textvariable",
 	DOID_TEXT_VAR, sizeof(ElementTextVar),
-	Tk_Offset(struct ElementTextVar, varNameObj),
+	offsetof(struct ElementTextVar, varNameObj),
 	-1, &TreeCtrlCO_string,
 	(DynamicOptionInitProc *) NULL);
 #endif
@@ -5632,7 +5632,7 @@ TreeElement_InitInterp(
     DynamicCO_Init(treeElemTypeText.optionSpecs, "-underline",
 	DOID_TEXT_STYLE, sizeof(ElementTextStyle),
 	-1,
-	Tk_Offset(ElementTextStyle, underline),
+	offsetof(ElementTextStyle, underline),
 	IntegerCO_Alloc("-underline",
 	    0,		/* min (ignored) */
 	    0,		/* max (ignored) */
@@ -5644,13 +5644,13 @@ TreeElement_InitInterp(
     /* 2 options in the same structure */
     DynamicCO_Init(treeElemTypeText.optionSpecs, "-lmargin1",
 	DOID_TEXT_LAYOUT3, sizeof(ElementTextLayout3),
-	Tk_Offset(ElementTextLayout3, lMargin1Obj),
-	Tk_Offset(ElementTextLayout3, lMargin1), &TreeCtrlCO_pixels,
+	offsetof(ElementTextLayout3, lMargin1Obj),
+	offsetof(ElementTextLayout3, lMargin1), &TreeCtrlCO_pixels,
 	(DynamicOptionInitProc *) NULL);
     DynamicCO_Init(treeElemTypeText.optionSpecs, "-lmargin2",
 	DOID_TEXT_LAYOUT3, sizeof(ElementTextLayout3),
-	Tk_Offset(ElementTextLayout3, lMargin2Obj),
-	Tk_Offset(ElementTextLayout3, lMargin2), &TreeCtrlCO_pixels,
+	offsetof(ElementTextLayout3, lMargin2Obj),
+	offsetof(ElementTextLayout3, lMargin2), &TreeCtrlCO_pixels,
 	(DynamicOptionInitProc *) NULL);
 
     /*

@@ -72,19 +72,19 @@ MODULE_SCOPE void QE_ExpandDetail(QE_BindingTable bindingTable, int event, int d
 MODULE_SCOPE void QE_ExpandPattern(QE_BindingTable bindingTable, int eventType, int detail, Tcl_DString *result);
 MODULE_SCOPE void QE_ExpandUnknown(char which, Tcl_DString *result);
 MODULE_SCOPE int QE_BindCmd(QE_BindingTable bindingTable, int objOffset, int objc,
-	Tcl_Obj *CONST objv[]);
+	Tcl_Obj *const objv[]);
 MODULE_SCOPE int QE_ConfigureCmd(QE_BindingTable bindingTable, int objOffset, int objc,
-	Tcl_Obj *CONST objv[]);
+	Tcl_Obj *const objv[]);
 MODULE_SCOPE int QE_GenerateCmd(QE_BindingTable bindingTable, int objOffset, int objc,
-	Tcl_Obj *CONST objv[]);
+	Tcl_Obj *const objv[]);
 MODULE_SCOPE int QE_InstallCmd(QE_BindingTable bindingTable, int objOffset, int objc,
-	Tcl_Obj *CONST objv[]);
+	Tcl_Obj *const objv[]);
 MODULE_SCOPE int QE_UnbindCmd(QE_BindingTable bindingTable, int objOffset, int objc,
-	Tcl_Obj *CONST objv[]);
+	Tcl_Obj *const objv[]);
 MODULE_SCOPE int QE_UninstallCmd(QE_BindingTable bindingTable, int objOffset, int objc,
-	Tcl_Obj *CONST objv[]);
+	Tcl_Obj *const objv[]);
 MODULE_SCOPE int QE_LinkageCmd(QE_BindingTable bindingTable, int objOffset, int objc,
-	Tcl_Obj *CONST objv[]);
+	Tcl_Obj *const objv[]);
 
 #endif /* INCLUDED_QEBIND_H */
 

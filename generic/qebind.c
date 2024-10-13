@@ -1535,10 +1535,10 @@ void QE_ExpandPattern(QE_BindingTable bindingTable, int eventType, int detail, T
 }
 
 int QE_BindCmd(QE_BindingTable bindingTable, int objOffset, int objc,
-	Tcl_Obj *CONST objv[])
+	Tcl_Obj *const  objv[])
 {
 	int objC = objc - objOffset;
-	Tcl_Obj *CONST *objV = objv + objOffset;
+	Tcl_Obj *const  *objV = objv + objOffset;
 	BindingTable *bindPtr = (BindingTable *) bindingTable;
 	Tk_Window tkwin = Tk_MainWindow(bindPtr->interp);
 	ClientData object;
@@ -1607,10 +1607,10 @@ int QE_BindCmd(QE_BindingTable bindingTable, int objOffset, int objc,
 }
 
 int QE_UnbindCmd(QE_BindingTable bindingTable, int objOffset, int objc,
-	Tcl_Obj *CONST objv[])
+	Tcl_Obj *const  objv[])
 {
 	int objC = objc - objOffset;
-	Tcl_Obj *CONST *objV = objv + objOffset;
+	Tcl_Obj *const  *objV = objv + objOffset;
 	BindingTable *bindPtr = (BindingTable *) bindingTable;
 	Tk_Window tkwin = Tk_MainWindow(bindPtr->interp);
 	ClientData object;
@@ -1658,10 +1658,10 @@ int QE_UnbindCmd(QE_BindingTable bindingTable, int objOffset, int objc,
 
 int
 QE_GenerateCmd(QE_BindingTable bindingTable, int objOffset, int objc,
-	Tcl_Obj *CONST objv[])
+	Tcl_Obj *const  objv[])
 {
 	int objC = objc - objOffset;
-	Tcl_Obj *CONST *objV = objv + objOffset;
+	Tcl_Obj *const  *objV = objv + objOffset;
 	BindingTable *bindPtr = (BindingTable *) bindingTable;
 	QE_Event fakeEvent;
 	EventInfo *eiPtr;
@@ -1669,7 +1669,7 @@ QE_GenerateCmd(QE_BindingTable bindingTable, int objOffset, int objc,
 	GenerateData genData;
 	GenerateField *fieldPtr;
 	char *p, *t;
-	int listObjc;
+	Tcl_Size listObjc;
 	int i;
 	Tcl_Obj **listObjv;
 	Pattern pats;
@@ -1719,7 +1719,7 @@ QE_GenerateCmd(QE_BindingTable bindingTable, int objOffset, int objc,
 
 		while (listObjc > 1)
 		{
-			int length;
+			Tcl_Size length;
 
 			t = Tcl_GetStringFromObj(listObjv[0], &length);
 			if (length != 1)
@@ -1780,15 +1780,15 @@ done:
 
 int
 QE_ConfigureCmd(QE_BindingTable bindingTable, int objOffset, int objc,
-	Tcl_Obj *CONST objv[])
+	Tcl_Obj *const  objv[])
 {
 	int objC = objc - objOffset;
-	Tcl_Obj *CONST *objV = objv + objOffset;
+	Tcl_Obj *const  *objV = objv + objOffset;
 	BindingTable *bindPtr = (BindingTable *) bindingTable;
 	Tcl_Interp *interp = bindPtr->interp;
 	Tk_Window tkwin = Tk_MainWindow(interp);
-	static CONST char *configSwitch[] = {"-active", NULL};
-	Tcl_Obj *CONST *objPtr;
+	static const  char *configSwitch[] = {"-active", NULL};
+	Tcl_Obj *const  *objPtr;
 	BindValue *valuePtr;
 	char *t, *eventString;
 	int index;
@@ -1906,7 +1906,8 @@ static void Percents_Command(QE_ExpandArgs *args)
 	EventInfo *eiPtr = data->eventPtr;
 	Detail *dPtr = data->detailPtr;
 	Tcl_DString command;
-	Tcl_SavedResult state;
+//	Tcl_SavedResult state;
+	Tcl_InterpState state;
 	int i;
 
 	Tcl_DStringInit(&command);
@@ -1935,7 +1936,8 @@ static void Percents_Command(QE_ExpandArgs *args)
 	}
 
 	Tcl_DStringEndSublist(&command);
-	Tcl_SaveResult(interp, &state);
+//	Tcl_SaveResult(interp, &state);
+	state = Tcl_SaveInterpState(interp, TCL_OK);
 	if (Tcl_EvalEx(interp, Tcl_DStringValue(&command),
 		Tcl_DStringLength(&command), TCL_EVAL_GLOBAL) == TCL_OK)
 	{
@@ -1948,7 +1950,8 @@ static void Percents_Command(QE_ExpandArgs *args)
 		Tcl_AddErrorInfo(interp, "\n    (expanding percents)");
 		Tcl_BackgroundError(interp);
 	}
-	Tcl_RestoreResult(interp, &state);
+//	Tcl_RestoreResult(interp, &state);
+	Tcl_RestoreInterpState(interp, state);
 	Tcl_DStringFree(&command);
 }
 
@@ -1956,10 +1959,10 @@ static void Percents_Command(QE_ExpandArgs *args)
 
 static int
 QE_InstallCmd_New(QE_BindingTable bindingTable, int objOffset, int objc,
-	Tcl_Obj *CONST objv[])
+	Tcl_Obj *const  objv[])
 {
 	int objC = objc - objOffset;
-	Tcl_Obj *CONST *objV = objv + objOffset;
+	Tcl_Obj *const  *objV = objv + objOffset;
 	BindingTable *bindPtr = (BindingTable *) bindingTable;
 	char *pattern, *command = NULL;
 	char eventName[FIELD_SIZE], detailName[FIELD_SIZE];
@@ -2087,12 +2090,12 @@ QE_InstallCmd_New(QE_BindingTable bindingTable, int objOffset, int objc,
 
 static int
 QE_InstallCmd_Old(QE_BindingTable bindingTable, int objOffset, int objc,
-	Tcl_Obj *CONST objv[])
+	Tcl_Obj *const  objv[])
 {
 	int objC = objc - objOffset;
-	Tcl_Obj *CONST *objV = objv + objOffset;
+	Tcl_Obj *const  *objV = objv + objOffset;
 	BindingTable *bindPtr = (BindingTable *) bindingTable;
-	static CONST char *commandOption[] = {"detail", "event", NULL};
+	static const  char *commandOption[] = {"detail", "event", NULL};
 	int index;
 
 	if (objC < 2)
@@ -2209,10 +2212,10 @@ QE_InstallCmd_Old(QE_BindingTable bindingTable, int objOffset, int objc,
 
 int
 QE_InstallCmd(QE_BindingTable bindingTable, int objOffset, int objc,
-	Tcl_Obj *CONST objv[])
+	Tcl_Obj *const  objv[])
 {
 	int objC = objc - objOffset;
-	Tcl_Obj *CONST *objV = objv + objOffset;
+	Tcl_Obj *const  *objV = objv + objOffset;
 	BindingTable *bindPtr = (BindingTable *) bindingTable;
 	char *s;
 	int length;
@@ -2232,10 +2235,10 @@ QE_InstallCmd(QE_BindingTable bindingTable, int objOffset, int objc,
 
 static int
 QE_UninstallCmd_New(QE_BindingTable bindingTable, int objOffset, int objc,
-	Tcl_Obj *CONST objv[])
+	Tcl_Obj *const  objv[])
 {
 	int objC = objc - objOffset;
-	Tcl_Obj *CONST *objV = objv + objOffset;
+	Tcl_Obj *const  *objV = objv + objOffset;
 	BindingTable *bindPtr = (BindingTable *) bindingTable;
 	char *pattern;
 	Pattern pats;
@@ -2275,12 +2278,12 @@ QE_UninstallCmd_New(QE_BindingTable bindingTable, int objOffset, int objc,
 
 static int
 QE_UninstallCmd_Old(QE_BindingTable bindingTable, int objOffset, int objc,
-	Tcl_Obj *CONST objv[])
+	Tcl_Obj *const  objv[])
 {
 	int objC = objc - objOffset;
-	Tcl_Obj *CONST *objV = objv + objOffset;
+	Tcl_Obj *const  *objV = objv + objOffset;
 	BindingTable *bindPtr = (BindingTable *) bindingTable;
-	static CONST char *commandOption[] = {"detail", "event", NULL};
+	static const  char *commandOption[] = {"detail", "event", NULL};
 	int index;
 
 	if (objC < 2)
@@ -2388,10 +2391,10 @@ QE_UninstallCmd_Old(QE_BindingTable bindingTable, int objOffset, int objc,
 }
 
 int QE_UninstallCmd(QE_BindingTable bindingTable, int objOffset, int objc,
-	Tcl_Obj *CONST objv[])
+	Tcl_Obj *const  objv[])
 {
 	int objC = objc - objOffset;
-	Tcl_Obj *CONST *objV = objv + objOffset;
+	Tcl_Obj *const  *objV = objv + objOffset;
 	BindingTable *bindPtr = (BindingTable *) bindingTable;
 	char *s;
 	int length;
@@ -2411,10 +2414,10 @@ int QE_UninstallCmd(QE_BindingTable bindingTable, int objOffset, int objc,
 
 static int
 QE_LinkageCmd_New(QE_BindingTable bindingTable, int objOffset, int objc,
-	Tcl_Obj *CONST objv[])
+	Tcl_Obj *const  objv[])
 {
 	int objC = objc - objOffset;
-	Tcl_Obj *CONST *objV = objv + objOffset;
+	Tcl_Obj *const  *objV = objv + objOffset;
 	BindingTable *bindPtr = (BindingTable *) bindingTable;
 	char *pattern;
 	Pattern pats;
@@ -2445,10 +2448,10 @@ QE_LinkageCmd_New(QE_BindingTable bindingTable, int objOffset, int objc,
 
 static int
 QE_LinkageCmd_Old(QE_BindingTable bindingTable, int objOffset, int objc,
-	Tcl_Obj *CONST objv[])
+	Tcl_Obj *const  objv[])
 {
 	int objC = objc - objOffset;
-	Tcl_Obj *CONST *objV = objv + objOffset;
+	Tcl_Obj *const  *objV = objv + objOffset;
 	BindingTable *bindPtr = (BindingTable *) bindingTable;
 	char *eventName, *detailName;
 	Detail *dPtr;
@@ -2503,10 +2506,10 @@ QE_LinkageCmd_Old(QE_BindingTable bindingTable, int objOffset, int objc,
 }
 
 int QE_LinkageCmd(QE_BindingTable bindingTable, int objOffset, int objc,
-	Tcl_Obj *CONST objv[])
+	Tcl_Obj *const  objv[])
 {
 	int objC = objc - objOffset;
-	Tcl_Obj *CONST *objV = objv + objOffset;
+	Tcl_Obj *const  *objV = objv + objOffset;
 	BindingTable *bindPtr = (BindingTable *) bindingTable;
 	char *s;
 	int length;

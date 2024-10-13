@@ -59,7 +59,7 @@ test treectrl-1.8 {configure: -backgroundmode option} -body {
 
 test treectrl-1.9 {configure: invalid -buttonsize option} -body {
     .t configure -buttonsize foo
-} -returnCodes error -result {bad screen distance "foo"}
+} -returnCodes error -result {expected screen distance but got "foo"}
 
 test treectrl-1.10 {configure: -buttonsize option} -body {
     .t configure -buttonsize 1c
@@ -86,7 +86,7 @@ test treectrl-1.14 {configure: -buttonbitmap option} -body {
 
 test treectrl-1.17 {configure: invalid -buttonimage option} -body {
     .t configure -buttonimage foo
-} -returnCodes error -result {image "foo" doesn't exist}
+} -returnCodes error -result {image "foo" does not exist}
 
 test treectrl-1.18 {configure: -buttonimage option} -body {
     image create photo emptyImg
@@ -105,7 +105,7 @@ test treectrl-1.22 {configure: -doublebuffer option} -body {
 
 test treectrl-1.23 {configure: invalid -indent option} -body {
     .t configure -indent foo
-} -returnCodes error -result {bad screen distance "foo"}
+} -returnCodes error -result {expected screen distance but got "foo"}
 
 test treectrl-1.24 {configure: -indent option} -body {
     .t configure -indent 2c
@@ -114,7 +114,7 @@ test treectrl-1.24 {configure: -indent option} -body {
 
 test treectrl-1.25 {configure: invalid -itemheight option} -body {
     .t configure -itemheight foo
-} -returnCodes error -result {bad screen distance "foo"}
+} -returnCodes error -result {expected screen distance but got "foo"}
 
 test treectrl-1.26 {configure: -itemheight option} -body {
     .t configure -itemheight 18m
@@ -132,7 +132,7 @@ test treectrl-1.28 {configure: -linestyle option} -body {
 
 test treectrl-1.29 {configure: invalid -linethickness option} -body {
     .t configure -linethickness foo
-} -returnCodes error -result {bad screen distance "foo"}
+} -returnCodes error -result {expected screen distance but got "foo"}
 
 test treectrl-1.30 {configure: -linethickness option} -body {
     .t configure -linethickness 3m
@@ -859,7 +859,7 @@ test treectrl-17.1 {columnproxy: Normally left blank} -body {
 
 test treectrl-17.2 {columnproxy: Normally left blank} -body {
     .t configure -columnproxy foo
-} -returnCodes error -result {bad screen distance "foo"}
+} -returnCodes error -result {expected screen distance or "" but got "foo"}
 
 test treectrl-17.3 {columnproxy: Negative screen distance} -body {
     # It is unclear if this should be forbiden...

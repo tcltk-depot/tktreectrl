@@ -4,7 +4,7 @@
 
 set VERSION 2.4.2
 
-package require Tk 8.4
+package require Tk 8.4-
 
 set thisPlatform $::tcl_platform(platform)
 if {$thisPlatform eq "unix" && [tk windowingsystem] eq "aqua"} {
@@ -114,8 +114,8 @@ puts "demo.tcl: Tcl/Tk [info patchlevel] [winfo server .]"
 # See if treectrl is already loaded for some reason
 if {[llength [info commands treectrl]]} {
     puts "demo.tcl: using previously-loaded treectrl package v[package provide treectrl]"
-    if {![package vsatisfies [package provide treectrl] $VERSION]} {
-	puts "demo.tcl: WARNING: expected at least v$VERSION"
+    if {$VERSION ne [package provide treectrl]} {
+	puts "demo.tcl: WARNING: expected v$VERSION"
     }
 
 # For 'package require' to work with the development version, make sure the
@@ -301,7 +301,7 @@ proc MakeMenuBar {} {
     if {$::thisPlatform ne "unix" && [info commands console] ne ""} {
 	console eval {
 	    wm title . "TkTreeCtrl Console"
-	    if {[info tclversion] == 8.4} {
+	    if {[info tclversion] eq "8.4"} {
 		.console configure -font {Courier 9}
 	    }
 	    .console configure -height 8

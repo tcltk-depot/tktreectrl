@@ -43,37 +43,37 @@ typedef struct TreeImageRef {
     Tcl_HashEntry *hPtr;	/* Entry in tree->imageNameHash. */
 } TreeImageRef;
 
-static CONST char *bgModeST[] = {
+static const char *bgModeST[] = {
     "column", "order", "ordervisible", "row",
 #ifdef DEPRECATED
     "index", "visindex",
 #endif
     (char *) NULL
 };
-static CONST char *columnResizeModeST[] = {
+static const char *columnResizeModeST[] = {
     "proxy", "realtime", (char *) NULL
 };
-static CONST char *doubleBufferST[] = {
+static const char *doubleBufferST[] = {
     "none", "item", "window", (char *) NULL
 };
-static CONST char *lineStyleST[] = {
+static const char *lineStyleST[] = {
     "dot", "solid", (char *) NULL
 };
-static CONST char *orientStringTable[] = {
+static const char *orientStringTable[] = {
     "horizontal", "vertical", (char *) NULL
 };
 
 static Tk_OptionSpec optionSpecs[] = {
     {TK_OPTION_BORDER, "-background", "background", "Background",
-     "white", -1, Tk_Offset(TreeCtrl, border), 0,
+     "white", -1, offsetof(TreeCtrl, border), 0,
      (ClientData) "white", TREE_CONF_REDISPLAY},
     {TK_OPTION_STRING, "-backgroundimage", "backgroundImage", "BackgroundImage",
-      (char *) NULL, -1, Tk_Offset(TreeCtrl, backgroundImageString),
+      (char *) NULL, -1, offsetof(TreeCtrl, backgroundImageString),
       TK_OPTION_NULL_OK, (ClientData) NULL,
       TREE_CONF_BG_IMAGE | TREE_CONF_REDISPLAY},
     {TK_OPTION_STRING_TABLE, "-backgroundmode",
      "backgroundMode", "BackgroundMode",
-     "row", -1, Tk_Offset(TreeCtrl, backgroundMode),
+     "row", -1, offsetof(TreeCtrl, backgroundMode),
      0, (ClientData) bgModeST, TREE_CONF_REDISPLAY},
     {TK_OPTION_SYNONYM, "-bd", (char *) NULL, (char *) NULL,
      (char *) NULL, 0, -1, 0, (ClientData) "-borderwidth"},
@@ -82,238 +82,238 @@ static Tk_OptionSpec optionSpecs[] = {
     {TK_OPTION_SYNONYM, "-bgimage", (char *) NULL, (char *) NULL,
      (char *) NULL, 0, -1, 0, (ClientData) "-backgroundimage"},
     {TK_OPTION_ANCHOR, "-bgimageanchor", "bgImageAnchor", "BgImageAnchor",
-     "nw", -1, Tk_Offset(TreeCtrl, bgImageAnchor),
+     "nw", -1, offsetof(TreeCtrl, bgImageAnchor),
      0, (ClientData) NULL, TREE_CONF_BGIMGOPT | TREE_CONF_REDISPLAY},
     {TK_OPTION_BOOLEAN, "-bgimageopaque", "bgImageOpaque", "BgImageOpaque",
-     "1", -1, Tk_Offset(TreeCtrl, bgImageOpaque), 0, (ClientData) NULL,
+     "1", -1, offsetof(TreeCtrl, bgImageOpaque), 0, (ClientData) NULL,
      TREE_CONF_BGIMGOPT | TREE_CONF_REDISPLAY},
     {TK_OPTION_STRING, "-bgimagescroll", "bgImageScroll", "BgImageScroll",
-     "xy", Tk_Offset(TreeCtrl, bgImageScrollObj), -1,
+     "xy", offsetof(TreeCtrl, bgImageScrollObj), -1,
      0, (ClientData) NULL, TREE_CONF_BGIMGOPT | TREE_CONF_REDISPLAY},
     {TK_OPTION_STRING, "-bgimagetile", "bgImageTile", "BgImageTile",
-     "xy", Tk_Offset(TreeCtrl, bgImageTileObj), -1,
+     "xy", offsetof(TreeCtrl, bgImageTileObj), -1,
      0, (ClientData) NULL, TREE_CONF_BGIMGOPT | TREE_CONF_REDISPLAY},
     {TK_OPTION_PIXELS, "-borderwidth", "borderWidth", "BorderWidth",
-     DEF_LISTBOX_BORDER_WIDTH, Tk_Offset(TreeCtrl, borderWidthObj),
-     Tk_Offset(TreeCtrl, borderWidth),
+     DEF_LISTBOX_BORDER_WIDTH, offsetof(TreeCtrl, borderWidthObj),
+     offsetof(TreeCtrl, borderWidth),
      0, (ClientData) NULL, TREE_CONF_BORDERS | TREE_CONF_RELAYOUT},
     {TK_OPTION_CUSTOM, "-buttonbitmap", "buttonBitmap", "ButtonBitmap",
      (char *) NULL, /* DEFAULT VALUE IS INITIALIZED LATER */
-     Tk_Offset(TreeCtrl, buttonBitmap.obj), Tk_Offset(TreeCtrl, buttonBitmap),
+     offsetof(TreeCtrl, buttonBitmap.obj), offsetof(TreeCtrl, buttonBitmap),
      TK_OPTION_NULL_OK, (ClientData) NULL,
      TREE_CONF_BUTTON | TREE_CONF_BUTBMP | TREE_CONF_RELAYOUT},
     {TK_OPTION_COLOR, "-buttoncolor", "buttonColor", "ButtonColor",
-     "#808080", -1, Tk_Offset(TreeCtrl, buttonColor),
+     "#808080", -1, offsetof(TreeCtrl, buttonColor),
      0, (ClientData) NULL, TREE_CONF_BUTTON | TREE_CONF_REDISPLAY},
     {TK_OPTION_CUSTOM, "-buttonimage", "buttonImage", "ButtonImage",
      (char *) NULL, /* DEFAULT VALUE IS INITIALIZED LATER */
-     Tk_Offset(TreeCtrl, buttonImage.obj), Tk_Offset(TreeCtrl, buttonImage),
+     offsetof(TreeCtrl, buttonImage.obj), offsetof(TreeCtrl, buttonImage),
      TK_OPTION_NULL_OK, (ClientData) NULL,
      TREE_CONF_BUTTON | TREE_CONF_BUTIMG | TREE_CONF_RELAYOUT},
     {TK_OPTION_PIXELS, "-buttonsize", "buttonSize", "ButtonSize",
-     "9", Tk_Offset(TreeCtrl, buttonSizeObj),
-     Tk_Offset(TreeCtrl, buttonSize),
+     "9", offsetof(TreeCtrl, buttonSizeObj),
+     offsetof(TreeCtrl, buttonSize),
      0, (ClientData) NULL, TREE_CONF_BUTTON | TREE_CONF_RELAYOUT},
     {TK_OPTION_PIXELS, "-buttonthickness",
      "buttonThickness", "ButtonThickness",
-     "1", Tk_Offset(TreeCtrl, buttonThicknessObj),
-     Tk_Offset(TreeCtrl, buttonThickness),
+     "1", offsetof(TreeCtrl, buttonThicknessObj),
+     offsetof(TreeCtrl, buttonThickness),
      0, (ClientData) NULL, TREE_CONF_BUTTON | TREE_CONF_REDISPLAY},
     {TK_OPTION_BOOLEAN, "-buttontracking", "buttonTracking", "ButtonTracking",
      (char *) NULL, /* DEFAULT VALUE IS INITIALIZED LATER */
-     -1, Tk_Offset(TreeCtrl, buttonTracking), 0, (ClientData) NULL, 0},
+     -1, offsetof(TreeCtrl, buttonTracking), 0, (ClientData) NULL, 0},
     {TK_OPTION_CUSTOM, "-canvaspadx", "canvasPadX", "CanvasPadX",
      "0",
-     Tk_Offset(TreeCtrl, canvasPadXObj),
-     Tk_Offset(TreeCtrl, canvasPadX),
+     offsetof(TreeCtrl, canvasPadXObj),
+     offsetof(TreeCtrl, canvasPadX),
      0, (ClientData) &TreeCtrlCO_pad, TREE_CONF_RELAYOUT},
     {TK_OPTION_CUSTOM, "-canvaspady", "canvasPadY", "CanvasPadY",
      "0",
-     Tk_Offset(TreeCtrl, canvasPadYObj),
-     Tk_Offset(TreeCtrl, canvasPadY),
+     offsetof(TreeCtrl, canvasPadYObj),
+     offsetof(TreeCtrl, canvasPadY),
      0, (ClientData) &TreeCtrlCO_pad, TREE_CONF_RELAYOUT},
     {TK_OPTION_STRING, "-columnprefix", "columnPrefix", "ColumnPrefix",
-     "", -1, Tk_Offset(TreeCtrl, columnPrefix), 0, (ClientData) NULL, 0},
+     "", -1, offsetof(TreeCtrl, columnPrefix), 0, (ClientData) NULL, 0},
     {TK_OPTION_PIXELS, "-columnproxy", "columnProxy", "ColumnProxy",
-     (char *) NULL, Tk_Offset(TreeCtrl, columnProxy.xObj),
-     Tk_Offset(TreeCtrl, columnProxy.x),
+     (char *) NULL, offsetof(TreeCtrl, columnProxy.xObj),
+     offsetof(TreeCtrl, columnProxy.x),
      TK_OPTION_NULL_OK, (ClientData) NULL, TREE_CONF_PROXY},
     {TK_OPTION_STRING_TABLE, "-columnresizemode",
      "columnResizeMode", "ColumnResizeMode",
-     "realtime", -1, Tk_Offset(TreeCtrl, columnResizeMode),
+     "realtime", -1, offsetof(TreeCtrl, columnResizeMode),
      0, (ClientData) columnResizeModeST, 0},
     {TK_OPTION_BOOLEAN, "-columntagexpr", "columnTagExpr", "ColumnTagExpr",
-     "1", -1, Tk_Offset(TreeCtrl, columnTagExpr),
+     "1", -1, offsetof(TreeCtrl, columnTagExpr),
      0, (ClientData) NULL, 0},
     {TK_OPTION_CURSOR, "-cursor", "cursor", "Cursor",
-     (char *) NULL, -1, Tk_Offset(TreeCtrl, cursor),
+     (char *) NULL, -1, offsetof(TreeCtrl, cursor),
      TK_OPTION_NULL_OK, (ClientData) NULL, 0},
 #ifdef DEPRECATED
     {TK_OPTION_STRING, "-defaultstyle", "defaultStyle", "DefaultStyle",
-     (char *) NULL, Tk_Offset(TreeCtrl, defaultStyle.stylesObj), -1,
+     (char *) NULL, offsetof(TreeCtrl, defaultStyle.stylesObj), -1,
      TK_OPTION_NULL_OK, (ClientData) NULL, TREE_CONF_DEFSTYLE},
     {TK_OPTION_STRING_TABLE, "-doublebuffer", "doubleBuffer", "DoubleBuffer",
-     "item", -1, Tk_Offset(TreeCtrl, doubleBuffer),
+     "item", -1, offsetof(TreeCtrl, doubleBuffer),
      0, (ClientData) doubleBufferST, TREE_CONF_REDISPLAY},
 #endif /* DEPRECATED */
     {TK_OPTION_SYNONYM, "-fg", (char *) NULL, (char *) NULL,
      (char *) NULL, 0, -1, 0, (ClientData) "-foreground"},
     {TK_OPTION_FONT, "-font", "font", "Font",
-     DEF_LISTBOX_FONT, Tk_Offset(TreeCtrl, fontObj),
-     Tk_Offset(TreeCtrl, tkfont),
+     DEF_LISTBOX_FONT, offsetof(TreeCtrl, fontObj),
+     offsetof(TreeCtrl, tkfont),
      0, (ClientData) NULL, TREE_CONF_FONT | TREE_CONF_RELAYOUT},
     {TK_OPTION_COLOR, "-foreground", "foreground", "Foreground",
-     DEF_LISTBOX_FG, Tk_Offset(TreeCtrl, fgObj), Tk_Offset(TreeCtrl, fgColorPtr),
+     DEF_LISTBOX_FG, offsetof(TreeCtrl, fgObj), offsetof(TreeCtrl, fgColorPtr),
      0, (ClientData) NULL, TREE_CONF_FG | TREE_CONF_REDISPLAY},
     {TK_OPTION_SYNONYM, "-headerfg", (char *) NULL, (char *) NULL,
      (char *) NULL, 0, -1, 0, (ClientData) "-headerforeground"},
     {TK_OPTION_FONT, "-headerfont", "headerFont", "Font",
      (char *) NULL, /* DEFAULT VALUE IS INITIALIZED LATER */
-     Tk_Offset(TreeCtrl, headerFontObj), Tk_Offset(TreeCtrl, tkfontHeader),
+     offsetof(TreeCtrl, headerFontObj), offsetof(TreeCtrl, tkfontHeader),
      0, (ClientData) NULL, TREE_CONF_FONT | TREE_CONF_RELAYOUT},
     {TK_OPTION_COLOR, "-headerforeground", "headerForeground", "Foreground",
      DEF_BUTTON_FG,
-     Tk_Offset(TreeCtrl, headerFgObj), Tk_Offset(TreeCtrl, defHeaderTextColor),
+     offsetof(TreeCtrl, headerFgObj), offsetof(TreeCtrl, defHeaderTextColor),
      0, (ClientData) NULL, TREE_CONF_FG | TREE_CONF_REDISPLAY},
     {TK_OPTION_PIXELS, "-height", "height", "Height",
-     "200", Tk_Offset(TreeCtrl, heightObj), Tk_Offset(TreeCtrl, height),
+     "200", offsetof(TreeCtrl, heightObj), offsetof(TreeCtrl, height),
      0, (ClientData) NULL, TREE_CONF_RELAYOUT},
     {TK_OPTION_COLOR, "-highlightbackground", "highlightBackground",
      "HighlightBackground", DEF_LISTBOX_HIGHLIGHT_BG, -1,
-     Tk_Offset(TreeCtrl, highlightBgColorPtr),
+     offsetof(TreeCtrl, highlightBgColorPtr),
      0, (ClientData) NULL, TREE_CONF_REDISPLAY},
     {TK_OPTION_COLOR, "-highlightcolor", "highlightColor", "HighlightColor",
-     DEF_LISTBOX_HIGHLIGHT, -1, Tk_Offset(TreeCtrl, highlightColorPtr),
+     DEF_LISTBOX_HIGHLIGHT, -1, offsetof(TreeCtrl, highlightColorPtr),
      0, (ClientData) NULL, TREE_CONF_REDISPLAY},
     {TK_OPTION_PIXELS, "-highlightthickness", "highlightThickness",
      "HighlightThickness", DEF_LISTBOX_HIGHLIGHT_WIDTH,
-     Tk_Offset(TreeCtrl, highlightWidthObj),
-     Tk_Offset(TreeCtrl, highlightWidth),
+     offsetof(TreeCtrl, highlightWidthObj),
+     offsetof(TreeCtrl, highlightWidth),
      0, (ClientData) NULL, TREE_CONF_BORDERS | TREE_CONF_RELAYOUT},
     {TK_OPTION_PIXELS, "-indent", "indent", "Indent",
-     "19", Tk_Offset(TreeCtrl, indentObj),
-     Tk_Offset(TreeCtrl, indent),
+     "19", offsetof(TreeCtrl, indentObj),
+     offsetof(TreeCtrl, indent),
      0, (ClientData) NULL, TREE_CONF_INDENT | TREE_CONF_RELAYOUT},
     {TK_OPTION_PIXELS, "-itemgapx", "itemGapX", "ItemGapX",
      "0",
-     Tk_Offset(TreeCtrl, itemGapXObj),
-     Tk_Offset(TreeCtrl, itemGapX),
+     offsetof(TreeCtrl, itemGapXObj),
+     offsetof(TreeCtrl, itemGapX),
      0, (ClientData) NULL, TREE_CONF_RELAYOUT},
     {TK_OPTION_PIXELS, "-itemgapy", "itemGapY", "ItemGapY",
      "0",
-     Tk_Offset(TreeCtrl, itemGapYObj),
-     Tk_Offset(TreeCtrl, itemGapY),
+     offsetof(TreeCtrl, itemGapYObj),
+     offsetof(TreeCtrl, itemGapY),
      0, (ClientData) NULL, TREE_CONF_RELAYOUT},
     {TK_OPTION_PIXELS, "-itemheight", "itemHeight", "ItemHeight",
-     "0", Tk_Offset(TreeCtrl, itemHeightObj),
-     Tk_Offset(TreeCtrl, itemHeight),
+     "0", offsetof(TreeCtrl, itemHeightObj),
+     offsetof(TreeCtrl, itemHeight),
      0, (ClientData) NULL, TREE_CONF_ITEMSIZE | TREE_CONF_RELAYOUT},
     {TK_OPTION_STRING, "-itemprefix", "itemPrefix", "ItemPrefix",
-     "", -1, Tk_Offset(TreeCtrl, itemPrefix), 0, (ClientData) NULL, 0},
+     "", -1, offsetof(TreeCtrl, itemPrefix), 0, (ClientData) NULL, 0},
     {TK_OPTION_BOOLEAN, "-itemtagexpr", "itemTagExpr", "ItemTagExpr",
-     "1", -1, Tk_Offset(TreeCtrl, itemTagExpr),
+     "1", -1, offsetof(TreeCtrl, itemTagExpr),
      0, (ClientData) NULL, 0},
     {TK_OPTION_PIXELS, "-itemwidth", "itemWidth", "ItemWidth",
-     "", Tk_Offset(TreeCtrl, itemWidthObj), Tk_Offset(TreeCtrl, itemWidth),
+     "", offsetof(TreeCtrl, itemWidthObj), offsetof(TreeCtrl, itemWidth),
      TK_OPTION_NULL_OK, (ClientData) NULL, TREE_CONF_ITEMSIZE | TREE_CONF_RELAYOUT},
     {TK_OPTION_BOOLEAN, "-itemwidthequal", "itemWidthEqual", "ItemWidthEqual",
-     "0", -1, Tk_Offset(TreeCtrl, itemWidthEqual),
+     "0", -1, offsetof(TreeCtrl, itemWidthEqual),
      TK_OPTION_NULL_OK, (ClientData) NULL, TREE_CONF_ITEMSIZE | TREE_CONF_RELAYOUT},
     {TK_OPTION_PIXELS, "-itemwidthmultiple", "itemWidthMultiple", "ItemWidthMultiple",
-     "", Tk_Offset(TreeCtrl, itemWidMultObj), Tk_Offset(TreeCtrl, itemWidMult),
+     "", offsetof(TreeCtrl, itemWidMultObj), offsetof(TreeCtrl, itemWidMult),
      TK_OPTION_NULL_OK, (ClientData) NULL, TREE_CONF_ITEMSIZE | TREE_CONF_RELAYOUT},
     {TK_OPTION_COLOR, "-linecolor", "lineColor", "LineColor",
-     "#808080", -1, Tk_Offset(TreeCtrl, lineColor),
+     "#808080", -1, offsetof(TreeCtrl, lineColor),
      0, (ClientData) NULL, TREE_CONF_LINE | TREE_CONF_REDISPLAY},
     {TK_OPTION_STRING_TABLE, "-linestyle", "lineStyle", "LineStyle",
-     "dot", -1, Tk_Offset(TreeCtrl, lineStyle),
+     "dot", -1, offsetof(TreeCtrl, lineStyle),
      0, (ClientData) lineStyleST, TREE_CONF_LINE | TREE_CONF_REDISPLAY},
     {TK_OPTION_PIXELS, "-linethickness", "lineThickness", "LineThickness",
-     "1", Tk_Offset(TreeCtrl, lineThicknessObj),
-     Tk_Offset(TreeCtrl, lineThickness),
+     "1", offsetof(TreeCtrl, lineThicknessObj),
+     offsetof(TreeCtrl, lineThickness),
      0, (ClientData) NULL, TREE_CONF_LINE | TREE_CONF_REDISPLAY},
     {TK_OPTION_PIXELS, "-minitemheight", "minItemHeight", "MinItemHeight",
-     "0", Tk_Offset(TreeCtrl, minItemHeightObj),
-     Tk_Offset(TreeCtrl, minItemHeight),
+     "0", offsetof(TreeCtrl, minItemHeightObj),
+     offsetof(TreeCtrl, minItemHeight),
      0, (ClientData) NULL, TREE_CONF_ITEMSIZE | TREE_CONF_RELAYOUT},
     {TK_OPTION_STRING_TABLE, "-orient", "orient", "Orient",
-     "vertical", -1, Tk_Offset(TreeCtrl, vertical),
+     "vertical", -1, offsetof(TreeCtrl, vertical),
      0, (ClientData) orientStringTable, TREE_CONF_RELAYOUT},
     {TK_OPTION_RELIEF, "-relief", "relief", "Relief",
-     "sunken", -1, Tk_Offset(TreeCtrl, relief),
+     "sunken", -1, offsetof(TreeCtrl, relief),
      0, (ClientData) NULL, TREE_CONF_REDISPLAY},
     {TK_OPTION_PIXELS, "-rowproxy", "rowProxy", "RowProxy",
-     (char *) NULL, Tk_Offset(TreeCtrl, rowProxy.yObj),
-     Tk_Offset(TreeCtrl, rowProxy.y),
+     (char *) NULL, offsetof(TreeCtrl, rowProxy.yObj),
+     offsetof(TreeCtrl, rowProxy.y),
      TK_OPTION_NULL_OK, (ClientData) NULL, TREE_CONF_PROXY},
     {TK_OPTION_STRING, "-scrollmargin", "scrollMargin", "ScrollMargin",
-     "0", Tk_Offset(TreeCtrl, scrollMargin), -1,
+     "0", offsetof(TreeCtrl, scrollMargin), -1,
      0, (ClientData) NULL, 0},
     {TK_OPTION_STRING, "-selectmode", "selectMode", "SelectMode",
-     DEF_LISTBOX_SELECT_MODE, -1, Tk_Offset(TreeCtrl, selectMode),
+     DEF_LISTBOX_SELECT_MODE, -1, offsetof(TreeCtrl, selectMode),
      TK_OPTION_NULL_OK, (ClientData) NULL, 0},
     {TK_OPTION_BOOLEAN, "-showbuttons", "showButtons",
-     "ShowButtons", "1", -1, Tk_Offset(TreeCtrl, showButtons),
+     "ShowButtons", "1", -1, offsetof(TreeCtrl, showButtons),
      0, (ClientData) NULL, TREE_CONF_RELAYOUT},
     {TK_OPTION_BOOLEAN, "-showheader", "showHeader", "ShowHeader",
-     "1", -1, Tk_Offset(TreeCtrl, showHeader),
+     "1", -1, offsetof(TreeCtrl, showHeader),
      0, (ClientData) NULL, TREE_CONF_RELAYOUT},
     {TK_OPTION_BOOLEAN, "-showlines", "showLines", "ShowLines",
      (char *) NULL, /* DEFAULT VALUE IS INITIALIZED LATER */
-     -1, Tk_Offset(TreeCtrl, showLines),
+     -1, offsetof(TreeCtrl, showLines),
      0, (ClientData) NULL, TREE_CONF_RELAYOUT},
     {TK_OPTION_BOOLEAN, "-showroot", "showRoot",
-     "ShowRoot", "1", -1, Tk_Offset(TreeCtrl, showRoot),
+     "ShowRoot", "1", -1, offsetof(TreeCtrl, showRoot),
      0, (ClientData) NULL, TREE_CONF_RELAYOUT},
     {TK_OPTION_BOOLEAN, "-showrootbutton", "showRootButton",
-     "ShowRootButton", "0", -1, Tk_Offset(TreeCtrl, showRootButton),
+     "ShowRootButton", "0", -1, offsetof(TreeCtrl, showRootButton),
      0, (ClientData) NULL, TREE_CONF_RELAYOUT},
     {TK_OPTION_BOOLEAN, "-showrootchildbuttons", "showRootChildButtons",
-     "ShowRootChildButtons", "1", -1, Tk_Offset(TreeCtrl, showRootChildButtons),
+     "ShowRootChildButtons", "1", -1, offsetof(TreeCtrl, showRootChildButtons),
      0, (ClientData) NULL, TREE_CONF_RELAYOUT},
     {TK_OPTION_BOOLEAN, "-showrootlines", "showRootLines",
-     "ShowRootLines", "1", -1, Tk_Offset(TreeCtrl, showRootLines),
+     "ShowRootLines", "1", -1, offsetof(TreeCtrl, showRootLines),
      0, (ClientData) NULL, TREE_CONF_RELAYOUT},
     {TK_OPTION_STRING, "-takefocus", "takeFocus", "TakeFocus",
-     DEF_LISTBOX_TAKE_FOCUS, -1, Tk_Offset(TreeCtrl, takeFocus),
+     DEF_LISTBOX_TAKE_FOCUS, -1, offsetof(TreeCtrl, takeFocus),
      TK_OPTION_NULL_OK, 0, 0},
     {TK_OPTION_CUSTOM, "-treecolumn", "treeColumn", "TreeColumn",
-     (char *) NULL, -1, Tk_Offset(TreeCtrl, columnTree),
+     (char *) NULL, -1, offsetof(TreeCtrl, columnTree),
      TK_OPTION_NULL_OK, (ClientData) &TreeCtrlCO_column_NOT_TAIL,
      TREE_CONF_RELAYOUT},
     {TK_OPTION_BOOLEAN, "-usetheme", "useTheme",
-     "UseTheme", "1", -1, Tk_Offset(TreeCtrl, useTheme),
+     "UseTheme", "1", -1, offsetof(TreeCtrl, useTheme),
      0, (ClientData) NULL, TREE_CONF_THEME | TREE_CONF_RELAYOUT},
     {TK_OPTION_PIXELS, "-width", "width", "Width",
-     "200", Tk_Offset(TreeCtrl, widthObj), Tk_Offset(TreeCtrl, width),
+     "200", offsetof(TreeCtrl, widthObj), offsetof(TreeCtrl, width),
      0, (ClientData) NULL, TREE_CONF_RELAYOUT},
     {TK_OPTION_STRING, "-wrap", "wrap", "Wrap",
-     (char *) NULL, Tk_Offset(TreeCtrl, wrapObj), -1,
+     (char *) NULL, offsetof(TreeCtrl, wrapObj), -1,
      TK_OPTION_NULL_OK, (ClientData) NULL,
      TREE_CONF_WRAP | TREE_CONF_RELAYOUT},
     {TK_OPTION_STRING, "-xscrollcommand", "xScrollCommand", "ScrollCommand",
-     (char *) NULL, -1, Tk_Offset(TreeCtrl, xScrollCmd),
+     (char *) NULL, -1, offsetof(TreeCtrl, xScrollCmd),
      TK_OPTION_NULL_OK, 0, 0},
     {TK_OPTION_STRING, "-xscrolldelay", "xScrollDelay", "ScrollDelay",
-     "50", Tk_Offset(TreeCtrl, xScrollDelay), -1,
+     "50", offsetof(TreeCtrl, xScrollDelay), -1,
      TK_OPTION_NULL_OK, 0, 0},
     {TK_OPTION_PIXELS, "-xscrollincrement", "xScrollIncrement", "ScrollIncrement",
-     "0", -1, Tk_Offset(TreeCtrl, xScrollIncrement),
+     "0", -1, offsetof(TreeCtrl, xScrollIncrement),
      0, (ClientData) NULL, TREE_CONF_REDISPLAY},
     {TK_OPTION_BOOLEAN, "-xscrollsmoothing", "xScrollSmoothing", "ScrollSmoothing",
-     "0", -1, Tk_Offset(TreeCtrl, xScrollSmoothing),
+     "0", -1, offsetof(TreeCtrl, xScrollSmoothing),
      0, (ClientData) NULL, TREE_CONF_REDISPLAY},
     {TK_OPTION_STRING, "-yscrollcommand", "yScrollCommand", "ScrollCommand",
-     (char *) NULL, -1, Tk_Offset(TreeCtrl, yScrollCmd),
+     (char *) NULL, -1, offsetof(TreeCtrl, yScrollCmd),
      TK_OPTION_NULL_OK, 0, 0},
     {TK_OPTION_STRING, "-yscrolldelay", "yScrollDelay", "ScrollDelay",
-     "50", Tk_Offset(TreeCtrl, yScrollDelay), -1,
+     "50", offsetof(TreeCtrl, yScrollDelay), -1,
      TK_OPTION_NULL_OK, 0, 0},
     {TK_OPTION_PIXELS, "-yscrollincrement", "yScrollIncrement", "ScrollIncrement",
-     "0", -1, Tk_Offset(TreeCtrl, yScrollIncrement),
+     "0", -1, offsetof(TreeCtrl, yScrollIncrement),
      0, (ClientData) NULL, TREE_CONF_REDISPLAY},
     {TK_OPTION_BOOLEAN, "-yscrollsmoothing", "yScrollSmoothing", "ScrollSmoothing",
-     "0", -1, Tk_Offset(TreeCtrl, yScrollSmoothing),
+     "0", -1, offsetof(TreeCtrl, yScrollSmoothing),
      0, (ClientData) NULL, TREE_CONF_REDISPLAY},
 
     {TK_OPTION_END, (char *) NULL, (char *) NULL, (char *) NULL,
@@ -322,48 +322,48 @@ static Tk_OptionSpec optionSpecs[] = {
 
 static Tk_OptionSpec debugSpecs[] = {
     {TK_OPTION_INT, "-displaydelay", (char *) NULL, (char *) NULL,
-     "0", -1, Tk_Offset(TreeCtrl, debug.displayDelay),
+     "0", -1, offsetof(TreeCtrl, debug.displayDelay),
      0, (ClientData) NULL, 0},
     {TK_OPTION_BOOLEAN, "-data", (char *) NULL, (char *) NULL,
-     "1", -1, Tk_Offset(TreeCtrl, debug.data),
+     "1", -1, offsetof(TreeCtrl, debug.data),
      0, (ClientData) NULL, 0},
     {TK_OPTION_BOOLEAN, "-display", (char *) NULL, (char *) NULL,
-     "1", -1, Tk_Offset(TreeCtrl, debug.display),
+     "1", -1, offsetof(TreeCtrl, debug.display),
      0, (ClientData) NULL, 0},
     {TK_OPTION_COLOR, "-drawcolor", (char *) NULL, (char *) NULL,
-     (char *) NULL, -1, Tk_Offset(TreeCtrl, debug.drawColor),
+     (char *) NULL, -1, offsetof(TreeCtrl, debug.drawColor),
      TK_OPTION_NULL_OK, (ClientData) NULL, 0},
     {TK_OPTION_BOOLEAN, "-enable", (char *) NULL, (char *) NULL,
-     "0", -1, Tk_Offset(TreeCtrl, debug.enable),
+     "0", -1, offsetof(TreeCtrl, debug.enable),
      0, (ClientData) NULL, 0},
     {TK_OPTION_COLOR, "-erasecolor", (char *) NULL, (char *) NULL,
-     (char *) NULL, -1, Tk_Offset(TreeCtrl, debug.eraseColor),
+     (char *) NULL, -1, offsetof(TreeCtrl, debug.eraseColor),
      TK_OPTION_NULL_OK, (ClientData) NULL, 0},
     {TK_OPTION_BOOLEAN, "-span", (char *) NULL, (char *) NULL,
-     "1", -1, Tk_Offset(TreeCtrl, debug.span),
+     "1", -1, offsetof(TreeCtrl, debug.span),
      0, (ClientData) NULL, 0},
     {TK_OPTION_BOOLEAN, "-textlayout", (char *) NULL, (char *) NULL,
-     "1", -1, Tk_Offset(TreeCtrl, debug.textLayout),
+     "1", -1, offsetof(TreeCtrl, debug.textLayout),
      0, (ClientData) NULL, 0},
     {TK_OPTION_END, (char *) NULL, (char *) NULL, (char *) NULL,
      (char *) NULL, -1, -1, 0, (ClientData) NULL, 0}
 };
 
 static int TreeWidgetCmd(ClientData clientData, Tcl_Interp *interp, int objc,
-    Tcl_Obj *CONST objv[]);
+    Tcl_Obj *const objv[]);
 static int TreeConfigure(Tcl_Interp *interp, TreeCtrl *tree, int objc,
-    Tcl_Obj *CONST objv[], int createFlag);
+    Tcl_Obj *const objv[], int createFlag);
 static void TreeEventProc(ClientData clientData, XEvent * eventPtr);
-static void TreeDestroy(char *memPtr);
+static void TreeDestroy(void *memPtr);
 static void TreeCmdDeletedProc(ClientData clientData);
 static void TreeWorldChanged(ClientData instanceData);
 static void TreeComputeGeometry(TreeCtrl *tree);
-static int TreeIdentifyCmd(TreeCtrl *tree, int objc, Tcl_Obj *CONST objv[]);
-static int TreeSeeCmd(TreeCtrl *tree, int objc, Tcl_Obj *CONST objv[]);
+static int TreeIdentifyCmd(TreeCtrl *tree, int objc, Tcl_Obj *const objv[]);
+static int TreeSeeCmd(TreeCtrl *tree, int objc, Tcl_Obj *const objv[]);
 static int TreeSelectionCmd(Tcl_Interp *interp, TreeCtrl *tree, int objc,
-    Tcl_Obj *CONST objv[]);
+    Tcl_Obj *const objv[]);
 static int TreeDebugCmd(ClientData clientData, Tcl_Interp *interp, int objc,
-    Tcl_Obj *CONST objv[]);
+    Tcl_Obj *const objv[]);
 
 static Tk_ClassProcs treectrlClass = {
     sizeof(Tk_ClassProcs),	/* size */
@@ -395,7 +395,7 @@ TreeObjCmd(
     ClientData clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[]	/* Argument values. */
+    Tcl_Obj *const objv[]	/* Argument values. */
     )
 {
     TreeCtrl *tree;
@@ -546,9 +546,9 @@ TreeArea_FromObj(
     int *areaPtr		/* Returned TREE_AREA_xxx constant. */
     )
 {
-    static CONST char *areaName[] = { "content", "header", "header.left",
+    static const char *areaName[] = { "content", "header", "header.left",
 	"header.none", "header.right", "left", "right", (char *) NULL };
-    static CONST int area[] = { TREE_AREA_CONTENT, TREE_AREA_HEADER,
+    static const int area[] = { TREE_AREA_CONTENT, TREE_AREA_HEADER,
 	TREE_AREA_HEADER_LEFT, TREE_AREA_HEADER_NONE, TREE_AREA_HEADER_RIGHT,
 	TREE_AREA_LEFT, TREE_AREA_RIGHT };
     int index;
@@ -591,12 +591,12 @@ static int TreeWidgetCmd(
     ClientData clientData,	/* Widget info. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[]	/* Argument values. */
+    Tcl_Obj *const objv[]	/* Argument values. */
     )
 {
     TreeCtrl *tree = clientData;
     int result = TCL_OK;
-    static CONST char *commandName[] = {
+    static const char *commandName[] = {
 	"activate", "bbox", "canvasx", "canvasy", "cget",
 #ifdef DEPRECATED
 	"collapse",
@@ -873,7 +873,7 @@ static int TreeWidgetCmd(
 #ifdef DEPRECATED
 	case COMMAND_COMPARE: {
 	    TreeItem item1, item2;
-	    static CONST char *opName[] = { "<", "<=", "==", ">=", ">", "!=", NULL };
+	    static const char *opName[] = { "<", "<=", "==", ">=", ">", "!=", NULL };
 	    int op, compare = 0, index1, index2;
 
 	    if (objc != 5) {
@@ -1071,7 +1071,7 @@ static int TreeWidgetCmd(
 #endif /* DEPRECATED */
 
 	case COMMAND_SCAN: {
-	    static CONST char *optionName[] = { "dragto", "mark",
+	    static const char *optionName[] = { "dragto", "mark",
 						(char *) NULL };
 	    int x, y, gain = 10, xOrigin, yOrigin;
 
@@ -1194,7 +1194,7 @@ TreeConfigure(
     Tcl_Interp *interp,		/* Current interpreter. */
     TreeCtrl *tree,		/* Widget info. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[],	/* Argument values. */
+    Tcl_Obj *const objv[],	/* Argument values. */
     int createFlag		/* TRUE if the widget is being created. */
     )
 {
@@ -1781,7 +1781,7 @@ TreeCmdDeletedProc(
 
 static void
 TreeDestroy(
-    char *memPtr		/* Widget info. */
+    void *memPtr		/* Widget info. */
     )
 {
     TreeCtrl *tree = (TreeCtrl *) memPtr;
@@ -2304,7 +2304,7 @@ Tree_FreeImage(
     hPtr = Tcl_FindHashEntry(&tree->imageTokenHash, (char *) image);
 #ifdef TREECTRL_DEBUG
     if (hPtr == NULL)
-	panic("Tree_FreeImage called with an image not in the hash table");
+	Tcl_Panic("Tree_FreeImage called with an image not in the hash table");
 #endif
     if (hPtr != NULL) {
 	ref = (TreeImageRef *) Tcl_GetHashValue(hPtr);
@@ -2339,7 +2339,7 @@ static int
 TreeIdentifyCmd(
     TreeCtrl *tree,		/* Widget info. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[]	/* Argument values. */
+    Tcl_Obj *const objv[]	/* Argument values. */
     )
 {
     Tcl_Interp *interp = tree->interp;
@@ -2348,7 +2348,7 @@ TreeIdentifyCmd(
     Tcl_Obj *listObj;
     TreeRectangle tr;
     int i, lock, columnTreeLeft;
-    CONST char *arrayName = NULL;
+    const char *arrayName = NULL;
     struct {
 	char *where;
 	int area;
@@ -2376,7 +2376,7 @@ TreeIdentifyCmd(
 
     if (objc > 4) {
 	for (i = 2; i < objc - 2; i += 2) {
-	    static CONST char *opName[] = { "-array", NULL };
+	    static const char *opName[] = { "-array", NULL };
 	    int index;
 
 	    if (Tcl_GetIndexFromObj(interp, objv[i], opName, "option", 0,
@@ -2415,7 +2415,7 @@ TreeIdentifyCmd(
 	int wx = x;
 	item = Tree_HeaderUnderPoint(tree, &x, &y, &lock);
 	if (item == NULL) /* impossible */
-	    panic("[identify] point is in TREE_AREA_HEADER but header == NULL");
+	    Tcl_Panic("[identify] point is in TREE_AREA_HEADER but header == NULL");
 	id.where = "header";
 	id.header = TreeItem_GetHeader(tree, item);
 	TreeItem_Identify(tree, item, lock, x, y, &id.column, &id.elem);
@@ -2614,7 +2614,7 @@ static int
 TreeSeeCmd(
     TreeCtrl *tree,		/* Widget info. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[]	/* Argument values. */
+    Tcl_Obj *const objv[]	/* Argument values. */
     )
 {
     Tcl_Interp *interp = tree->interp;
@@ -2652,7 +2652,7 @@ TreeSeeCmd(
 
 	for (i = firstOption; i < objc; i += 2)
 	{
-	    static CONST char *optionNames[] = {
+	    static const char *optionNames[] = {
 		"-center", (char *) NULL
 	    };
 	    if (Tcl_GetIndexFromObj(interp, objv[i], optionNames,
@@ -2937,12 +2937,12 @@ Tree_StateCmd(
     TreeCtrl *tree,		/* Widget info. */
     int domain,			/* STATE_DOMAIN_XXX index. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[]	/* Argument values. */
+    Tcl_Obj *const objv[]	/* Argument values. */
     )
 {
     Tcl_Interp *interp = tree->interp;
     TreeStateDomain *domainPtr = &tree->stateDomain[domain];
-    static CONST char *commandName[] = {
+    static const char *commandName[] = {
 	"define", "linkage", "names",  "undefine", (char *) NULL
     };
     enum {
@@ -3076,19 +3076,19 @@ Tree_AddToSelection(
 
 #ifdef SELECTION_VISIBLE
     if (!TreeItem_ReallyVisible(tree, item))
-	panic("Tree_AddToSelection: item %d not ReallyVisible",
+	Tcl_Panic("Tree_AddToSelection: item %d not ReallyVisible",
 		TreeItem_GetID(tree, item));
 #endif
     if (TreeItem_GetSelected(tree, item))
-	panic("Tree_AddToSelection: item %d already selected",
+	Tcl_Panic("Tree_AddToSelection: item %d already selected",
 		TreeItem_GetID(tree, item));
     if (!TreeItem_GetEnabled(tree, item))
-	panic("Tree_AddToSelection: item %d not enabled",
+	Tcl_Panic("Tree_AddToSelection: item %d not enabled",
 		TreeItem_GetID(tree, item));
     TreeItem_ChangeState(tree, item, 0, STATE_ITEM_SELECTED);
     Tcl_CreateHashEntry(&tree->selection, (char *) item, &isNew);
     if (!isNew)
-	panic("Tree_AddToSelection: item %d already in selection hash table",
+	Tcl_Panic("Tree_AddToSelection: item %d already in selection hash table",
 		TreeItem_GetID(tree, item));
     tree->selectCount++;
 }
@@ -3119,12 +3119,12 @@ Tree_RemoveFromSelection(
     Tcl_HashEntry *hPtr;
 
     if (!TreeItem_GetSelected(tree, item))
-	panic("Tree_RemoveFromSelection: item %d isn't selected",
+	Tcl_Panic("Tree_RemoveFromSelection: item %d isn't selected",
 		TreeItem_GetID(tree, item));
     TreeItem_ChangeState(tree, item, STATE_ITEM_SELECTED, 0);
     hPtr = Tcl_FindHashEntry(&tree->selection, (char *) item);
     if (hPtr == NULL)
-	panic("Tree_RemoveFromSelection: item %d not found in selection hash table",
+	Tcl_Panic("Tree_RemoveFromSelection: item %d not found in selection hash table",
 		TreeItem_GetID(tree, item));
     Tcl_DeleteHashEntry(hPtr);
     tree->selectCount--;
@@ -3153,10 +3153,10 @@ TreeSelectionCmd(
     Tcl_Interp *interp,		/* Current interpreter. */
     TreeCtrl *tree,		/* Widget info. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[]	/* Argument values. */
+    Tcl_Obj *const objv[]	/* Argument values. */
     )
 {
-    static CONST char *commandName[] = {
+    static const char *commandName[] = {
 	"add", "anchor", "clear", "count", "get", "includes", "modify", NULL
     };
     enum {
@@ -3370,7 +3370,7 @@ doneCLEAR:
 		int first, last;
 		TreeItemList items;
 
-		if (TclGetIntForIndex(interp, objv[3], tree->selectCount - 1,
+		if (Tcl_GetIntForIndex(interp, objv[3], tree->selectCount - 1,
 			&first) != TCL_OK) {
 		    return TCL_ERROR;
 		}
@@ -3378,7 +3378,7 @@ doneCLEAR:
 		    first = 0;
 		last = first;
 		if (objc == 5) {
-		    if (TclGetIntForIndex(interp, objv[4], tree->selectCount - 1,
+		    if (Tcl_GetIntForIndex(interp, objv[4], tree->selectCount - 1,
 			    &last) != TCL_OK) {
 			return TCL_ERROR;
 		    }
@@ -3660,11 +3660,11 @@ TreeDebugCmd(
     ClientData clientData,	/* Widget info. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[]	/* Argument values. */
+    Tcl_Obj *const objv[]	/* Argument values. */
     )
 {
     TreeCtrl *tree = clientData;
-    static CONST char *commandNames[] = {
+    static const char *commandNames[] = {
 	"alloc", "cget", "configure", "dinfo", "expose", (char *) NULL
     };
     enum { COMMAND_ALLOC, COMMAND_CGET, COMMAND_CONFIGURE, COMMAND_DINFO,
@@ -3830,7 +3830,7 @@ Tree_ReleaseItems(
     TreeItem item;
 
     if (tree->preserveItemRefCnt == 0)
-	panic("mismatched calls to Tree_PreserveItems/Tree_ReleaseItems");
+	Tcl_Panic("mismatched calls to Tree_PreserveItems/Tree_ReleaseItems");
 
     if (--tree->preserveItemRefCnt > 0)
 	return;
@@ -3875,7 +3875,7 @@ TextLayoutCmd(
     ClientData clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[]	/* Argument values. */
+    Tcl_Obj *const objv[]	/* Argument values. */
     )
 {
     Tk_Font tkfont;
@@ -3899,7 +3899,7 @@ TextLayoutCmd(
     text = Tcl_GetString(objv[2]);
 
     for (i = 3; i < objc; i += 2) {
-	static CONST char *optionNames[] = {
+	static const char *optionNames[] = {
 	    "-ignoretabs", "-ignorenewlines",
 	    "-justify", "-width", (char *) NULL
 	};
@@ -3994,7 +3994,7 @@ ImageTintCmd(
     ClientData clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[]	/* Argument values. */
+    Tcl_Obj *const objv[]	/* Argument values. */
     )
 {
     char *imageName;
@@ -4093,7 +4093,7 @@ LoupeCmd(
     ClientData clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[]	/* Argument values. */
+    Tcl_Obj *const objv[]	/* Argument values. */
     )
 {
     Tk_Window tkwin = Tk_MainWindow(interp);
@@ -4537,9 +4537,9 @@ Treectrl_Init(
     )
 {
 #ifdef USE_TTK
-    static CONST char *tcl_version = "8.5";
+    static const char *tcl_version = "8.5-";
 #else
-    static CONST char *tcl_version = "8.4";
+    static const char *tcl_version = "8.4-";
 #endif
     Tk_OptionSpec *specPtr;
 #ifdef TREECTRL_DEBUG
@@ -4567,7 +4567,7 @@ Treectrl_Init(
     for (specPtr = optionSpecs; specPtr->type != TK_OPTION_END; specPtr++) {
 	if (prevSpecPtr != NULL &&
 		strcmp(prevSpecPtr->optionName, specPtr->optionName) >= 0) {
-	    panic("Treectrl_Init option table ordering %s >= %s",
+	    Tcl_Panic("Treectrl_Init option table ordering %s >= %s",
 		    prevSpecPtr->optionName, specPtr->optionName);
 	}
 	prevSpecPtr = specPtr;

@@ -228,7 +228,7 @@ TreeDotRect_Setup(
     struct DotStatePriv *dotState = (struct DotStatePriv *) p;
 
     if (sizeof(*dotState) > sizeof(*p))
-	panic("TreeDotRect_Setup: DotState hack is too small");
+	Tcl_Panic("TreeDotRect_Setup: DotState hack is too small");
 
     dotState->tree = tree;
     dotState->drawable = drawable;
@@ -2570,7 +2570,7 @@ TreeTheme_SetOptionDefault(
 {
 #ifdef TREECTRL_DEBUG
     if (specPtr == NULL)
-	panic("TreeTheme_SetOptionDefault specPtr == NULL");
+	Tcl_Panic("TreeTheme_SetOptionDefault specPtr == NULL");
 #endif
 
     /* Only set the default value once per-application. */
@@ -2584,7 +2584,7 @@ TreeTheme_SetOptionDefault(
 
 #ifdef TREECTRL_DEBUG
     else
-	panic("TreeTheme_SetOptionDefault unhandled option \"%s\"",
+	Tcl_Panic("TreeTheme_SetOptionDefault unhandled option \"%s\"",
 	    specPtr->optionName ? specPtr->optionName : "NULL");
 #endif
 }
@@ -2593,11 +2593,11 @@ int
 TreeThemeCmd(
     TreeCtrl *tree,		/* Widget info. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[]	/* Argument values. */
+    Tcl_Obj *const objv[]	/* Argument values. */
     )
 {
     Tcl_Interp *interp = tree->interp;
-    static CONST char *commandName[] = {
+    static const char *commandName[] = {
 	"platform", "setwindowtheme", (char *) NULL
     };
     enum {
@@ -2712,14 +2712,14 @@ typedef enum SmoothingMode {
 typedef struct GdiplusStartupInput
 {
     UINT32 GdiplusVersion;
-    /*DebugEventProc*/VOID* DebugEventCallback;
+    /*DebugEventProc*/void* DebugEventCallback;
     BOOL SuppressBackgroundThread;
     BOOL SuppressExternalCodecs;
 } GdiplusStartupInput;
 typedef struct GdiplusStartupOutput
 {
-    /*NotificationHookProc*/VOID* NotificationHook;
-    /*NotificationUnhookProc*/VOID* NotificationUnhook;
+    /*NotificationHookProc*/void* NotificationHook;
+    /*NotificationUnhookProc*/void* NotificationUnhook;
 } GdiplusStartupOutput;
 typedef struct GpPoint {
     INT X;
@@ -2750,11 +2750,11 @@ static struct
 {
     HMODULE handle; /* gdiplus.dll */
 
-    VOID* (WINGDIPAPI *_GdipAlloc)(size_t);
-    VOID (WINGDIPAPI *_GdipFree)(VOID*);
+    void* (WINGDIPAPI *_GdipAlloc)(size_t);
+    void (WINGDIPAPI *_GdipFree)(void*);
 
     GpStatus (WINGDIPAPI *_GdiplusStartup)(ULONG_PTR*,GDIPCONST GdiplusStartupInput*,GdiplusStartupOutput*);
-    VOID (WINGDIPAPI *_GdiplusShutdown)(ULONG_PTR);
+    void (WINGDIPAPI *_GdiplusShutdown)(ULONG_PTR);
 
     /* Graphics */
     GpStatus (WINGDIPAPI *_GdipCreateFromHDC)(HDC,GpGraphics**);
@@ -2827,7 +2827,7 @@ LoadGdiplus(void)
     DllExports.handle = LoadLibraryA("gdiplus.dll");
     if (DllExports.handle != NULL) {
 #define LOADPROC(name) \
-	(0 != (DllExports._ ## name = (VOID *)GetProcAddress(DllExports.handle, #name) ))
+	(0 != (DllExports._ ## name = (void *)GetProcAddress(DllExports.handle, #name) ))
 	if (   LOADPROC(GdipAlloc)
 	    && LOADPROC(GdipFree)
 	    && LOADPROC(GdiplusStartup)

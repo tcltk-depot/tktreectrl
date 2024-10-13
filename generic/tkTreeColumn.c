@@ -275,9 +275,9 @@ static Tk_ObjCustomOption uniformGroupCO =
 };
 #endif /* UNIFORM_GROUP */
 
-static CONST char *arrowSideST[] = { "left", "right", (char *) NULL };
-static CONST char *lockST[] = { "left", "none", "right", (char *) NULL };
-static CONST char *justifyStrings[] = {
+static const char *arrowSideST[] = { "left", "right", (char *) NULL };
+static const char *lockST[] = { "left", "none", "right", (char *) NULL };
+static const char *justifyStrings[] = {
     "left", "right", "center", (char *) NULL
 };
 
@@ -295,73 +295,73 @@ static CONST char *justifyStrings[] = {
 
 static Tk_OptionSpec columnSpecs[] = {
     {TK_OPTION_BOOLEAN, "-expand", (char *) NULL, (char *) NULL,
-     "0", -1, Tk_Offset(TreeColumn_, expand),
+     "0", -1, offsetof(TreeColumn_, expand),
      0, (ClientData) NULL, COLU_CONF_TWIDTH},
 #if COLUMNGRID==1
     {TK_OPTION_CUSTOM, "-gridleftcolor", (char *) NULL, (char *) NULL, (char *) NULL,
-	Tk_Offset(TreeColumn_, gridLeftColorObj),
-	Tk_Offset(TreeColumn_, gridLeftColor),
+	offsetof(TreeColumn_, gridLeftColorObj),
+	offsetof(TreeColumn_, gridLeftColor),
 	TK_OPTION_NULL_OK, (ClientData) &TreeCtrlCO_treecolor,
 	COLU_CONF_GRIDLINES},
     {TK_OPTION_CUSTOM, "-gridrightcolor", (char *) NULL, (char *) NULL, (char *) NULL,
-	Tk_Offset(TreeColumn_, gridRightColorObj),
-	Tk_Offset(TreeColumn_, gridRightColor),
+	offsetof(TreeColumn_, gridRightColorObj),
+	offsetof(TreeColumn_, gridRightColor),
 	TK_OPTION_NULL_OK, (ClientData) &TreeCtrlCO_treecolor,
 	COLU_CONF_GRIDLINES},
 #endif
     {TK_OPTION_STRING, "-itembackground", (char *) NULL, (char *) NULL,
-     (char *) NULL, Tk_Offset(TreeColumn_, itemBgObj), -1,
+     (char *) NULL, offsetof(TreeColumn_, itemBgObj), -1,
      TK_OPTION_NULL_OK, (ClientData) NULL, COLU_CONF_ITEMBG},
     {TK_OPTION_CUSTOM, "-itemjustify", (char *) NULL, (char *) NULL,
-     (char *) NULL, -1, Tk_Offset(TreeColumn_, itemJustify),
+     (char *) NULL, -1, offsetof(TreeColumn_, itemJustify),
      TK_OPTION_NULL_OK, (ClientData) NULL, COLU_CONF_JUSTIFY},
     {TK_OPTION_CUSTOM, "-itemstyle", (char *) NULL, (char *) NULL,
-     (char *) NULL, -1, Tk_Offset(TreeColumn_, itemStyle),
+     (char *) NULL, -1, offsetof(TreeColumn_, itemStyle),
      TK_OPTION_NULL_OK, (ClientData) &TreeCtrlCO_style, 0},
     {TK_OPTION_JUSTIFY, "-justify", (char *) NULL, (char *) NULL,
-     "left", -1, Tk_Offset(TreeColumn_, justify),
+     "left", -1, offsetof(TreeColumn_, justify),
      0, (ClientData) NULL, COLU_CONF_DISPLAY | COLU_CONF_JUSTIFY},
     {TK_OPTION_STRING_TABLE, "-lock", (char *) NULL, (char *) NULL,
-     "none", -1, Tk_Offset(TreeColumn_, lock), 0, (ClientData) lockST, 0},
+     "none", -1, offsetof(TreeColumn_, lock), 0, (ClientData) lockST, 0},
     {TK_OPTION_PIXELS, "-maxwidth", (char *) NULL, (char *) NULL,
-     (char *) NULL, Tk_Offset(TreeColumn_, maxWidthObj),
-     Tk_Offset(TreeColumn_, maxWidth),
+     (char *) NULL, offsetof(TreeColumn_, maxWidthObj),
+     offsetof(TreeColumn_, maxWidth),
      TK_OPTION_NULL_OK, (ClientData) NULL, COLU_CONF_TWIDTH},
     {TK_OPTION_PIXELS, "-minwidth", (char *) NULL, (char *) NULL,
-     (char *) NULL, Tk_Offset(TreeColumn_, minWidthObj),
-     Tk_Offset(TreeColumn_, minWidth),
+     (char *) NULL, offsetof(TreeColumn_, minWidthObj),
+     offsetof(TreeColumn_, minWidth),
      TK_OPTION_NULL_OK, (ClientData) NULL, COLU_CONF_TWIDTH},
     {TK_OPTION_BOOLEAN, "-resize", (char *) NULL, (char *) NULL,
-     "1", -1, Tk_Offset(TreeColumn_, resize), 0, (ClientData) NULL, 0},
+     "1", -1, offsetof(TreeColumn_, resize), 0, (ClientData) NULL, 0},
     {TK_OPTION_BOOLEAN, "-squeeze", (char *) NULL, (char *) NULL,
-     "0", -1, Tk_Offset(TreeColumn_, squeeze),
+     "0", -1, offsetof(TreeColumn_, squeeze),
      0, (ClientData) NULL, COLU_CONF_TWIDTH},
 #ifdef DEPRECATED
     {TK_OPTION_PIXELS, "-stepwidth", (char *) NULL, (char *) NULL,
-     (char *) NULL, Tk_Offset(TreeColumn_, stepWidthObj),
-     Tk_Offset(TreeColumn_, stepWidth),
+     (char *) NULL, offsetof(TreeColumn_, stepWidthObj),
+     offsetof(TreeColumn_, stepWidth),
      TK_OPTION_NULL_OK, (ClientData) NULL, COLU_CONF_RANGES},
 #endif /* DEPRECATED */
     {TK_OPTION_CUSTOM, "-tags", (char *) NULL, (char *) NULL,
-     (char *) NULL, -1, Tk_Offset(TreeColumn_, tagInfo),
+     (char *) NULL, -1, offsetof(TreeColumn_, tagInfo),
      TK_OPTION_NULL_OK, (ClientData) &TreeCtrlCO_tagInfo, COLU_CONF_TAGS},
 #ifdef UNIFORM_GROUP
     {TK_OPTION_CUSTOM, "-uniform", (char *) NULL, (char *) NULL,
-     (char *) NULL, -1, Tk_Offset(TreeColumn_, uniform), TK_OPTION_NULL_OK,
+     (char *) NULL, -1, offsetof(TreeColumn_, uniform), TK_OPTION_NULL_OK,
      (ClientData) &uniformGroupCO, COLU_CONF_TWIDTH},
     {TK_OPTION_INT, "-weight", (char *) NULL, (char *) NULL,
-     "1", -1, Tk_Offset(TreeColumn_, weight),
+     "1", -1, offsetof(TreeColumn_, weight),
      TK_OPTION_NULL_OK, (ClientData) NULL, COLU_CONF_TWIDTH},
 #endif
     {TK_OPTION_PIXELS, "-width", (char *) NULL, (char *) NULL,
-     (char *) NULL, Tk_Offset(TreeColumn_, widthObj), Tk_Offset(TreeColumn_, width),
+     (char *) NULL, offsetof(TreeColumn_, widthObj), offsetof(TreeColumn_, width),
      TK_OPTION_NULL_OK, (ClientData) NULL, COLU_CONF_TWIDTH},
     {TK_OPTION_BOOLEAN, "-visible", (char *) NULL, (char *) NULL,
-     "1", -1, Tk_Offset(TreeColumn_, visible),
+     "1", -1, offsetof(TreeColumn_, visible),
      0, (ClientData) NULL, COLU_CONF_TWIDTH | COLU_CONF_DISPLAY},
 #ifdef DEPRECATED
     {TK_OPTION_BOOLEAN, "-widthhack", (char *) NULL, (char *) NULL,
-     "0", -1, Tk_Offset(TreeColumn_, widthHack),
+     "0", -1, offsetof(TreeColumn_, widthHack),
      0, (ClientData) NULL, COLU_CONF_RANGES},
 #endif /* DEPRECATED */
     {TK_OPTION_END, (char *) NULL, (char *) NULL, (char *) NULL,
@@ -531,34 +531,34 @@ Tk_ObjCustomOption TreeCtrlCO_column_NOT_TAIL =
 
 static Tk_OptionSpec dragSpecs[] = {
     {TK_OPTION_BOOLEAN, "-enable", (char *) NULL, (char *) NULL,
-     "0", -1, Tk_Offset(TreeCtrl, columnDrag.enable),
+     "0", -1, offsetof(TreeCtrl, columnDrag.enable),
      0, (ClientData) NULL, 0},
     {TK_OPTION_INT, "-imagealpha", (char *) NULL, (char *) NULL,
-     "200", -1, Tk_Offset(TreeCtrl, columnDrag.alpha),
+     "200", -1, offsetof(TreeCtrl, columnDrag.alpha),
      0, (ClientData) NULL, 0},
     {TK_OPTION_COLOR, "-imagecolor", (char *) NULL, (char *) NULL,
-     "gray75", -1, Tk_Offset(TreeCtrl, columnDrag.color),
+     "gray75", -1, offsetof(TreeCtrl, columnDrag.color),
      0, (ClientData) NULL, 0},
     {TK_OPTION_CUSTOM, "-imagecolumn", (char *) NULL, (char *) NULL,
-     (char *) NULL, -1, Tk_Offset(TreeCtrl, columnDrag.column),
+     (char *) NULL, -1, offsetof(TreeCtrl, columnDrag.column),
      TK_OPTION_NULL_OK, (ClientData) &TreeCtrlCO_column_NOT_TAIL, 0},
     {TK_OPTION_PIXELS, "-imageoffset", (char *) NULL, (char *) NULL,
-     (char *) NULL, Tk_Offset(TreeCtrl, columnDrag.offsetObj),
-     Tk_Offset(TreeCtrl, columnDrag.offset), 0, (ClientData) NULL, 0},
+     (char *) NULL, offsetof(TreeCtrl, columnDrag.offsetObj),
+     offsetof(TreeCtrl, columnDrag.offset), 0, (ClientData) NULL, 0},
     {TK_OPTION_INT, "-imagespan", (char *) NULL, (char *) NULL,
-     "1", -1, Tk_Offset(TreeCtrl, columnDrag.span),
+     "1", -1, offsetof(TreeCtrl, columnDrag.span),
      0, (ClientData) NULL, 0},
     {TK_OPTION_COLOR, "-indicatorcolor", (char *) NULL, (char *) NULL,
-     "Black", -1, Tk_Offset(TreeCtrl, columnDrag.indColor),
+     "Black", -1, offsetof(TreeCtrl, columnDrag.indColor),
      0, (ClientData) NULL, 0},
     {TK_OPTION_CUSTOM, "-indicatorcolumn", (char *) NULL, (char *) NULL,
-     (char *) NULL, -1, Tk_Offset(TreeCtrl, columnDrag.indColumn),
+     (char *) NULL, -1, offsetof(TreeCtrl, columnDrag.indColumn),
      TK_OPTION_NULL_OK, (ClientData) &TreeCtrlCO_column, 0},
     {TK_OPTION_STRING_TABLE, "-indicatorside", (char *) NULL, (char *) NULL,
-     "left", -1, Tk_Offset(TreeCtrl, columnDrag.indSide),
+     "left", -1, offsetof(TreeCtrl, columnDrag.indSide),
      0, (ClientData) arrowSideST, 0},
     {TK_OPTION_INT, "-indicatorspan", (char *) NULL, (char *) NULL,
-     "1", -1, Tk_Offset(TreeCtrl, columnDrag.indSpan),
+     "1", -1, offsetof(TreeCtrl, columnDrag.indSpan),
      0, (ClientData) NULL, 0},
     {TK_OPTION_END, (char *) NULL, (char *) NULL, (char *) NULL,
      (char *) NULL, 0, -1, 0, 0, 0}
@@ -714,7 +714,7 @@ Qualifiers_Scan(
     Tcl_Interp *interp = tree->interp;
     int qual, j = startIndex;
 
-    static CONST char *qualifiers[] = {
+    static const char *qualifiers[] = {
 	"lock", "tag", "visible", "!tail", "!visible", NULL
     };
     enum qualEnum {
@@ -899,13 +899,14 @@ TreeColumnList_FromObj(
     )
 {
     Tcl_Interp *interp = tree->interp;
-    int i, objc, index, listIndex;
+    int i, index;
+    Tcl_Size objc, listIndex;
     Tcl_Obj **objv, *elemPtr;
     TreeColumn column = NULL;
     Qualifiers q;
     int qualArgsTotal;
 
-    static CONST char *indexName[] = {
+    static const char *indexName[] = {
 	"all", "end", "first", "last", "list", "order", "range", "tail",
 	"tree", (char *) NULL
     };
@@ -922,7 +923,7 @@ TreeColumnList_FromObj(
 	1, 0, 1, 1, 0, 1, 1, 0, 0
     };
 
-    static CONST char *modifiers[] = {
+    static const char *modifiers[] = {
 	"next", "prev", "span", (char *) NULL
     };
     enum modEnum {
@@ -1890,7 +1891,7 @@ static int
 Column_Config(
     TreeColumn column,		/* Column record. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[],	/* Argument values. */
+    Tcl_Obj *const objv[],	/* Argument values. */
     int createFlag		/* TRUE if the Column is being created. */
     )
 {
@@ -1920,7 +1921,7 @@ Column_Config(
     for (i = 0; i < objc; i += 2) {
 	Tk_OptionSpec *specPtr = columnSpecs;
 	int length;
-	CONST char *optionName = Tcl_GetStringFromObj(objv[i], &length);
+	const char *optionName = Tcl_GetStringFromObj(objv[i], &length);
 	while (specPtr->type != TK_OPTION_END) {
 	    if (strncmp(specPtr->optionName, optionName, length) == 0) {
 		objV[objC++] = objv[i];
@@ -2834,11 +2835,11 @@ ColumnTagCmd(
     ClientData clientData,	/* Widget info. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[]	/* Argument values. */
+    Tcl_Obj *const objv[]	/* Argument values. */
     )
 {
     TreeCtrl *tree = clientData;
-    static CONST char *commandNames[] = {
+    static const char *commandNames[] = {
 	"add", "expr", "names", "remove", (char *) NULL
     };
     enum {
@@ -3000,11 +3001,11 @@ TreeColumnCmd(
     ClientData clientData,	/* Widget info. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[]	/* Argument values. */
+    Tcl_Obj *const objv[]	/* Argument values. */
     )
 {
     TreeCtrl *tree = clientData;
-    static CONST char *commandNames[] = {
+    static const char *commandNames[] = {
 	"bbox", "cget", "compare", "configure", "count", "create", "delete",
 	"dragcget", "dragconfigure", "id",
 #ifdef DEPRECATED
@@ -3071,7 +3072,7 @@ TreeColumnCmd(
 	    {
 		Tk_OptionSpec *specPtr = columnSpecs;
 		int length;
-		CONST char *optionName = Tcl_GetStringFromObj(objv[4], &length);
+		const char *optionName = Tcl_GetStringFromObj(objv[4], &length);
 		while (specPtr->type != TK_OPTION_END) {
 		    if (strncmp(specPtr->optionName, optionName, length) == 0) {
 			break;
@@ -3093,7 +3094,7 @@ TreeColumnCmd(
 	/* T column compare C op C */
 	case COMMAND_COMPARE: {
 	    TreeColumn column1, column2;
-	    static CONST char *opName[] = { "<", "<=", "==", ">=", ">", "!=", NULL };
+	    static const char *opName[] = { "<", "<=", "==", ">=", ">", "!=", NULL };
 	    int op, compare = 0, index1, index2;
 
 	    if (objc != 6) {
@@ -3136,7 +3137,7 @@ TreeColumnCmd(
 		if (objc == 5) {
 		    Tk_OptionSpec *specPtr = columnSpecs;
 		    int length;
-		    CONST char *optionName = Tcl_GetStringFromObj(objv[4], &length);
+		    const char *optionName = Tcl_GetStringFromObj(objv[4], &length);
 		    while (specPtr->type != TK_OPTION_END) {
 			if (strncmp(specPtr->optionName, optionName, length) == 0) {
 			    break;

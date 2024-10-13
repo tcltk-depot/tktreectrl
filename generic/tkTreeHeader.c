@@ -90,9 +90,9 @@ struct TreeHeader_
     struct TreeHeaderDrag columnDrag;
 };
 
-static CONST char *arrowST[] = { "none", "up", "down", (char *) NULL };
-static CONST char *arrowSideST[] = { "left", "right", (char *) NULL };
-static CONST char *stateST[] = { "normal", "active", "pressed", (char *) NULL };
+static const char *arrowST[] = { "none", "up", "down", (char *) NULL };
+static const char *arrowSideST[] = { "left", "right", (char *) NULL };
+static const char *stateST[] = { "normal", "active", "pressed", (char *) NULL };
 
 #define COLU_CONF_IMAGE		0x0001
 #define COLU_CONF_NWIDTH	0x0002	/* neededWidth */
@@ -111,89 +111,89 @@ static CONST char *stateST[] = { "normal", "active", "pressed", (char *) NULL };
 
 static Tk_OptionSpec columnSpecs[] = {
     {TK_OPTION_STRING_TABLE, "-arrow", (char *) NULL, (char *) NULL,
-     "none", -1, Tk_Offset(HeaderColumn, arrow),
+     "none", -1, offsetof(HeaderColumn, arrow),
      0, (ClientData) arrowST, COLU_CONF_STATE | ELEM_HEADER},
     {TK_OPTION_CUSTOM, "-arrowbitmap", (char *) NULL, (char *) NULL,
      (char *) NULL,
-     Tk_Offset(HeaderColumn, arrowBitmap.obj), Tk_Offset(HeaderColumn, arrowBitmap),
+     offsetof(HeaderColumn, arrowBitmap.obj), offsetof(HeaderColumn, arrowBitmap),
      TK_OPTION_NULL_OK, (ClientData) NULL,
      COLU_CONF_NWIDTH | COLU_CONF_NHEIGHT | COLU_CONF_DISPLAY | ELEM_HEADER},
     {TK_OPTION_STRING_TABLE, "-arrowgravity", (char *) NULL, (char *) NULL,
-     "left", -1, Tk_Offset(HeaderColumn, arrowGravity),
+     "left", -1, offsetof(HeaderColumn, arrowGravity),
      0, (ClientData) arrowSideST, COLU_CONF_DISPLAY | ELEM_HEADER},
     {TK_OPTION_CUSTOM, "-arrowimage", (char *) NULL, (char *) NULL,
      (char *) NULL,
-     Tk_Offset(HeaderColumn, arrowImage.obj), Tk_Offset(HeaderColumn, arrowImage),
+     offsetof(HeaderColumn, arrowImage.obj), offsetof(HeaderColumn, arrowImage),
      TK_OPTION_NULL_OK, (ClientData) NULL,
      COLU_CONF_NWIDTH | COLU_CONF_NHEIGHT | COLU_CONF_DISPLAY | ELEM_HEADER},
     {TK_OPTION_CUSTOM, "-arrowpadx", (char *) NULL, (char *) NULL,
-     "6", Tk_Offset(HeaderColumn, arrowPadXObj), Tk_Offset(HeaderColumn, arrowPadX),
+     "6", offsetof(HeaderColumn, arrowPadXObj), offsetof(HeaderColumn, arrowPadX),
      0, (ClientData) &TreeCtrlCO_pad, COLU_CONF_NWIDTH | COLU_CONF_DISPLAY | ELEM_HEADER},
     {TK_OPTION_CUSTOM, "-arrowpady", (char *) NULL, (char *) NULL,
-     "0", Tk_Offset(HeaderColumn, arrowPadYObj), Tk_Offset(HeaderColumn, arrowPadY),
+     "0", offsetof(HeaderColumn, arrowPadYObj), offsetof(HeaderColumn, arrowPadY),
      0, (ClientData) &TreeCtrlCO_pad, COLU_CONF_NWIDTH | COLU_CONF_DISPLAY | ELEM_HEADER},
     {TK_OPTION_STRING_TABLE, "-arrowside", (char *) NULL, (char *) NULL,
-     "right", -1, Tk_Offset(HeaderColumn, arrowSide),
+     "right", -1, offsetof(HeaderColumn, arrowSide),
      0, (ClientData) arrowSideST, COLU_CONF_NWIDTH | COLU_CONF_DISPLAY | ELEM_HEADER},
     {TK_OPTION_CUSTOM, "-background", (char *) NULL, (char *) NULL,
      (char *) NULL, /* DEFAULT VALUE IS INITIALIZED LATER */
-     Tk_Offset(HeaderColumn, border.obj), Tk_Offset(HeaderColumn, border),
+     offsetof(HeaderColumn, border.obj), offsetof(HeaderColumn, border),
      0, (ClientData) NULL, COLU_CONF_DISPLAY | COLU_CONF_TAIL | ELEM_HEADER},
     {TK_OPTION_BITMAP, "-bitmap", (char *) NULL, (char *) NULL,
-     (char *) NULL, -1, Tk_Offset(HeaderColumn, bitmap),
+     (char *) NULL, -1, offsetof(HeaderColumn, bitmap),
      TK_OPTION_NULL_OK, (ClientData) NULL,
      COLU_CONF_BITMAP | COLU_CONF_NWIDTH | COLU_CONF_NHEIGHT | COLU_CONF_DISPLAY | ELEM_BITMAP},
     {TK_OPTION_PIXELS, "-borderwidth", (char *) NULL, (char *) NULL,
-     "2", Tk_Offset(HeaderColumn, borderWidthObj), Tk_Offset(HeaderColumn, borderWidth),
+     "2", offsetof(HeaderColumn, borderWidthObj), offsetof(HeaderColumn, borderWidth),
      0, (ClientData) NULL, COLU_CONF_NWIDTH | COLU_CONF_NHEIGHT |
      COLU_CONF_DISPLAY | COLU_CONF_TAIL | ELEM_HEADER},
     {TK_OPTION_BOOLEAN, "-button", (char *) NULL, (char *) NULL,
-     "1", -1, Tk_Offset(HeaderColumn, button),
+     "1", -1, offsetof(HeaderColumn, button),
      0, (ClientData) NULL, 0},
     {TK_OPTION_FONT, "-font", (char *) NULL, (char *) NULL,
-     (char *) NULL, -1, Tk_Offset(HeaderColumn, tkfont),
+     (char *) NULL, -1, offsetof(HeaderColumn, tkfont),
      TK_OPTION_NULL_OK, (ClientData) NULL, COLU_CONF_NWIDTH |
      COLU_CONF_NHEIGHT | COLU_CONF_DISPLAY | COLU_CONF_TEXT | ELEM_TEXT},
     {TK_OPTION_STRING, "-image", (char *) NULL, (char *) NULL,
-     (char *) NULL, -1, Tk_Offset(HeaderColumn, imageString),
+     (char *) NULL, -1, offsetof(HeaderColumn, imageString),
      TK_OPTION_NULL_OK, (ClientData) NULL,
      COLU_CONF_IMAGE | COLU_CONF_NWIDTH | COLU_CONF_NHEIGHT | COLU_CONF_DISPLAY
      | ELEM_IMAGE},
     {TK_OPTION_CUSTOM, "-imagepadx", (char *) NULL, (char *) NULL,
-     "6", Tk_Offset(HeaderColumn, imagePadXObj),
-     Tk_Offset(HeaderColumn, imagePadX), 0, (ClientData) &TreeCtrlCO_pad,
+     "6", offsetof(HeaderColumn, imagePadXObj),
+     offsetof(HeaderColumn, imagePadX), 0, (ClientData) &TreeCtrlCO_pad,
      COLU_CONF_NWIDTH | COLU_CONF_DISPLAY},
     {TK_OPTION_CUSTOM, "-imagepady", (char *) NULL, (char *) NULL,
-     "0", Tk_Offset(HeaderColumn, imagePadYObj),
-     Tk_Offset(HeaderColumn, imagePadY), 0, (ClientData) &TreeCtrlCO_pad,
+     "0", offsetof(HeaderColumn, imagePadYObj),
+     offsetof(HeaderColumn, imagePadY), 0, (ClientData) &TreeCtrlCO_pad,
      COLU_CONF_NHEIGHT | COLU_CONF_DISPLAY},
     {TK_OPTION_JUSTIFY, "-justify", (char *) NULL, (char *) NULL,
-     "left", -1, Tk_Offset(HeaderColumn, justify),
+     "left", -1, offsetof(HeaderColumn, justify),
      0, (ClientData) NULL, COLU_CONF_DISPLAY | COLU_CONF_JUSTIFY},
     {TK_OPTION_STRING_TABLE, "-state", (char *) NULL, (char *) NULL,
-     "normal", -1, Tk_Offset(HeaderColumn, state), 0, (ClientData) stateST,
+     "normal", -1, offsetof(HeaderColumn, state), 0, (ClientData) stateST,
      COLU_CONF_STATE | ELEM_HEADER},
     {TK_OPTION_STRING, "-text", (char *) NULL, (char *) NULL,
-     (char *) NULL, Tk_Offset(HeaderColumn, textObj), Tk_Offset(HeaderColumn, text),
+     (char *) NULL, offsetof(HeaderColumn, textObj), offsetof(HeaderColumn, text),
      TK_OPTION_NULL_OK, (ClientData) NULL,
      COLU_CONF_TEXT | COLU_CONF_NWIDTH | COLU_CONF_NHEIGHT | COLU_CONF_DISPLAY |
      ELEM_TEXT},
     {TK_OPTION_CUSTOM, "-textcolor", (char *) NULL, (char *) NULL,
      (char *) NULL, /* DEFAULT VALUE IS INITIALIZED LATER */
-     Tk_Offset(HeaderColumn, textColor.obj),
-     Tk_Offset(HeaderColumn, textColor), 0, (ClientData) NULL,
+     offsetof(HeaderColumn, textColor.obj),
+     offsetof(HeaderColumn, textColor), 0, (ClientData) NULL,
      COLU_CONF_DISPLAY | ELEM_TEXT},
     {TK_OPTION_INT, "-textlines", (char *) NULL, (char *) NULL,
-     "1", -1, Tk_Offset(HeaderColumn, textLines),
+     "1", -1, offsetof(HeaderColumn, textLines),
      0, (ClientData) NULL, COLU_CONF_TEXT | COLU_CONF_NWIDTH |
      COLU_CONF_NHEIGHT | COLU_CONF_DISPLAY | ELEM_TEXT},
     {TK_OPTION_CUSTOM, "-textpadx", (char *) NULL, (char *) NULL,
-     "6", Tk_Offset(HeaderColumn, textPadXObj),
-     Tk_Offset(HeaderColumn, textPadX), 0, (ClientData) &TreeCtrlCO_pad,
+     "6", offsetof(HeaderColumn, textPadXObj),
+     offsetof(HeaderColumn, textPadX), 0, (ClientData) &TreeCtrlCO_pad,
      COLU_CONF_NWIDTH | COLU_CONF_DISPLAY},
     {TK_OPTION_CUSTOM, "-textpady", (char *) NULL, (char *) NULL,
-     "0", Tk_Offset(HeaderColumn, textPadYObj),
-     Tk_Offset(HeaderColumn, textPadY), 0, (ClientData) &TreeCtrlCO_pad,
+     "0", offsetof(HeaderColumn, textPadYObj),
+     offsetof(HeaderColumn, textPadY), 0, (ClientData) &TreeCtrlCO_pad,
      COLU_CONF_NHEIGHT | COLU_CONF_DISPLAY},
     {TK_OPTION_END, (char *) NULL, (char *) NULL, (char *) NULL,
      (char *) NULL, 0, -1, 0, 0, 0}
@@ -201,10 +201,10 @@ static Tk_OptionSpec columnSpecs[] = {
 
 static Tk_OptionSpec dragSpecs[] = {
     {TK_OPTION_BOOLEAN, "-draw", (char *) NULL, (char *) NULL,
-     "1", -1, Tk_Offset(TreeHeader_, columnDrag.draw),
+     "1", -1, offsetof(TreeHeader_, columnDrag.draw),
      0, (ClientData) NULL, 0},
     {TK_OPTION_BOOLEAN, "-enable", (char *) NULL, (char *) NULL,
-     "1", -1, Tk_Offset(TreeHeader_, columnDrag.enable),
+     "1", -1, offsetof(TreeHeader_, columnDrag.enable),
      0, (ClientData) NULL, 0},
     {TK_OPTION_END, (char *) NULL, (char *) NULL, (char *) NULL,
      (char *) NULL, 0, -1, 0, 0, 0}
@@ -378,11 +378,11 @@ Tk_ObjCustomOption TreeCtrlCO_header =
 static Tk_OptionSpec*
 LookupOption(
     Tk_OptionSpec *tablePtr,
-    CONST char *name
+    const char *name
     )
 {
     Tk_OptionSpec *specPtr = tablePtr, *bestPtr = NULL;
-    CONST char *p1, *p2;
+    const char *p1, *p2;
 
     while (specPtr->type != TK_OPTION_END) {
 	for (p1 = name, p2 = specPtr->optionName;
@@ -446,7 +446,7 @@ TreeHeaderColumn_ConfigureHeaderStyle(
     TreeHeaderColumn column,	/* Column that was configured. */
     TreeColumn treeColumn,	/* The tree-column. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[]	/* Option/value pairs. */
+    Tcl_Obj *const objv[]	/* Option/value pairs. */
     )
 {
     TreeCtrl *tree = header->tree;
@@ -737,7 +737,7 @@ Column_Configure(
     TreeHeaderColumn column,	/* Column token. */
     TreeColumn treeColumn,	/* Column token. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[],	/* Argument values. */
+    Tcl_Obj *const objv[],	/* Argument values. */
     int createFlag		/* TRUE if the Column is being created. */
     )
 {
@@ -977,13 +977,13 @@ TreeHeader_ConsumeColumnCget(
 
 #ifdef TREECTRL_DEBUG
     if (tree->headerItems == NULL)
-	panic("the default header was deleted!");
+	Tcl_Panic("the default header was deleted!");
 #endif
     itemColumn = TreeItem_FindColumn(tree, tree->headerItems,
 	TreeColumn_Index(treeColumn));
 #ifdef TREECTRL_DEBUG
     if (itemColumn == NULL)
-	panic("the default header is missing column %s%d!",
+	Tcl_Panic("the default header is missing column %s%d!",
 	    tree->columnPrefix, TreeColumn_GetID(treeColumn));
 #endif
     column = TreeItemColumn_GetHeaderColumn(tree, itemColumn);
@@ -1019,7 +1019,7 @@ TreeHeader_ConsumeColumnConfig(
     TreeColumn treeColumn,	/* Used to determine which header-column to
 				 * configure. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[],	/* Argument values. */
+    Tcl_Obj *const objv[],	/* Argument values. */
     int createFlag		/* TRUE if column is being created. */
     )
 {
@@ -1034,13 +1034,13 @@ TreeHeader_ConsumeColumnConfig(
 	return TCL_OK;
 #ifdef TREECTRL_DEBUG
     if (tree->headerItems == NULL)
-	panic("the default header was deleted!");
+	Tcl_Panic("the default header was deleted!");
 #endif
     itemColumn = TreeItem_FindColumn(tree, tree->headerItems,
 	TreeColumn_Index(treeColumn));
 #ifdef TREECTRL_DEBUG
     if (itemColumn == NULL)
-	panic("the default header is missing column %s%d!",
+	Tcl_Panic("the default header is missing column %s%d!",
 	    tree->columnPrefix, TreeColumn_GetID(treeColumn));
 #endif
     column = TreeItemColumn_GetHeaderColumn(tree, itemColumn);
@@ -1081,13 +1081,13 @@ TreeHeader_ConsumeColumnOptionInfo(
 
 #ifdef TREECTRL_DEBUG
     if (tree->headerItems == NULL)
-	panic("the default header was deleted!");
+	Tcl_Panic("the default header was deleted!");
 #endif
     itemColumn = TreeItem_FindColumn(tree, tree->headerItems,
 	TreeColumn_Index(treeColumn));
 #ifdef TREECTRL_DEBUG
     if (itemColumn == NULL)
-	panic("the default header is missing column %s%d!",
+	Tcl_Panic("the default header is missing column %s%d!",
 	    tree->columnPrefix, TreeColumn_GetID(treeColumn));
 #endif
     column = TreeItemColumn_GetHeaderColumn(tree, itemColumn);
@@ -1475,7 +1475,7 @@ SetImageForColumn(
     ximage = XGetImage(tree->display, td.drawable, 0, 0,
 	    (unsigned int)width, (unsigned int)height, AllPlanes, ZPixmap);
     if (ximage == NULL)
-	panic("tkTreeColumn.c:SetImageForColumn() ximage is NULL");
+	Tcl_Panic("tkTreeColumn.c:SetImageForColumn() ximage is NULL");
 
     /* XImage -> Tk_Image */
     Tree_XImage2Photo(tree->interp, photoH, ximage, 0, tree->columnDrag.alpha);
@@ -1616,7 +1616,7 @@ static int
 Header_Configure(
     TreeHeader header,		/* Header token */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[],	/* Argument values. */
+    Tcl_Obj *const objv[],	/* Argument values. */
     int createFlag		/* TRUE if the TreeHeader is being created. */
     )
 {
@@ -1636,7 +1636,7 @@ Header_Configure(
     for (i = 0; i < objc; i += 2) {
 	Tk_OptionSpec *specPtr = headerSpecs;
 	int length;
-	CONST char *optionName = Tcl_GetStringFromObj(objv[i], &length);
+	const char *optionName = Tcl_GetStringFromObj(objv[i], &length);
 	while (specPtr->type != TK_OPTION_END) {
 	    if (strncmp(specPtr->optionName, optionName, length) == 0) {
 		objV[objC++] = objv[i];
@@ -2175,7 +2175,7 @@ Qualifiers_Scan(
     Tcl_Interp *interp = tree->interp;
     int qual, j = startIndex;
 
-    static CONST char *qualifiers[] = {
+    static const char *qualifiers[] = {
 	"tag", "visible", "!visible", NULL
     };
     enum qualEnum {
@@ -2320,7 +2320,7 @@ TreeHeaderList_FromObj(
     )
 {
     Tcl_Interp *interp = tree->interp;
-    static CONST char *indexName[] = {
+    static const char *indexName[] = {
 	"all", "end", "first", "last", (char *) NULL
     };
     enum indexEnum {
@@ -2621,7 +2621,7 @@ TreeHeaderCmd_Create(
     ClientData clientData,	/* Widget info. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[]	/* Argument values. */
+    Tcl_Obj *const objv[]	/* Argument values. */
     )
 {
     TreeCtrl *tree = clientData;
@@ -2663,7 +2663,7 @@ TreeHeaderCmd_Cget(
     ClientData clientData,	/* Widget info. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[]	/* Argument values. */
+    Tcl_Obj *const objv[]	/* Argument values. */
     )
 {
     TreeCtrl *tree = clientData;
@@ -2684,7 +2684,7 @@ TreeHeaderCmd_Cget(
 	{
 	    Tk_OptionSpec *specPtr = headerSpecs;
 	    int length;
-	    CONST char *optionName = Tcl_GetStringFromObj(objv[4], &length);
+	    const char *optionName = Tcl_GetStringFromObj(objv[4], &length);
 	    while (specPtr->type != TK_OPTION_END) {
 		if (strncmp(specPtr->optionName, optionName, length) == 0) {
 		    break;
@@ -2737,14 +2737,14 @@ TreeHeaderCmd_Configure(
     ClientData clientData,	/* Widget info. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[]	/* Argument values. */
+    Tcl_Obj *const objv[]	/* Argument values. */
     )
 {
     TreeCtrl *tree = clientData;
     TreeHeader header;
     TreeHeaderColumn column;
     Tcl_Obj *resultObjPtr;
-    CONST char *s;
+    const char *s;
     TreeItem item;
     TreeItemList items;
     ItemForEach iter;
@@ -2873,11 +2873,11 @@ TreeHeaderCmd(
     ClientData clientData,	/* Widget info. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[]	/* Argument values. */
+    Tcl_Obj *const objv[]	/* Argument values. */
     )
 {
     TreeCtrl *tree = clientData;
-    static CONST char *commandNames[] = {
+    static const char *commandNames[] = {
 	"bbox", "cget", "compare", "configure", "count", "create", "delete",
 	"dragcget", "dragconfigure", "element", "id", "image", "span",
 	"state", "style", "tag", "text", (char *) NULL
@@ -2920,7 +2920,7 @@ TreeHeaderCmd(
 
 	/* T header compare H op H */
 	case COMMAND_COMPARE: {
-	    static CONST char *opName[] = { "<", "<=", "==", ">=", ">", "!=",
+	    static const char *opName[] = { "<", "<=", "==", ">=", ">", "!=",
 		NULL };
 	    enum { COP_LT, COP_LE, COP_EQ, COP_GE, COP_GT, COP_NE };
 	    int op, compare = 0, index1 = 0, index2 = 0;
@@ -3061,7 +3061,7 @@ TreeHeaderCmd(
 	    Tcl_Obj *resultObjPtr;
 	    Tk_SavedOptions savedOptions;
 	    int mask, result, flags = 0;
-	    CONST char *s;
+	    const char *s;
 
 	    if (objc == 3) {
 		resultObjPtr = Tk_GetOptionInfo(interp, (char *) tree,
