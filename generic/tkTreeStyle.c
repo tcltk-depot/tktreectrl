@@ -3768,7 +3768,7 @@ Element_CreateAndConfig(
     /* Filter out -statedomain and its value. */
     /* FIXME: there is no way to query this. */
     for (i = 0; i < objc; i += 2) {
-	int length;
+	Tcl_Size length;
 	const char *s = Tcl_GetStringFromObj(objv[i], &length);
 	if (strncmp(s, "-statedomain", length) == 0) {
 	    if (i + 1 == objc) {
@@ -5791,7 +5791,7 @@ TreeElementCmd(
 		return TCL_ERROR;
 	    /* Hack -- allow [cget -statedomain] but not [configure] */
 	    {
-		int length;
+		Tcl_Size length;
 		const char *s = Tcl_GetStringFromObj(objv[4], &length);
 		/* FIXME: Check for minimum # unique chars. */
 		if (strncmp(s, "-statedomain", length) == 0 && length >= 6) {
@@ -5852,7 +5852,7 @@ TreeElementCmd(
 
 	case COMMAND_CREATE: {
 	    char *name;
-	    int length;
+	    Tcl_Size length;
 	    int isNew;
 	    TreeElement elem;
 	    TreeElementType *typePtr;
@@ -5992,7 +5992,7 @@ Style_CreateAndConfig(
     /* Filter out -statedomain and its value. */
     /* FIXME: there is no way to query this. */
     for (i = 0; i < objc; i += 2) {
-	int length;
+	Tcl_Size length;
 	const char *s = Tcl_GetStringFromObj(objv[i], &length);
 	if (strncmp(s, "-statedomain", length) == 0) {
 	    if (i + 1 == objc) {
@@ -6486,7 +6486,7 @@ StyleLayoutCmd(
 		break;
 	    }
 	    case OPTION_UNION: {
-		int objc1;
+		Tcl_Size objc1;
 		Tcl_Obj **objv1;
 		int j, k, eIndex2, *onion, count = 0;
 
@@ -6784,7 +6784,7 @@ TreeStyleCmd(
 	    style = (MStyle *) _style;
 	    /* Hack -- allow [cget -statedomain] but not [configure] */
 	    {
-		int length;
+		Tcl_Size length;
 		const char *s = Tcl_GetStringFromObj(objv[4], &length);
 		/* FIXME: Check for minimum # unique chars. */
 		if (strncmp(s, "-statedomain", length) == 0 && length >= 7) {
@@ -6831,7 +6831,7 @@ TreeStyleCmd(
 
 	case COMMAND_CREATE: {
 	    char *name;
-	    int len;
+	    Tcl_Size len;
 	    Tcl_HashEntry *hPtr;
 	    int isNew;
 
@@ -6877,9 +6877,9 @@ TreeStyleCmd(
 	/* T style elements S ?{E ...}? */
 	case COMMAND_ELEMENTS: {
 	    TreeElement elem, *elemList = NULL;
-	    int i, j, count = 0;
+	    int j, count = 0;
 	    int staticMap[STATIC_SIZE], *map = staticMap;
-	    int listObjc;
+	    Tcl_Size listObjc, i;
 	    Tcl_Obj **listObjv;
 
 	    if (objc < 4 || objc > 5) {

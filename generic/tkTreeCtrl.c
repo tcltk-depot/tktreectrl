@@ -809,7 +809,8 @@ static int TreeWidgetCmd(
 	    char *s;
 	    int recurse = 0;
 	    int mode = 0; /* lint */
-	    int i, j, count, len;
+	    int i, j, count;
+	    Tcl_Size len;
 	    TreeItemList items, item2s;
 	    TreeItem _item;
 	    ItemForEach iter;
@@ -1315,7 +1316,7 @@ TreeConfigure(
 		    tree->defaultStyle.styles = NULL;
 		    tree->defaultStyle.numStyles = 0;
 		} else {
-		    int i, listObjc;
+		    Tcl_Size i, listObjc;
 		    Tcl_Obj **listObjv;
 		    TreeStyle style;
 
@@ -1352,14 +1353,14 @@ TreeConfigure(
 
 	    /* Parse -wrap string into wrapMode and wrapArg */
 	    if (mask & TREE_CONF_WRAP) {
-		int listObjc;
+		Tcl_Size listObjc;
 		Tcl_Obj **listObjv;
 
 		if (tree->wrapObj == NULL) {
 		    tree->wrapMode = TREE_WRAP_NONE;
 		    tree->wrapArg = 0;
 		} else {
-		    int len0, len1;
+		    Tcl_Size len0, len1;
 		    char *s0, *s1, ch0, ch1;
 
 		    if ((Tcl_ListObjGetElements(interp, tree->wrapObj, &listObjc,
@@ -2641,7 +2642,8 @@ TreeSeeCmd(
 	return TCL_ERROR;
 
     if (objc > 3) {
-	int i, len, firstOption = 3;
+	int i, firstOption = 3;
+	Tcl_Size len;
 	char *s = Tcl_GetStringFromObj(objv[3], &len);
 	if (s[0] != '-') {
 	    if (TreeColumn_FromObj(tree, objv[3], &treeColumn,
@@ -2806,7 +2808,8 @@ Tree_StateFromObj(
 {
     Tcl_Interp *interp = tree->interp;
     TreeStateDomain *domainPtr = &tree->stateDomain[domain];
-    int i, op = STATE_OP_ON, op2, op3, length, state = 0;
+    int i, op = STATE_OP_ON, op2, op3, state = 0;
+    Tcl_Size length;
     char ch0, *string;
 
     string = Tcl_GetStringFromObj(obj, &length);
@@ -2900,7 +2903,7 @@ Tree_StateFromListObj(
     )
 {
     Tcl_Interp *interp = tree->interp;
-    int i, listObjc;
+    Tcl_Size i, listObjc;
     Tcl_Obj **listObjv;
 
     states[0] = states[1] = states[2] = 0;
@@ -2963,7 +2966,8 @@ Tree_StateCmd(
     switch (index) {
 	case COMMAND_DEFINE: {
 	    char *string;
-	    int i, length, slot = -1;
+	    int i, slot = -1;
+	    Tcl_Size length;
 
 	    if (objc != 4) {
 		Tcl_WrongNumArgs(interp, 3, objv, "stateName");
@@ -3367,7 +3371,7 @@ doneCLEAR:
 		return TCL_ERROR;
 	    }
 	    if (objc > 3) {
-		int first, last;
+		Tcl_Size first, last;
 		TreeItemList items;
 
 		if (Tcl_GetIntForIndex(interp, objv[3], tree->selectCount - 1,
@@ -3452,7 +3456,7 @@ doneCLEAR:
 	}
 
 	case COMMAND_MODIFY: {
-	    int i, j, k, objcS, objcD;
+	    Tcl_Size i, j, k, objcS, objcD;
 	    Tcl_Obj **objvS, **objvD;
 	    Tcl_HashEntry *hPtr;
 	    Tcl_HashSearch search;

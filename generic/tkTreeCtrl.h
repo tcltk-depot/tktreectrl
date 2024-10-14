@@ -1539,7 +1539,7 @@ typedef struct TagExpr {
 
     char *string;		/* tag expression string */
     int stringIndex;		/* current position in string scan */
-    int stringLength;		/* length of tag expression string */
+    Tcl_Size stringLength;		/* length of tag expression string */
 
     char *rewritebuffer;	/* tag string (after removing escapes) */
     char staticRWB[100];
@@ -1597,8 +1597,8 @@ MODULE_SCOPE int ItemButtonCO_Init(Tk_OptionSpec *optionTable, const char *optio
 MODULE_SCOPE void TreeStyleCO_Init(Tk_OptionSpec *optionTable, const char *optionName,
     int domain);
 
-MODULE_SCOPE int Tree_GetIntForIndex(TreeCtrl *tree, Tcl_Obj *objPtr, int *indexPtr,
-    int *endRelativePtr);
+MODULE_SCOPE int Tree_GetIntForIndex(TreeCtrl *tree, Tcl_Obj *objPtr,
+    Tcl_Size *indexPtr, int *endRelativePtr);
 
 MODULE_SCOPE Tk_ObjCustomOption TreeCtrlCO_pixels;
 MODULE_SCOPE Tk_ObjCustomOption TreeCtrlCO_string;

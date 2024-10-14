@@ -118,10 +118,10 @@ TreeCtrl_BreakIntoDebugger(
 
 static int	PadAmountOptionSet(ClientData clientData,
 		Tcl_Interp *interp, Tk_Window tkwin,
-		Tcl_Obj **value, char *recordPtr, int internalOffset,
+		Tcl_Obj **value, char *recordPtr, Tcl_Size internalOffset,
 		char *saveInternalPtr, int flags);
 static Tcl_Obj *PadAmountOptionGet(ClientData clientData,
-		Tk_Window tkwin, char *recordPtr, int internalOffset);
+		Tk_Window tkwin, char *recordPtr, Tcl_Size internalOffset);
 static void	PadAmountOptionRestore(ClientData clientData,
 		Tk_Window tkwin, char *internalPtr,
 		char *saveInternalPtr);
@@ -1604,7 +1604,7 @@ PadAmountOptionSet(
     Tcl_Obj **valuePtr,		/* The argument to "-padx", "-pady", "-ipadx",
 				 * or "-ipady".  The thing to be parsed. */
     char *recordPtr,		/* Pointer to start of widget record. */
-    int internalOffset,		/* Offset of internal representation or
+    Tcl_Size internalOffset,		/* Offset of internal representation or
 				 * -1, if no internal repr is wanted. */
     char *saveInternalPtr,	/* Pointer to the place, where the saved
 				 * internal form (of type "int *") resides. */
@@ -1658,7 +1658,7 @@ PadAmountOptionGet(
     ClientData clientData,	/* unused. */
     Tk_Window tkwin,		/* A window; unused. */
     char *recordPtr,		/* Pointer to start of widget record. */
-    int internalOffset		/* Offset of internal representation. */
+    Tcl_Size internalOffset		/* Offset of internal representation. */
     )
 {
     int *padAmounts = *(int **)(recordPtr + internalOffset);
@@ -1717,7 +1717,7 @@ ObjectIsEmpty(
     Tcl_Obj *obj		/* Object to test.  May be NULL. */
     )
 {
-    int length;
+    Tcl_Size length;
 
     if (obj == NULL)
 	return 1;
@@ -2063,7 +2063,8 @@ PerStateInfo_Undefine(
     )
 {
     PerStateData *pData = pInfo->data;
-    int i, j, numStates, stateOff, stateOn;
+    int i, stateOff, stateOn;
+    Tcl_Size numStates, j;
     Tcl_Obj *configObj = pInfo->obj, *listObj, *stateObj;
     int modified = 0;
 
@@ -2504,7 +2505,7 @@ PSDImageFromObj(
     Tcl_Obj *obj,
     PerStateDataImage *pImage)
 {
-    int length;
+    Tcl_Size length;
     char *string;
 
     if (ObjectIsEmpty(obj)) {
@@ -2696,7 +2697,7 @@ Tree_GetFlagsFromObj(
     int *flagsPtr
     )
 {
-    int length;
+    Tcl_Size length;
     char *string;
 
     string = Tcl_GetStringFromObj(obj, &length);
@@ -3822,7 +3823,7 @@ TagInfoCO_Set(
     Tk_Window tkwin,
     Tcl_Obj **value,
     char *recordPtr,
-    int internalOffset,
+    Tcl_Size internalOffset,
     char *saveInternalPtr,
     int flags
     )
@@ -3859,7 +3860,7 @@ TagInfoCO_Get(
     ClientData clientData,
     Tk_Window tkwin,
     char *recordPtr,
-    int internalOffset
+    Tcl_Size internalOffset
     )
 {
     TreeCtrl *tree = (TreeCtrl *) ((TkWindow *) tkwin)->instanceData;
@@ -4616,7 +4617,7 @@ PerStateCO_Set(
     Tk_Window tkwin,
     Tcl_Obj **value,
     char *recordPtr,
-    int internalOffset,
+    Tcl_Size internalOffset,
     char *saveInternalPtr,
     int flags
     )
@@ -4673,7 +4674,7 @@ PerStateCO_Get(
     ClientData clientData,
     Tk_Window tkwin,
     char *recordPtr,
-    int internalOffset
+    Tcl_Size internalOffset
     )
 {
     PerStateInfo *value = (PerStateInfo *) (recordPtr + internalOffset);
@@ -4997,7 +4998,7 @@ DynamicCO_Set(
     Tk_Window tkwin,
     Tcl_Obj **value,
     char *recordPtr,
-    int internalOffset,
+    Tcl_Size internalOffset,
     char *saveInternalPtr,
     int flags
     )
@@ -5061,7 +5062,7 @@ DynamicCO_Get(
     ClientData clientData,
     Tk_Window tkwin,
     char *recordPtr,
-    int internalOffset
+    Tcl_Size internalOffset
     )
 {
     DynamicCOClientData *cd = clientData;
@@ -5464,14 +5465,14 @@ StringCO_Set(
     Tk_Window tkwin,
     Tcl_Obj **valuePtr,
     char *recordPtr,
-    int internalOffset,
+    Tcl_Size internalOffset,
     char *saveInternalPtr,
     int flags
     )
 {
     int objEmpty;
     char *internalPtr, *new, *value;
-    int length;
+    Tcl_Size length;
 
     if (internalOffset >= 0)
 	internalPtr = (char *) (recordPtr + internalOffset);
@@ -5503,7 +5504,7 @@ StringCO_Get(
     ClientData clientData,
     Tk_Window tkwin,
     char *recordPtr,
-    int internalOffset
+    Tcl_Size internalOffset
     )
 {
     char **internalPtr = (char **) (recordPtr + internalOffset);
@@ -5572,7 +5573,7 @@ PixelsCO_Set(
     Tk_Window tkwin,
     Tcl_Obj **valuePtr,
     char *recordPtr,
-    int internalOffset,
+    Tcl_Size internalOffset,
     char *saveInternalPtr,
     int flags
     )
@@ -5608,7 +5609,7 @@ PixelsCO_Get(
     ClientData clientData,
     Tk_Window tkwin,
     char *recordPtr,
-    int internalOffset
+    Tcl_Size internalOffset
     )
 {
     int *internalPtr = (int *) (recordPtr + internalOffset);
@@ -5663,7 +5664,7 @@ StyleCO_Set(
     Tk_Window tkwin,
     Tcl_Obj **valuePtr,
     char *recordPtr,
-    int internalOffset,
+    Tcl_Size internalOffset,
     char *saveInternalPtr,
     int flags
     )
@@ -5709,7 +5710,7 @@ StyleCO_Get(
     ClientData clientData,
     Tk_Window tkwin,
     char *recordPtr,
-    int internalOffset
+    Tcl_Size internalOffset
     )
 {
     TreeStyle *internalPtr = (TreeStyle *) (recordPtr + internalOffset);
@@ -5806,7 +5807,7 @@ BooleanFlagCO_Set(
     Tk_Window tkwin,
     Tcl_Obj **value,
     char *recordPtr,
-    int internalOffset,
+    Tcl_Size internalOffset,
     char *saveInternalPtr,
     int flags
     )
@@ -5838,7 +5839,7 @@ BooleanFlagCO_Get(
     ClientData clientData,
     Tk_Window tkwin,
     char *recordPtr,
-    int internalOffset
+    Tcl_Size internalOffset
     )
 {
     int theFlag = PTR2INT(clientData);
@@ -5927,7 +5928,7 @@ ItemButtonCO_Set(
     Tk_Window tkwin,
     Tcl_Obj **value,
     char *recordPtr,
-    int internalOffset,
+    Tcl_Size internalOffset,
     char *saveInternalPtr,
     int flags
     )
@@ -5935,7 +5936,7 @@ ItemButtonCO_Set(
     struct ItemButtonCOClientData *cd = clientData;
     int new, *internalPtr, on, off;
     char *s;
-    int length;
+    Tcl_Size length;
 
     if (internalOffset >= 0)
 	internalPtr = (int *) (recordPtr + internalOffset);
@@ -5974,7 +5975,7 @@ ItemButtonCO_Get(
     ClientData clientData,
     Tk_Window tkwin,
     char *recordPtr,
-    int internalOffset
+    Tcl_Size internalOffset
     )
 {
     struct ItemButtonCOClientData *cd = clientData;
@@ -6061,13 +6062,13 @@ Tree_GetIntForIndex(
     TreeCtrl *tree,		/* Widget info. */
     Tcl_Obj *objPtr,		/* Points to an object containing either "end"
 				 * or an integer. */
-    int *indexPtr,		/* Location filled in with an integer
+    Tcl_Size *indexPtr,		/* Location filled in with an integer
 				 * representing an index. */
     int *endRelativePtr		/* Set to 1 if the returned index is relative
 				 * to "end". */
     )
 {
-    int endValue = 0;
+    Tcl_Size endValue = 0;
     char *bytes;
 
     if (Tcl_GetIntForIndex(tree->interp, objPtr, endValue, indexPtr) != TCL_OK)
@@ -6506,7 +6507,7 @@ TreeColorCO_Set(
     Tk_Window tkwin,
     Tcl_Obj **valuePtr,
     char *recordPtr,
-    int internalOffset,
+    Tcl_Size internalOffset,
     char *saveInternalPtr,
     int flags
     )
@@ -6544,7 +6545,7 @@ TreeColorCO_Get(
     ClientData clientData,
     Tk_Window tkwin,
     char *recordPtr,
-    int internalOffset
+    Tcl_Size internalOffset
     )
 {
     TreeCtrl *tree = (TreeCtrl *) ((TkWindow *) tkwin)->instanceData;
@@ -6668,7 +6669,7 @@ StopsSet(
 				 * We use a pointer to the pointer because
 				 * we may need to return a value (NULL). */
     char *recordPtr,		/* Pointer to storage for the widget record. */
-    int internalOffset,		/* Offset within *recordPtr at which the
+    Tcl_Size internalOffset,		/* Offset within *recordPtr at which the
 				 internal value is to be stored. */
     char *oldInternalPtr,	/* Pointer to storage for the old value. */
     int flags			/* Flags for the option, set Tk_SetOptions. */
@@ -6833,7 +6834,7 @@ GradientCoordSet(
 				 * We use a pointer to the pointer because
 				 * we may need to return a value (NULL). */
     char *recordPtr,		/* Pointer to storage for the widget record. */
-    int internalOffset,		/* Offset within *recordPtr at which the
+    Tcl_Size internalOffset,		/* Offset within *recordPtr at which the
 				 internal value is to be stored. */
     char *oldInternalPtr,	/* Pointer to storage for the old value. */
     int flags			/* Flags for the option, set Tk_SetOptions. */
@@ -8031,7 +8032,7 @@ TreeGradientCmd(
 	/* T gradient create NAME ?option value ...? */
 	case COMMAND_CREATE: {
 	    char *name;
-	    int len;
+	    Tcl_Size len;
 	    Tcl_HashEntry *hPtr;
 	    int isNew;
 	    TreeGradient gradient;

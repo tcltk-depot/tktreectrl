@@ -56,7 +56,7 @@ struct TreeHeaderColumn_
 
     int state;			/* -state */
 
-    int textLen;
+    Tcl_Size textLen;
     Tk_Image image;
 #define TEXT_WRAP_NULL -1
 #define TEXT_WRAP_CHAR 0
@@ -244,7 +244,7 @@ HeaderCO_Set(
 				 * We use a pointer to the pointer because
 				 * we may need to return a value (NULL). */
     char *recordPtr,		/* Pointer to storage for the widget record. */
-    int internalOffset,		/* Offset within *recordPtr at which the
+    Tcl_Size internalOffset,		/* Offset within *recordPtr at which the
 				 * internal value is to be stored. */
     char *saveInternalPtr,	/* Pointer to storage for the old value. */
     int flags			/* Flags for the option, set Tk_SetOptions. */
@@ -300,7 +300,7 @@ HeaderCO_Get(
     ClientData clientData,	/* Not used. */
     Tk_Window tkwin,		/* Window for which option is being set. */
     char *recordPtr,		/* Pointer to widget record. */
-    int internalOffset		/* Offset within *recordPtr containing the
+    Tcl_Size internalOffset		/* Offset within *recordPtr containing the
 				 * sticky value. */
     )
 {
@@ -519,7 +519,7 @@ TreeHeaderColumn_ConfigureHeaderStyle(
 		continue;
 	    }
 	    if (specPtr->typeMask & (ELEM_HEADER | ELEM_IMAGE | ELEM_TEXT | ELEM_BITMAP)) {
-		int listC;
+		Tcl_Size listC;
 		Tcl_Obj *infoObj, **listObjV;
 		Tcl_SetStringObj(optionNameObj, specPtr->optionName, -1);
 		infoObj = Tk_GetOptionInfo(interp, (char *) column,
@@ -1635,7 +1635,7 @@ Header_Configure(
     STATIC_ALLOC(iObjV, Tcl_Obj *, objc);
     for (i = 0; i < objc; i += 2) {
 	Tk_OptionSpec *specPtr = headerSpecs;
-	int length;
+	Tcl_Size length;
 	const char *optionName = Tcl_GetStringFromObj(objv[i], &length);
 	while (specPtr->type != TK_OPTION_END) {
 	    if (strncmp(specPtr->optionName, optionName, length) == 0) {
@@ -2334,7 +2334,8 @@ TreeHeaderList_FromObj(
     static int indexQual[] = {
 	1, 1, 1, 1
     };
-    int id, index, listIndex, objc;
+    int id, index, listIndex;
+    Tcl_Size objc;
     Tcl_Obj **objv, *elemPtr;
     TreeItem item = NULL;
     Qualifiers q;
@@ -2683,7 +2684,7 @@ TreeHeaderCmd_Cget(
     if (objc == 5) {
 	{
 	    Tk_OptionSpec *specPtr = headerSpecs;
-	    int length;
+	    Tcl_Size length;
 	    const char *optionName = Tcl_GetStringFromObj(objv[4], &length);
 	    while (specPtr->type != TK_OPTION_END) {
 		if (strncmp(specPtr->optionName, optionName, length) == 0) {
