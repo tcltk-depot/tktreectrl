@@ -167,7 +167,7 @@ UniformGroupCO_Set(
     Tk_Window tkwin,
     Tcl_Obj **valuePtr,
     char *recordPtr,
-    int internalOffset,
+    Tcl_Size internalOffset,
     char *saveInternalPtr,
     int flags
     )
@@ -219,7 +219,7 @@ UniformGroupCO_Get(
     ClientData clientData,
     Tk_Window tkwin,
     char *recordPtr,
-    int internalOffset
+    Tcl_Size internalOffset
     )
 {
     TreeCtrl *tree = (TreeCtrl *) ((TkWindow *) tkwin)->instanceData;
@@ -399,7 +399,7 @@ ColumnCO_Set(
 				 * We use a pointer to the pointer because
 				 * we may need to return a value (NULL). */
     char *recordPtr,		/* Pointer to storage for the widget record. */
-    int internalOffset,		/* Offset within *recordPtr at which the
+    Tcl_Size internalOffset,		/* Offset within *recordPtr at which the
 				 * internal value is to be stored. */
     char *saveInternalPtr,	/* Pointer to storage for the old value. */
     int flags			/* Flags for the option, set Tk_SetOptions. */
@@ -456,7 +456,7 @@ ColumnCO_Get(
     ClientData clientData,	/* Not used. */
     Tk_Window tkwin,		/* Window for which option is being set. */
     char *recordPtr,		/* Pointer to widget record. */
-    int internalOffset		/* Offset within *recordPtr containing the
+    Tcl_Size internalOffset		/* Offset within *recordPtr containing the
 				 * sticky value. */
     )
 {
@@ -1011,7 +1011,7 @@ TreeColumnList_FromObj(
 		break;
 	    }
 	    case INDEX_LIST: {
-		int listObjc;
+		Tcl_Size listObjc;
 		Tcl_Obj **listObjv;
 		int count;
 
@@ -1920,7 +1920,7 @@ Column_Config(
     STATIC_ALLOC(hObjV, Tcl_Obj *, objc);
     for (i = 0; i < objc; i += 2) {
 	Tk_OptionSpec *specPtr = columnSpecs;
-	int length;
+	Tcl_Size length;
 	const char *optionName = Tcl_GetStringFromObj(objv[i], &length);
 	while (specPtr->type != TK_OPTION_END) {
 	    if (strncmp(specPtr->optionName, optionName, length) == 0) {
@@ -2000,7 +2000,7 @@ Column_Config(
 		    column->itemBgColor = NULL;
 		    column->itemBgCount = 0;
 		} else {
-		    int i, length, listObjc;
+		    Tcl_Size i, length, listObjc;
 		    Tcl_Obj **listObjv;
 		    TreeColor **colors;
 
@@ -2864,7 +2864,7 @@ ColumnTagCmd(
     switch (index) {
 	/* T column tag add C tagList */
 	case COMMAND_ADD: {
-	    int i, numTags;
+	    Tcl_Size i, numTags;
 	    Tcl_Obj **listObjv;
 	    Tk_Uid staticTags[STATIC_SIZE], *tags = staticTags;
 
@@ -2947,7 +2947,7 @@ ColumnTagCmd(
 
 	/* T column tag remove C tagList */
 	case COMMAND_REMOVE: {
-	    int i, numTags;
+	    Tcl_Size i, numTags;
 	    Tcl_Obj **listObjv;
 	    Tk_Uid staticTags[STATIC_SIZE], *tags = staticTags;
 
@@ -3071,7 +3071,7 @@ TreeColumnCmd(
 		return TCL_ERROR;
 	    {
 		Tk_OptionSpec *specPtr = columnSpecs;
-		int length;
+		Tcl_Size length;
 		const char *optionName = Tcl_GetStringFromObj(objv[4], &length);
 		while (specPtr->type != TK_OPTION_END) {
 		    if (strncmp(specPtr->optionName, optionName, length) == 0) {
@@ -3136,7 +3136,7 @@ TreeColumnCmd(
 		    return TCL_ERROR;
 		if (objc == 5) {
 		    Tk_OptionSpec *specPtr = columnSpecs;
-		    int length;
+		    Tcl_Size length;
 		    const char *optionName = Tcl_GetStringFromObj(objv[4], &length);
 		    while (specPtr->type != TK_OPTION_END) {
 			if (strncmp(specPtr->optionName, optionName, length) == 0) {
@@ -3493,7 +3493,7 @@ doneDELETE:
 		return TCL_ERROR;
 	    }
 	    if (objc == 4) {
-		int len;
+		Tcl_Size len;
 		char *s = Tcl_GetStringFromObj(objv[3], &len);
 		if ((s[0] == '-') && (strncmp(s, "-visible", len) == 0))
 		    visible = TRUE;
@@ -3600,7 +3600,7 @@ doneDELETE:
 		return TCL_ERROR;
 	    }
 	    if (objc == 5) {
-		int len;
+		Tcl_Size len;
 		char *s = Tcl_GetStringFromObj(objv[4], &len);
 		if ((s[0] == '-') && (strncmp(s, "-visible", len) == 0))
 		    visible = TRUE;
