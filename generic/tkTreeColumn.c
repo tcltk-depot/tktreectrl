@@ -1943,8 +1943,7 @@ Column_Config(
 		hObjV[hObjC++] = objv[i + 1];
 	}
     }
-    if (TreeHeader_ConsumeColumnConfig(tree, column, hObjC,
-	    (Tcl_Obj *const *) hObjV, createFlag) != TCL_OK) {
+    if (TreeHeader_ConsumeColumnConfig(tree, column, hObjC, hObjV, createFlag) != TCL_OK) {
 	STATIC_FREE(objV, Tcl_Obj *, objc);
 	STATIC_FREE(hObjV, Tcl_Obj *, objc);
 	return TCL_ERROR;
@@ -4707,7 +4706,7 @@ LayoutColumns(
 
 #ifdef TREECTRL_DEBUG
     if (tree->debugCheck.inLayoutColumns)
-	panic("recursive call to LayoutColumns");
+	Tcl_Panic("recursive call to LayoutColumns");
 #endif
 
     if (first == NULL)

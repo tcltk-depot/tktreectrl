@@ -2412,7 +2412,8 @@ gotFirstPart:
 		break;
 	    }
 	    case TMOD_CHILD: {
-		int n, endRelative;
+		Tcl_Size n;
+		int endRelative;
 
 		if (Tree_GetIntForIndex(tree, objv[listIndex + 1], &n,
 			&endRelative) != TCL_OK) {
@@ -2522,7 +2523,8 @@ gotFirstPart:
 		break;
 	    }
 	    case TMOD_SIBLING: {
-		int n, endRelative;
+		Tcl_Size n;
+		int endRelative;
 
 		if (Tree_GetIntForIndex(tree, objv[listIndex + 1], &n,
 			&endRelative) != TCL_OK) {
