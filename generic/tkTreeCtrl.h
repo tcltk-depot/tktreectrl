@@ -18,6 +18,10 @@
 #define WIN32
 #endif
 
+#if TCL_MAJOR_VERSION < 9
+#   define Tcl_Size int
+#endif
+
 /*
  * Used to tag functions that are only to be visible within the module being
  * built and not outside it (where this is supported by the linker).

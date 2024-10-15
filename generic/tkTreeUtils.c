@@ -6071,8 +6071,13 @@ Tree_GetIntForIndex(
     Tcl_Size endValue = 0;
     char *bytes;
 
+#if TCL_MAJOR_VERSION < 9
+    if (TclGetIntForIndex(tree->interp, objPtr, endValue, indexPtr) != TCL_OK)
+	return TCL_ERROR;
+#else
     if (Tcl_GetIntForIndex(tree->interp, objPtr, endValue, indexPtr) != TCL_OK)
 	return TCL_ERROR;
+#endif
 
     bytes = Tcl_GetString(objPtr);
     if (*bytes == 'e') {
@@ -6871,7 +6876,7 @@ GradientCoordSet(
 	    return TCL_ERROR;
         }
         if (Tcl_GetIndexFromObj(interp, objv[1], coordTypeNames,
-	    "coordinate type", 0, &coordType) != TCL_OK) {
+	    "coordinate type", 0, (int *) &coordType) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (Tcl_GetDoubleFromObj(interp, objv[0], &coordValue) != TCL_OK) {

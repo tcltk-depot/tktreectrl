@@ -3374,16 +3374,26 @@ doneCLEAR:
 		Tcl_Size first, last;
 		TreeItemList items;
 
+#if TCL_MAJOR_VERSION < 9
+		if (TclGetIntForIndex(interp, objv[3], tree->selectCount - 1,
+			&first) != TCL_OK) {
+#else
 		if (Tcl_GetIntForIndex(interp, objv[3], tree->selectCount - 1,
 			&first) != TCL_OK) {
+#endif
 		    return TCL_ERROR;
 		}
 		if (first < 0)
 		    first = 0;
 		last = first;
 		if (objc == 5) {
+#if TCL_MAJOR_VERSION < 9
+		    if (TclGetIntForIndex(interp, objv[4], tree->selectCount - 1,
+			    &last) != TCL_OK) {
+#else
 		    if (Tcl_GetIntForIndex(interp, objv[4], tree->selectCount - 1,
 			    &last) != TCL_OK) {
+#endif
 			return TCL_ERROR;
 		    }
 		}

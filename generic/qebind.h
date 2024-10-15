@@ -22,6 +22,10 @@
 #   endif
 #endif
 
+#if TCL_MAJOR_VERSION < 9
+#   define Tcl_Size int
+#endif
+
 typedef struct QE_BindingTable_ *QE_BindingTable;
 
 /* Pass to QE_BindEvent */

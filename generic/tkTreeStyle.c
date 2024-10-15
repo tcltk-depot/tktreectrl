@@ -1767,7 +1767,6 @@ TreeElement_GetContentMargins(tree, layout->eLink->elem, drawArgs->state, layout
 		continue;
 
 	    switch (drawArgs->justify) {
-		case TK_JUSTIFY_NULL:
 		case TK_JUSTIFY_LEFT:
 		    break;
 		case TK_JUSTIFY_RIGHT:
@@ -1775,6 +1774,9 @@ TreeElement_GetContentMargins(tree, layout->eLink->elem, drawArgs->state, layout
 		    break;
 		case TK_JUSTIFY_CENTER:
 		    layout->x += dx / 2;
+		    break;
+		default:
+		    /*Catch TK_JUSTIFY_NULL if TCL_MAJOR_VERSION < 9*/
 		    break;
 	    }
 	}

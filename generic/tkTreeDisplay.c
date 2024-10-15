@@ -6227,7 +6227,6 @@ CalcBgImageBounds(
     Tk_SizeOfImage(tree->backgroundImage, &imgWidth, &imgHeight);
 
     switch (tree->bgImageAnchor) {
-	case TK_ANCHOR_NULL:
 	case TK_ANCHOR_NW:
 	case TK_ANCHOR_W:
 	case TK_ANCHOR_SW:
@@ -6242,10 +6241,12 @@ CalcBgImageBounds(
 	case TK_ANCHOR_SE:
 	    x1 = x2 - imgWidth;
 	    break;
+	default:
+	    /* Catch TK_ANCHOR_NULL if TCL_MAJOR_VERSION == 8*/
+	    break;
     }
 
     switch (tree->bgImageAnchor) {
-	case TK_ANCHOR_NULL:
 	case TK_ANCHOR_NW:
 	case TK_ANCHOR_N:
 	case TK_ANCHOR_NE:
@@ -6259,6 +6260,9 @@ CalcBgImageBounds(
 	case TK_ANCHOR_S:
 	case TK_ANCHOR_SE:
 	    y1 = y2 - imgHeight;
+	    break;
+	default:
+	    /* Catch TK_ANCHOR_NULL if TCL_MAJOR_VERSION == 8*/
 	    break;
     }
 
@@ -7688,10 +7692,13 @@ Tcl_SetServiceMode(oldMode);
 		    fgGC = Tk_GCForColor(tree->highlightColorPtr, drawable);
 		else
 		    fgGC = bgGC;
-//		TkpDrawHighlightBorder(tkwin, fgGC, bgGC, tree->highlightWidth,
-//			drawable);
+#if TCL_MAJOR_VERSION < 9
+		TkpDrawHighlightBorder(tkwin, fgGC, bgGC, tree->highlightWidth,
+			drawable);
+#else
 		Tk_DrawHighlightBorder(tkwin, fgGC, bgGC, tree->highlightWidth,
 			drawable);
+#endif
 		dInfo->flags &= ~DINFO_DRAW_HIGHLIGHT;
 	    }
 
