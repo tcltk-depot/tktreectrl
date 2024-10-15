@@ -191,6 +191,11 @@ if {[string equal "x11" [tk windowingsystem]]} {
     # the wheel to the extended buttons.  If you have a mousewheel, find
     # Linux configuration info at:
     #	http://www.inria.fr/koala/colas/mouse-wheel-scroll/
+
+    # with recent Tk, use the binding of ttk::treeview
+    bind TreeCtrl <MouseWheel> [bind Treeview <MouseWheel>]
+    bind TreeCtrl <Shift-MouseWheel> [bind Treeview <Shift-MouseWheel>]
+
     bind TreeCtrl <4> {
 	if {!$tk_strictMotif} {
 	    %W yview scroll -5 units
