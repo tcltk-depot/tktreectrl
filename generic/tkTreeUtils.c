@@ -6875,8 +6875,13 @@ GradientCoordSet(
 	    FormatResult(interp, "expected list {offset coordType ?arg ...?}");
 	    return TCL_ERROR;
         }
+#if TCL_MAJOR_VERSION < 9
         if (Tcl_GetIndexFromObj(interp, objv[1], coordTypeNames,
 	    "coordinate type", 0, (int *) &coordType) != TCL_OK) {
+# else
+        if (Tcl_GetIndexFromObj(interp, objv[1], coordTypeNames,
+	    "coordinate type", 0, &coordType) != TCL_OK) {
+#endif
 	    return TCL_ERROR;
 	}
 	if (Tcl_GetDoubleFromObj(interp, objv[0], &coordValue) != TCL_OK) {

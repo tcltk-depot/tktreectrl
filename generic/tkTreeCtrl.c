@@ -354,7 +354,11 @@ static int TreeWidgetCmd(ClientData clientData, Tcl_Interp *interp, int objc,
 static int TreeConfigure(Tcl_Interp *interp, TreeCtrl *tree, int objc,
     Tcl_Obj *const objv[], int createFlag);
 static void TreeEventProc(ClientData clientData, XEvent * eventPtr);
+#if TCL_MAJOR_VERSION < 9
+static void TreeDestroy(char *memPtr);
+#else
 static void TreeDestroy(void *memPtr);
+#endif
 static void TreeCmdDeletedProc(ClientData clientData);
 static void TreeWorldChanged(ClientData instanceData);
 static void TreeComputeGeometry(TreeCtrl *tree);
@@ -1782,7 +1786,11 @@ TreeCmdDeletedProc(
 
 static void
 TreeDestroy(
+#if TCL_MAJOR_VERSION < 9
+    char *memPtr		/* Widget info. */
+#else
     void *memPtr		/* Widget info. */
+#endif
     )
 {
     TreeCtrl *tree = (TreeCtrl *) memPtr;
