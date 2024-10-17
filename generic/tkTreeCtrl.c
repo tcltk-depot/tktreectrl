@@ -19,6 +19,17 @@
 #if defined(MAC_TK_COCOA)
 #import <Cocoa/Cocoa.h>
 #endif
+#if defined(MAC_OSX_TK)
+size_t CGDisplayBitsPerPixel (
+   CGDirectDisplayID display
+);
+size_t CGDisplayBytesPerRow (
+   CGDirectDisplayID display
+);
+void * CGDisplayBaseAddress (
+   CGDirectDisplayID display
+);
+#endif
 
 /*
  * TIP #116 altered Tk_PhotoPutBlock API to add interp arg.
