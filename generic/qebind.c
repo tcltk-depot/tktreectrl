@@ -140,7 +140,7 @@ typedef struct GenerateField {
 typedef struct GenerateData {
 	GenerateField staticField[20];
 	GenerateField *field;
-	int count;
+	Tcl_Size count;
 	char *command; /* Tcl command to expand percents, or NULL */
 } GenerateData;
 
@@ -1470,7 +1470,8 @@ void QE_ExpandNumber(long number, Tcl_DString *result)
 
 void QE_ExpandString(char *string, Tcl_DString *result)
 {
-	int length, spaceNeeded, cvtFlags;
+	Tcl_Size length, spaceNeeded;
+	int cvtFlags;
 
 	spaceNeeded = Tcl_ScanElement(string, &cvtFlags);
 	length = Tcl_DStringLength(result);
