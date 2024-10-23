@@ -1911,13 +1911,16 @@ Column_Config(
 #endif
 
     int objC = 0, hObjC = 0;
-    Tcl_Obj *staticObjV[STATIC_SIZE], **objV = staticObjV;
-    Tcl_Obj *staticHObjV[STATIC_SIZE], **hObjV = staticHObjV;
+//    Tcl_Obj *staticObjV[STATIC_SIZE], **objV = staticObjV;
+//    Tcl_Obj *staticHObjV[STATIC_SIZE], **hObjV = staticHObjV;
+    Tcl_Obj **objV, **hObjV;
     int i;
 
     /* Hack -- Pass some options to the underlying header-column */
-    STATIC_ALLOC(objV, Tcl_Obj *, objc);
-    STATIC_ALLOC(hObjV, Tcl_Obj *, objc);
+//    STATIC_ALLOC(objV, Tcl_Obj *, objc);
+//    STATIC_ALLOC(hObjV, Tcl_Obj *, objc);
+    objV  = (Tcl_Obj **)ckalloc(objc * sizeof(Tcl_Obj *));
+    hObjV = (Tcl_Obj **)ckalloc(objc * sizeof(Tcl_Obj *));
     for (i = 0; i < objc; i += 2) {
 	Tk_OptionSpec *specPtr = columnSpecs;
 	Tcl_Size length;
@@ -1943,9 +1946,13 @@ Column_Config(
 		hObjV[hObjC++] = objv[i + 1];
 	}
     }
-    if (TreeHeader_ConsumeColumnConfig(tree, column, hObjC, hObjV, createFlag) != TCL_OK) {
-	STATIC_FREE(objV, Tcl_Obj *, objc);
-	STATIC_FREE(hObjV, Tcl_Obj *, objc);
+//    if (TreeHeader_ConsumeColumnConfig(tree, column, hObjC, hObjV, createFlag) != TCL_OK) {
+    if (TreeHeader_ConsumeColumnConfig(tree, column, hObjC,
+	    (Tcl_Obj *const *)hObjV, createFlag) != TCL_OK) {
+//	STATIC_FREE(objV, Tcl_Obj *, objc);
+//	STATIC_FREE(hObjV, Tcl_Obj *, objc);
+	ckfree(objV);
+	ckfree(hObjV);
 	return TCL_ERROR;
     }
 
@@ -1955,9 +1962,12 @@ Column_Config(
 
     for (error = 0; error <= 1; error++) {
 	if (error == 0) {
+//	    if (Tk_SetOptions(tree->interp, (char *) column,
+//			column->optionTable, objC, objV, tree->tkwin,
+//			&savedOptions, &mask) != TCL_OK) {
 	    if (Tk_SetOptions(tree->interp, (char *) column,
-			column->optionTable, objC, objV, tree->tkwin,
-			&savedOptions, &mask) != TCL_OK) {
+			column->optionTable, objC, (Tcl_Obj *const *)objV,
+			tree->tkwin, &savedOptions, &mask) != TCL_OK) {
 		mask = 0;
 		continue;
 	    }
@@ -2036,8 +2046,10 @@ Column_Config(
 	    if (mask & COLU_CONF_ITEMBG)
 		Column_FreeColors(column, saved.itemBgColor, saved.itemBgCount);
 	    Tk_FreeSavedOptions(&savedOptions);
-	    STATIC_FREE(objV, Tcl_Obj *, objc);
-	    STATIC_FREE(hObjV, Tcl_Obj *, objc);
+//	    STATIC_FREE(objV, Tcl_Obj *, objc);
+//	    STATIC_FREE(hObjV, Tcl_Obj *, objc);
+	    ckfree(objV);
+	    ckfree(hObjV);
 	    break;
 	} else {
 	    errorResult = Tcl_GetObjResult(tree->interp);
@@ -2060,8 +2072,10 @@ Column_Config(
 
 	    Tcl_SetObjResult(tree->interp, errorResult);
 	    Tcl_DecrRefCount(errorResult);
-	    STATIC_FREE(objV, Tcl_Obj *, objc);
-	    STATIC_FREE(hObjV, Tcl_Obj *, objc);
+//	    STATIC_FREE(objV, Tcl_Obj *, objc);
+//	    STATIC_FREE(hObjV, Tcl_Obj *, objc);
+	    ckfree(objV);
+	    ckfree(hObjV);
 	    return TCL_ERROR;
 	}
     }
