@@ -98,7 +98,7 @@ UpdateImage(
     ximage = XGetImage(tree->display, dragImage->pixmap, 0, 0,
 	    (unsigned int)width, (unsigned int)height, AllPlanes, ZPixmap);
     if (ximage == NULL)
-	panic("tkTreeDrag.c:UpdateImage() ximage is NULL");
+	Tcl_Panic("tkTreeDrag.c:UpdateImage() ximage is NULL");
 
     /* XImage -> Tk_Image */
     colorPtr = Tk_GetColor(tree->interp, tree->tkwin, "pink");
@@ -234,7 +234,7 @@ DragImage_UpdateStyleTkImage(
     ximage = XGetImage(tree->display, dragImage->pixmap, 0, 0,
 	    (unsigned int)width, (unsigned int)height, AllPlanes, ZPixmap);
     if (ximage == NULL)
-	panic("tkTreeDrag.c:DragImage_UpdateStyleTkImage() ximage is NULL");
+	Tcl_Panic("tkTreeDrag.c:DragImage_UpdateStyleTkImage() ximage is NULL");
 
     /* XImage -> Tk_Image */
     colorPtr = Tk_GetColor(tree->interp, tree->tkwin, "pink");
