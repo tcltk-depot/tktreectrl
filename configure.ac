@@ -137,7 +137,7 @@ AC_CHECK_TYPE([intptr_t], [
 # your system.
 #--------------------------------------------------------------------
 
-OUTPUTFILES=Makefile
+OUTPUTFILES="Makefile pkgIndex.tcl"
 
 if test "${TEA_PLATFORM}" = "windows" ; then
     TEA_ADD_SOURCES([tkWinTree.c])

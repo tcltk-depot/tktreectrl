@@ -63,7 +63,7 @@ PKG_LIB_FILE9	= @PKG_LIB_FILE9@
 PKG_STUB_LIB_FILE = @PKG_STUB_LIB_FILE@
 
 lib_BINARIES	= $(PKG_LIB_FILE)
-BINARIES	= $(lib_BINARIES) pkgIndex.tcl
+BINARIES	= $(lib_BINARIES)
 
 SHELL		= @SHELL@
 
@@ -160,7 +160,7 @@ PKG_CFLAGS	= @PKG_CFLAGS@
 DEFS		= @DEFS@ $(PKG_CFLAGS)
 
 # Move pkgIndex.tcl to 'BINARIES' var if it is generated in the Makefile
-CONFIG_CLEAN_FILES = Makefile
+CONFIG_CLEAN_FILES = Makefile pkgIndex.tcl
 CLEANFILES	= @CLEANFILES@
 
 CPPFLAGS	= @CPPFLAGS@
@@ -251,7 +251,9 @@ install-doc: install-doc-x
 	cp $(srcdir)/doc/*.html $(DESTDIR)$(pkglibdir)/htmldoc
 
 test: binaries libraries
-	@$(WISH) `@CYGPATH@ $(srcdir)/tests/all.tcl` $(TESTFLAGS) | cat
+	$(WISH) `@CYGPATH@ $(srcdir)/tests/all.tcl` $(TESTFLAGS) \
+	    -load "package ifneeded $(PACKAGE_NAME) $(PACKAGE_VERSION) \
+		[list load `@CYGPATH@ $(PKG_LIB_FILE)` [string totitle $(PACKAGE_NAME)]]"
 
 shell: binaries libraries
 	@$(WISH) $(SCRIPT)
@@ -260,7 +262,7 @@ demo: binaries libraries
 	@$(WISH) `@CYGPATH@ $(srcdir)/demos/demo.tcl` | cat
 
 gdb:
-	@$(TCLSH_ENV) gdb --silent --args $(WISH_PROG) $(srcdir)/demos/demo.tcl
+	$(TCLSH_ENV) $(PKG_ENV) $(GDB) $(TCLSH_PROG) $(srcdir)/demos/demo.tcl
 
 gdb-test: binaries libraries
 	$(TCLSH_ENV) $(PKG_ENV) $(GDB) \
@@ -273,7 +275,7 @@ VALGRINDARGS=--tool=memcheck --num-callers=8 --leak-resolution=high --leak-check
 
 valgrind: binaries libraries
 	$(TCLSH_ENV) $(PKG_ENV) $(VALGRIND) $(VALGRINDARGS) $(TCLSH_PROG) \
-	    `@CYGPATH@ $(srcdir)/tests/all.tcl` $(TESTFLAGS) | cat
+	    `@CYGPATH@ $(srcdir)/tests/all.tcl` $(TESTFLAGS)
 
 valgrindshell: binaries libraries
 	$(TCLSH_ENV) $(PKG_ENV) $(VALGRIND) $(VALGRINDARGS) $(WISH_PROG) $(SCRIPT)
@@ -334,22 +336,6 @@ VPATH = $(srcdir):$(srcdir)/generic:$(srcdir)/unix:$(srcdir)/win:$(srcdir)/macos
 	@RC@ @RC_OUT@ $@ @RC_INCLUDE@ "`@CYGPATH@ $(srcdir)`" @RC_DEPARG@
 
 #========================================================================
-# Create the pkgIndex.tcl file.
-#========================================================================
-
-pkgIndex.tcl:
-	(\
-	echo 'if {[catch {package require Tcl @TK_VERSION@}]} return';\
-	echo 'set script ""';\
-	echo 'if {![info exists ::env(TREECTRL_LIBRARY)]';\
-	echo '    && [file exists [file join $$dir treectrl.tcl]]} {';\
-	echo '    append script "[list set ::treectrl_library $$dir]\n"';\
-	echo '}';\
-	echo 'append script [list load [file join $$dir $(PKG_LIB_FILE)] [string totitle $(PACKAGE_NAME)]]';\
-	echo 'package ifneeded $(PACKAGE_NAME) $(PACKAGE_PATCHLEVEL) $$script'\
-	) > pkgIndex.tcl
-
-#========================================================================
 # Distribution creation
 # You may need to tweak this target to make it work correctly.
 #========================================================================
@@ -389,7 +375,7 @@ dist: dist-clean
 	mkdir -p $(DIST_DIR)/unix
 	mkdir -p $(DIST_DIR)/win
 
-	list='aclocal.m4 ChangeLog configure configure.ac license.terms Makefile.in pkg.m4 README.txt treectrl.dll.manifest.in treectrl.rc winrc.m4'; \
+	list='aclocal.m4 ChangeLog configure configure.ac pkgIndex.tcl.in license.terms Makefile.in pkg.m4 README.txt treectrl.dll.manifest.in treectrl.rc winrc.m4'; \
 	for p in $$list; do \
 	    cp -p $(srcdir)/$$p $(DIST_DIR)/$$p; \
 	    chmod 664 $(DIST_DIR)/$$p; \
@@ -419,7 +405,7 @@ dist: dist-clean
 	    chmod 664 $(DIST_DIR)/library/$$p; \
 	done
 
-	list='aclocal.m4 configure configure.ac Makefile.in shellicon.c shellicon.rc shellicon.dll.manifest.in'; \
+	list='aclocal.m4 configure configure.ac pkgIndex.tcl.in Makefile.in shellicon.c shellicon.rc shellicon.dll.manifest.in'; \
 	for p in $$list; do \
 	    cp -p $(srcdir)/shellicon/$$p $(DIST_DIR)/shellicon/$$p; \
 	    chmod 664 $(DIST_DIR)/shellicon/$$p; \

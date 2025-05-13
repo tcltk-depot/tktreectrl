@@ -113,7 +113,7 @@ AC_C_BIGENDIAN
 # your system.
 #--------------------------------------------------------------------
 
-OUTPUTFILES=Makefile
+OUTPUTFILES="Makefile pkgIndex.tcl"
 
 if test "${TEA_PLATFORM}" = "windows" ; then
     TEA_ADD_LIBS([gdi32.lib user32.lib comctl32.lib ole32.lib shell32.lib])
