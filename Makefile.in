@@ -246,10 +246,6 @@ install-doc: doc
 	    $(INSTALL_DATA) $$i "$(DESTDIR)$(mandir)/mann" ; \
 	done
 
-install-doc: install-doc-x
-	mkdir -p $(DESTDIR)$(pkglibdir)/htmldoc
-	cp $(srcdir)/doc/*.html $(DESTDIR)$(pkglibdir)/htmldoc
-
 test: binaries libraries
 	$(WISH) `@CYGPATH@ $(srcdir)/tests/all.tcl` $(TESTFLAGS) \
 	    -load "package ifneeded $(PACKAGE_NAME) $(PACKAGE_VERSION) \
