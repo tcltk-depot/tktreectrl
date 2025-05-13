@@ -326,9 +326,8 @@ VPATH = $(srcdir):$(srcdir)/generic:$(srcdir)/unix:$(srcdir)/win:$(srcdir)/macos
 .c.@OBJEXT@:
 	$(COMPILE) -c `@CYGPATH@ $<` -o $@
 
-.rc.@RES@:
-	@RC@ @RC_OUT@ $@ @RC_INCLUDE@ "`@CYGPATH@ $(srcdir)`" @RC_DEPARG@
-
+%.res.o: %.rc
+	@RC@ --include-dir="$(srcdir)" --input="$<" --output="$@"
 
 #========================================================================
 # Distribution creation
