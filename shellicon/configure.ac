@@ -113,20 +113,16 @@ AC_C_BIGENDIAN
 # your system.
 #--------------------------------------------------------------------
 
-OUTPUTFILES=Makefile
+OUTPUTFILES="Makefile pkgIndex.tcl"
 
 if test "${TEA_PLATFORM}" = "windows" ; then
     TEA_ADD_LIBS([gdi32.lib user32.lib comctl32.lib ole32.lib shell32.lib])
-
-    # Find rc.exe or windres.exe.
-    # Defined in winrc.m4.
-    TREECTRL_PROG_RC
 
     # X86|AMD64|IA64 for manifest
     AC_SUBST(MACHINE)
 
     # PKG_MANIFEST -> VC_MANIFEST_EMBED_DLL -> MAKE_SHARED_LIB
-    TEA_ADD_MANIFEST([shellicon.dll.manifest])
+    #TEA_ADD_MANIFEST([shellicon.dll.manifest])
 
     # Create shellicon.dll.manifest from shellicon.dll.manifest.in.
     # shellicon.dll.manifest is included by shellicon.rc.
@@ -134,10 +130,9 @@ if test "${TEA_PLATFORM}" = "windows" ; then
     # shelliconNN.dll.manifest (to pick the correct MSVCRT runtime) then
     # that manifest is merged with mine using mt.exe (see the Makefile
     # rule for PKG_LIB_FILE).
-    OUTPUTFILES="Makefile shellicon.dll.manifest"
-
-    TREECTRL_ADD_RC([shellicon.rc])
+    OUTPUTFILES="${OUTPUTFILES} shellicon.dll.manifest"
 fi
+
 if test "${TEA_WINDOWINGSYSTEM}" = "aqua"; then
     TEA_ADD_LIBS([-framework Carbon])
 fi

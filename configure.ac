@@ -21,7 +21,7 @@ AC_INIT([treectrl], [2.5])
 AC_SUBST([PACKAGE_PATCHLEVEL], [2.5.0])
 AC_DEFINE_UNQUOTED(PACKAGE_PATCHLEVEL, "$PACKAGE_PATCHLEVEL")
 
-TEA_INIT([3.9])
+TEA_INIT()
 
 AC_CONFIG_AUX_DIR(tclconfig)
 
@@ -137,11 +137,11 @@ AC_CHECK_TYPE([intptr_t], [
 # your system.
 #--------------------------------------------------------------------
 
-OUTPUTFILES=Makefile
+OUTPUTFILES="Makefile pkgIndex.tcl"
 
 if test "${TEA_PLATFORM}" = "windows" ; then
     TEA_ADD_SOURCES([tkWinTree.c])
-    TEA_ADD_LIBS([gdi32.lib user32.lib])
+    TEA_ADD_LIBS([gdi32.lib user32.lib uxtheme.lib])
 
     AC_ARG_ENABLE(shellicon,
 	AC_HELP_STRING([--enable-shellicon],
@@ -151,15 +151,11 @@ if test "${TEA_PLATFORM}" = "windows" ; then
 	AC_CONFIG_SUBDIRS(shellicon)
     fi
 
-    # Find rc.exe or windres.exe.
-    # Defined in winrc.m4.
-    TREECTRL_PROG_RC
-
     # X86|AMD64|IA64 for manifest
     AC_SUBST(MACHINE)
 
     # PKG_MANIFEST -> VC_MANIFEST_EMBED_DLL -> MAKE_SHARED_LIB
-    TEA_ADD_MANIFEST([treectrl.dll.manifest])
+    #TEA_ADD_MANIFEST([treectrl.dll.manifest])
 
     # Create treectrl.dll.manifest from treectrl.dll.manifest.in.
     # treectrl.dll.manifest is included by treectrl.rc.
@@ -167,9 +163,7 @@ if test "${TEA_PLATFORM}" = "windows" ; then
     # treectrlNN.dll.manifest (to pick the correct MSVCRT runtime) then
     # that manifest is merged with mine using mt.exe (see the Makefile
     # rule for PKG_LIB_FILE).
-    OUTPUTFILES="Makefile treectrl.dll.manifest"
-
-    TREECTRL_ADD_RC([treectrl.rc])
+    OUTPUTFILES="${OUTPUTFILES} treectrl.dll.manifest"
 fi
 
 if test "${TEA_WINDOWINGSYSTEM}" = "aqua"; then
