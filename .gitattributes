@@ -1,0 +1,3 @@
+configure* text eol=lf
+Makefile.in text eol=lf
+tclconfig/** text eol=lf
