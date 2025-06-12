@@ -265,7 +265,7 @@ test header-3.18 {header configure/cget: -borderwidth} -body {
 
 test header-3.19 {header configure: invalid -button} -body {
     .t header configure first column1 -button ""
-} -returnCodes error -result {expected boolean value but got a list}
+} -returnCodes error -result {expected boolean value but got ""}
 
 test header-3.20 {header configure/cget: -button} -body {
     .t header configure first column1 -button off

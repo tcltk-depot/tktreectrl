@@ -129,20 +129,20 @@ TK_SRC_DIR	= @TK_SRC_DIR@
 # require for testing here (like TCLX_LIBRARY).
 #========================================================================
 
-EXTRA_PATH	= $(top_builddir):$(TCL_BIN_DIR)
-#EXTRA_PATH	= $(top_builddir):$(TCL_BIN_DIR):$(TK_BIN_DIR)
+#EXTRA_PATH	= $(top_builddir):$(TCL_BIN_DIR)
+EXTRA_PATH	= $(top_builddir):$(TCL_BIN_DIR):$(TK_BIN_DIR)
 TCLLIBPATH	= $(top_builddir)
 TCLSH_ENV	= TCL_LIBRARY=`@CYGPATH@ $(TCL_SRC_DIR)/library`
 PKG_ENV		= @LD_LIBRARY_PATH_VAR@="$(EXTRA_PATH):$(@LD_LIBRARY_PATH_VAR@)" \
-		  PATH="$(EXTRA_PATH):$(PATH)" \
+		  TREECTRL_LIBRARY=`@CYGPATH@ $(srcdir)/library` \
 		  TCLLIBPATH="$(TCLLIBPATH)"
 
 TCLSH_PROG	= @TCLSH_PROG@
 TCLSH		= $(TCLSH_ENV) $(PKG_ENV) $(TCLSH_PROG)
 
-#WISH_ENV	= TK_LIBRARY=`@CYGPATH@ $(TK_SRC_DIR)/library`
-#WISH_PROG	= @WISH_PROG@
-#WISH		= $(TCLSH_ENV) $(WISH_ENV) $(PKG_ENV) $(WISH_PROG)
+WISH_ENV	= TK_LIBRARY=`@CYGPATH@ $(TK_SRC_DIR)/library`
+WISH_PROG	= @WISH_PROG@
+WISH		= $(TCLSH_ENV) $(WISH_ENV) $(PKG_ENV) $(WISH_PROG)
 
 SHARED_BUILD	= @SHARED_BUILD@
 
@@ -247,9 +247,7 @@ install-doc: doc
 	done
 
 test: binaries libraries
-	$(WISH) `@CYGPATH@ $(srcdir)/tests/all.tcl` $(TESTFLAGS) \
-	    -load "package ifneeded $(PACKAGE_NAME) $(PACKAGE_VERSION) \
-		[list load `@CYGPATH@ $(PKG_LIB_FILE)` [string totitle $(PACKAGE_NAME)]]"
+	@$(WISH) `@CYGPATH@ $(srcdir)/tests/all.tcl` $(TESTFLAGS) | cat
 
 shell: binaries libraries
 	@$(WISH) $(SCRIPT)

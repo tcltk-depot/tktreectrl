@@ -219,7 +219,7 @@ test style-6.16 {style layout: option -union} -body {
 
 test style-6.17 {style layout: option invalid -detach} -body {
     .t style layout testStyle eText -detach {x y}
-} -returnCodes error -result {expected boolean value but got a list}
+} -returnCodes error -result {expected boolean value but got "x y"}
 
 test style-6.18 {style layout: option -detach} -body {
     .t style layout testStyle eText -detach true
