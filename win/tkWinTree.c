@@ -1440,36 +1440,6 @@ DeactivateManifestContext(HANDLE hCtx, ULONG_PTR ulpCookie)
     }
 }
 
-/* http://www.manbu.net/Lib/En/Class5/Sub16/1/29.asp */
-static int
-ComCtlVersionOK(void)
-{
-    HINSTANCE handle;
-    typedef HRESULT (STDAPICALLTYPE DllGetVersionProc)(DLLVERSIONINFO *);
-    DllGetVersionProc *pDllGetVersion;
-    int result = FALSE;
-    HANDLE hCtx;
-    ULONG_PTR ulpCookie;
-
-    hCtx = ActivateManifestContext(&ulpCookie);
-    handle = LoadLibraryA("comctl32.dll");
-    DeactivateManifestContext(hCtx, ulpCookie);
-    if (handle == NULL)
-	return FALSE;
-    pDllGetVersion = (DllGetVersionProc *) GetProcAddress(handle,
-	    "DllGetVersion");
-    if (pDllGetVersion != NULL) {
-	DLLVERSIONINFO dvi;
-
-	memset(&dvi, '\0', sizeof(dvi));
-	dvi.cbSize = sizeof(dvi);
-	if ((*pDllGetVersion)(&dvi) == NOERROR)
-	    result = dvi.dwMajorVersion >= 6;
-    }
-    FreeLibrary(handle);
-    return result;
-}
-
 /*
  *----------------------------------------------------------------------
  *
@@ -2627,9 +2597,11 @@ TreeThemeCmd(
 	/* T theme setwindowtheme $appname */
 	case COMMAND_SETWINDOWTHEME: {
 	    LPCWSTR pszSubAppName; /* L"Explorer" for example */
-	    int length;
+	    Tcl_Size length;
 	    Window win;
 	    HWND hwnd;
+            Tcl_DString ds;
+            const char *utf8;
 
 	    if (objc != 4) {
 		Tcl_WrongNumArgs(interp, 3, objv, "appname");
@@ -2639,9 +2611,15 @@ TreeThemeCmd(
 		break;
 	    win = Tk_WindowId(tree->tkwin);
 	    hwnd = Tk_GetHWND(win);
-	    pszSubAppName = Tcl_GetUnicodeFromObj(objv[3], &length);
-	    SetWindowTheme(hwnd, length ? pszSubAppName : NULL, NULL);
-
+            Tcl_DStringInit(&ds);
+            utf8 = Tcl_GetStringFromObj(objv[3], &length);
+            if (length) {
+                pszSubAppName = Tcl_UtfToChar16DString(utf8, length, &ds);
+            } else {
+                pszSubAppName = NULL;
+            }
+	    SetWindowTheme(hwnd, pszSubAppName, NULL);
+            Tcl_DStringFree(&ds);
 	    /* uxtheme.h says a WM_THEMECHANGED is sent to the window. */
 	    /* FIXME: only this window needs to be updated. */
 	    /* This calls TreeTheme_ThemeChanged which is needed. */
