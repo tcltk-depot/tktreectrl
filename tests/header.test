@@ -256,7 +256,7 @@ test header-3.16 {header configure/cget: -background} -body {
 
 test header-3.17 {header configure: invalid -borderwidth} -body {
     .t header configure first column1 -borderwidth x
-} -returnCodes error -result {expected screen distance but got "x"}
+} -returnCodes error -match glob -result {*screen distance* "x"}
 
 test header-3.18 {header configure/cget: -borderwidth} -body {
     .t header configure first column1 -borderwidth 4
@@ -276,7 +276,7 @@ test header-3.20 {header configure/cget: -button} -body {
 
 test header-3.23 {header configure: invalid -image} -body {
     .t header configure first column1 -image questhead
-} -returnCodes error -result {image "questhead" does not exist}
+} -returnCodes error -result {image "questhead" (does not|doesn't) exist} -match regexp
 
 test header-3.24 {header configure/cget: -image} -body {
     .t header configure first column1 -image emptyImg
