@@ -2600,9 +2600,10 @@ TreeThemeCmd(
 	    Tcl_Size length;
 	    Window win;
 	    HWND hwnd;
+#if TCL_MAJOR_VERSION >= 9
             Tcl_DString ds;
             const char *utf8;
-
+#endif
 	    if (objc != 4) {
 		Tcl_WrongNumArgs(interp, 3, objv, "appname");
 		return TCL_ERROR;
@@ -2611,6 +2612,7 @@ TreeThemeCmd(
 		break;
 	    win = Tk_WindowId(tree->tkwin);
 	    hwnd = Tk_GetHWND(win);
+#if TCL_MAJOR_VERSION >= 9
             Tcl_DStringInit(&ds);
             utf8 = Tcl_GetStringFromObj(objv[3], &length);
             if (length) {
@@ -2618,8 +2620,16 @@ TreeThemeCmd(
             } else {
                 pszSubAppName = NULL;
             }
+#else
+            pszSubAppName = Tcl_GetUnicodeFromObj(objv[3], &length);
+            if (length == 0) {
+                pszSubAppName = NULL;
+            }
+#endif
 	    SetWindowTheme(hwnd, pszSubAppName, NULL);
+#if TCL_MAJOR_VERSION >= 9
             Tcl_DStringFree(&ds);
+#endif
 	    /* uxtheme.h says a WM_THEMECHANGED is sent to the window. */
 	    /* FIXME: only this window needs to be updated. */
 	    /* This calls TreeTheme_ThemeChanged which is needed. */
