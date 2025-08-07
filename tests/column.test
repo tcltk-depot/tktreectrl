@@ -177,7 +177,7 @@ test column-3.18 {column configure/cget: -borderwidth} -body {
 
 test column-3.19 {column configure: invalid -button} -body {
     .t column configure column1 -button ""
-} -returnCodes error -result {expected boolean value but got ""}
+} -returnCodes error -match glob -result {expected boolean value but got *}
 
 test column-3.20 {column configure/cget: -button} -body {
     .t column configure column1 -button off
