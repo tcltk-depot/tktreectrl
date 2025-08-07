@@ -470,8 +470,8 @@ test column-8.4 {column width} -body {
     .t style elements testStyle3 eText2
     .t item style set 1 column1 testStyle3
     update idletasks
-    list [.t column width column1] [font measure {courier -12} "Hello World"]
-} -result {77 77}
+    expr {[.t column width column1] == [font measure {courier -12} "Hello World"]}
+} -result 1
 
 test column-9.1 {column neededwidth: missing args} -body {
     .t column neededwidth
@@ -486,8 +486,8 @@ test column-9.3 {column neededwidth: tail column returns always 0} -body {
 } -result {0}
 
 test column-9.4 {column neededwidth} -body {
-    .t column neededwidth column1
-} -result {77}
+    expr {[.t column neededwidth column1] == [font measure {courier -12} "Hello World"]}
+} -result 1
 
 test column-10.1 {-itemstyle: not for tail} -body {
     .t column configure tail -itemstyle testStyle3
