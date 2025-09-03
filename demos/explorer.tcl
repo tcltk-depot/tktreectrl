@@ -4,12 +4,10 @@ set Dir [file dirname [file dirname [info script]]]
 
 set shellicon 0
 # Might work on other windows versions, but only tested on XP and Win7
-if {$tcl_platform(os) eq "Windows NT" &&
-    ($tcl_platform(osVersion) == 5.1 ||
-    $tcl_platform(osVersion) == 6.1)} {
+if {$tcl_platform(os) eq "Windows NT"} {
     catch {
 	lappend auto_path $treectrl_library
-	package require shellicon $VERSION
+	package require tcshellicon $VERSION
 	set shellicon 1
     }
 }
