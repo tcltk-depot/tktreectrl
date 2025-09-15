@@ -2,13 +2,22 @@
 
 set Dir [file dirname [file dirname [info script]]]
 
-set shellicon 0
-# Might work on other windows versions, but only tested on XP and Win7
-if {$tcl_platform(os) eq "Windows NT"} {
-    catch {
-	lappend auto_path $treectrl_library
-	package require tcshellicon $VERSION
-	set shellicon 1
+set tcshellicon 0
+set shellicon   0
+
+if { $tcl_platform(platform) eq "windows" } {
+    lappend auto_path $treectrl_library
+
+    set retVal [catch {package require shellicon} version]
+    set shellicon [expr { ! $retVal }]
+    if { $shellicon } {
+        puts "Have shellicon $version"
+    } else {
+        set retVal [catch {package require tcshellicon} version]
+        set tcshellicon [expr { ! $retVal }]
+        if { $tcshellicon } {
+            puts "Have tcshellicon $version"
+        }
     }
 }
 
@@ -18,6 +27,28 @@ if {[info commands ::tk::mac::iconBitmap] ne {}} {
 }
 
 namespace eval DemoExplorer {}
+
+proc DemoExplorer::GetIcon {fileName args} {
+    variable sImgCache
+
+    set name [file nativename $fileName]
+    if { [llength $args] == 0 } {
+        set opts ",Default"
+    } else {
+        set opts ""
+        foreach opt $args {
+            append opts ",$opt"
+        }
+    }
+    if { [info exists sImgCache($name,$opts)] } {
+        # puts "Get image from cache $name"
+        return $sImgCache($name,$opts)
+    }
+
+    set phImg [shellicon::get {*}$args $name]
+    set sImgCache($name,$opts) $phImg
+    return $phImg
+}
 
 # DemoExplorer::SetList
 #
@@ -82,6 +113,7 @@ proc DemoExplorer::SetList {T scriptDir scriptFile {scriptFollowup ""}} {
     set Priv(scriptDir) $scriptDir
     set Priv(scriptFile) $scriptFile
     set Priv(scriptFollowup) $scriptFollowup
+    puts "Images: [llength [image names]]"
 
     return
 }
@@ -165,7 +197,7 @@ proc DemoExplorer::InitDetails {T} {
     #
     # Create elements
     #
-    if {$::shellicon} {
+    if {$::tcshellicon} {
 	$T element create elemImg shellicon -size small
     } elseif {$::macBitmap} {
         $T element create elemImg bitmap
@@ -253,15 +285,17 @@ proc DemoExplorer::InitDetails {T} {
 	    name txtName -text [file tail $file] , \
 	    type txtType -text "Folder" , \
 	    modified txtDate -data [file mtime $file]
-	if {$::shellicon} {
-	    # The shellicon extension fails randomly (by putting GDB into the
+	if {$::tcshellicon} {
+	    # The tcshellicon extension fails randomly (by putting GDB into the
 	    # background!?) if the filename is not valid. MSDN says "relative
 	    # paths are valid" but perhaps that is misinformation.
 	    if {$file eq ".."} { set file [file dirname $::Dir] }
 	    $T item element configure $item \
 		name elemImg -path $file
-	}
-	if {$::macBitmap} {
+	} elseif {$::shellicon} {
+	    $T item element configure $item \
+		name elemImg -image [list [GetIcon $file]]
+        } elseif {$::macBitmap} {
 	    if {$file eq ".."} { set file [file dirname $::Dir] }
 	    ::tk::mac::iconBitmap $file 16 16 -file $file
 	    $T item element configure $item \
@@ -273,20 +307,28 @@ proc DemoExplorer::InitDetails {T} {
     set scriptFile {
 	set item [$T item create -open no]
 	$T item style set $item name styName size stySize type styType modified styDate
-	switch [file extension $file] {
-	    .dll { set img small-dll }
-	    .exe { set img small-exe }
-	    .txt { set img small-txt }
-	    default { set img small-file }
-	}
+        switch [file extension $file] {
+            .dll { set img small-dll }
+            .exe { set img small-exe }
+            .txt { set img small-txt }
+            default { set img small-file }
+        }
 	set type [string toupper [file extension $file]]
 	if {$type ne ""} {
 	    set type "[string range $type 1 end] "
 	}
 	append type "File"
-	if {$::shellicon} {
+	if {$::tcshellicon} {
 	    $T item element configure $item \
 		name elemImg -path $file + txtName -text [file tail $file] , \
+		size txtSize -data [expr {[file size $file] / 1024 + 1}] , \
+		type txtType -text $type , \
+		modified txtDate -data [file mtime $file]
+	} elseif {$::shellicon} {
+            set shellImg [GetIcon $file]
+            set shellSel [GetIcon $file -selected]
+	    $T item element configure $item \
+		name elemImg -image [list $shellSel {selected} $shellImg {}] + txtName -text [file tail $file] , \
 		size txtSize -data [expr {[file size $file] / 1024 + 1}] , \
 		type txtType -text $type , \
 		modified txtDate -data [file mtime $file]
@@ -383,7 +425,6 @@ proc DemoExplorer::HeaderInvoke {T C} {
 	    }
 	}
     }
-
     return
 }
 
@@ -416,7 +457,7 @@ proc DemoExplorer::InitLargeIcons {T} {
     # Create elements
     #
 
-    if {$::shellicon} {
+    if {$::tcshellicon} {
 	$T element create elemImg shellicon -size large
     } elseif {$::macBitmap} {
         $T element create elemImg bitmap
@@ -483,15 +524,17 @@ proc DemoExplorer::InitLargeIcons {T} {
 	set item [$T item create -open no]
 	$T item style set $item C0 STYLE
 	$T item text $item C0 [file tail $file]
-	if {$::shellicon} {
-	    # The shellicon extension fails randomly (by putting GDB into the
+	if {$::tcshellicon} {
+	    # The tcshellicon extension fails randomly (by putting GDB into the
 	    # background!?) if the filename is not valid. MSDN says "relative
 	    # paths are valid" but perhaps that is misinformation.
 	    if {$file eq ".."} { set file [file dirname $::Dir] }
 	    $T item element configure $item C0 \
 		elemImg -path $file
-	}
-	if {$::macBitmap} {
+	} elseif {$::shellicon} {
+	    $T item element configure $item C0 \
+		elemImg -image [list [GetIcon $file -large]]
+        } elseif {$::macBitmap} {
 	    if {$file eq ".."} { set file [file dirname $::Dir] }
 	    ::tk::mac::iconBitmap $file 32 32 -file $file
 	    $T item element configure $item C0 \
@@ -503,20 +546,26 @@ proc DemoExplorer::InitLargeIcons {T} {
     set scriptFile {
 	set item [$T item create -open no]
 	$T item style set $item C0 STYLE
-	switch [file extension $file] {
-	    .dll { set img big-dll }
-	    .exe { set img big-exe }
-	    .txt { set img big-txt }
-	    default { set img big-file }
-	}
+        switch [file extension $file] {
+            .dll { set img big-dll }
+            .exe { set img big-exe }
+            .txt { set img big-txt }
+            default { set img big-file }
+        }
 	set type [string toupper [file extension $file]]
 	if {$type ne ""} {
 	    set type "[string range $type 1 end] "
 	}
 	append type "File"
-	if {$::shellicon} {
+	if {$::tcshellicon} {
 	    $T item element configure $item C0 \
 		elemImg -path $file + \
+		elemTxt -text [file tail $file]
+	} elseif { $::shellicon } {
+            set shellImg [GetIcon $file -large]
+            set shellSel [GetIcon $file -large -selected]
+	    $T item element configure $item C0 \
+		elemImg -image [list $shellSel {selected} $shellImg {}] + \
 		elemTxt -text [file tail $file]
 	} elseif {$::macBitmap} {
 	    ::tk::mac::iconBitmap $file 32 32 -file $file
@@ -596,7 +645,7 @@ proc DemoExplorer::InitList {T} {
     # Create elements
     #
 
-    if {$::shellicon} {
+    if {$::tcshellicon} {
 	$T element create elemImg shellicon -size small
     } elseif {$::macBitmap} {
         $T element create elemImg bitmap
@@ -663,15 +712,17 @@ proc DemoExplorer::InitList {T} {
 	set item [$T item create -open no]
 	$T item style set $item C0 STYLE
 	$T item text $item C0 [file tail $file]
-	if {$::shellicon} {
-	    # The shellicon extension fails randomly (by putting GDB into the
+	if {$::tcshellicon} {
+	    # The tcshellicon extension fails randomly (by putting GDB into the
 	    # background!?) if the filename is not valid. MSDN says "relative
 	    # paths are valid" but perhaps that is misinformation.
 	    if {$file eq ".."} { set file [file dirname $::Dir] }
 	    $T item element configure $item C0 \
 		elemImg -path $file
-	}
-	if {$::macBitmap} {
+	} elseif {$::shellicon} {
+	    $T item element configure $item C0 \
+		elemImg -image [list [GetIcon $file]]
+        } elseif {$::macBitmap} {
 	    if {$file eq ".."} { set file [file dirname $::Dir] }
 	    ::tk::mac::iconBitmap $file 16 16 -file $file
 	    $T item element configure $item C0 \
@@ -683,20 +734,26 @@ proc DemoExplorer::InitList {T} {
     set scriptFile {
 	set item [$T item create -open no]
 	$T item style set $item C0 STYLE
-	switch [file extension $file] {
-	    .dll { set img small-dll }
-	    .exe { set img small-exe }
-	    .txt { set img small-txt }
-	    default { set img small-file }
-	}
+        switch [file extension $file] {
+            .dll { set img small-dll }
+            .exe { set img small-exe }
+            .txt { set img small-txt }
+            default { set img small-file }
+        }
 	set type [string toupper [file extension $file]]
 	if {$type ne ""} {
 	    set type "[string range $type 1 end] "
 	}
 	append type "File"
-	if {$::shellicon} {
+	if {$::tcshellicon} {
 	    $T item element configure $item C0 \
 		elemImg -path $file + \
+		elemTxt -text [file tail $file]
+	} elseif {$::shellicon} {
+            set shellImg [GetIcon $file]
+            set shellSel [GetIcon $file -selected]
+	    $T item element configure $item C0 \
+		elemImg -image [list $shellSel {selected} $shellImg {}] + \
 		elemTxt -text [file tail $file]
 	} elseif {$::macBitmap} {
 	    ::tk::mac::iconBitmap $file 16 16 -file $file
@@ -885,7 +942,7 @@ proc DemoExplorer::InitDetailsWin7 {T} {
     # Create elements
     #
 
-    if {$::shellicon} {
+    if {$::tcshellicon} {
 	$T element create elemImg shellicon -size small -useselected never
     } elseif {$::macBitmap} {
         $T element create elemImg bitmap
@@ -1005,15 +1062,17 @@ proc DemoExplorer::InitDetailsWin7 {T} {
 	    name txtName -text [file tail $file] , \
 	    type txtType -text "Folder" , \
 	    modified txtDate -data [file mtime $file]
-	if {$::shellicon} {
-	    # The shellicon extension fails randomly (by putting GDB into the
+	if {$::tcshellicon} {
+	    # The tcshellicon extension fails randomly (by putting GDB into the
 	    # background!?) if the filename is not valid. MSDN says "relative
 	    # paths are valid" but perhaps that is misinformation.
 	    if {$file eq ".."} { set file [file dirname $::Dir] }
 	    $T item element configure $item \
 		name elemImg -path $file
-	}
-	if {$::macBitmap} {
+	} elseif {$::shellicon} {
+	    $T item element configure $item \
+		name elemImg -image [list [GetIcon $file]]
+        } elseif {$::macBitmap} {
 	    if {$file eq ".."} { set file [file dirname $::Dir] }
 	    ::tk::mac::iconBitmap $file 16 16 -file $file
 	    $T item element configure $item \
@@ -1025,20 +1084,27 @@ proc DemoExplorer::InitDetailsWin7 {T} {
     set scriptFile {
 	set item [$T item create -open no]
 	$T item style set $item name styName size stySize type styType modified styDate
-	switch [file extension $file] {
-	    .dll { set img small-dll }
-	    .exe { set img small-exe }
-	    .txt { set img small-txt }
-	    default { set img small-file }
-	}
+        switch [file extension $file] {
+            .dll { set img small-dll }
+            .exe { set img small-exe }
+            .txt { set img small-txt }
+            default { set img small-file }
+        }
 	set type [string toupper [file extension $file]]
 	if {$type ne ""} {
 	    set type "[string range $type 1 end] "
 	}
 	append type "File"
-	if {$::shellicon} {
+	if {$::tcshellicon} {
 	    $T item element configure $item \
 		name elemImg -path $file + txtName -text [file tail $file] , \
+		size txtSize -data [expr {[file size $file] / 1024 + 1}] , \
+		type txtType -text $type , \
+		modified txtDate -data [file mtime $file]
+	} elseif { $::shellicon } {
+            set shellImg [GetIcon $file]
+	    $T item element configure $item \
+		name elemImg -image $shellImg + txtName -text [file tail $file] , \
 		size txtSize -data [expr {[file size $file] / 1024 + 1}] , \
 		type txtType -text $type , \
 		modified txtDate -data [file mtime $file]
@@ -1192,7 +1258,7 @@ proc DemoExplorer::InitLargeIconsWin7 {T} {
 		       #7da2ce {active focus} \
 		       #b8d6fb mouseover] -outlinewidth 1
 
-    if {$::shellicon} {
+    if {$::tcshellicon} {
 	$T element create elemImg shellicon -size large -useselect never
     } elseif {$::macBitmap} {
         $T element create elemImg bitmap
@@ -1260,15 +1326,17 @@ proc DemoExplorer::InitLargeIconsWin7 {T} {
 	set item [$T item create -open no]
 	$T item style set $item C0 STYLE
 	$T item text $item C0 [file tail $file]
-	if {$::shellicon} {
-	    # The shellicon extension fails randomly (by putting GDB into the
+	if {$::tcshellicon} {
+	    # The tcshellicon extension fails randomly (by putting GDB into the
 	    # background!?) if the filename is not valid. MSDN says "relative
 	    # paths are valid" but perhaps that is misinformation.
 	    if {$file eq ".."} { set file [file dirname $::Dir] }
 	    $T item element configure $item C0 \
 		elemImg -path $file
-	}
-	if {$::macBitmap} {
+	} elseif {$::shellicon} {
+	    $T item element configure $item C0 \
+		elemImg -image [list [GetIcon $file -large]]
+        } elseif {$::macBitmap} {
 	    if {$file eq ".."} { set file [file dirname $::Dir] }
 	    ::tk::mac::iconBitmap $file 32 32 -file $file
 	    $T item element configure $item C0 \
@@ -1280,20 +1348,25 @@ proc DemoExplorer::InitLargeIconsWin7 {T} {
     set scriptFile {
 	set item [$T item create -open no]
 	$T item style set $item C0 STYLE
-	switch [file extension $file] {
-	    .dll { set img big-dll }
-	    .exe { set img big-exe }
-	    .txt { set img big-txt }
-	    default { set img big-file }
-	}
+        switch [file extension $file] {
+            .dll { set img big-dll }
+            .exe { set img big-exe }
+            .txt { set img big-txt }
+            default { set img big-file }
+        }
 	set type [string toupper [file extension $file]]
 	if {$type ne ""} {
 	    set type "[string range $type 1 end] "
 	}
 	append type "File"
-	if {$::shellicon} {
+	if {$::tcshellicon} {
 	    $T item element configure $item C0 \
 		elemImg -path $file + \
+		elemTxt -text [file tail $file]
+	} elseif { $::shellicon } {
+            set shellImg [GetIcon $file -large]
+	    $T item element configure $item C0 \
+		elemImg -image [list $shellImg] + \
 		elemTxt -text [file tail $file]
 	} elseif {$::macBitmap} {
 	    ::tk::mac::iconBitmap $file 32 32 -file $file
