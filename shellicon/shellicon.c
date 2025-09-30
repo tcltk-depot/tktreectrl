@@ -720,7 +720,7 @@ TreeElementType elemTypeShellIcon = {
     NULL /* onScreenProc */
 };
 
-DLLEXPORT int Shellicon_Init(Tcl_Interp *interp)
+DLLEXPORT int Tcshellicon_Init(Tcl_Interp *interp)
 {
 #if 1
     SHFILEINFO sfi;
@@ -729,19 +729,19 @@ DLLEXPORT int Shellicon_Init(Tcl_Interp *interp)
 #endif
 
 #ifdef USE_TCL_STUBS
-    if (Tcl_InitStubs(interp, "8.4", 0) == NULL) {
+    if (Tcl_InitStubs(interp, "8.4-", 0) == NULL) {
 	return TCL_ERROR;
     }
 #endif
 #ifdef USE_TK_STUBS
-    if (Tk_InitStubs(interp, "8.4", 0) == NULL) {
+    if (Tk_InitStubs(interp, "8.4-", 0) == NULL) {
 	return TCL_ERROR;
     }
 #endif
 
     /* InitCommonControlsEx must be called to use the ImageList functions */
     /* This is already done by Tk on NT */
-    if (TkWinGetPlatformId() != VER_PLATFORM_WIN32_NT) {
+    if (TclWinGetPlatformId() != VER_PLATFORM_WIN32_NT) {
 	INITCOMMONCONTROLSEX comctl;
 	ZeroMemory(&comctl, sizeof(comctl));
 	(void) InitCommonControlsEx(&comctl);
@@ -816,8 +816,8 @@ FileIconInit(TRUE);
     return TCL_OK;
 }
 
-DLLEXPORT int Shellicon_SafeInit(Tcl_Interp *interp)
+DLLEXPORT int Tcshellicon_SafeInit(Tcl_Interp *interp)
 {
-    return Shellicon_Init(interp);
+    return Tcshellicon_Init(interp);
 }
 
