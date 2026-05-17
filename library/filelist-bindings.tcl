@@ -1059,7 +1059,9 @@ proc ::TreeCtrl::EditClose {T type accept {refocus 0}} {
 	     E $Priv($type,$T,element)]
 
     if {$refocus} {
-	focus $Priv($type,$T,focus)
+	    if {[winfo exists Priv($type,$T,focus)]} {
+	      focus $Priv($type,$T,focus)
+	    }
     }
 
     return
