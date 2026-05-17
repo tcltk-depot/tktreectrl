@@ -1049,12 +1049,12 @@ proc ::TreeCtrl::Motion1 {w x y} {
 		}
 
 		if {[ColumnDragFindBefore $w $xEdge $Priv(columnDrag,y) $Priv(column) indColumn indSide]} {
-		    set prevIndColumn [$w header dragcget -indicatorcolumn]
+		    set prevedColumn [$w header dragcget -indicatorcolumn]
 		    $w header dragconfigure \
 			-indicatorcolumn $indColumn \
 			-indicatorside $indSide \
 			-indicatorspan [$w header span $Priv(header) $indColumn]
-		    if {$indColumn != $prevIndColumn} {
+		    if {$indColumn != $prevedColumn} {
 			TryEvent $w ColumnDrag indicator [list H $Priv(header) C $indColumn]
 		    }
 		} else {
@@ -1286,56 +1286,64 @@ proc ::TreeCtrl::BeginSelect {w item} {
 # item-		The item under the pointer.
 
 proc ::TreeCtrl::SelectionMotion {w item} {
-    variable Priv
+   variable Priv
 
-    if {$item eq ""} return
-    set item [$w item id $item]
-    if {$item eq $Priv(prev)} return
-    if {![$w item enabled $item]} return
+   if {$item eq ""} return
+   set item [$w item id $item]
+   if {$item eq $Priv(prev)} return
+   if {![$w item enabled $item]} return
 
-    switch [$w cget -selectmode] {
-	browse {
-	    $w selection modify $item all
-	    set Priv(prev) $item
-	}
-	extended {
-	    set i $Priv(prev)
-	    set select {}
-	    set deselect {}
-	    if {$i eq ""} {
-		set i $item
-		lappend select $item
-		set hack [$w item compare $item == anchor]
-	    } else {
-		set hack 0
-	    }
-	    if {[$w selection includes anchor] || $hack} {
-		set deselect [concat $deselect [$w item range $i $item]]
-		set select [concat $select [$w item range anchor $item]]
-	    } else {
-		set deselect [concat $deselect [$w item range $i $item]]
-		set deselect [concat $deselect [$w item range anchor $item]]
-	    }
-	    if {![info exists Priv(selection)]} {
-		set Priv(selection) [$w selection get]
-	    }
-	    while {[$w item compare $i < $item] && [$w item compare $i < anchor]} {
-		if {[lsearch $Priv(selection) $i] >= 0} {
-		    lappend select $i
-		}
-		set i [$w item id "$i next visible"]
-	    }
-	    while {[$w item compare $i > $item] && [$w item compare $i > anchor]} {
-		if {[lsearch $Priv(selection) $i] >= 0} {
-		    lappend select $i
-		}
-		set i [$w item id "$i prev visible"]
-	    }
-	    set Priv(prev) $item
-	    $w selection modify $select $deselect
-	}
-    }
-    return
+   switch [$w cget -selectmode] {
+   browse {
+      $w selection modify $item all
+      set Priv(prev) $item
+   }
+   extended {
+      set i $Priv(prev)
+      # There was a bug in treectrl, when the focus changes from one tree to another and the shift key is pressed.
+      # The Priv(prev) variable stores the item of the first tree, not that of the second tree.
+      # Here is the added code:
+      # If i is not available in this tree (because it is in another tree) the catch will return an error code
+      set code [catch {$w item range $i $item} err]
+      if {$code} {
+        return
+      }
+      set select [list]
+      set deselect [list]
+      if {$i eq ""} {
+      set i $item
+      lappend select $item
+      set hack [$w item compare $item == anchor]
+      } else {
+      set hack 0
+      }
+      if {[$w selection includes anchor] || $hack} {
+      set deselect [concat $deselect [$w item range $i $item]]
+      set select [concat $select [$w item range anchor $item]]
+      } else {
+      set deselect [concat $deselect [$w item range $i $item]]
+      set deselect [concat $deselect [$w item range anchor $item]]
+      }
+      if {![info exists Priv(selection)]} {
+      set Priv(selection) [$w selection get]
+      }
+      while {[$w item compare $i < $item] && [$w item compare $i < anchor]} {
+      if {[lsearch -exact $Priv(selection) $i] >= 0} {
+        lappend select $i
+      }
+      set i [$w item id "$i next visible"]
+      }
+      while {[$w item compare $i > $item] && [$w item compare $i > anchor]} {
+      if {[lsearch -exact $Priv(selection) $i] >= 0} {
+        lappend select $i
+      }
+      set i [$w item id "$i prev visible"]
+      }
+      set Priv(prev) $item
+      $w selection modify $select $deselect
+   }
+   }
+   return
 }
 
 # ::TreeCtrl::BeginExtend --
@@ -1766,32 +1774,40 @@ proc ::TreeCtrl::DataExtend {w item} {
 # w		The treectrl widget.
 
 proc ::TreeCtrl::Cancel w {
-    variable Priv
-    if {[string compare [$w cget -selectmode] "extended"]} {
-	return
-    }
-    set first [$w item id anchor]
-    set last $Priv(prev)
-    if {[string equal $last ""] || [string equal [$w item id $last] ""]} {
-	# Not actually doing any selection right now
-	return
-    }
-    if {[$w item compare $first > $last]} {
-	set tmp $first
-	set first $last
-	set last $tmp
-    }
-    set select {}
-    set deselect {}
-    foreach item [$w item id "range $first $last visible"] {
-	if {[lsearch $Priv(selection) $item] == -1} {
-	    lappend deselect $item
-	} else {
-	    lappend select $item
-	}
-    }
-    $w selection modify $select $deselect
-    return
+   variable Priv
+   if {[string compare [$w cget -selectmode] "extended"]} {
+   return
+   }
+   set first [$w item id anchor]
+   set last $Priv(prev)
+   if { [string equal $last ""] } {
+   # Not actually doing any selection right now
+   return
+   }
+   # There was a bug in treectrl, when Escape key is pressed and
+   # another tree has focus than the tree that setted the last Priv(prev).
+   # Here is the added code:
+   set code [catch {set cmp [$w item compare $first > $last]} err]
+   if {$code} {
+     return
+   }
+   # Next line changed
+   if {$cmp} {
+   set tmp $first
+   set first $last
+   set last $tmp
+   }
+   set select [list]
+   set deselect [list]
+   foreach item [$w item id "range $first $last visible"] {
+   if {[lsearch -exact $Priv(selection) $item] == -1} {
+      lappend deselect $item
+   } else {
+      lappend select $item
+   }
+   }
+   $w selection modify $select $deselect
+   return
 }
 
 # ::TreeCtrl::SelectAll
