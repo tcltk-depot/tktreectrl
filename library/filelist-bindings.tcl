@@ -916,7 +916,7 @@ proc ::TreeCtrl::EntryOpen {T item column element} {
     # Pesky MouseWheel
     $T notify bind $e <Scroll> { TreeCtrl::EditClose %T entry 0 1 }
 
-    $e configure -font $font
+    $e configure -font $font -background [$T cget -background] -foreground [$T cget -foreground]
     $e insert end $text
     $e selection range 0 end
 
@@ -995,7 +995,7 @@ proc ::TreeCtrl::EntryExpanderOpen {T item column element} {
     # Pesky MouseWheel
     $T notify bind $e <Scroll> { TreeCtrl::EditClose %T entry 0 1 }
 
-    $e configure -font $font -background [$T cget -background]
+    $e configure -font $font -background [$T cget -background] -foreground [$T cget -foreground] -insertbackground [$T cget -foreground]
     $e insert end $text
     $e selection range 0 end
 
